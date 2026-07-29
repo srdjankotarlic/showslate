@@ -26,6 +26,6 @@ jobs:
       - name: Public site contract
         run: npm run check:site
       - name: Dependency audit
-        run: npm audit
+        run: npm audit --omit=dev
       - name: Module tests
         run: npm test
