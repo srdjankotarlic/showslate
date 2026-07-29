@@ -15,6 +15,7 @@ const macInstallerUrl = 'https://github.com/srdjankotarlic/protimer-studio/relea
 const windowsInstallerUrl = 'https://github.com/srdjankotarlic/protimer-studio/releases/download/v0.9.0-beta.2/ProTimer-Studio-Setup-0.9.0-beta.2.exe';
 
 const requiredSnippets = [
+  '<meta name="google-site-verification"',
   '<link rel="canonical" href="https://srdjankotarlic.github.io/protimer-studio/">',
   '<meta property="og:image"',
   '<meta name="twitter:card" content="summary_large_image">',
@@ -24,6 +25,7 @@ const requiredSnippets = [
   'https://github.com/srdjankotarlic/protimer-studio/discussions/1',
   macInstallerUrl,
   windowsInstallerUrl,
+  'https://srdjankotarlic.github.io/protimer/',
   "GitHub's automatic <code>Source code</code>",
 ];
 

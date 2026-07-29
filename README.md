@@ -16,9 +16,19 @@
   <img alt="Windows x64 beta" src="https://img.shields.io/badge/Windows-x64%20beta-2563eb">
 </p>
 
+<p align="center">
+  <a href="https://srdjankotarlic.github.io/protimer-studio/"><strong>Product page</strong></a>
+  ·
+  <a href="#download-and-install"><strong>Download</strong></a>
+  ·
+  <a href="docs/USER-GUIDE.md"><strong>User guide</strong></a>
+</p>
+
 ![ProTimer Studio operator workspace](docs/images/operator-workspace.png)
 
 ProTimer Studio is free stage-timer and event-rundown software for conferences, venues, churches and live-production teams. Prepare the next cue without changing LIVE, run the speaker timer, create lower thirds and send Program to several displays from one local operator workspace.
+
+> Need only a fast countdown, OBS overlay, phone remote and simple rundown? Use the smaller **[ProTimer](https://github.com/srdjankotarlic/protimer)** app. Choose Studio for NEXT/LIVE/GO, lower thirds, screen content and multiple independent outputs.
 
 ## Download and install
 
