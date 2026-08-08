@@ -3853,7 +3853,7 @@
           <button class="source-kind" data-source-kind="timer"><span class="source-kind-icon">00</span><span class="source-kind-copy"><strong data-i18n="sourceTimer">Timer</strong><span data-i18n="sourceTimerBody">Place the ShowSlate timer in this scene.</span></span></button>
         </div>
         <section class="source-picker" id="sourceWindowPicker"><div class="source-picker-head"><button class="ghost mini source-back">‹</button><div><h3 data-i18n="sourceWindow">Window capture</h3><p data-i18n="sourceWindowChoose">Choose the exact window or display.</p></div><span class="grow"></span><button id="btnDesktopRefresh" class="ghost mini" data-i18n="refresh">Refresh</button></div><div class="desktop-source-grid" id="desktopSourceGrid"></div></section>
-        <section class="source-picker" id="sourceDevicePicker"><div class="source-picker-head"><button class="ghost mini source-back">‹</button><div><h3 data-i18n="sourceDevice">Video capture device</h3><p data-i18n="sourceDeviceChoose">Choose video, audio and requested format.</p></div></div><div class="source-form"><label class="wide"><span data-i18n="sourceName">Source name</span><input id="sourceDeviceName" type="text" value="Video input"></label><label class="wide"><span data-i18n="sourceVideoDevice">Video device</span><select id="sourceVideoDevice"></select></label><label class="wide"><span data-i18n="sourceAudioDevice">Audio device</span><select id="sourceAudioDevice"><option value="" data-i18n="sourceNoAudio">No audio</option></select></label><label><span data-i18n="resolution">Resolution</span><select id="sourceDeviceResolution"><option value="1920x1080">1920 × 1080</option><option value="1280x720">1280 × 720</option><option value="720x576">720 × 576</option><option value="720x480">720 × 480</option></select></label><label><span>FPS</span><select id="sourceDeviceFps"><option>60</option><option selected>30</option><option>25</option><option>24</option></select></label><div class="form-actions"><button class="ghost source-back" data-i18n="cancel">Cancel</button><button id="btnDeviceAdd" class="primary" data-i18n="add">Add</button></div></div></section>
+        <section class="source-picker" id="sourceDevicePicker"><div class="source-picker-head"><button class="ghost mini source-back">‹</button><div><h3 data-i18n="sourceDevice">Video capture device</h3><p data-i18n="sourceDeviceChoose">Choose video, audio and requested format.</p></div></div><div class="source-form"><div class="source-permission-note wide" id="sourceDeviceStatus" hidden></div><label class="wide"><span data-i18n="sourceName">Source name</span><input id="sourceDeviceName" type="text" value="Video input"></label><label class="wide"><span data-i18n="sourceVideoDevice">Video device</span><select id="sourceVideoDevice"></select></label><label class="wide"><span data-i18n="sourceAudioDevice">Audio device</span><select id="sourceAudioDevice"><option value="" data-i18n="sourceNoAudio">No audio</option></select></label><label><span data-i18n="resolution">Resolution</span><select id="sourceDeviceResolution"><option value="1920x1080">1920 × 1080</option><option value="1280x720">1280 × 720</option><option value="720x576">720 × 576</option><option value="720x480">720 × 480</option></select></label><label><span>FPS</span><select id="sourceDeviceFps"><option>60</option><option selected>30</option><option>25</option><option>24</option></select></label><div class="form-actions"><button class="ghost source-back" data-i18n="cancel">Cancel</button><button id="btnDeviceAdd" class="primary" data-i18n="add">Add</button></div></div></section>
         <section class="source-picker" id="sourceColorPicker"><div class="source-picker-head"><button class="ghost mini source-back">‹</button><div><h3 data-i18n="sourceColor">Color</h3><p data-i18n="sourceColorChoose">Choose a color for the new layer.</p></div></div><div class="source-form"><label class="wide"><span data-i18n="sourceName">Source name</span><input id="sourceColorName" type="text" value="Background"></label><label class="wide"><span data-i18n="sourceColor">Color</span><input id="sourceColorValue" type="color" value="#20242c"></label><div class="form-actions"><button class="ghost source-back" data-i18n="cancel">Cancel</button><button id="btnColorAdd" class="primary" data-i18n="add">Add</button></div></div></section>
       </main>
       <footer class="source-dialog-foot"><span id="sourceDialogStatus" data-i18n="sourceLocalNote">Live inputs stay local to this ShowSlate computer and its desktop output windows.</span><span class="grow"></span><button id="btnSourceClose" class="ghost" data-i18n="close">Close</button></footer>
@@ -6261,10 +6261,13 @@ function addLiveInputLayer(definition,type){
 
 async function renderDesktopSources(){
   const grid=$('desktopSourceGrid'); grid.innerHTML=`<div class="source-empty">${t('sourceScanning')}</div>`;
-  let sources=[];
-  try{sources=await api.liveInputDesktopSources();}catch(error){sources=[];}
+  let sources=[],permissions={};
+  try{[sources,permissions]=await Promise.all([api.liveInputDesktopSources(),api.liveInputPermissions()]);}catch(error){sources=[];}
   grid.innerHTML='';
-  if(!sources.length){grid.innerHTML=`<div class="source-empty">${t('sourceWindowEmpty')}</div>`;return;}
+  if(!sources.length){
+    const blocked=['denied','restricted'].includes(permissions&&permissions.screen);
+    grid.innerHTML=`<div class="source-empty${blocked?' permission-blocked':''}">${t(blocked?'sourceScreenPermission':'sourceWindowEmpty')}</div>`;return;
+  }
   sources.forEach(source=>{
     const button=document.createElement('button'); button.type='button'; button.className='desktop-source-card';
     const image=document.createElement('img'); image.alt=''; image.src=source.thumbnail||source.appIcon||'';
@@ -6282,14 +6285,26 @@ async function renderDesktopSources(){
 $('btnDesktopRefresh')?.addEventListener('click',renderDesktopSources);
 
 async function renderDeviceSources(){
-  const video=$('sourceVideoDevice'),audio=$('sourceAudioDevice');
+  const video=$('sourceVideoDevice'),audio=$('sourceAudioDevice'),status=$('sourceDeviceStatus');
   video.innerHTML=`<option value="">${t('sourceScanning')}</option>`; audio.innerHTML=`<option value="">${t('sourceNoAudio')}</option>`;
-  let devices=[]; try{devices=await api.liveInputDevices(true);}catch(error){devices=[];}
+  status.hidden=true;status.textContent='';
+  let devices=[],permissions={},error='';
+  try{
+    const response=await api.liveInputDevices(true);
+    if(Array.isArray(response)) devices=response;
+    else {devices=Array.isArray(response&&response.devices)?response.devices:[];permissions=response&&response.permissions||{};error=response&&response.error||'';}
+  }catch(reason){devices=[];error='enumeration-failed';}
   const videos=devices.filter(row=>row.kind==='videoinput'), audios=devices.filter(row=>row.kind==='audioinput');
   video.innerHTML='';
-  if(!videos.length){const option=document.createElement('option');option.value='';option.textContent=t('sourceDeviceEmpty');video.appendChild(option);}
+  const cameraBlocked=['denied','restricted'].includes(permissions.camera);
+  if(!videos.length){const option=document.createElement('option');option.value='';option.textContent=t(cameraBlocked?'sourceCameraPermission':error==='timeout'?'sourceDeviceTimeout':'sourceDeviceEmpty');video.appendChild(option);}
   videos.forEach((device,index)=>{const option=document.createElement('option');option.value=device.deviceId;option.textContent=device.label||`${t('sourceDevice')} ${index+1}`;video.appendChild(option);});
   audios.forEach((device,index)=>{const option=document.createElement('option');option.value=device.deviceId;option.textContent=device.label||`${t('sourceAudioDevice')} ${index+1}`;audio.appendChild(option);});
+  const notices=[];
+  if(cameraBlocked) notices.push(t('sourceCameraPermission'));
+  if(['denied','restricted'].includes(permissions.microphone)) notices.push(t('sourceMicrophonePermission'));
+  if(error==='timeout') notices.push(t('sourceDeviceTimeout'));
+  if(notices.length){status.textContent=notices.join(' ');status.hidden=false;}
   if(videos[0]) $('sourceDeviceName').value=videos[0].label||t('sourceDevice');
   const replacing=sourceReplaceLayerId ? currentScene().layers.find(row=>row.id===sourceReplaceLayerId) : null;
   const current=replacing&&liveInputDefinition(replacing.inputId);

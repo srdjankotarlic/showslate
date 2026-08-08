@@ -33,7 +33,7 @@ The live-input service also passed its targeted synthetic-stream test. A hidden 
 - `npm test`: all 16 module scripts passed, together with free-build, icon and public-site checks.
 - Visible Electron renderer suite: all eight workflow scripts passed.
 - Conference Desk renderer: `13/13` checks passed.
-- Canvas/compositor renderer: `14/14` checks passed, including 900x600 reachability, layer order, hidden-source retention, transform persistence and Preview/TAKE isolation.
+- Canvas/compositor renderer: `15/15` checks passed, including 900x600 reachability, layer order, hidden-source retention, permission-failure recovery, transform persistence and Preview/TAKE isolation.
 - Targeted live-input and multi-output checks passed, including simultaneous Program routes, fail-closed missing-display handling and the one-Program-audio-route guard.
 - Responsive beta usability matrix: `55/55` checks passed at 1440x900, 1280x800, 1024x700 and 900x600.
 - Public website renderer: `7/7` desktop/mobile checks passed with no horizontal overflow and all local product images loaded.

@@ -244,6 +244,30 @@ function createLiveInputHub() {
   return liveInputHubWin;
 }
 
+function boundedLiveInputTask(task, timeoutMs, label) {
+  let timer = null;
+  const timeout = new Promise((resolve, reject) => {
+    timer = setTimeout(() => reject(new Error(`${label} timed out`)), timeoutMs);
+  });
+  return Promise.race([Promise.resolve(task), timeout]).finally(() => clearTimeout(timer));
+}
+
+function liveInputPermissionSnapshot() {
+  if (process.platform !== 'darwin') return { camera: 'unknown', microphone: 'unknown', screen: 'unknown' };
+  return {
+    camera: systemPreferences.getMediaAccessStatus('camera'),
+    microphone: systemPreferences.getMediaAccessStatus('microphone'),
+    screen: systemPreferences.getMediaAccessStatus('screen')
+  };
+}
+
+async function requestDarwinLiveInputPermissions() {
+  for (const mediaType of ['camera', 'microphone']) {
+    if (systemPreferences.getMediaAccessStatus(mediaType) !== 'not-determined') continue;
+    await boundedLiveInputTask(systemPreferences.askForMediaAccess(mediaType), 30000, `${mediaType} permission`);
+  }
+}
+
 // ---------------- MREŽNI IZLAZ (OBS Browser Source / NDI most / confidence monitor) ----------------
 let server = null;
 let serverPort = 0;
@@ -1089,9 +1113,12 @@ ipcMain.handle('output-configs', () => outputConfigs);
 ipcMain.handle('build-info', () => getBuildInfo());
 ipcMain.handle('live-input-desktop-sources', async (event) => {
   if (!controlWin || controlWin.isDestroyed() || event.sender.id !== controlWin.webContents.id) return [];
-  const rows = await desktopCapturer.getSources({
-    types: ['window', 'screen'], thumbnailSize: { width: 320, height: 180 }, fetchWindowIcons: true
-  });
+  let rows = [];
+  try {
+    rows = await boundedLiveInputTask(desktopCapturer.getSources({
+      types: ['window', 'screen'], thumbnailSize: { width: 320, height: 180 }, fetchWindowIcons: true
+    }), 8000, 'Desktop source discovery');
+  } catch (_) {}
   return rows.map(source => ({
     id: source.id,
     name: source.name,
@@ -1101,7 +1128,14 @@ ipcMain.handle('live-input-desktop-sources', async (event) => {
   }));
 });
 ipcMain.handle('live-input-devices', async (event, requestPermission) => {
-  if (!controlWin || controlWin.isDestroyed() || event.sender.id !== controlWin.webContents.id) return [];
+  if (!controlWin || controlWin.isDestroyed() || event.sender.id !== controlWin.webContents.id) return { devices: [], permissions: liveInputPermissionSnapshot(), error: 'unauthorized' };
+  let permissions = liveInputPermissionSnapshot();
+  if (requestPermission === true && process.platform === 'darwin') {
+    try {
+      await requestDarwinLiveInputPermissions();
+    } catch (_) {}
+    permissions = liveInputPermissionSnapshot();
+  }
   if (!liveInputHubWin || liveInputHubWin.isDestroyed()) createLiveInputHub();
   await new Promise(resolve => {
     if (liveInputHubReady) { resolve(); return; }
@@ -1109,16 +1143,21 @@ ipcMain.handle('live-input-devices', async (event, requestPermission) => {
     const poll = () => liveInputHubReady || Date.now() - started > 5000 ? resolve() : setTimeout(poll, 40);
     poll();
   });
-  if (!liveInputHubReady) return [];
-  return liveInputHubWin.webContents.executeJavaScript(`window.liveCapture.enumerateDevices(${requestPermission === true ? 'true' : 'false'})`);
+  if (!liveInputHubReady) return { devices: [], permissions, error: 'service-unavailable' };
+  try {
+    const askInRenderer = process.platform !== 'darwin' && requestPermission === true;
+    const devices = await boundedLiveInputTask(
+      liveInputHubWin.webContents.executeJavaScript(`window.liveCapture.enumerateDevices(${askInRenderer ? 'true' : 'false'})`),
+      12000,
+      'Capture device discovery'
+    );
+    return { devices: Array.isArray(devices) ? devices : [], permissions: liveInputPermissionSnapshot(), error: '' };
+  } catch (error) {
+    return { devices: [], permissions: liveInputPermissionSnapshot(), error: /timed out/i.test(String(error && error.message || error)) ? 'timeout' : 'enumeration-failed' };
+  }
 });
 ipcMain.handle('live-input-permissions', async () => {
-  if (process.platform !== 'darwin') return { camera: 'unknown', microphone: 'unknown', screen: 'unknown' };
-  return {
-    camera: systemPreferences.getMediaAccessStatus('camera'),
-    microphone: systemPreferences.getMediaAccessStatus('microphone'),
-    screen: systemPreferences.getMediaAccessStatus('screen')
-  };
+  return liveInputPermissionSnapshot();
 });
 ipcMain.handle('live-input-configure', async (event, definitions) => {
   if (!controlWin || controlWin.isDestroyed() || event.sender.id !== controlWin.webContents.id) return { ok: false, error: 'unauthorized' };

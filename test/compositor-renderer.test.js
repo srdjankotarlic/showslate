@@ -16,6 +16,7 @@ let repository;
 let target;
 let checks = 0;
 let configuredInputs = [];
+let deviceDiscoveryMode = 'ready';
 
 function check(name, condition, detail = '') {
   console.log(`${name}=${!!condition}${detail ? ` ${detail}` : ''}`);
@@ -69,10 +70,15 @@ ipcMain.handle('live-input-desktop-sources', () => [{
   id: 'window:compositor-test:1', name: 'Presentation Window', kind: 'window',
   thumbnail: 'data:image/svg+xml,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="320" height="180"><rect width="320" height="180" fill="#1b2430"/><rect x="36" y="34" width="248" height="112" rx="6" fill="#6a8eb5"/></svg>')
 }]);
-ipcMain.handle('live-input-devices', () => [
-  { deviceId: 'video-card-1', groupId: 'capture-card', kind: 'videoinput', label: 'UVC Capture Card' },
-  { deviceId: 'audio-card-1', groupId: 'capture-card', kind: 'audioinput', label: 'UVC Capture Audio' }
-]);
+ipcMain.handle('live-input-devices', () => deviceDiscoveryMode === 'blocked' ? {
+  devices: [], permissions: { camera: 'denied', microphone: 'denied', screen: 'granted' }, error: ''
+} : {
+  devices: [
+    { deviceId: 'video-card-1', groupId: 'capture-card', kind: 'videoinput', label: 'UVC Capture Card' },
+    { deviceId: 'audio-card-1', groupId: 'capture-card', kind: 'audioinput', label: 'UVC Capture Audio' }
+  ],
+  permissions: { camera: 'granted', microphone: 'granted', screen: 'granted' }, error: ''
+});
 ipcMain.handle('live-input-permissions', () => ({ camera: 'granted', microphone: 'granted', screen: 'granted' }));
 ipcMain.handle('live-input-configure', (event, definitions) => { configuredInputs = JSON.parse(JSON.stringify(definitions || [])); return { ok: true, count: configuredInputs.length }; });
 ipcMain.handle('live-input-restart', () => ({ ok: true }));
@@ -168,6 +174,17 @@ app.whenReady().then(async () => {
   if (!await waitFor(() => configuredInputs.some(input => input.type === 'window' && input.active))) throw new Error('window input was not configured');
   check('COMPOSITOR_WINDOW_AND_CAPTURE_CARD_CONFIGURED_ONCE_OK', configuredInputs.filter(input => input.type === 'window').length === 1 && configuredInputs.filter(input => input.type === 'device' && input.videoDeviceId === 'video-card-1' && input.audioDeviceId === 'audio-card-1' && input.withAudio && input.width === 1280 && input.height === 720).length === 1, JSON.stringify(configuredInputs));
 
+  deviceDiscoveryMode = 'blocked';
+  const permissionFailure = JSON.parse(await win.webContents.executeJavaScript(`(async()=>{
+    document.getElementById('btnAddSource').click();
+    document.querySelector('[data-source-kind="device"]').click();
+    const started=Date.now(); while(Date.now()-started<2000&&document.getElementById('sourceVideoDevice').options[0]?.textContent.includes('Scanning')) await new Promise(resolve=>setTimeout(resolve,25));
+    const result={option:document.getElementById('sourceVideoDevice').options[0]?.textContent||'',status:document.getElementById('sourceDeviceStatus').textContent,visible:!document.getElementById('sourceDeviceStatus').hidden,addDisabled:document.getElementById('btnDeviceAdd').disabled};
+    closeSourceDialog(); return JSON.stringify(result);
+  })()`));
+  deviceDiscoveryMode = 'ready';
+  check('COMPOSITOR_PERMISSION_FAILURE_EXITS_SCANNING_OK', permissionFailure.visible && permissionFailure.addDisabled && !permissionFailure.option.includes('Scanning') && permissionFailure.status.includes('Camera') && permissionFailure.status.includes('Microphone'), JSON.stringify(permissionFailure));
+
   const hiddenSource = JSON.parse(await win.webContents.executeJavaScript(`JSON.stringify((()=>{
     const layer=selectedLayer(); const inputId=layer.inputId;
     const findToggle=()=>[...document.querySelectorAll('#layerList .layer-row')].find(row=>row.querySelector('.layer-name')?.textContent===layer.name)?.querySelector('.vis');
@@ -245,7 +262,7 @@ app.whenReady().then(async () => {
   await new Promise(resolve => setTimeout(resolve, 120));
   fs.writeFileSync(path.join(artifactDirectory, 'compositor-900x600.png'), (await win.webContents.capturePage()).toPNG());
 
-  console.log(`COMPOSITOR_RENDERER_TESTS_OK ${checks}/14`);
+  console.log(`COMPOSITOR_RENDERER_TESTS_OK ${checks}/15`);
   win.destroy();
   fs.rmSync(profile, { recursive: true, force: true });
   app.quit();
