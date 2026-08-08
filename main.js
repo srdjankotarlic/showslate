@@ -261,11 +261,10 @@ function liveInputPermissionSnapshot() {
   };
 }
 
-async function requestDarwinLiveInputPermissions() {
-  for (const mediaType of ['camera', 'microphone']) {
-    if (systemPreferences.getMediaAccessStatus(mediaType) !== 'not-determined') continue;
-    await boundedLiveInputTask(systemPreferences.askForMediaAccess(mediaType), 30000, `${mediaType} permission`);
-  }
+async function requestDarwinLiveInputPermission(mediaType) {
+  if (!['camera', 'microphone'].includes(mediaType)) return;
+  if (systemPreferences.getMediaAccessStatus(mediaType) !== 'not-determined') return;
+  await boundedLiveInputTask(systemPreferences.askForMediaAccess(mediaType), 20000, `${mediaType} permission`);
 }
 
 // ---------------- MREŽNI IZLAZ (OBS Browser Source / NDI most / confidence monitor) ----------------
@@ -1130,9 +1129,10 @@ ipcMain.handle('live-input-desktop-sources', async (event) => {
 ipcMain.handle('live-input-devices', async (event, requestPermission) => {
   if (!controlWin || controlWin.isDestroyed() || event.sender.id !== controlWin.webContents.id) return { devices: [], permissions: liveInputPermissionSnapshot(), error: 'unauthorized' };
   let permissions = liveInputPermissionSnapshot();
-  if (requestPermission === true && process.platform === 'darwin') {
+  const permissionType = ['camera', 'microphone'].includes(requestPermission) ? requestPermission : (requestPermission === true ? 'camera' : '');
+  if (permissionType && process.platform === 'darwin') {
     try {
-      await requestDarwinLiveInputPermissions();
+      await requestDarwinLiveInputPermission(permissionType);
     } catch (_) {}
     permissions = liveInputPermissionSnapshot();
   }
@@ -1145,7 +1145,7 @@ ipcMain.handle('live-input-devices', async (event, requestPermission) => {
   });
   if (!liveInputHubReady) return { devices: [], permissions, error: 'service-unavailable' };
   try {
-    const askInRenderer = process.platform !== 'darwin' && requestPermission === true;
+    const askInRenderer = process.platform !== 'darwin' && !!requestPermission;
     const devices = await boundedLiveInputTask(
       liveInputHubWin.webContents.executeJavaScript(`window.liveCapture.enumerateDevices(${askInRenderer ? 'true' : 'false'})`),
       12000,

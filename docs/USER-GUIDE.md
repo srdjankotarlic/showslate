@@ -83,7 +83,7 @@ Select **Canvas** in the visible header to open the scene compositor. This works
 1. Select an existing scene or create, duplicate or delete one from the Canvas header.
 2. Choose a standard preset or enter a custom width, height and frame rate.
 3. Select **Add Source** and add a picture/video/PDF, solid color, text, timer, application window/display or video capture device.
-4. For a camera or UVC capture card, select the video device, optional audio device, requested resolution and frame rate.
+4. For a camera or UVC capture card, choose **Allow camera** when access is first needed. Choose **Allow audio** separately only when that source should carry sound, then select the devices, resolution and frame rate.
 5. Arrange the stack in **Layers**. The top row is visually in front.
 6. Select a layer, then drag it in Preview or use the inspector for exact position, size, opacity, rotation and fit.
 7. Use **Change source** to reconnect a window or device without losing that layer's transform.
@@ -151,7 +151,7 @@ English is the default. English and Serbian have full interface coverage. The ot
 ## Before doors open
 
 - Connect and power all displays before opening ShowSlate.
-- Grant Screen Recording only when using window/display capture, and Camera/Microphone only when using a selected capture device.
+- Grant Screen Recording only when using window/display capture. ShowSlate requests Camera and audio-input access separately from visible buttons in the capture-device picker; enable only what the show needs.
 - Disable sleep, notifications and automatic system updates.
 - Prefer wired Ethernet for browser devices.
 - Open the final show and verify every media asset.

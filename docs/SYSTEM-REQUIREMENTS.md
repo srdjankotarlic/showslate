@@ -13,7 +13,7 @@ ShowSlate Conference Desk `0.11.0-beta.1` targets Apple Silicon Macs and Windows
 - 1280x800 recommended controller workspace; the responsive UI is tested down to 900x600.
 - One or more external displays for speaker, confidence or venue output workflows.
 - A dedicated show computer is strongly recommended when several output roles or video/PDF media are active.
-- Window/display capture requires macOS Screen Recording permission. Camera or UVC capture with audio requires Camera and, when selected, Microphone permission.
+- Window/display capture requires macOS Screen Recording permission. Camera and audio-input access are requested separately from the capture-device picker; macOS can require ShowSlate to be restarted after changing a denied permission in System Settings.
 
 Intel Macs are not part of the current release candidate.
 

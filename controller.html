@@ -3853,7 +3853,7 @@
           <button class="source-kind" data-source-kind="timer"><span class="source-kind-icon">00</span><span class="source-kind-copy"><strong data-i18n="sourceTimer">Timer</strong><span data-i18n="sourceTimerBody">Place the ShowSlate timer in this scene.</span></span></button>
         </div>
         <section class="source-picker" id="sourceWindowPicker"><div class="source-picker-head"><button class="ghost mini source-back">‹</button><div><h3 data-i18n="sourceWindow">Window capture</h3><p data-i18n="sourceWindowChoose">Choose the exact window or display.</p></div><span class="grow"></span><button id="btnDesktopRefresh" class="ghost mini" data-i18n="refresh">Refresh</button></div><div class="desktop-source-grid" id="desktopSourceGrid"></div></section>
-        <section class="source-picker" id="sourceDevicePicker"><div class="source-picker-head"><button class="ghost mini source-back">‹</button><div><h3 data-i18n="sourceDevice">Video capture device</h3><p data-i18n="sourceDeviceChoose">Choose video, audio and requested format.</p></div></div><div class="source-form"><div class="source-permission-note wide" id="sourceDeviceStatus" hidden></div><label class="wide"><span data-i18n="sourceName">Source name</span><input id="sourceDeviceName" type="text" value="Video input"></label><label class="wide"><span data-i18n="sourceVideoDevice">Video device</span><select id="sourceVideoDevice"></select></label><label class="wide"><span data-i18n="sourceAudioDevice">Audio device</span><select id="sourceAudioDevice"><option value="" data-i18n="sourceNoAudio">No audio</option></select></label><label><span data-i18n="resolution">Resolution</span><select id="sourceDeviceResolution"><option value="1920x1080">1920 × 1080</option><option value="1280x720">1280 × 720</option><option value="720x576">720 × 576</option><option value="720x480">720 × 480</option></select></label><label><span>FPS</span><select id="sourceDeviceFps"><option>60</option><option selected>30</option><option>25</option><option>24</option></select></label><div class="form-actions"><button class="ghost source-back" data-i18n="cancel">Cancel</button><button id="btnDeviceAdd" class="primary" data-i18n="add">Add</button></div></div></section>
+        <section class="source-picker" id="sourceDevicePicker"><div class="source-picker-head"><button class="ghost mini source-back">‹</button><div><h3 data-i18n="sourceDevice">Video capture device</h3><p data-i18n="sourceDeviceChoose">Choose video, audio and requested format.</p></div></div><div class="source-form"><div class="source-permission-note wide" id="sourceDeviceStatus" hidden><span id="sourceDeviceStatusText"></span><div class="source-permission-actions"><button id="btnCameraPermission" class="ghost mini" type="button" data-i18n="sourceAllowCamera">Allow camera</button><button id="btnMicrophonePermission" class="ghost mini" type="button" data-i18n="sourceAllowMicrophone">Allow audio</button></div></div><label class="wide"><span data-i18n="sourceName">Source name</span><input id="sourceDeviceName" type="text" value="Video input"></label><label class="wide"><span data-i18n="sourceVideoDevice">Video device</span><select id="sourceVideoDevice"></select></label><label class="wide"><span data-i18n="sourceAudioDevice">Audio device</span><select id="sourceAudioDevice"><option value="" data-i18n="sourceNoAudio">No audio</option></select></label><label><span data-i18n="resolution">Resolution</span><select id="sourceDeviceResolution"><option value="1920x1080">1920 × 1080</option><option value="1280x720">1280 × 720</option><option value="720x576">720 × 576</option><option value="720x480">720 × 480</option></select></label><label><span>FPS</span><select id="sourceDeviceFps"><option>60</option><option selected>30</option><option>25</option><option>24</option></select></label><div class="form-actions"><button class="ghost source-back" data-i18n="cancel">Cancel</button><button id="btnDeviceAdd" class="primary" data-i18n="add">Add</button></div></div></section>
         <section class="source-picker" id="sourceColorPicker"><div class="source-picker-head"><button class="ghost mini source-back">‹</button><div><h3 data-i18n="sourceColor">Color</h3><p data-i18n="sourceColorChoose">Choose a color for the new layer.</p></div></div><div class="source-form"><label class="wide"><span data-i18n="sourceName">Source name</span><input id="sourceColorName" type="text" value="Background"></label><label class="wide"><span data-i18n="sourceColor">Color</span><input id="sourceColorValue" type="color" value="#20242c"></label><div class="form-actions"><button class="ghost source-back" data-i18n="cancel">Cancel</button><button id="btnColorAdd" class="primary" data-i18n="add">Add</button></div></div></section>
       </main>
       <footer class="source-dialog-foot"><span id="sourceDialogStatus" data-i18n="sourceLocalNote">Live inputs stay local to this ShowSlate computer and its desktop output windows.</span><span class="grow"></span><button id="btnSourceClose" class="ghost" data-i18n="close">Close</button></footer>
@@ -6284,13 +6284,14 @@ async function renderDesktopSources(){
 }
 $('btnDesktopRefresh')?.addEventListener('click',renderDesktopSources);
 
-async function renderDeviceSources(){
-  const video=$('sourceVideoDevice'),audio=$('sourceAudioDevice'),status=$('sourceDeviceStatus');
+async function renderDeviceSources(requestPermission=''){
+  const video=$('sourceVideoDevice'),audio=$('sourceAudioDevice'),status=$('sourceDeviceStatus'),statusText=$('sourceDeviceStatusText');
+  const cameraPermission=$('btnCameraPermission'),microphonePermission=$('btnMicrophonePermission');
   video.innerHTML=`<option value="">${t('sourceScanning')}</option>`; audio.innerHTML=`<option value="">${t('sourceNoAudio')}</option>`;
-  status.hidden=true;status.textContent='';
+  status.hidden=true;statusText.textContent='';cameraPermission.hidden=true;microphonePermission.hidden=true;
   let devices=[],permissions={},error='';
   try{
-    const response=await api.liveInputDevices(true);
+    const response=await api.liveInputDevices(requestPermission);
     if(Array.isArray(response)) devices=response;
     else {devices=Array.isArray(response&&response.devices)?response.devices:[];permissions=response&&response.permissions||{};error=response&&response.error||'';}
   }catch(reason){devices=[];error='enumeration-failed';}
@@ -6302,9 +6303,13 @@ async function renderDeviceSources(){
   audios.forEach((device,index)=>{const option=document.createElement('option');option.value=device.deviceId;option.textContent=device.label||`${t('sourceAudioDevice')} ${index+1}`;audio.appendChild(option);});
   const notices=[];
   if(cameraBlocked) notices.push(t('sourceCameraPermission'));
+  if(permissions.camera==='not-determined') notices.push(t('sourceCameraPermissionNeeded'));
   if(['denied','restricted'].includes(permissions.microphone)) notices.push(t('sourceMicrophonePermission'));
+  if(permissions.microphone==='not-determined') notices.push(t('sourceMicrophonePermissionNeeded'));
   if(error==='timeout') notices.push(t('sourceDeviceTimeout'));
-  if(notices.length){status.textContent=notices.join(' ');status.hidden=false;}
+  cameraPermission.hidden=permissions.camera!=='not-determined';
+  microphonePermission.hidden=permissions.microphone!=='not-determined';
+  if(notices.length){statusText.textContent=notices.join(' ');status.hidden=false;}
   if(videos[0]) $('sourceDeviceName').value=videos[0].label||t('sourceDevice');
   const replacing=sourceReplaceLayerId ? currentScene().layers.find(row=>row.id===sourceReplaceLayerId) : null;
   const current=replacing&&liveInputDefinition(replacing.inputId);
@@ -6317,6 +6322,8 @@ async function renderDeviceSources(){
   }
   $('btnDeviceAdd').disabled=!videos.length;
 }
+$('btnCameraPermission')?.addEventListener('click',()=>renderDeviceSources('camera'));
+$('btnMicrophonePermission')?.addEventListener('click',()=>renderDeviceSources('microphone'));
 $('sourceVideoDevice')?.addEventListener('change',event=>{const label=event.target.selectedOptions[0]?.textContent||'';if(label)$('sourceDeviceName').value=label;});
 
 $('sourceKindGrid')?.addEventListener('click',event=>{

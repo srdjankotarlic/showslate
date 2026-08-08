@@ -42,7 +42,7 @@ contextBridge.exposeInMainWorld('pt', {
   onWinFs: (cb) => ipcRenderer.on('win-fs', (e, v) => cb(v)),
   buildInfo: () => ipcRenderer.invoke('build-info'),
   liveInputDesktopSources: () => ipcRenderer.invoke('live-input-desktop-sources'),
-  liveInputDevices: (requestPermission = false) => ipcRenderer.invoke('live-input-devices', requestPermission === true),
+  liveInputDevices: (requestPermission = false) => ipcRenderer.invoke('live-input-devices', ['camera', 'microphone'].includes(requestPermission) ? requestPermission : requestPermission === true),
   liveInputPermissions: () => ipcRenderer.invoke('live-input-permissions'),
   liveInputConfigure: (definitions) => ipcRenderer.invoke('live-input-configure', definitions),
   liveInputRestart: (inputId) => ipcRenderer.invoke('live-input-restart', inputId),
