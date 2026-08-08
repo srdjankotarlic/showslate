@@ -1,4 +1,4 @@
-// ProTimer Studio — Lower Third Studio: PURE resolveri (LT-1).
+// ShowSlate — Lower Third Studio: pure resolvers (LT-1).
 // template + cue + mediaResolver + now → deterministički, JSON-serializable runtime.
 // LIVE resolver dobija ISKLJUČIVO liveCue (selected cue se nikad ne prosleđuje ovde);
 // preview resolver je odvojen, ne zove send() niti dira bilo kakav state (pure funkcija).

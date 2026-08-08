@@ -3,5 +3,6 @@ dist-installers/
 tools/private.key
 .DS_Store
 .protimer-smoke-display.json
+.showslate-smoke-display.json
 artifacts/
 build-info.json

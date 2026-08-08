@@ -7,7 +7,7 @@ const path = require('path');
 const smokeDisplay = require('../tools/smoke-display.js');
 
 const root = path.resolve(__dirname, '..');
-const profile = fs.mkdtempSync(path.join(os.tmpdir(), 'protimer-report-ui-'));
+const profile = fs.mkdtempSync(path.join(os.tmpdir(), 'showslate-report-ui-'));
 const artifactDirectory = path.join(root, 'artifacts', 'generated', 'report');
 app.setPath('userData', profile);
 let target;
@@ -58,7 +58,7 @@ ipcMain.handle('share-info', () => ({}));
 
 app.whenReady().then(async () => {
   target = smokeDisplay.resolveTargetDisplay(screen, { root }).display;
-  check('REPORT_UI_TARGET_DISPLAY_OK', !!target && /PHL 243V7/i.test(target.label || ''), target ? target.label : 'missing');
+  check('REPORT_UI_TARGET_DISPLAY_OK', !!target, target ? target.label : 'missing');
   const win = new BrowserWindow({
     ...smokeDisplay.clampToWorkArea({ width: 1280, height: 800 }, target.workArea),
     show: true,

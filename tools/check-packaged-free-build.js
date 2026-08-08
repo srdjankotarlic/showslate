@@ -17,7 +17,7 @@ const uiFiles = [
   'signal.html',
   'i18n.js'
 ];
-const gatePattern = /license-status|license-activate|PTP-[A-Za-z0-9_-]+|ProTimer Studio\s*[—-]\s*TRIAL/i;
+const gatePattern = /license-status|license-activate|PTP-[A-Za-z0-9_-]+|(?:ShowSlate|ProTimer Studio)\s*[—-]\s*TRIAL/i;
 
 function fail(message) {
   console.error(`PACKAGED_FREE_BUILD_FAILED: ${message}`);

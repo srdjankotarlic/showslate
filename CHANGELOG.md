@@ -1,8 +1,17 @@
 # Changelog
 
-All notable changes to ProTimer Studio are documented here.
+All notable changes to ShowSlate are documented here.
 
 ## Unreleased
+
+## 0.9.0-beta.3 - 2026-08-08
+
+### Changed
+
+- Renamed the app, installers, website and repository from ProTimer Studio to ShowSlate.
+- Added idempotent migration of existing local projects and settings without deleting legacy data.
+- Changed new portable package extensions to `.showslate-show` and `.showslate-lt` while retaining legacy import compatibility.
+- Stabilized responsive UI verification by waiting for settled visual state instead of a fixed animation delay.
 
 ## 0.9.0-beta.2 - 2026-07-21
 
@@ -52,7 +61,7 @@ All notable changes to ProTimer Studio are documented here.
 ### Changed
 
 - Rebuilt the operator workspace for consistent responsive access from 1440x900 down to 900x600.
-- Unified product identity, icon, package names and release metadata as ProTimer Studio.
+- Unified the original product identity, icon, package names and release metadata under its former ProTimer Studio name.
 - Hardened display identity and output reconnection so missing routes never move silently to another monitor.
 - Upgraded the runtime from end-of-support Electron 39 to supported Electron 42.6.1.
 - Hardened packaged Electron fuses and enforced embedded ASAR integrity on macOS and Windows.

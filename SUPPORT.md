@@ -1,6 +1,6 @@
 # Support
 
-ProTimer Studio is a community-supported public beta.
+ShowSlate is a community-supported public beta.
 
 - Use the bug-report form for reproducible software defects.
 - Use Discussions for setup questions, ideas and workflow feedback.

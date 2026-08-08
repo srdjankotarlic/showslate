@@ -25,9 +25,9 @@ function classifyTag(tag) {
 function expectedArtifactNames(tag) {
   const version = String(tag || '').replace(/^v/, '');
   return [
-    `ProTimer-Studio-${version}-arm64.dmg`,
-    `ProTimer-Studio-Setup-${version}.exe`,
-    `ProTimer-Studio-${version}-portable.exe`
+    `ShowSlate-${version}-arm64.dmg`,
+    `ShowSlate-Setup-${version}.exe`,
+    `ShowSlate-${version}-portable.exe`
   ];
 }
 
@@ -142,8 +142,8 @@ function validateReleaseEvidence(document, options = {}) {
 
   for (const gateName of ['sourceDisplaySmoke', 'packagedDisplaySmoke']) {
     const gate = document.gates[gateName];
-    if (isObject(gate) && !/^PHL 243V7(?:\b|$)/i.test(gate.display || '')) {
-      errors.push(`${gateName}.display must identify PHL 243V7`);
+    if (isObject(gate) && !hasRealEvidence(gate.display)) {
+      errors.push(`${gateName}.display must identify the exact tested display`);
     }
   }
 

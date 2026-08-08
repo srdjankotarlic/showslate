@@ -5,7 +5,8 @@ const { ZipArchive } = require('archiver');
 const yauzl = require('yauzl');
 const V = require('./validate.js');
 
-const FORMAT = 'protimer-lt';
+const FORMAT = 'showslate-lt';
+const LEGACY_FORMATS = new Set(['protimer-lt']);
 const PACKAGE_SCHEMA_VERSION = 1;
 const MAX_PACKAGE_BYTES = 512 * 1024 * 1024;
 const MAX_ASSET_BYTES = 200 * 1024 * 1024;
@@ -116,8 +117,8 @@ async function writeZip(destination, entries) {
 }
 
 async function exportLowerThirdPackage({ destination, template, mediaDirectory, appMetadata = {} }) {
-  if (!destination || path.extname(destination).toLowerCase() !== '.protimer-lt') {
-    throw fail('INVALID_DESTINATION', 'Template package must use the .protimer-lt extension.');
+  if (!destination || !String(destination).toLowerCase().endsWith('.showslate-lt')) {
+    throw fail('INVALID_DESTINATION', 'Template package must use the .showslate-lt extension.');
   }
   const cleanTemplate = validateTemplate(template);
   const templateData = jsonBuffer(cleanTemplate);
@@ -139,7 +140,7 @@ async function exportLowerThirdPackage({ destination, template, mediaDirectory, 
     schemaVersion: PACKAGE_SCHEMA_VERSION,
     createdAt: new Date().toISOString(),
     app: {
-      name: 'ProTimer Studio',
+      name: 'ShowSlate',
       version: String(appMetadata.version || ''),
       commit: String(appMetadata.commit || '')
     },
@@ -230,7 +231,7 @@ function parseJsonEntry(entries, name) {
 function validateLowerThirdPackageEntries(entries, { existingTemplateIds = [] } = {}) {
   if (!(entries instanceof Map)) throw fail('INVALID_PACKAGE', 'Package entries are invalid.');
   const manifest = parseJsonEntry(entries, 'manifest.json');
-  if (manifest.format !== FORMAT) throw fail('INVALID_FORMAT', 'Not a ProTimer lower-third package.');
+  if (manifest.format !== FORMAT && !LEGACY_FORMATS.has(manifest.format)) throw fail('INVALID_FORMAT', 'Not a ShowSlate lower-third package.');
   if (manifest.schemaVersion !== PACKAGE_SCHEMA_VERSION) throw fail('UNSUPPORTED_SCHEMA', 'Unsupported lower-third package schema version.');
   if (!manifest.template || manifest.template.path !== 'template.json' || !/^[a-f0-9]{64}$/.test(String(manifest.template.sha256 || ''))) {
     throw fail('INVALID_MANIFEST', 'Template manifest entry is invalid.');
@@ -324,6 +325,7 @@ async function importLowerThirdPackage({ packagePath, mediaDirectory, existingTe
 
 module.exports = {
   FORMAT,
+  LEGACY_FORMATS,
   PACKAGE_SCHEMA_VERSION,
   MAX_PACKAGE_BYTES,
   MAX_ASSET_BYTES,

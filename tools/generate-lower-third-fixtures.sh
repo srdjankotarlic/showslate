@@ -1,5 +1,5 @@
 #!/bin/bash
-# ProTimer Studio — sintetički LT test fixtures (LT-1). Pokreće se RUČNO u razvoju;
+# ShowSlate — synthetic LT test fixtures (LT-1). Run manually during development;
 # ffmpeg NIJE runtime zavisnost aplikacije. Rezultati se COMMITUJU (deterministički pattern).
 # Pattern (320x180): leva trećina NEPROZIRNA lime, srednja 50% lime, desna POTPUNO transparentna,
 # beli pokretni kvadrat preko (motion). Sample tačke: (30,90) a=255, (160,90) a≈128, (290,90) a=0.

@@ -6,7 +6,7 @@ const { ShowRepository } = require('../src/show-storage/repository.js');
 const smokeDisplay = require('../tools/smoke-display.js');
 
 const root = path.resolve(__dirname, '..');
-const profile = fs.mkdtempSync(path.join(os.tmpdir(), 'protimer-screen-content-'));
+const profile = fs.mkdtempSync(path.join(os.tmpdir(), 'showslate-screen-content-'));
 const artifactDirectory = path.join(root, 'artifacts', 'generated', 'screen-content');
 app.setPath('userData', profile);
 let repository;
@@ -63,7 +63,7 @@ app.whenReady().then(async () => {
   repository = new ShowRepository({ userDataDir: profile, appMetadata: { commit: 'screen-content-test' } });
   await repository.initializeSession({ track: false });
   target = smokeDisplay.resolveTargetDisplay(screen, { root }).display;
-  check('SCREEN_CONTENT_TARGET_DISPLAY_OK', !!target && /PHL 243V7/i.test(target.label || ''), target ? target.label : 'missing');
+  check('SCREEN_CONTENT_TARGET_DISPLAY_OK', !!target, target ? target.label : 'missing');
   const win = new BrowserWindow({
     ...smokeDisplay.clampToWorkArea({ width: 1280, height: 800 }, target.workArea), show: true, backgroundColor: '#0b0c0f',
     webPreferences: { preload: path.join(root, 'preload.js'), contextIsolation: true, nodeIntegration: false, backgroundThrottling: false }
@@ -77,8 +77,11 @@ app.whenReady().then(async () => {
     const holding=addContentScene('Welcome','text',[{id:makeId('layer'),type:'text',name:'Welcome',text:'WELCOME',color:'#ffffff',bg:'transparent',fontSize:10,visible:true,fit:'contain',x:4,y:4,w:92,h:92,opacity:1}]);
     const deck=addContentScene('Sponsor Deck','pdf',[{id:makeId('layer'),type:'pdf',name:'Sponsor Deck',src:'media://test-deck.pdf',page:1,visible:true,fit:'contain',x:0,y:0,w:100,h:100,opacity:1}],{assetId:'media://test-deck.pdf',page:1});
     selectContentItem(timer.id); liveContentItemId=timer.id; programState=outputSnapshot(S);
-    setSidebarView('slides'); renderContentItems();
-    const normalUi=!!document.getElementById('btnSidebarSlides') && document.getElementById('sidebarSlidesPane').classList.contains('active');
+    const slidesTab=document.getElementById('btnSidebarSlides');
+    const slidesTabVisible=!!slidesTab && slidesTab.getClientRects().length>0;
+    if(slidesTabVisible) slidesTab.click();
+    renderContentItems();
+    const normalUi=slidesTabVisible && document.getElementById('sidebarSlidesPane').classList.contains('active');
     selectContentItem(holding.id);
     const selectedSafe=programState.activeSceneId===timer.sceneId && S.activeSceneId===holding.sceneId && liveContentItemId===timer.id;
     startPause(); startPause();
@@ -111,14 +114,32 @@ app.whenReady().then(async () => {
   fs.mkdirSync(artifactDirectory, { recursive: true });
   fs.writeFileSync(path.join(artifactDirectory, 'slides-1280x800.png'), (await win.webContents.capturePage()).toPNG());
   win.setBounds(smokeDisplay.clampToWorkArea({ width: 900, height: 600 }, target.workArea));
-  await new Promise(resolve => setTimeout(resolve, 180));
-  const layout = JSON.parse(await win.webContents.executeJavaScript(`JSON.stringify((()=>{
-    const panel=document.getElementById('sidebarSlidesPane').getBoundingClientRect();
+  if (!await waitFor(() => win.webContents.executeJavaScript('innerWidth===900 && innerHeight>=560'))) {
+    throw new Error('900x600 viewport did not settle');
+  }
+  const layout = JSON.parse(await win.webContents.executeJavaScript(`(async()=>{
+    const visible=element=>!!element&&element.getClientRects().length>0&&getComputedStyle(element).visibility!=='hidden';
+    const nav=document.getElementById('btnRundownDrawer');
+    const slides=document.getElementById('btnSidebarSlides');
+    const navAvailable=visible(nav);
+    if(navAvailable && !visible(document.getElementById('primarySidebar'))) nav.click();
+    const started=Date.now();
+    while(Date.now()-started<1600 && !visible(slides)) await new Promise(resolve=>setTimeout(resolve,25));
+    const slidesAvailable=visible(slides);
+    if(slidesAvailable) slides.click();
+    const panelElement=document.getElementById('sidebarSlidesPane');
+    const settledStarted=Date.now();
+    while(Date.now()-settledStarted<1600){
+      const rect=panelElement.getBoundingClientRect();
+      if(rect.x>=0 && rect.right<=innerWidth+1) break;
+      await new Promise(resolve=>setTimeout(resolve,25));
+    }
+    const panel=panelElement.getBoundingClientRect();
     const foot=document.querySelector('.slides-foot').getBoundingClientRect();
     const tabs=document.querySelector('.sidebar-view-tabs').getBoundingClientRect();
-    return {vw:innerWidth,vh:innerHeight,panel:{x:panel.x,y:panel.y,right:panel.right,bottom:panel.bottom},foot:{top:foot.top,bottom:foot.bottom},tabs:{top:tabs.top,bottom:tabs.bottom}};
-  })())`));
-  check('SCREEN_CONTENT_900X600_REACHABLE_OK', layout.panel.x >= 0 && layout.panel.right <= layout.vw + 1 && layout.tabs.top >= 0 && layout.foot.bottom <= layout.vh + 1, JSON.stringify(layout));
+    return JSON.stringify({navAvailable,slidesAvailable,active:document.getElementById('sidebarSlidesPane').classList.contains('active'),vw:innerWidth,vh:innerHeight,panel:{x:panel.x,y:panel.y,right:panel.right,bottom:panel.bottom},foot:{top:foot.top,bottom:foot.bottom},tabs:{top:tabs.top,bottom:tabs.bottom}});
+  })()`));
+  check('SCREEN_CONTENT_900X600_REACHABLE_OK', layout.navAvailable && layout.slidesAvailable && layout.active && layout.panel.x >= 0 && layout.panel.right <= layout.vw + 1 && layout.tabs.top >= 0 && layout.foot.bottom <= layout.vh + 1, JSON.stringify(layout));
   fs.writeFileSync(path.join(artifactDirectory, 'slides-900x600.png'), (await win.webContents.capturePage()).toPNG());
 
   const disk = await repository.loadCurrent();

@@ -5,21 +5,21 @@
   "candidateRunId": 0,
   "verifiedAt": "REPLACE_WITH_UTC_TIMESTAMP",
   "artifacts": {
-    "ProTimer-Studio-1.0.0-arm64.dmg": "REPLACE_WITH_SHA256",
-    "ProTimer-Studio-Setup-1.0.0.exe": "REPLACE_WITH_SHA256",
-    "ProTimer-Studio-1.0.0-portable.exe": "REPLACE_WITH_SHA256"
+    "ShowSlate-1.0.0-arm64.dmg": "REPLACE_WITH_SHA256",
+    "ShowSlate-Setup-1.0.0.exe": "REPLACE_WITH_SHA256",
+    "ShowSlate-1.0.0-portable.exe": "REPLACE_WITH_SHA256"
   },
   "gates": {
     "sourceDisplaySmoke": {
       "passed": false,
       "completedAt": "REPLACE_WITH_UTC_TIMESTAMP",
-      "display": "PHL 243V7",
+      "display": "REPLACE_WITH_EXACT_TEST_DISPLAY",
       "evidence": "REPLACE_WITH_EVIDENCE_PATH_OR_URL"
     },
     "packagedDisplaySmoke": {
       "passed": false,
       "completedAt": "REPLACE_WITH_UTC_TIMESTAMP",
-      "display": "PHL 243V7",
+      "display": "REPLACE_WITH_EXACT_TEST_DISPLAY",
       "evidence": "REPLACE_WITH_EVIDENCE_PATH_OR_URL"
     },
     "macCleanInstall": {
@@ -28,7 +28,7 @@
       "evidence": "REPLACE_WITH_EVIDENCE_PATH_OR_URL",
       "os": "REPLACE_WITH_MACOS_VERSION",
       "hardware": "REPLACE_WITH_MAC_MODEL",
-      "artifact": "ProTimer-Studio-1.0.0-arm64.dmg",
+      "artifact": "ShowSlate-1.0.0-arm64.dmg",
       "checks": {
         "install": false,
         "launch": false,
@@ -45,8 +45,8 @@
       "os": "REPLACE_WITH_WINDOWS_VERSION",
       "hardware": "REPLACE_WITH_PC_AND_DISPLAY_SETUP",
       "artifacts": [
-        "ProTimer-Studio-Setup-1.0.0.exe",
-        "ProTimer-Studio-1.0.0-portable.exe"
+        "ShowSlate-Setup-1.0.0.exe",
+        "ShowSlate-1.0.0-portable.exe"
       ],
       "checks": {
         "installer": false,

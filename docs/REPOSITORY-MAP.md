@@ -38,9 +38,9 @@ Current public repository map. Line counts are approximate and should be checked
 ## Tests
 
 - `tools/run-test-suite.js`: cross-platform aggregate module/renderer runner.
-- `npm test`: 93 headless checks across twelve scripts.
-- `test/*-renderer.test.js`: five real Electron workflow suites pinned to PHL 243V7.
-- `test/beta-usability-matrix.test.js`: 53 responsive checks at four viewport sizes.
+- `npm test`: deterministic free-build/site/icon checks plus thirteen module scripts.
+- `test/*-renderer.test.js`: five real Electron workflow suites pinned to an explicitly selected display.
+- `test/beta-usability-matrix.test.js`: 55 responsive checks at four viewport sizes.
 - `main.js --smoke`: source/packaged integration and visual assertions.
 - `tools/run-lt-soak.js`: targeted condition-driven soak.
 - `test/fixtures/lower-third/`: deterministic image/video/codec fixtures included in packaged smoke.
@@ -51,7 +51,7 @@ Generated evidence lives under `artifacts/generated/` and is not release code. `
 
 | Path | Responsibility |
 |---|---|
-| `tools/smoke-display.js` | Strict PHL 243V7 test-display resolver; absence or ambiguity aborts. |
+| `tools/smoke-display.js` | Strict configured-display resolver; absence or ambiguity aborts. |
 | `tools/run-smoke-on-display.js` | Source/packaged smoke launcher and focused routing mode. |
 | `tools/list-displays.js` | Physical display inventory. |
 | `tools/write-build-info.js` | Build commit/timestamp metadata with explicit clean/dirty source state. |

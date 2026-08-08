@@ -118,7 +118,7 @@ jobs:
             --checksums release-assets/SHA256SUMS.txt
 
           signer_workflow="${GITHUB_SERVER_URL#https://}/$GITHUB_REPOSITORY/.github/workflows/stable-release.yml"
-          for artifact in release-assets/ProTimer-Studio-*.dmg release-assets/ProTimer-Studio-*.exe; do
+          for artifact in release-assets/ShowSlate-*.dmg release-assets/ShowSlate-*.exe; do
             [[ -f "$artifact" ]] || continue
             gh attestation verify "$artifact" \
               --repo "$GITHUB_REPOSITORY" \
@@ -134,4 +134,4 @@ jobs:
           --repo "$GITHUB_REPOSITORY"
           --draft=false
           --latest
-          --title "ProTimer Studio $RELEASE_TAG"
+          --title "ShowSlate $RELEASE_TAG"

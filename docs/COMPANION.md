@@ -1,6 +1,6 @@
-# ProTimer Studio control reference
+# ShowSlate control reference
 
-ProTimer Studio uses its existing local HTTP and OSC services for Bitfocus Companion,
+ShowSlate uses its existing local HTTP and OSC services for Bitfocus Companion,
 Stream Deck, QLab and other show-control tools. There is no separate service and no
 official Companion module in this beta. Companion's Generic HTTP or OSC connections
 can use the mappings below.
@@ -9,7 +9,8 @@ can use the mappings below.
 
 - HTTP base: the `API / Companion` address shown in **Network & Outputs**.
 - HTTP authentication: add `t=<launch-token>` to the query string or send the
-  `x-pt-token` header. The token changes whenever ProTimer Studio starts.
+  `x-showslate-token` header. The token changes whenever ShowSlate starts. The
+  legacy `x-pt-token` header remains accepted for existing integrations.
 - OSC: UDP on the OSC port shown in the app (normally `7879`). OSC is intentionally
   tokenless and must only be used on a trusted production LAN.
 - A `200` command response means the command was accepted. Read status to confirm
@@ -23,7 +24,7 @@ Every action supports HTTP GET:
 http://HOST:PORT/cmd?type=goNext&t=TOKEN
 ```
 
-HTTP POST uses JSON and the `x-pt-token` header:
+HTTP POST uses JSON and the `x-showslate-token` header:
 
 ```json
 {"type":"messageSend","value":"WRAP UP"}
@@ -31,26 +32,27 @@ HTTP POST uses JSON and the `x-pt-token` header:
 
 | Companion action | HTTP `type` | Value | OSC address |
 | --- | --- | --- | --- |
-| Start / pause | `startPause` | none | `/protimer/start-pause` |
-| Reset timer | `reset` | none | `/protimer/reset` |
-| Adjust time | `adjust` | signed seconds | `/protimer/adjust` |
-| GO using normal operator logic | `go` | none | `/protimer/go` |
-| GO next cue | `goNext` | none | `/protimer/go/next` |
-| GO selected cue | `goSelected` | none | `/protimer/go/selected` |
-| Set blackout | `blackout` | `on`, `off`, or `toggle` | `/protimer/blackout` |
-| Set duration | `setDuration` | milliseconds | `/protimer/set-duration` |
-| Set timer mode | `mode` | `countdown`, `countup`, or `clock` | `/protimer/mode` |
-| Send speaker message | `messageSend` | text | `/protimer/message/send` |
-| Clear speaker message | `messageClear` | none | `/protimer/message/clear` |
-| Take active lower third | `ltTake` | none | `/protimer/lt/take` |
-| Hide lower third | `ltHide` | none | `/protimer/lt/hide` |
-| Replay last taken lower third | `ltReplay` | none | `/protimer/lt/replay` |
-| Select LT template | `ltSelectTemplate` | template ID or exact name | `/protimer/lt/select-template` |
-| Set automatic LT | `ltAuto` | `on` or `off` | `/protimer/lt/auto` |
-| Take selected screen content | `contentTake` | `transition` or `cut` | `/protimer/content/take` |
-| Clear live screen content | `contentClear` | none | `/protimer/content/clear` |
+| Start / pause | `startPause` | none | `/showslate/start-pause` |
+| Reset timer | `reset` | none | `/showslate/reset` |
+| Adjust time | `adjust` | signed seconds | `/showslate/adjust` |
+| GO using normal operator logic | `go` | none | `/showslate/go` |
+| GO next cue | `goNext` | none | `/showslate/go/next` |
+| GO selected cue | `goSelected` | none | `/showslate/go/selected` |
+| Set blackout | `blackout` | `on`, `off`, or `toggle` | `/showslate/blackout` |
+| Set duration | `setDuration` | milliseconds | `/showslate/set-duration` |
+| Set timer mode | `mode` | `countdown`, `countup`, or `clock` | `/showslate/mode` |
+| Send speaker message | `messageSend` | text | `/showslate/message/send` |
+| Clear speaker message | `messageClear` | none | `/showslate/message/clear` |
+| Take active lower third | `ltTake` | none | `/showslate/lt/take` |
+| Hide lower third | `ltHide` | none | `/showslate/lt/hide` |
+| Replay last taken lower third | `ltReplay` | none | `/showslate/lt/replay` |
+| Select LT template | `ltSelectTemplate` | template ID or exact name | `/showslate/lt/select-template` |
+| Set automatic LT | `ltAuto` | `on` or `off` | `/showslate/lt/auto` |
+| Take selected screen content | `contentTake` | `transition` or `cut` | `/showslate/content/take` |
+| Clear live screen content | `contentClear` | none | `/showslate/content/clear` |
 
-The older HTTP names `start`, `message` and `clearMessage` remain accepted.
+The older HTTP names `start`, `message` and `clearMessage`, plus legacy
+`/protimer/...` OSC addresses, remain accepted.
 
 ### Action semantics
 

@@ -1,6 +1,6 @@
 # Security notes
 
-ProTimer Studio is a local-first desktop app for live production. It is intended to run on a trusted show computer and a trusted production LAN.
+ShowSlate is a local-first desktop app for live production. It is intended to run on a trusted show computer and a trusted production LAN.
 
 ## Packaged application hardening
 
@@ -10,7 +10,7 @@ These controls supplement code signing; they do not replace Developer ID/notariz
 
 ## Network control
 
-ProTimer Studio exposes local browser views on the production network:
+ShowSlate exposes local browser views on the production network:
 
 - `/` and `/output.html` for the screen / OBS output
 - `/remote?t=<token>` for phone remote control
@@ -26,7 +26,7 @@ The browser output, backstage, signal, and legacy SSE event endpoints do not req
 
 ## OSC control
 
-OSC input listens on UDP port `7879` by default and accepts `/protimer/<command>` messages from the LAN. OSC does not use the HTTP token because common show-control tools such as Companion, TouchOSC, QLab-style workflows, and hardware bridges often expect simple local UDP control.
+OSC input listens on UDP port `7879` by default and accepts `/showslate/<command>` messages from the LAN. Legacy `/protimer/<command>` aliases remain accepted for existing integrations. OSC does not use the HTTP token because common show-control tools such as Companion, TouchOSC, QLab-style workflows, and hardware bridges often expect simple local UDP control.
 
 Treat OSC as a trusted-LAN integration:
 

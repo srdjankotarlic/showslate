@@ -1,4 +1,4 @@
-// ProTimer Studio — display inventory tool.  `npm run displays:list`
+// ShowSlate display inventory tool. `npm run displays:list`
 // Prints every connected monitor and writes artifacts/test-display/display-inventory.txt.
 // Read-only: opens NO app windows, changes nothing.
 const { app, screen } = require('electron');

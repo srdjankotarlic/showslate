@@ -109,9 +109,9 @@ expectFailure('RELEASE_POLICY_ALL_GATES_REQUIRED_OK', evidence => {
 }, /missing gate: windowsCleanInstall/);
 
 expectFailure('RELEASE_POLICY_PHYSICAL_CHECKLIST_REQUIRED_OK', evidence => {
-  evidence.gates.sourceDisplaySmoke.display = 'Built-in Retina Display';
+  evidence.gates.sourceDisplaySmoke.display = 'any';
   evidence.gates.windowsCleanInstall.checks.uninstall = false;
-}, /PHL 243V7|uninstall must be true/);
+}, /exact tested display|uninstall must be true/);
 
 expectFailure('RELEASE_POLICY_EXTERNAL_BETA_EVIDENCE_REQUIRED_OK', evidence => {
   evidence.gates.externalOperatorBeta.operators = 0;

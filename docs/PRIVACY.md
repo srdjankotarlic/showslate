@@ -2,7 +2,7 @@
 
 Effective date: 2026-07-12
 
-ProTimer Studio is designed as a local-first desktop application. It does not require a ProTimer account for normal operation and does not include product analytics, advertising trackers or behavioral telemetry.
+ShowSlate is designed as a local-first desktop application. It does not require an account for normal operation and does not include product analytics, advertising trackers or behavioral telemetry.
 
 ## Data stored on the computer
 
@@ -13,7 +13,7 @@ The app may store the following in the operating system's application-data direc
 - imported media used by shows and lower-third templates;
 - recent operational state needed for recovery.
 
-Portable `.protimer-show` and `.protimer-lt` files are created only when the user exports them. They may contain show names, cue text, speaker details, logos and referenced media chosen by the user.
+Portable `.showslate-show` and `.showslate-lt` files are created only when the user exports them. They may contain show names, cue text, speaker details, logos and referenced media chosen by the user. Legacy `.protimer-show` and `.protimer-lt` packages can still be imported.
 
 ## Local network data
 
@@ -23,7 +23,7 @@ Remote and structured control URLs use a random per-launch token. The app does n
 
 ## Optional public sharing
 
-Public sharing is off until the user starts it. When enabled, the app uses the third-party `localtunnel` service to expose the local web service through an internet URL. Network metadata and any content requested through that URL pass through infrastructure outside ProTimer Studio's control. Do not enable public sharing for confidential shows without assessing that risk.
+Public sharing is off until the user starts it. When enabled, the app uses the third-party `localtunnel` service to expose the local web service through an internet URL. Network metadata and any content requested through that URL pass through infrastructure outside ShowSlate's control. Do not enable public sharing for confidential shows without assessing that risk.
 
 ## GitHub and support
 

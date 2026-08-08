@@ -37,7 +37,7 @@ function documentFor(name, speaker = 'Speaker') {
 }
 
 async function makeRoot() {
-  return fsp.mkdtemp(path.join(os.tmpdir(), 'protimer-show-repository-'));
+  return fsp.mkdtemp(path.join(os.tmpdir(), 'showslate-show-repository-'));
 }
 
 async function prepareCrash(root, nowRef) {

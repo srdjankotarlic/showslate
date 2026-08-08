@@ -49,16 +49,16 @@ jobs:
         run: npm run dist:mac
       - name: Verify package boot and DMG
         run: |
-          build_info="$("dist-installers/mac-arm64/ProTimer Studio.app/Contents/MacOS/ProTimer Studio" --print-build-info)"
+          build_info="$("dist-installers/mac-arm64/ShowSlate.app/Contents/MacOS/ShowSlate" --print-build-info)"
           printf '%s\n' "$build_info"
           node -e "const d=JSON.parse(process.argv[1]); if(d.dirty || d.commitFull!==process.env.GITHUB_SHA) process.exit(1)" "$build_info"
-          npm run check:packaged-free -- "dist-installers/mac-arm64/ProTimer Studio.app/Contents/Resources/app.asar"
-          hdiutil verify dist-installers/ProTimer-Studio-*-arm64.dmg
-          node node_modules/@electron/fuses/dist/bin.js read --app "dist-installers/mac-arm64/ProTimer Studio.app"
+          npm run check:packaged-free -- "dist-installers/mac-arm64/ShowSlate.app/Contents/Resources/app.asar"
+          hdiutil verify dist-installers/ShowSlate-*-arm64.dmg
+          node node_modules/@electron/fuses/dist/bin.js read --app "dist-installers/mac-arm64/ShowSlate.app"
       - uses: actions/upload-artifact@v7
         with:
           name: macos-arm64
-          path: dist-installers/ProTimer-Studio-*-arm64.dmg
+          path: dist-installers/ShowSlate-*-arm64.dmg
           if-no-files-found: error
 
   windows-x64:
@@ -78,10 +78,10 @@ jobs:
       - name: Verify x64 package inputs
         shell: pwsh
         run: |
-          if (-not (Test-Path "dist-installers/win-unpacked/ProTimer Studio.exe")) { throw "Missing unpacked app" }
-          if (-not (Test-Path "dist-installers/ProTimer-Studio-Setup-*.exe")) { throw "Missing installer" }
-          if (-not (Test-Path "dist-installers/ProTimer-Studio-*-portable.exe")) { throw "Missing portable app" }
-          $buildInfoJson = & "dist-installers/win-unpacked/ProTimer Studio.exe" --print-build-info | Out-String
+          if (-not (Test-Path "dist-installers/win-unpacked/ShowSlate.exe")) { throw "Missing unpacked app" }
+          if (-not (Test-Path "dist-installers/ShowSlate-Setup-*.exe")) { throw "Missing installer" }
+          if (-not (Test-Path "dist-installers/ShowSlate-*-portable.exe")) { throw "Missing portable app" }
+          $buildInfoJson = & "dist-installers/win-unpacked/ShowSlate.exe" --print-build-info | Out-String
           if ($LASTEXITCODE -ne 0) { throw "Packaged Windows CLI boot failed." }
           Write-Host $buildInfoJson
           $buildInfo = $buildInfoJson | ConvertFrom-Json
@@ -93,8 +93,8 @@ jobs:
         with:
           name: windows-x64
           path: |
-            dist-installers/ProTimer-Studio-Setup-*.exe
-            dist-installers/ProTimer-Studio-*-portable.exe
+            dist-installers/ShowSlate-Setup-*.exe
+            dist-installers/ShowSlate-*-portable.exe
           if-no-files-found: error
 
   release:
@@ -110,19 +110,19 @@ jobs:
           merge-multiple: true
       - name: Generate checksums
         working-directory: release-assets
-        run: sha256sum ProTimer-Studio-* > SHA256SUMS.txt
+        run: sha256sum ShowSlate-* > SHA256SUMS.txt
       - name: Attest release binaries
         uses: actions/attest@v4
         with:
-          subject-path: release-assets/ProTimer-Studio-*
+          subject-path: release-assets/ShowSlate-*
       - name: Publish prerelease
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
-          mac_asset="$(find release-assets -maxdepth 1 -name 'ProTimer-Studio-*-arm64.dmg' -print -quit)"
-          windows_setup="$(find release-assets -maxdepth 1 -name 'ProTimer-Studio-Setup-*.exe' -print -quit)"
-          windows_portable="$(find release-assets -maxdepth 1 -name 'ProTimer-Studio-*-portable.exe' -print -quit)"
+          mac_asset="$(find release-assets -maxdepth 1 -name 'ShowSlate-*-arm64.dmg' -print -quit)"
+          windows_setup="$(find release-assets -maxdepth 1 -name 'ShowSlate-Setup-*.exe' -print -quit)"
+          windows_portable="$(find release-assets -maxdepth 1 -name 'ShowSlate-*-portable.exe' -print -quit)"
           checksums="release-assets/SHA256SUMS.txt"
 
           test -n "$mac_asset"
@@ -138,5 +138,5 @@ jobs:
             --repo "${GITHUB_REPOSITORY}" \
             --prerelease \
             --verify-tag \
-            --title "ProTimer Studio ${GITHUB_REF_NAME}" \
+            --title "ShowSlate ${GITHUB_REF_NAME}" \
             --generate-notes

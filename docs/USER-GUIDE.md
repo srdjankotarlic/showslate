@@ -1,6 +1,6 @@
-# ProTimer Studio User Guide
+# ShowSlate User Guide
 
-ProTimer Studio is an offline-first control application for event rundowns, speaker timing, screen content, lower thirds and multiple Program destinations.
+ShowSlate is an offline-first control application for event rundowns, speaker timing, screen content, lower thirds and multiple Program destinations.
 
 ## Quick start
 
@@ -70,7 +70,7 @@ Select **Edit Studio** for reusable custom templates:
 8. Use **Take** to resolve the template with data from the LIVE cue and send it to Program.
 9. Use **Hide** to remove the lower third and clean up its media.
 
-Export important templates as `.protimer-lt` packages. Imported packages are validated and keep their referenced assets.
+Export important templates as `.showslate-lt` packages. Imported packages are validated and keep their referenced assets. Legacy `.protimer-lt` packages remain importable.
 
 ## Slides and screen content
 
@@ -86,7 +86,7 @@ The **Slides** workspace can prepare images, video, PDF pages, text, logos, time
 
 Shows autosave locally using atomic writes and bounded backups. After an unclean shutdown, recovery opens off-air and paused so the operator can inspect state before continuing.
 
-- Export a complete `.protimer-show` package before moving a show to another computer.
+- Export a complete `.showslate-show` package before moving a show to another computer. Legacy `.protimer-show` packages remain importable.
 - Import the package into a clean profile and run Preflight.
 - Do not rely on autosave as the only backup for a live event.
 

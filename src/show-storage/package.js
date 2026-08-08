@@ -6,7 +6,8 @@ const yauzl = require('yauzl');
 const { validateShowDocument, MAX_SHOW_BYTES } = require('./repository.js');
 const LT = require('../lower-third/validate.js');
 
-const FORMAT = 'protimer-show';
+const FORMAT = 'showslate-show';
+const LEGACY_FORMATS = new Set(['protimer-show']);
 const PACKAGE_SCHEMA_VERSION = 1;
 const MAX_PACKAGE_BYTES = 1024 * 1024 * 1024;
 const MAX_ASSET_BYTES = 200 * 1024 * 1024;
@@ -189,8 +190,8 @@ function componentEntries(document) {
 }
 
 async function exportShowPackage({ destination, document: input, mediaDirectory, appMetadata = {} }) {
-  if (!destination || !String(destination).toLowerCase().endsWith('.protimer-show')) {
-    throw fail('INVALID_DESTINATION', 'Show package must use the .protimer-show extension.');
+  if (!destination || !String(destination).toLowerCase().endsWith('.showslate-show')) {
+    throw fail('INVALID_DESTINATION', 'Show package must use the .showslate-show extension.');
   }
   const document = validateExportDocument(input);
   const components = componentEntries(document);
@@ -223,7 +224,7 @@ async function exportShowPackage({ destination, document: input, mediaDirectory,
     documentSchemaVersion: document.schemaVersion,
     createdAt: new Date().toISOString(),
     app: {
-      name: 'ProTimer Studio',
+      name: 'ShowSlate',
       version: String(appMetadata.version || ''),
       commit: String(appMetadata.commit || ''),
       buildTimestamp: String(appMetadata.buildTimestamp || '')
@@ -333,7 +334,7 @@ function verifyComponent(entries, component, expectedPath) {
 function validateShowPackageEntries(entries, { existingShowIds = [], existingTemplateIds = [] } = {}) {
   if (!(entries instanceof Map)) throw fail('INVALID_PACKAGE', 'Package entries are invalid.');
   const manifest = parseJsonEntry(entries, 'manifest.json');
-  if (manifest.format !== FORMAT) throw fail('INVALID_FORMAT', 'Not a ProTimer show package.');
+  if (manifest.format !== FORMAT && !LEGACY_FORMATS.has(manifest.format)) throw fail('INVALID_FORMAT', 'Not a ShowSlate show package.');
   if (manifest.schemaVersion !== PACKAGE_SCHEMA_VERSION) throw fail('UNSUPPORTED_SCHEMA', 'Unsupported show package schema version.');
   if (!manifest.show || manifest.show.path !== 'show.json' || !/^[a-f0-9]{64}$/.test(String(manifest.show.sha256 || ''))) {
     throw fail('INVALID_MANIFEST', 'Show manifest entry is invalid.');
@@ -443,6 +444,7 @@ async function importShowPackage({ packagePath, mediaDirectory, existingShowIds 
 
 module.exports = {
   FORMAT,
+  LEGACY_FORMATS,
   PACKAGE_SCHEMA_VERSION,
   MAX_PACKAGE_BYTES,
   MAX_ASSET_BYTES,

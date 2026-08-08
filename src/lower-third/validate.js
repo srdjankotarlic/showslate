@@ -1,4 +1,4 @@
-// ProTimer Studio — Lower Third Studio: validacija modela (LT-1). UMD, bez zavisnosti.
+// ShowSlate — Lower Third Studio: model validation (LT-1). UMD, dependency-free.
 // Politika: clamp gde je bezbedno, REJECT za opasno (dupli ID, nepostojeća phase referenca,
 // javascript:/file: URL, ne-JSON vrednosti). Tekst se NIKAD ne izvršava (renderer koristi textContent).
 (function (root, factory) {

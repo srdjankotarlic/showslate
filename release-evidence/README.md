@@ -12,7 +12,7 @@ The publish workflow rejects the evidence unless all of these are true:
 - the release tag and full commit match the candidate;
 - the candidate workflow succeeded for that exact commit;
 - the DMG, installer and portable executable hashes match the draft release;
-- source and packaged smoke passed on `PHL 243V7`;
+- source and packaged smoke passed on explicitly selected displays whose exact identities are recorded;
 - the signed Mac candidate passed clean install, Gatekeeper, multi-display and network-view checks;
 - both signed Windows packages passed clean install/launch, firewall, multi-display and uninstall checks;
 - at least one external operator completed the beta with zero open release blockers;

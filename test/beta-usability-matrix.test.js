@@ -8,7 +8,7 @@ const { evaluatePreflight } = require('../src/show-storage/preflight.js');
 const smokeDisplay = require('../tools/smoke-display.js');
 
 const root = path.resolve(__dirname, '..');
-const profile = fs.mkdtempSync(path.join(os.tmpdir(), 'protimer-beta-usability-'));
+const profile = fs.mkdtempSync(path.join(os.tmpdir(), 'showslate-beta-usability-'));
 const artifactDirectory = path.join(root, 'artifacts', 'generated', 'beta-usability');
 const allSizes = [
   { name: '1440x900', width: 1440, height: 900 },
@@ -16,10 +16,10 @@ const allSizes = [
   { name: '1024x700', width: 1024, height: 700 },
   { name: '900x600', width: 900, height: 600 }
 ];
-const requestedSize = String(process.env.PROTIMER_BETA_SIZE || '').trim();
+const requestedSize = String(process.env.SHOWSLATE_BETA_SIZE || process.env.PROTIMER_BETA_SIZE || '').trim();
 const sizes = requestedSize ? allSizes.filter(size => size.name === requestedSize) : allSizes;
-if (!sizes.length) throw new Error('Unknown PROTIMER_BETA_SIZE: ' + requestedSize);
-const hiddenVisual = process.env.PROTIMER_HIDDEN_VISUAL === '1';
+if (!sizes.length) throw new Error('Unknown SHOWSLATE_BETA_SIZE: ' + requestedSize);
+const hiddenVisual = (process.env.SHOWSLATE_HIDDEN_VISUAL || process.env.PROTIMER_HIDDEN_VISUAL) === '1';
 app.setPath('userData', profile);
 let target;
 let checks = 0;
@@ -94,7 +94,7 @@ async function json(win, source) {
 
 app.whenReady().then(async () => {
   target = hiddenVisual ? screen.getPrimaryDisplay() : smokeDisplay.resolveTargetDisplay(screen, { root }).display;
-  check('BETA_UI_TARGET_DISPLAY_OK', !!target && (hiddenVisual || /PHL 243V7/i.test(target.label || '')), target ? `${target.label}${hiddenVisual ? ' (hidden visual)' : ''}` : 'missing');
+  check('BETA_UI_TARGET_DISPLAY_OK', !!target, target ? `${target.label}${hiddenVisual ? ' (hidden visual)' : ''}` : 'missing');
   fs.mkdirSync(artifactDirectory, { recursive: true });
   const win = new BrowserWindow({
     ...smokeDisplay.clampToWorkArea({ width: 1440, height: 900 }, target.workArea),
@@ -145,7 +145,9 @@ app.whenReady().then(async () => {
     window.__betaState=()=>({running:S.running,endAt:S.endAt,currentCue,selectedCue,outputOpen,programScene:programState&&programState.activeSceneId,message:S.message.text});
     window.__visible=el=>{if(!el)return false;const s=getComputedStyle(el),r=el.getBoundingClientRect();return s.display!=='none'&&s.visibility!=='hidden'&&Number(s.opacity)!==0&&r.width>0&&r.height>0;};
     window.__inside=el=>{if(!window.__visible(el))return false;const r=el.getBoundingClientRect();return r.left>=-1&&r.top>=-1&&r.right<=innerWidth+1&&r.bottom<=innerHeight+1;};
+    window.__insideX=el=>{if(!window.__visible(el))return false;const r=el.getBoundingClientRect();return r.left>=-1&&r.right<=innerWidth+1;};
     window.__rect=el=>{const r=el.getBoundingClientRect();return {x:r.x,y:r.y,w:r.width,h:r.height,right:r.right,bottom:r.bottom};};
+    window.__waitVisual=async(fn,timeout=1600)=>{const started=Date.now();while(Date.now()-started<timeout){try{if(fn())return true;}catch(_){}await new Promise(resolve=>setTimeout(resolve,25));}return false;};
     window.__fits=el=>{if(!window.__visible(el))return true;const style=getComputedStyle(el),fits=el.scrollWidth<=el.clientWidth+2&&el.scrollHeight<=el.clientHeight+2;const deliberateEllipsis=style.overflow==='hidden'&&style.textOverflow==='ellipsis'&&!!String(el.title||el.getAttribute('aria-label')||'').trim();return fits||deliberateEllipsis;};
     window.__baseProbe=selectors=>{const els=selectors.map(s=>document.querySelector(s));const footer=document.querySelector('.statusbar');return {vw:innerWidth,vh:innerHeight,inside:els.map(window.__inside),bodyX:document.documentElement.scrollWidth-innerWidth,footer:window.__inside(footer),footerTop:footer.getBoundingClientRect().top,uniqueStart:document.querySelectorAll('#btnStart').length,uniqueGo:document.querySelectorAll('#btnGo').length,textFits:[document.getElementById('btnStart'),document.getElementById('btnGo'),document.getElementById('btnGoNext')].map(window.__fits)};};
     window.__overlayProbe=id=>{const root=document.getElementById(id),dialog=root&&root.querySelector('.flow-dialog'),head=dialog&&dialog.querySelector('.flow-head'),foot=dialog&&dialog.querySelector('.flow-foot');return {open:!!root&&root.classList.contains('open'),display:root?getComputedStyle(root).display:'',dialog:window.__inside(dialog),head:window.__inside(head),foot:window.__inside(foot),bodyX:document.documentElement.scrollWidth-innerWidth,buttons:foot?[...foot.querySelectorAll('button')].filter(window.__visible).map(window.__fits):[]};};
@@ -156,14 +158,16 @@ app.whenReady().then(async () => {
   const sidebarToggle = await json(win, `(async()=>{
     applyCompactMode(false); applyAdvancedMode(false); closeDrawers(); setSidebarCollapsed(false,false);
     const button=document.getElementById('btnRundownDrawer'), sidebar=document.getElementById('primarySidebar'), operator=document.querySelector('.operator-main');
-    const before={sidebar:__visible(sidebar),operator:__rect(operator),state:__betaState(),expanded:button.getAttribute('aria-expanded')};
-    button.click(); await new Promise(resolve=>setTimeout(resolve,240));
-    const collapsed={classOn:document.body.classList.contains('sidebar-collapsed'),sidebar:__visible(sidebar),operator:__rect(operator),state:__betaState(),expanded:button.getAttribute('aria-expanded')};
-    button.click(); await new Promise(resolve=>setTimeout(resolve,240));
-    const restored={classOff:!document.body.classList.contains('sidebar-collapsed'),sidebar:__visible(sidebar),operator:__rect(operator),state:__betaState(),expanded:button.getAttribute('aria-expanded')};
-    return {before,collapsed,restored};
+    const sidebarStyle=()=>{const style=getComputedStyle(sidebar);return {display:style.display,visibility:style.visibility,opacity:style.opacity,transform:style.transform};};
+    const waitSidebar=async collapsed=>{const started=Date.now();while(Date.now()-started<1600){const style=getComputedStyle(sidebar),rect=__rect(operator);if(collapsed?style.visibility==='hidden'&&Number(style.opacity)<=.01&&rect.w>1000:style.visibility==='visible'&&Number(style.opacity)>=.99&&rect.w<900)return true;await new Promise(resolve=>setTimeout(resolve,25));}return false;};
+    const before={sidebar:__visible(sidebar),sidebarStyle:sidebarStyle(),operator:__rect(operator),state:__betaState(),expanded:button.getAttribute('aria-expanded'),viewport:innerWidth,drawerBreakpoint:matchMedia('(max-width:1100px)').matches};
+    button.click(); const collapsedSettled=await waitSidebar(true);
+    const collapsed={classOn:document.body.classList.contains('sidebar-collapsed'),sidebar:__visible(sidebar),sidebarStyle:sidebarStyle(),operator:__rect(operator),state:__betaState(),expanded:button.getAttribute('aria-expanded')};
+    button.click(); const restoredSettled=await waitSidebar(false);
+    const restored={classOff:!document.body.classList.contains('sidebar-collapsed'),sidebar:__visible(sidebar),sidebarStyle:sidebarStyle(),operator:__rect(operator),state:__betaState(),expanded:button.getAttribute('aria-expanded')};
+    return {before,collapsed:{...collapsed,settled:collapsedSettled},restored:{...restored,settled:restoredSettled}};
   })()`);
-  check('BETA_SIDEBAR_TOGGLE_WIDE_OK', sidebarToggle.before.sidebar && sidebarToggle.before.expanded==='true' && sidebarToggle.collapsed.classOn && !sidebarToggle.collapsed.sidebar && sidebarToggle.collapsed.expanded==='false' && sidebarToggle.collapsed.operator.w>sidebarToggle.before.operator.w+150 && sidebarToggle.restored.classOff && sidebarToggle.restored.sidebar && sidebarToggle.restored.expanded==='true' && JSON.stringify(sidebarToggle.before.state)===JSON.stringify(sidebarToggle.collapsed.state) && JSON.stringify(sidebarToggle.before.state)===JSON.stringify(sidebarToggle.restored.state), JSON.stringify(sidebarToggle));
+  check('BETA_SIDEBAR_TOGGLE_WIDE_OK', sidebarToggle.before.sidebar && sidebarToggle.before.expanded==='true' && sidebarToggle.collapsed.settled && sidebarToggle.collapsed.classOn && !sidebarToggle.collapsed.sidebar && sidebarToggle.collapsed.expanded==='false' && sidebarToggle.collapsed.operator.w>sidebarToggle.before.operator.w+150 && sidebarToggle.restored.settled && sidebarToggle.restored.classOff && sidebarToggle.restored.sidebar && sidebarToggle.restored.expanded==='true' && JSON.stringify(sidebarToggle.before.state)===JSON.stringify(sidebarToggle.collapsed.state) && JSON.stringify(sidebarToggle.before.state)===JSON.stringify(sidebarToggle.restored.state), JSON.stringify(sidebarToggle));
   await capture(win, '1440x900-sidebar-restored');
 
   for (const size of sizes) {
@@ -187,11 +191,13 @@ app.whenReady().then(async () => {
 
     const compact = await json(win, `(async()=>{
       applyCompactMode(true); applyAdvancedMode(false); closeDrawers();
+      await __waitVisual(()=>document.getElementById('app-shell').classList.contains('mode-compact')&&__rect(document.querySelector('.operator-main')).w<=642);
       const closed=__baseProbe(['#program','#btnStart','#btnGo','#compactMsg','#btnRundownDrawer']);
       document.getElementById('btnRundownDrawer').click();
-      await new Promise(resolve=>setTimeout(resolve,420));
+      await __waitVisual(()=>document.body.classList.contains('dr-run')&&__inside(document.getElementById('cueList')));
       const drawer={open:document.body.classList.contains('dr-run'),cueList:__inside(document.getElementById('cueList'))};
       closeDrawers();
+      await __waitVisual(()=>!document.body.classList.contains('dr-run')&&__rect(document.querySelector('.primary-sidebar')).right<=1);
       const operator=__rect(document.querySelector('.operator-main'));
       const sidebarStyle=getComputedStyle(document.querySelector('.primary-sidebar'));
       const utilityStyle=getComputedStyle(document.querySelector('.utility-column'));
@@ -201,8 +207,9 @@ app.whenReady().then(async () => {
     check('BETA_COMPACT_' + size.name + '_OK', compact.mode && compact.closed.inside.every(Boolean) && compact.closed.bodyX <= 1 && compact.closed.footer && compact.drawer.open && compact.drawer.cueList && compact.drawersFixed && compact.operator.w <= 642 && compact.operator.w >= Math.min(600, size.width - 24), JSON.stringify(compact));
     if (size.name === '1280x800') await capture(win, size.name + '-compact');
 
-    const advanced = await json(win, `(()=>{
+    const advanced = await json(win, `(async()=>{
       applyCompactMode(false); applyAdvancedMode(true); closeDrawers();
+      await __waitVisual(()=>document.getElementById('app-shell').classList.contains('mode-advanced')&&__inside(document.getElementById('program')));
       const monitors=[...document.querySelectorAll('.studio-monitor')].filter(__visible),rects=monitors.map(__rect);
       const overlap=rects.length===2&&!(rects[0].right<=rects[1].x||rects[1].right<=rects[0].x||rects[0].bottom<=rects[1].y||rects[1].bottom<=rects[0].y);
       const p=__baseProbe(['#program','#btnStart','#btnGo']);
@@ -213,6 +220,7 @@ app.whenReady().then(async () => {
 
     const panels = await json(win, `(async()=>{
       applyAdvancedMode(false); setSidebarView('rundown'); setCueEditorOpen(false); renderCues();
+      await __waitVisual(()=>document.getElementById('app-shell').classList.contains('mode-standard')&&__inside(document.querySelector('.card-rundown')));
       closeDrawers(); if(innerWidth<=1100){document.getElementById('btnRundownDrawer').click();await new Promise(resolve=>setTimeout(resolve,420));}
       const rundown={visible:__visible(document.getElementById('cueList')),rows:document.querySelectorAll('#cueList .cue').length,scroll:getComputedStyle(document.getElementById('cueList')).overflowY,inside:__inside(document.querySelector('.card-rundown'))};
       setCueEditorOpen(true); const cueEditor=document.getElementById('cueEditor'); cueEditor.scrollTop=0;
@@ -221,10 +229,11 @@ app.whenReady().then(async () => {
       const editor={visible:__visible(cueEditor),inside:__inside(document.querySelector('.card-rundown')),save:saveReachable,last:__inside(document.getElementById('chkNowNext')),dark:!['rgb(255, 255, 255)','rgba(0, 0, 0, 0)'].includes(inputBg)};
       setCueEditorOpen(false); closeDrawers(); const setup=document.getElementById('setupWrap'); if(!__inside(setup)&&__inside(document.getElementById('btnSettingsDrawer'))){document.getElementById('btnSettingsDrawer').click();await new Promise(resolve=>setTimeout(resolve,420));} document.querySelector('#setupTabs button[data-pane="lt"]').click();
       const pane=document.getElementById('pane-lt'); pane.scrollTop=pane.scrollHeight; document.getElementById('btnLtDeletePreset').scrollIntoView({block:'nearest'});
-      const lower={active:pane.classList.contains('active'),studioButton:__inside(document.getElementById('btnLtStudioOpen')),last:__inside(document.getElementById('btnLtDeletePreset')),scroll:getComputedStyle(pane).overflowY};
+      const lowerControls=[...pane.querySelectorAll('.lt-form-row input,.lt-form-row select,.lt-form-row button,.lt-form-row .chk')].filter(__visible);
+      const lower={active:pane.classList.contains('active'),studioButton:__inside(document.getElementById('btnLtStudioOpen')),last:__inside(document.getElementById('btnLtDeletePreset')),controlsInsideX:lowerControls.map(__insideX),controlsFit:lowerControls.map(__fits),scroll:getComputedStyle(pane).overflowY};
       const result={rundown,editor,lower,bodyX:document.documentElement.scrollWidth-innerWidth}; closeDrawers(); return result;
     })()`);
-    check('BETA_PANELS_' + size.name + '_OK', panels.rundown.visible && panels.rundown.rows === 5 && panels.rundown.inside && panels.editor.visible && panels.editor.inside && panels.editor.save && panels.editor.last && panels.editor.dark && panels.lower.active && panels.lower.studioButton && panels.lower.last && panels.bodyX <= 1, JSON.stringify(panels));
+    check('BETA_PANELS_' + size.name + '_OK', panels.rundown.visible && panels.rundown.rows === 5 && panels.rundown.inside && panels.editor.visible && panels.editor.inside && panels.editor.save && panels.editor.last && panels.editor.dark && panels.lower.active && panels.lower.studioButton && panels.lower.last && panels.lower.controlsInsideX.every(Boolean) && panels.lower.controlsFit.every(Boolean) && panels.bodyX <= 1, JSON.stringify(panels));
     if (size.name === '1280x800') {
       await capture(win, size.name + '-lower-third');
       await win.webContents.executeJavaScript(`setSidebarView('rundown');setCueEditorOpen(true);document.getElementById('cueEditor').scrollTop=0;`);
@@ -236,6 +245,27 @@ app.whenReady().then(async () => {
     await new Promise(resolve => setTimeout(resolve, 80));
     const routing = await json(win, `(()=>{const root=document.getElementById('outputRouterOverlay'),dialog=root.querySelector('.output-router-dialog'),rows=[...document.querySelectorAll('#outputRouterList .output-route-editor')],first=rows[0];return {open:root.classList.contains('open'),dialog:__inside(dialog),head:__inside(root.querySelector('.output-router-head')),foot:__inside(root.querySelector('.output-router-foot')),rows:rows.length,first:!!first&&__inside(first),display:!!first&&__inside(first.querySelector('.out-display')),mode:!!first&&__inside(first.querySelector('.out-mode')),apply:__inside(document.getElementById('btnOutputRouterApply')),stop:__inside(document.getElementById('btnOutputStopAll')),bodyX:document.documentElement.scrollWidth-innerWidth};})()`);
     check('BETA_OUTPUT_ROUTING_' + size.name + '_OK', routing.open && routing.dialog && routing.head && routing.foot && routing.rows === 2 && routing.first && routing.display && routing.mode && routing.apply && routing.stop && routing.bodyX <= 1, JSON.stringify(routing));
+    if (size.name === '1280x800') {
+      const draftRefresh = await json(win, `(()=>{
+        const originalDisplays=lastDisplays.slice();
+        const originalConfig={...outputConfigs[1]};
+        const synthetic={id:987654321,label:'QA Secondary Display',width:1366,height:768,hasControl:false,hasOutput:false};
+        lastDisplays=[...originalDisplays,synthetic];
+        renderOutputRouterRows();
+        const row=document.querySelectorAll('#outputRouterList .output-route-editor')[1];
+        const select=row.querySelector('.out-display');
+        select.value=String(synthetic.id);
+        select.dispatchEvent(new Event('change',{bubbles:true}));
+        const state=row.querySelector('.output-route-state').textContent.trim();
+        const summary=row.querySelector('.output-route-runtime').textContent.trim();
+        const result={state,summary,displayLabel:outputConfigs[1].displayLabel,displayWidth:outputConfigs[1].displayWidth};
+        lastDisplays=originalDisplays;
+        outputConfigs[1]=originalConfig;
+        renderOutputRouterRows();
+        return result;
+      })()`);
+      check('BETA_OUTPUT_DRAFT_DISPLAY_REFRESH_OK', draftRefresh.state === 'PENDING APPLY' && draftRefresh.summary.includes('QA Secondary Display · 1366×768') && draftRefresh.displayLabel === 'QA Secondary Display' && draftRefresh.displayWidth === 1366, JSON.stringify(draftRefresh));
+    }
     if (size.name === '1280x800' || size.name === '900x600') await capture(win, size.name + '-output-routing');
     await win.webContents.executeJavaScript(`closeOutputRouter()`);
 
@@ -287,7 +317,7 @@ app.whenReady().then(async () => {
     check('BETA_STATE_' + size.name + '_OK', state.running && state.endAt === initialState.endAt && state.currentCue === initialState.currentCue && state.selectedCue === initialState.selectedCue && state.outputOpen === initialState.outputOpen && state.programScene === initialState.programScene && state.message === initialState.message, JSON.stringify({ initialState, state }));
   }
 
-  const expectedChecks = 2 + sizes.length * 13;
+  const expectedChecks = 2 + sizes.length * 13 + (sizes.some(size => size.name === '1280x800') ? 1 : 0);
   console.log('BETA_USABILITY_MATRIX_OK ' + checks + '/' + expectedChecks + ' artifacts=' + artifactDirectory);
   win.destroy();
   fs.rmSync(profile, { recursive: true, force: true });

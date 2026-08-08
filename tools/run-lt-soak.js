@@ -5,8 +5,8 @@ const os = require('os');
 const path = require('path');
 
 const root = path.join(__dirname, '..');
-const profileDir = path.join(os.tmpdir(), 'protimer-studio-lt-soak-profile');
-const artifactDir = path.join(os.tmpdir(), 'protimer-studio-lt-soak-artifacts');
+const profileDir = path.join(os.tmpdir(), 'showslate-lt-soak-profile');
+const artifactDir = path.join(os.tmpdir(), 'showslate-lt-soak-artifacts');
 fs.rmSync(profileDir, { recursive: true, force: true });
 fs.rmSync(artifactDir, { recursive: true, force: true });
 fs.mkdirSync(profileDir, { recursive: true });
@@ -21,7 +21,7 @@ const result = spawnSync(electron, [
 ], {
   cwd: root,
   stdio: 'inherit',
-  env: { ...process.env, PROTIMER_TEST_ARTIFACT_DIR: artifactDir }
+  env: { ...process.env, SHOWSLATE_TEST_ARTIFACT_DIR: artifactDir }
 });
 
 process.exit(result.status == null ? 1 : result.status);

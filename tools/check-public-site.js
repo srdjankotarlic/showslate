@@ -8,21 +8,21 @@ const siteDir = path.join(root, 'site');
 const indexPath = path.join(siteDir, 'index.html');
 const html = fs.readFileSync(indexPath, 'utf8');
 const readme = fs.readFileSync(path.join(root, 'README.md'), 'utf8');
-const releaseNotes = fs.readFileSync(path.join(root, 'docs', 'RELEASE-NOTES-0.9.0-beta.2.md'), 'utf8');
+const releaseNotes = fs.readFileSync(path.join(root, 'docs', 'RELEASE-NOTES-0.9.0-beta.3.md'), 'utf8');
 const failures = [];
 
-const macInstallerUrl = 'https://github.com/srdjankotarlic/protimer-studio/releases/download/v0.9.0-beta.2/ProTimer-Studio-0.9.0-beta.2-arm64.dmg';
-const windowsInstallerUrl = 'https://github.com/srdjankotarlic/protimer-studio/releases/download/v0.9.0-beta.2/ProTimer-Studio-Setup-0.9.0-beta.2.exe';
+const macInstallerUrl = 'https://github.com/srdjankotarlic/showslate/releases/download/v0.9.0-beta.3/ShowSlate-0.9.0-beta.3-arm64.dmg';
+const windowsInstallerUrl = 'https://github.com/srdjankotarlic/showslate/releases/download/v0.9.0-beta.3/ShowSlate-Setup-0.9.0-beta.3.exe';
 
 const requiredSnippets = [
   '<meta name="google-site-verification"',
-  '<link rel="canonical" href="https://srdjankotarlic.github.io/protimer-studio/">',
+  '<link rel="canonical" href="https://srdjankotarlic.github.io/showslate/">',
   '<meta property="og:image"',
   '<meta name="twitter:card" content="summary_large_image">',
   '"@type": "SoftwareApplication"',
   '"@type": "FAQPage"',
-  'https://github.com/srdjankotarlic/protimer-studio/releases/tag/v0.9.0-beta.2',
-  'https://github.com/srdjankotarlic/protimer-studio/discussions/1',
+  'https://github.com/srdjankotarlic/showslate/releases/tag/v0.9.0-beta.3',
+  'https://github.com/srdjankotarlic/showslate/discussions',
   macInstallerUrl,
   windowsInstallerUrl,
   'https://srdjankotarlic.github.io/protimer/',
@@ -31,6 +31,18 @@ const requiredSnippets = [
 
 for (const snippet of requiredSnippets) {
   if (!html.includes(snippet)) failures.push(`missing required site metadata: ${snippet}`);
+}
+
+for (const [name, content] of [
+  ['site/index.html', html],
+  ['release notes', releaseNotes],
+]) {
+  if (/ProTimer Studio|protimer-studio|ProTimer-Studio/.test(content)) {
+    failures.push(`${name} still exposes the former public brand`);
+  }
+}
+if (/github\.com\/srdjankotarlic\/protimer-studio|github\.io\/protimer-studio/.test(readme)) {
+  failures.push('README.md still links to the former repository or product page');
 }
 
 for (const [name, content] of [
@@ -76,10 +88,10 @@ for (const [index, match] of jsonLdBlocks.entries()) {
 
 const robots = fs.readFileSync(path.join(siteDir, 'robots.txt'), 'utf8');
 const sitemap = fs.readFileSync(path.join(siteDir, 'sitemap.xml'), 'utf8');
-if (!robots.includes('Sitemap: https://srdjankotarlic.github.io/protimer-studio/sitemap.xml')) {
+if (!robots.includes('Sitemap: https://srdjankotarlic.github.io/showslate/sitemap.xml')) {
   failures.push('robots.txt does not advertise the canonical sitemap');
 }
-if (!sitemap.includes('<loc>https://srdjankotarlic.github.io/protimer-studio/</loc>')) {
+if (!sitemap.includes('<loc>https://srdjankotarlic.github.io/showslate/</loc>')) {
   failures.push('sitemap.xml does not contain the canonical page URL');
 }
 

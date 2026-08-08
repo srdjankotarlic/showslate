@@ -7,7 +7,7 @@ const path = require('path');
 const { execFileSync } = require('child_process');
 const { createBuildInfo } = require('../src/release/build-info.js');
 
-const root = fs.mkdtempSync(path.join(os.tmpdir(), 'protimer-build-info-'));
+const root = fs.mkdtempSync(path.join(os.tmpdir(), 'showslate-build-info-'));
 
 function git(args) {
   return execFileSync('git', args, { cwd: root, encoding: 'utf8' }).trim();
@@ -15,8 +15,8 @@ function git(args) {
 
 try {
   git(['init', '-q']);
-  git(['config', 'user.name', 'ProTimer Test']);
-  git(['config', 'user.email', 'test@protimer.invalid']);
+  git(['config', 'user.name', 'ShowSlate Test']);
+  git(['config', 'user.email', 'test@showslate.invalid']);
   fs.writeFileSync(path.join(root, 'tracked.txt'), 'clean\n');
   git(['add', 'tracked.txt']);
   git(['commit', '-q', '-m', 'fixture']);

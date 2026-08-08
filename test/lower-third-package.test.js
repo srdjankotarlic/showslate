@@ -5,10 +5,10 @@ const path = require('path');
 const P = require('../src/lower-third/package.js');
 const M = require('../src/lower-third/model.js');
 
-const root = fs.mkdtempSync(path.join(os.tmpdir(), 'protimer-lt-package-'));
+const root = fs.mkdtempSync(path.join(os.tmpdir(), 'showslate-lt-package-'));
 const sourceMedia = path.join(root, 'source-media');
 const importedMedia = path.join(root, 'imported-media');
-const packagePath = path.join(root, 'Conference Lower Third.protimer-lt');
+const packagePath = path.join(root, 'Conference Lower Third.showslate-lt');
 fs.mkdirSync(sourceMedia, { recursive: true });
 fs.writeFileSync(path.join(sourceMedia, 'aaaaaaaaaaaaaaaa.png'), Buffer.from('png-fixture-data'));
 fs.writeFileSync(path.join(sourceMedia, 'bbbbbbbbbbbbbbbb.webm'), Buffer.from('webm-fixture-data'));
@@ -77,6 +77,14 @@ function check(name, fn) {
       const bad = new Map(entries);
       bad.set('manifest.json', Buffer.from('{bad json'));
       assert.throws(() => P.validateLowerThirdPackageEntries(bad), error => error.code === 'INVALID_JSON');
+    });
+
+    check('LT_PACKAGE_LEGACY_FORMAT_ACCEPTED_OK', () => {
+      const legacy = new Map(entries);
+      const manifest = JSON.parse(legacy.get('manifest.json').toString('utf8'));
+      manifest.format = 'protimer-lt';
+      legacy.set('manifest.json', Buffer.from(JSON.stringify(manifest)));
+      assert.strictEqual(P.validateLowerThirdPackageEntries(legacy).template.id, template.id);
     });
 
     check('LT_PACKAGE_CHECKSUM_REJECTED_OK', () => {

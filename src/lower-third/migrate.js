@@ -1,4 +1,4 @@
-// ProTimer Studio — Lower Third Studio: idempotentne migracije (LT-1). UMD, pure.
+// ShowSlate — Lower Third Studio: idempotent migrations (LT-1). UMD, pure.
 // NIŠTA se ne briše; ponovljeni pozivi ne prave duplikate; ne diraju LIVE/selected/timer.
 (function (root, factory) {
   if (typeof module !== 'undefined' && module.exports) {

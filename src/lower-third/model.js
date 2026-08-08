@@ -1,4 +1,4 @@
-// ProTimer Studio — Lower Third Studio: versioned template + runtime MODEL (LT-1).
+// ShowSlate — Lower Third Studio: versioned template + runtime model (LT-1).
 // Pure data + factory helpers. UMD: require() u main procesu, window.PTLT u rendereru.
 // Koordinate lejera su DESIGN prostor 1920×1080 (dokumentovano u docs/lower-third-studio-audit.md §19);
 // resolver/renderer kasnije skalira na stvarni canvas. Model je striktno JSON-serializable.

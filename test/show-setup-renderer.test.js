@@ -7,7 +7,7 @@ const { evaluatePreflight } = require('../src/show-storage/preflight.js');
 const smokeDisplay = require('../tools/smoke-display.js');
 
 const root = path.resolve(__dirname, '..');
-const profile = fs.mkdtempSync(path.join(os.tmpdir(), 'protimer-show-setup-'));
+const profile = fs.mkdtempSync(path.join(os.tmpdir(), 'showslate-show-setup-'));
 const artifactDirectory = path.join(root, 'artifacts', 'generated', 'show-setup');
 app.setPath('userData', profile);
 let repository;
@@ -68,7 +68,7 @@ app.whenReady().then(async () => {
   repository = new ShowRepository({ userDataDir: profile, appMetadata: { commit: 'show-setup-test' } });
   await repository.initializeSession({ track: false });
   target = smokeDisplay.resolveTargetDisplay(screen, { root }).display;
-  check('SHOW_SETUP_TARGET_DISPLAY_OK', !!target && /PHL 243V7/i.test(target.label || ''), target ? target.label : 'missing');
+  check('SHOW_SETUP_TARGET_DISPLAY_OK', !!target, target ? target.label : 'missing');
   const bounds = smokeDisplay.clampToWorkArea({ width: 1280, height: 800 }, target.workArea);
   const win = new BrowserWindow({
     ...bounds, show: true, backgroundColor: '#0b0c0f',

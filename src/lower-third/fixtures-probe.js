@@ -1,4 +1,4 @@
-// ProTimer Studio — LT-1 codec/decode probe (test-only, main proces).
+// ShowSlate — LT-1 codec/decode probe (test-only, main process).
 // Kopira fixtures u tmp, učitava ih u SKRIVENOM prozoru (show:false, focusable:false —
 // nikada vidljiv, nikada na HP-u) i vraća stvarne decode rezultate. Bez alpha-compositing
 // tvrdnji: LT-1 dokazuje samo DECODE (alpha compositing je LT-2).

@@ -1,6 +1,6 @@
 # Signing and Release
 
-ProTimer Studio has separate unsigned public-beta and signed stable-release paths. Beta packages are suitable for evaluation after checksum verification; stable packages require trusted platform signing and hardware QA.
+ShowSlate has separate unsigned public-beta and signed stable-release paths. Beta packages are suitable for evaluation after checksum verification; stable packages require trusted platform signing and hardware QA.
 
 ## Current machine state
 
@@ -84,16 +84,16 @@ npm run dist:mac:release
 The release command fails before packaging if signing or notarization inputs are absent. After a successful build, verify the exact artifact:
 
 ```bash
-codesign --verify --deep --strict --verbose=2 "dist-installers/mac-arm64/ProTimer Studio.app"
-spctl --assess --type execute --verbose=2 "dist-installers/mac-arm64/ProTimer Studio.app"
-xcrun stapler validate "dist-installers/ProTimer-Studio-*-arm64.dmg"
-hdiutil verify "dist-installers/ProTimer-Studio-*-arm64.dmg"
+codesign --verify --deep --strict --verbose=2 "dist-installers/mac-arm64/ShowSlate.app"
+spctl --assess --type execute --verbose=2 "dist-installers/mac-arm64/ShowSlate.app"
+xcrun stapler validate "dist-installers/ShowSlate-*-arm64.dmg"
+hdiutil verify "dist-installers/ShowSlate-*-arm64.dmg"
 ```
 
 Also inspect the packaged Electron fuses. `RunAsNode`, Node options and CLI inspect must be disabled; embedded ASAR integrity and OnlyLoadAppFromAsar must be enabled:
 
 ```bash
-node node_modules/@electron/fuses/dist/bin.js read --app "dist-installers/mac-arm64/ProTimer Studio.app"
+node node_modules/@electron/fuses/dist/bin.js read --app "dist-installers/mac-arm64/ShowSlate.app"
 ```
 
 ## Windows
@@ -121,7 +121,7 @@ The final installer and portable executable must be checked on a clean physical 
 
 Do not publish or upload a stable package until all of these are true:
 
-- source and packaged smoke pass on the designated PHL 243V7 test display;
+- source and packaged smoke pass on an explicitly selected display, with its exact identity recorded in the retained evidence;
 - the artifact is built from a clean, pushed commit;
 - checksums and build metadata are recorded;
 - macOS signing, notarization, stapling and Gatekeeper assessment pass;
@@ -136,7 +136,7 @@ The GitHub Actions beta workflow intentionally publishes unsigned prereleases wi
 Future beta and stable workflows also create GitHub provenance attestations for the binaries. Users can verify a downloaded artifact with:
 
 ```bash
-gh attestation verify PATH/TO/ARTIFACT -R srdjankotarlic/protimer-studio
+gh attestation verify PATH/TO/ARTIFACT -R srdjankotarlic/showslate
 ```
 
 References: [electron-builder code signing](https://www.electron.build/docs/features/code-signing/), [electron-builder macOS](https://www.electron.build/mac/), [Apple notarization](https://developer.apple.com/documentation/security/notarizing-macos-software-before-distribution).

@@ -7,7 +7,7 @@ const path = require('path');
 const root = path.resolve(__dirname, '..');
 const forbiddenFiles = ['license.js', 'tools/keygen.js', 'tools/private.key'];
 const publicUiFiles = ['controller.html', 'preload.js', 'output.html', 'signal.html', 'i18n.js'];
-const gatePattern = /license-status|license-activate|PTP-[A-Za-z0-9_-]+|ProTimer Studio\s*[—-]\s*TRIAL/i;
+const gatePattern = /license-status|license-activate|PTP-[A-Za-z0-9_-]+|(?:ShowSlate|ProTimer Studio)\s*[—-]\s*TRIAL/i;
 const failures = [];
 
 for (const file of forbiddenFiles) {

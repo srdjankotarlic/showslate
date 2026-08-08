@@ -1,4 +1,4 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://srdjankotarlic.github.io/protimer-studio/sitemap.xml
+Sitemap: https://srdjankotarlic.github.io/showslate/sitemap.xml

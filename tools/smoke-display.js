@@ -1,9 +1,9 @@
-// ProTimer Studio — smoke test-display resolver (no dependencies).
+// ShowSlate — smoke test-display resolver (no dependencies).
 // Chooses the monitor that smoke/test windows must stay on. Selection order:
-//   1. --smoke-display-id=<id>  / env PROTIMER_SMOKE_DISPLAY_ID / config.id
-//   2. --smoke-display=<substr> / env PROTIMER_SMOKE_DISPLAY    / config.labelContains
-//   3. built-in default label substrings ["PHL","Philips"] (a Philips monitor reports "PHL...")
-// Never selects by position, array order, or "not primary". Never hardcodes a display ID.
+//   1. --smoke-display-id=<id> / SHOWSLATE_SMOKE_DISPLAY_ID / config.id
+//   2. --smoke-display=<text>  / SHOWSLATE_SMOKE_DISPLAY / config.labelContains
+// With no explicit selection it returns no display, so callers fail before opening a window.
+// Never selects by position, array order, primary status or a hardcoded display ID.
 const fs = require('fs');
 const path = require('path');
 
@@ -18,8 +18,11 @@ function parseArgs(argv) {
 }
 
 function readConfig(root) {
-  try { return JSON.parse(fs.readFileSync(path.join(root, '.protimer-smoke-display.json'), 'utf8')); }
-  catch (e) { return {}; }
+  for (const name of ['.showslate-smoke-display.json', '.protimer-smoke-display.json']) {
+    try { return JSON.parse(fs.readFileSync(path.join(root, name), 'utf8')); }
+    catch (e) {}
+  }
+  return {};
 }
 
 // screen: Electron screen module. Returns {display|null, requested, available[]}.
@@ -34,8 +37,8 @@ function resolveTargetDisplay(screen, opts) {
   const primaryId = screen.getPrimaryDisplay().id;
   const available = displays.map((d) => ({ id: d.id, label: d.label || '', primary: d.id === primaryId }));
 
-  const wantId = cli.id || env.PROTIMER_SMOKE_DISPLAY_ID || (cfg && cfg.id);
-  const wantLabel = cli.label || env.PROTIMER_SMOKE_DISPLAY || (cfg && cfg.labelContains);
+  const wantId = cli.id || env.SHOWSLATE_SMOKE_DISPLAY_ID || env.PROTIMER_SMOKE_DISPLAY_ID || (cfg && cfg.id);
+  const wantLabel = cli.label || env.SHOWSLATE_SMOKE_DISPLAY || env.PROTIMER_SMOKE_DISPLAY || (cfg && cfg.labelContains);
 
   let display = null;
   let requested;
@@ -45,8 +48,8 @@ function resolveTargetDisplay(screen, opts) {
     requested = 'id:' + wantId;
     display = displays.find((d) => String(d.id) === String(wantId)) || null;
     if (display) matches = [display];
-  } else {
-    const subs = wantLabel ? [String(wantLabel)] : ['PHL', 'Philips'];
+  } else if (wantLabel) {
+    const subs = [String(wantLabel)];
     requested = 'label~' + subs.join('|');
     const has = (d, sub) => (d.label || '').toLowerCase().includes(String(sub).toLowerCase());
     matches = displays.filter((d) => subs.some((sub) => has(d, sub)));
@@ -58,6 +61,8 @@ function resolveTargetDisplay(screen, opts) {
     // Caller must use an explicit --smoke-display-id / config id.
     if (matches.length > 1) { ambiguous = true; display = null; }
     else display = matches[0] || null;
+  } else {
+    requested = 'explicit display selection required';
   }
   return { display, requested, available, matches: matches.map((d) => ({ id: d.id, label: d.label || '' })), ambiguous };
 }

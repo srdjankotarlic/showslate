@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' http://127.0.0.1:* data: blob:; media-src 'self' http://127.0.0.1:* data: blob:; frame-src 'self' http://127.0.0.1:* data: blob:">
-<title>ProTimer Studio — Control</title>
+<title>ShowSlate — Control</title>
 <link rel="stylesheet" href="styles/operator-shell.css">
 <style>
   :root{
@@ -146,6 +146,14 @@
   .pv-lower-third.style-glass{background:rgba(20,22,28,.54); backdrop-filter:blur(16px) saturate(1.25);}
   .pv-lower-third.style-slab{background:#f5f5f7; color:#0d0e10; border-color:rgba(255,255,255,.45);}
   .pv-lower-third.style-slab .lt-title,.pv-lower-third.style-slab .lt-meta{color:rgba(0,0,0,.62);}
+  .pv-lt-runtime{position:absolute; inset:0; z-index:3; display:none; overflow:hidden; pointer-events:none; isolation:isolate;}
+  .pv-lt-runtime-root{position:absolute; left:0; top:0; transform-origin:0 0; overflow:visible; pointer-events:none;}
+  .pv-lt-runtime-layer{position:absolute; overflow:hidden; pointer-events:none; transform-origin:50% 50%; contain:layout paint style;}
+  .pv-lt-runtime-layer img,.pv-lt-runtime-layer video{display:block; width:100%; height:100%; border:0; user-select:none; -webkit-user-drag:none;}
+  .pv-lt-runtime-layer.fit-contain img,.pv-lt-runtime-layer.fit-contain video{object-fit:contain;}
+  .pv-lt-runtime-layer.fit-cover img,.pv-lt-runtime-layer.fit-cover video{object-fit:cover;}
+  .pv-lt-runtime-layer.fit-fill img,.pv-lt-runtime-layer.fit-fill video{object-fit:fill;}
+  .pv-lt-runtime-text{display:flex; min-width:0; max-width:100%; overflow:hidden; white-space:pre-wrap; word-break:break-word;}
   .gridsel{width:248px; max-width:100%; aspect-ratio:16/9; background:#000; border:1px solid var(--border);
     border-radius:7px; display:grid; gap:1px; overflow:hidden;}
   .gridsel .gc{background:#11151c; cursor:pointer; transition:background .08s;}
@@ -975,7 +983,7 @@
     grid-template-columns:1fr 1fr !important;
   }
 
-  /* ---- ProTimer Studio production layout: neutral, stable, scene-first ---- */
+  /* ---- ShowSlate production layout: neutral, stable, scene-first ---- */
   :root{
     --bg:#07080a; --chrome:#111216; --panel:#17181d; --panel2:#202127; --control:#26272e;
     --border:rgba(255,255,255,.105); --border-strong:rgba(255,255,255,.2);
@@ -2365,6 +2373,24 @@
   .lt-form-row.assets{
     grid-template-columns:auto minmax(92px,.75fr) auto minmax(74px,.5fr) minmax(112px,1fr) minmax(78px,.65fr) minmax(104px,.75fr) !important;
   }
+  body:not(.compact) #setupWrap .lt-form-row.controls{
+    grid-template-columns:minmax(0,1fr) 72px !important;
+  }
+  body:not(.compact) #setupWrap .lt-form-row.controls .lt-accent,
+  body:not(.compact) #setupWrap .lt-form-row.controls #ltPos,
+  body:not(.compact) #setupWrap .lt-form-row.controls .lt-duration{
+    grid-column:1 / -1;
+    width:100%;
+  }
+  body:not(.compact) #setupWrap .lt-form-row.actions{
+    grid-template-columns:repeat(2,minmax(0,1fr)) !important;
+  }
+  body:not(.compact) #setupWrap .lt-form-row.assets{
+    grid-template-columns:minmax(0,1fr) !important;
+  }
+  body:not(.compact) #setupWrap .lt-form-row.assets > *{
+    max-width:100%;
+  }
   body:not(.compact) #setupWrap #pane-lt.active{
     display:flex !important;
     flex-direction:column !important;
@@ -3230,7 +3256,7 @@
 <div id="app-shell" class="mode-standard shell-layout">
 
 <div class="topbar app-header">
-  <div class="brand"><img class="brand-mark" src="build/icon.png" alt=""><span>ProTimer</span><span class="probadge">STUDIO</span></div>
+  <div class="brand"><img class="brand-mark" src="build/icon.png" alt=""><span>ShowSlate</span><span class="probadge">BETA</span></div>
   <button id="btnRundownDrawer" class="ghost tb-drawerbtn sidebar-toggle" type="button"
     aria-label="Toggle navigation sidebar" aria-controls="primarySidebar" aria-expanded="true"
     data-i18n-title="sidebarToggle" title="Show or hide navigation">
@@ -3365,6 +3391,7 @@
             <div class="pv-text" id="pvText"></div>
             <div class="pv-time" id="pvTime">10:00</div>
           </div>
+          <div class="pv-lt-runtime" id="pvLtRuntime" aria-hidden="true"></div>
           <div class="pv-lower-third" id="pvLowerThird">
             <img class="lt-img" id="pvLtImg" alt="">
             <div class="lt-copy">
@@ -3399,6 +3426,7 @@
             <div class="pv-text" id="pgText"></div>
             <div class="pv-time" id="pgTime" data-testid="timer-display">10:00</div>
           </div>
+          <div class="pv-lt-runtime" id="pgLtRuntime" aria-hidden="true"></div>
           <div class="pv-lower-third" id="pgLowerThird">
             <img class="lt-img" id="pgLtImg" alt="">
             <div class="lt-copy">
@@ -4112,7 +4140,7 @@ const I18N = {
     shareOnline:'Deli online', publicLabel:'Javni link (bilo koja mreža)',
     connecting:'Povezivanje…', stopSharing:'Prekini deljenje', shareFail:'Nije uspelo, pokušaj opet',
     shareNote:'QR = skeniraj telefonom (ista Wi-Fi). „Deli online" = link sa bilo koje mreže.',
-    netNote:'Svi uređaji moraju biti na <b>ISTOJ Wi-Fi</b> mreži. OBS: <b>Browser Source</b> → Ekran URL („Providna pozadina" za overlay; NDI preko DistroAV). Telefon: otvori Daljinski URL. OSC: UDP port <b>7879</b>; GO, tajmer, poruke, potpisi i Slides koriste <b>/protimer/…</b> adrese.',
+    netNote:'Svi uređaji moraju biti na <b>ISTOJ Wi-Fi</b> mreži. OBS: <b>Browser Source</b> → Ekran URL („Providna pozadina" za overlay; NDI preko DistroAV). Telefon: otvori Daljinski URL. OSC: UDP port <b>7879</b>; GO, tajmer, poruke, potpisi i Slides koriste <b>/showslate/…</b> adrese.',
     chimes:'Zvuk', chimesTitle:'Zvučni signal na ekranu: 1 ton žuto · 2 tona crveno · 3 tona nula',
     schedLabel:'Auto-start u', schedTitle:'Tajmer sam krene u zadato vreme',
     logoBtn:'Logo slika', logoBig:'Slika je prevelika (max 8 MB).',
@@ -4208,7 +4236,7 @@ const I18N = {
     shareOnline:'Share online', publicLabel:'Public link (any network)',
     connecting:'Connecting…', stopSharing:'Stop sharing', shareFail:'Failed, try again',
     shareNote:'QR = scan with a phone (same Wi-Fi). “Share online” = a link that works from any network.',
-    netNote:'All devices must be on the <b>SAME Wi-Fi</b> network. OBS: <b>Browser Source</b> → Screen URL (enable “Transparent background” for overlay; NDI via DistroAV). Phone: open the Remote URL. OSC: UDP port <b>7879</b>; GO, timer, message, lower-third and Slides actions use <b>/protimer/…</b> addresses.',
+    netNote:'All devices must be on the <b>SAME Wi-Fi</b> network. OBS: <b>Browser Source</b> → Screen URL (enable “Transparent background” for overlay; NDI via DistroAV). Phone: open the Remote URL. OSC: UDP port <b>7879</b>; GO, timer, message, lower-third and Slides actions use <b>/showslate/…</b> addresses.',
     chimes:'Sound', chimesTitle:'Audible chime on screen: 1 tone yellow · 2 tones red · 3 tones zero',
     schedLabel:'Auto-start at', schedTitle:'Timer starts by itself at the set time',
     logoBtn:'Logo image', logoBig:'Image too large (max 8 MB).',
@@ -4994,7 +5022,7 @@ function collectShowDocument(){
   const runtime=S.lowerThird&&S.lowerThird.runtime;
   return {
     schemaVersion:1,
-    app:{productName:'ProTimer Studio'},
+    app:{productName:'ShowSlate'},
     show:{
       id:String(showMeta.id||'show-current'),
       name:String(showMeta.name||'Untitled show'),
@@ -6079,7 +6107,10 @@ function renderOutputRouterRows(){
       option.dataset.unavailable='1'; displaySel.appendChild(option);
     }
     (lastDisplays.length?lastDisplays:[{id:cfg.displayId,label:t('outputDisplay'),width:0,height:0}]).forEach(d=>{
-      const option=document.createElement('option'); option.value=d.id; option.textContent=d.width?`${d.label} · ${d.width}×${d.height}${d.hasControl?' · CONTROL':''}`:d.label; displaySel.appendChild(option);
+      const option=document.createElement('option'); option.value=d.id;
+      option.textContent=d.width?`${d.label} · ${d.width}×${d.height}`:d.label;
+      option.title=d.hasControl?`${option.textContent} · ${t('controlTag')}`:option.textContent;
+      displaySel.appendChild(option);
     });
     displaySel.value=String(cfg.displayId);
     const mode=row.querySelector('.out-mode');
@@ -6108,6 +6139,10 @@ function renderOutputRouterRows(){
       row.classList.toggle('disabled',!cfg.enabled);
       updateOutputRouterRowVisibility(row);
       saveOutputConfigsLocal(); markOutputRoutingDirty();
+      const routeState=row.querySelector('.output-route-state');
+      const routeRuntime=row.querySelector('.output-route-runtime');
+      if(routeState) routeState.textContent=t('outputPendingState');
+      if(routeRuntime) routeRuntime.textContent=`${outputDisplayName(cfg.displayId,cfg)} · ${t('outputPendingState')}`;
     };
     row.querySelectorAll('input,select').forEach(el=>el.addEventListener('change',sync));
     row.querySelector('.out-del').addEventListener('click',()=>{
@@ -6698,10 +6733,212 @@ function replayLowerThirdFromControl(){
   }
   return !!S.lowerThird.visible;
 }
+let monitorLowerThirdKeys={pv:'',pg:''};
+function monitorLtNumber(value,fallback=0){
+  const n=Number(value);
+  return Number.isFinite(n)?n:fallback;
+}
+function monitorLtRuntimeValid(lt){
+  const rt=lt&&lt.runtime;
+  return !!(lt&&lt.visible&&(!lt.until||Date.now()<lt.until)&&lt.runtimeVersion===1&&rt&&rt.version===1&&rt.visible!==false&&Array.isArray(rt.resolvedLayers));
+}
+function monitorLtPhaseEnabled(cfg){
+  return !!(cfg&&cfg.enabled!==false&&cfg.mode&&cfg.mode!=='none');
+}
+function monitorLtPhaseDuration(phase,cfg,rt){
+  const explicit=Number(rt&&rt.phase===phase?rt.phaseDurationMs:NaN);
+  if(Number.isFinite(explicit)&&explicit>=0) return explicit;
+  const duration=Number(cfg&&cfg.durationMs);
+  if(Number.isFinite(duration)&&duration>=0) return duration;
+  return phase==='intro'?900:(phase==='outro'?700:null);
+}
+function monitorEffectiveLtRuntime(rt,now=Date.now()){
+  const plan=(rt&&rt.phasePlan)||{};
+  let phase=rt.phase||'hold';
+  let phaseStarted=Number(rt.phaseStartedAt)||Number(rt.startedAt)||now;
+  let cfg=plan[phase]||null;
+  let duration=monitorLtPhaseDuration(phase,cfg,rt);
+  if(phase==='intro'&&duration!=null&&now-phaseStarted>=duration){
+    phase='hold';
+    phaseStarted+=duration;
+    cfg=plan.hold||null;
+    duration=monitorLtPhaseDuration(phase,cfg,rt);
+  }
+  if(phase==='outro'&&duration!=null&&now-phaseStarted>=duration) return {hidden:true,runtime:null};
+  const phaseMediaIds=['intro','hold','outro'].map(name=>plan[name]&&plan[name].mediaLayerId).filter(Boolean);
+  const activeMediaId=cfg&&cfg.mediaLayerId;
+  const revealAt=phase==='intro'?phaseStarted+Math.max(0,Number((cfg&&cfg.textRevealDelayMs)||0)):0;
+  const layers=(rt.resolvedLayers||[]).map(layer=>({...layer}));
+  layers.forEach(layer=>{
+    if((layer.type==='media'||layer.type==='logo')&&phaseMediaIds.includes(layer.id)&&activeMediaId&&layer.id!==activeMediaId) layer.visible=false;
+    if((layer.type==='dynamicText'||layer.type==='staticText')&&phase==='intro'&&now<revealAt) layer.visible=false;
+  });
+  const elapsed=Math.max(0,now-phaseStarted);
+  const mode=String((cfg&&cfg.mode)||'static');
+  const fadeDuration=Math.max(1,Number((cfg&&cfg.transition&&cfg.transition.durationMs)||duration||220));
+  let opacity=1;
+  if(phase==='intro'&&(mode==='fade'||(cfg&&cfg.transition&&cfg.transition.type==='fade'))) opacity=Math.max(0,Math.min(1,elapsed/fadeDuration));
+  else if(phase==='outro'&&(mode==='fade'||!cfg||(cfg.transition&&cfg.transition.type==='fade'))) opacity=Math.max(0,Math.min(1,1-elapsed/fadeDuration));
+  return {hidden:false,runtime:{...rt,phase,phaseStartedAt:phaseStarted,phaseDurationMs:duration,resolvedLayers:layers,sequenceOpacity:opacity}};
+}
+function monitorLtLayerBox(layer){
+  const width=Math.max(1,monitorLtNumber(layer.width,100));
+  const height=Math.max(1,monitorLtNumber(layer.height,100));
+  const anchor=String(layer.anchor||'tl');
+  const xOffset=anchor[1]==='c'?-width/2:(anchor[1]==='r'?-width:0);
+  const yOffset=anchor[0]==='m'?-height/2:(anchor[0]==='b'?-height:0);
+  return {x:monitorLtNumber(layer.x,0)+xOffset,y:monitorLtNumber(layer.y,0)+yOffset,width,height};
+}
+function monitorLtApplyLayerBox(el,layer,order){
+  const box=monitorLtLayerBox(layer);
+  el.style.left=box.x+'px';
+  el.style.top=box.y+'px';
+  el.style.width=box.width+'px';
+  el.style.height=box.height+'px';
+  el.style.opacity=String(Math.max(0,Math.min(1,monitorLtNumber(layer.opacity,1))));
+  el.style.zIndex=String(order);
+  const rotation=monitorLtNumber(layer.rotation,0);
+  el.style.transform=rotation?`rotate(${rotation}deg)`:'';
+}
+function monitorLtTextFits(el,text){
+  if(!el||!text) return false;
+  const style=getComputedStyle(el);
+  const width=Math.max(0,el.clientWidth-(parseFloat(style.paddingLeft)||0)-(parseFloat(style.paddingRight)||0));
+  const height=Math.max(0,el.clientHeight-(parseFloat(style.paddingTop)||0)-(parseFloat(style.paddingBottom)||0));
+  return text.scrollWidth<=width+1&&text.scrollHeight<=height+1;
+}
+function monitorLtAutoFit(el,text,layer){
+  if(!el||!text||!layer||layer.autoFit===false) return;
+  const preferred=Math.min(monitorLtNumber(layer.fontSize,48),monitorLtNumber(layer.maxFontSize,monitorLtNumber(layer.fontSize,48)));
+  const minimum=Math.min(preferred,monitorLtNumber(layer.minFontSize,18));
+  let low=minimum,high=preferred,best=minimum;
+  text.style.fontSize=high+'px';
+  if(monitorLtTextFits(el,text)) return;
+  for(let i=0;i<10;i++){
+    const mid=(low+high)/2;
+    text.style.fontSize=mid+'px';
+    if(monitorLtTextFits(el,text)){best=mid;low=mid;}else high=mid;
+  }
+  text.style.fontSize=best+'px';
+}
+function monitorLtLayerElement(layer){
+  const el=document.createElement('div');
+  el.className='pv-lt-runtime-layer fit-'+(layer.fit||'contain');
+  el.dataset.layerId=String(layer.id||'');
+  el.dataset.layerType=String(layer.type||'');
+  if(layer.type==='media'||layer.type==='logo'){
+    const src=mediaSrc(layer.src||layer.assetId||'');
+    if(!src) return null;
+    const media=layer.mediaKind==='video'?document.createElement('video'):document.createElement('img');
+    if(media.tagName==='IMG'){media.alt='';media.draggable=false;}
+    else {media.muted=true;media.defaultMuted=true;media.playsInline=true;media.autoplay=true;media.controls=false;media.loop=layer.playbackMode==='loop-until-hide'||layer.playbackMode==='loop';}
+    media.src=src;
+    el.appendChild(media);
+  } else if(layer.type==='dynamicText'||layer.type==='staticText'){
+    el.classList.add('pv-lt-runtime-text');
+    el.style.alignItems=layer.verticalAlign==='top'?'flex-start':(layer.verticalAlign==='bottom'?'flex-end':'center');
+    el.style.justifyContent=layer.textAlign==='center'?'center':(layer.textAlign==='right'?'flex-end':'flex-start');
+    const padding=layer.padding||{};
+    el.style.padding=[padding.top||0,padding.right||0,padding.bottom||0,padding.left||0].map(value=>Math.max(0,monitorLtNumber(value,0))+'px').join(' ');
+    const background=layer.background||{};
+    if(background.enabled){el.style.background=background.color||'rgba(0,0,0,.55)';el.style.borderRadius=Math.max(0,monitorLtNumber(background.radius,0))+'px';}
+    const text=document.createElement('div');
+    text.className='pv-lt-runtime-copy';
+    text.textContent=String(layer.resolvedText!=null?layer.resolvedText:(layer.text||''));
+    text.style.minWidth='0';text.style.maxWidth='100%';text.style.overflow='hidden';
+    text.style.fontFamily=layer.fontFamily||'-apple-system,system-ui,sans-serif';
+    text.style.fontSize=Math.max(4,monitorLtNumber(layer.fontSize,48))+'px';
+    text.style.fontWeight=String(layer.fontWeight||700);
+    text.style.fontStyle=layer.fontStyle||'normal';
+    text.style.color=layer.color||'#ffffff';
+    text.style.textAlign=layer.textAlign||'left';
+    text.style.lineHeight=String(layer.lineHeight||1.15);
+    const maxLines=Math.max(1,Math.min(10,parseInt(layer.maxLines,10)||1));
+    if(maxLines===1){text.style.whiteSpace='nowrap';text.style.textOverflow='ellipsis';}
+    else {text.style.display='-webkit-box';text.style.whiteSpace='pre-wrap';text.style.wordBreak='break-word';text.style.webkitBoxOrient='vertical';text.style.webkitLineClamp=String(maxLines);}
+    const outline=layer.outline||{};
+    if(outline.enabled) text.style.webkitTextStroke=Math.max(0,monitorLtNumber(outline.width,2))+'px '+(outline.color||'#000');
+    const shadow=layer.shadow||{};
+    if(shadow.enabled) text.style.textShadow=`${monitorLtNumber(shadow.offsetX,0)}px ${monitorLtNumber(shadow.offsetY,2)}px ${Math.max(0,monitorLtNumber(shadow.blur,8))}px ${shadow.color||'rgba(0,0,0,.6)'}`;
+    el.appendChild(text);
+  } else if(layer.type==='shape'){
+    if(layer.shape==='line'){
+      el.style.height=Math.max(1,monitorLtNumber(layer.strokeWidth,Math.max(1,layer.height||2)))+'px';
+      el.style.background=layer.stroke||layer.fill||'#ffffff';
+      el.style.borderRadius='999px';
+    } else {
+      el.style.background=layer.fill||'rgba(0,0,0,.55)';
+      if(layer.stroke) el.style.border=Math.max(0,monitorLtNumber(layer.strokeWidth,1))+'px solid '+layer.stroke;
+      el.style.borderRadius=(layer.shape==='roundedRectangle'?Math.max(0,monitorLtNumber(layer.radius,12)):0)+'px';
+    }
+  } else return null;
+  return el;
+}
+function clearMonitorRuntimeLowerThird(prefix){
+  const canvas=$(prefix+'LtRuntime');
+  if(!canvas) return;
+  canvas.querySelectorAll('video').forEach(video=>{try{video.pause();video.removeAttribute('src');video.load();}catch(e){}});
+  canvas.replaceChildren();
+  canvas.style.display='none';
+  canvas.setAttribute('aria-hidden','true');
+  monitorLowerThirdKeys[prefix]='';
+}
+function renderMonitorRuntimeLowerThird(prefix,lt){
+  const canvas=$(prefix+'LtRuntime');
+  const host=$(prefix==='pg'?'program':'preview');
+  if(!canvas||!host||!monitorLtRuntimeValid(lt)){
+    clearMonitorRuntimeLowerThird(prefix);
+    return false;
+  }
+  const effective=monitorEffectiveLtRuntime(lt.runtime);
+  if(effective.hidden){clearMonitorRuntimeLowerThird(prefix);return true;}
+  const runtime=effective.runtime;
+  const width=Math.max(320,Math.min(7680,monitorLtNumber(runtime.canvas&&runtime.canvas.width,1920)));
+  const height=Math.max(180,Math.min(4320,monitorLtNumber(runtime.canvas&&runtime.canvas.height,1080)));
+  const hostWidth=Math.max(1,host.clientWidth),hostHeight=Math.max(1,host.clientHeight);
+  const scale=Math.min(hostWidth/width,hostHeight/height);
+  const left=(hostWidth-width*scale)/2,top=(hostHeight-height*scale)/2;
+  const key=hostWidth+'x'+hostHeight+'|'+runtime.phase+'|'+runtime.instanceId+'|'+runtime.sequenceOpacity+'|'+JSON.stringify(runtime.resolvedLayers||[]);
+  canvas.style.display='block';
+  canvas.setAttribute('aria-hidden','false');
+  canvas.dataset.templateId=String(runtime.templateId||'');
+  canvas.dataset.instanceId=String(runtime.instanceId||'');
+  canvas.dataset.phase=String(runtime.phase||'hold');
+  if(monitorLowerThirdKeys[prefix]===key) return true;
+  clearMonitorRuntimeLowerThird(prefix);
+  monitorLowerThirdKeys[prefix]=key;
+  canvas.style.display='block';
+  canvas.setAttribute('aria-hidden','false');
+  canvas.dataset.templateId=String(runtime.templateId||'');
+  canvas.dataset.instanceId=String(runtime.instanceId||'');
+  canvas.dataset.phase=String(runtime.phase||'hold');
+  const root=document.createElement('div');
+  root.className='pv-lt-runtime-root';
+  root.style.width=width+'px';root.style.height=height+'px';
+  root.style.opacity=String(Math.max(0,Math.min(1,monitorLtNumber(runtime.sequenceOpacity,1))));
+  root.style.transform=`translate(${left}px,${top}px) scale(${scale})`;
+  canvas.appendChild(root);
+  [...(runtime.resolvedLayers||[])]
+    .map((layer,index)=>({layer,index,z:monitorLtNumber(layer&&layer.zIndex,0)}))
+    .sort((a,b)=>(a.z-b.z)||(a.index-b.index))
+    .forEach((entry,order)=>{
+      if(!entry.layer||entry.layer.visible===false) return;
+      const el=monitorLtLayerElement(entry.layer);
+      if(!el) return;
+      monitorLtApplyLayerBox(el,entry.layer,order+1);
+      root.appendChild(el);
+      if(entry.layer.type==='dynamicText'||entry.layer.type==='staticText') monitorLtAutoFit(el,el.querySelector('.pv-lt-runtime-copy'),entry.layer);
+    });
+  return true;
+}
 function renderStageLowerThird(prefix, st){
   const box=$(prefix+'LowerThird');
   if(!box) return;
   const lt=(st && st.lowerThird) || {};
+  if(renderMonitorRuntimeLowerThird(prefix,lt)){
+    box.style.display='none';
+    return;
+  }
   const stillVisible=lt.visible && (!lt.until || Date.now()<lt.until);
   if(!stillVisible){
     box.style.display='none';
@@ -8178,7 +8415,7 @@ $('btnCueExport').addEventListener('click',()=>{
     return [esc(c.name),dur,esc(c.note||''),c.color||'',esc(c.ltName||''),esc(c.ltTitle||'')].join(','); }).join('\n');
   const a=document.createElement('a');
   a.href='data:text/csv;charset=utf-8,'+encodeURIComponent('name,duration,note,color,lower_name,lower_title\n'+csv);
-  a.download='protimer-rundown.csv'; a.click();
+  a.download='showslate-rundown.csv'; a.click();
 });
 
 // PRO: kanonski post-show report iz cue stvarnih polja; showLog je samo legacy fallback.
@@ -8264,7 +8501,7 @@ function exportPostShowReport(){
   const report=renderPostShowReport();
   const csv=PTReport.toCsv(report);
   const blob=new Blob([csv],{type:'text/csv;charset=utf-8'}),url=URL.createObjectURL(blob),link=document.createElement('a');
-  const safe=String(report.show.name||'protimer-show').replace(/[^A-Za-z0-9 _.-]+/g,'').trim().replace(/\s+/g,'-').slice(0,80)||'protimer-show';
+  const safe=String(report.show.name||'showslate-show').replace(/[^A-Za-z0-9 _.-]+/g,'').trim().replace(/\s+/g,'-').slice(0,80)||'showslate-show';
   link.href=url; link.download=safe+'-report.csv'; document.body.appendChild(link); link.click(); link.remove();
   setTimeout(()=>URL.revokeObjectURL(url),1000);
 }
@@ -8413,7 +8650,7 @@ $('btnAbout')?.addEventListener('click',async()=>{
   let info={};
   try{ info=await api.buildInfo(); }catch(e){ info={error:String(e&&e.message||e)}; }
   const lines=[
-    'ProTimer Studio',
+    'ShowSlate',
     'Version: '+(info.version || '1.0.0'),
     'Commit: '+(info.commit || 'unknown'),
     'Source state: '+(info.dirty ? 'modified (non-release build)' : 'clean'),

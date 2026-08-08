@@ -6,7 +6,7 @@ const { ShowRepository } = require('../src/show-storage/repository.js');
 const smokeDisplay = require('../tools/smoke-display.js');
 
 const root = path.resolve(__dirname, '..');
-const profile = fs.mkdtempSync(path.join(os.tmpdir(), 'protimer-recovery-renderer-'));
+const profile = fs.mkdtempSync(path.join(os.tmpdir(), 'showslate-recovery-renderer-'));
 const artifactDirectory = path.join(root, 'artifacts', 'generated', 'show-recovery');
 app.setPath('userData', profile);
 let repository;

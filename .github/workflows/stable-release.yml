@@ -91,7 +91,7 @@ jobs:
               exit 1
             fi
           done
-          export CERT_PATH="$RUNNER_TEMP/protimer-developer-id.p12"
+          export CERT_PATH="$RUNNER_TEMP/showslate-developer-id.p12"
           export API_KEY_PATH="$RUNNER_TEMP/AuthKey.p8"
           node -e "const fs=require('fs'); fs.writeFileSync(process.env.CERT_PATH, Buffer.from(process.env.MAC_CERT_P12_BASE64, 'base64')); fs.writeFileSync(process.env.API_KEY_PATH, Buffer.from(process.env.APPLE_API_KEY_P8_BASE64, 'base64'));"
           test -s "$CERT_PATH"
@@ -108,10 +108,10 @@ jobs:
       - name: Verify signed and notarized Mac artifact
         run: |
           set -euo pipefail
-          app="dist-installers/mac-arm64/ProTimer Studio.app"
-          dmg="$(find dist-installers -maxdepth 1 -name 'ProTimer-Studio-*-arm64.dmg' -print -quit)"
+          app="dist-installers/mac-arm64/ShowSlate.app"
+          dmg="$(find dist-installers -maxdepth 1 -name 'ShowSlate-*-arm64.dmg' -print -quit)"
           test -n "$dmg"
-          build_info="$("$app/Contents/MacOS/ProTimer Studio" --print-build-info)"
+          build_info="$("$app/Contents/MacOS/ShowSlate" --print-build-info)"
           printf '%s\n' "$build_info"
           node -e "const d=JSON.parse(process.argv[1]); if(d.dirty || d.commitFull!==process.env.GITHUB_SHA) process.exit(1)" "$build_info"
           npm run check:packaged-free -- "$app/Contents/Resources/app.asar"
@@ -132,7 +132,7 @@ jobs:
       - uses: actions/upload-artifact@v7
         with:
           name: stable-macos-arm64
-          path: dist-installers/ProTimer-Studio-*-arm64.dmg
+          path: dist-installers/ShowSlate-*-arm64.dmg
           if-no-files-found: error
 
   windows-x64:
@@ -160,7 +160,7 @@ jobs:
           if ([string]::IsNullOrWhiteSpace($env:WINDOWS_CERT_PASSWORD)) {
             throw "Stable release blocked: missing WINDOWS_CERT_PASSWORD."
           }
-          $certPath = Join-Path $env:RUNNER_TEMP "protimer-authenticode.pfx"
+          $certPath = Join-Path $env:RUNNER_TEMP "showslate-authenticode.pfx"
           try {
             $bytes = [Convert]::FromBase64String($env:WINDOWS_CERT_PFX_BASE64)
           } catch {
@@ -178,9 +178,9 @@ jobs:
       - name: Verify Authenticode signatures and timestamps
         shell: pwsh
         run: |
-          $app = Resolve-Path "dist-installers/win-unpacked/ProTimer Studio.exe"
-          $setup = Get-ChildItem "dist-installers/ProTimer-Studio-Setup-*.exe" | Select-Object -First 1
-          $portable = Get-ChildItem "dist-installers/ProTimer-Studio-*-portable.exe" | Select-Object -First 1
+          $app = Resolve-Path "dist-installers/win-unpacked/ShowSlate.exe"
+          $setup = Get-ChildItem "dist-installers/ShowSlate-Setup-*.exe" | Select-Object -First 1
+          $portable = Get-ChildItem "dist-installers/ShowSlate-*-portable.exe" | Select-Object -First 1
           if (-not $setup -or -not $portable) {
             throw "Stable release blocked: expected Windows artifacts are missing."
           }
@@ -211,8 +211,8 @@ jobs:
         with:
           name: stable-windows-x64
           path: |
-            dist-installers/ProTimer-Studio-Setup-*.exe
-            dist-installers/ProTimer-Studio-*-portable.exe
+            dist-installers/ShowSlate-Setup-*.exe
+            dist-installers/ShowSlate-*-portable.exe
           if-no-files-found: error
 
   draft-release:
@@ -234,7 +234,7 @@ jobs:
           RELEASE_TAG: ${{ inputs.tag }}
         run: |
           set -euo pipefail
-          sha256sum ProTimer-Studio-* > SHA256SUMS.txt
+          sha256sum ShowSlate-* > SHA256SUMS.txt
           tag_commit="$(git rev-parse HEAD)"
           jq -n \
             --arg tag "$RELEASE_TAG" \
@@ -246,7 +246,7 @@ jobs:
       - name: Attest stable release binaries
         uses: actions/attest@v4
         with:
-          subject-path: release-assets/ProTimer-Studio-*
+          subject-path: release-assets/ShowSlate-*
       - name: Create private draft release candidate
         env:
           GH_TOKEN: ${{ github.token }}
@@ -257,5 +257,5 @@ jobs:
           --repo "$GITHUB_REPOSITORY"
           --verify-tag
           --draft
-          --title "ProTimer Studio $RELEASE_TAG candidate"
+          --title "ShowSlate $RELEASE_TAG candidate"
           --generate-notes

@@ -1,4 +1,4 @@
-# ProTimer Studio architecture
+# ShowSlate architecture
 
 Current public product architecture.
 
@@ -15,7 +15,7 @@ Preview selection must never change the LIVE cue, running timer or Program outpu
 
 - Cues have stable IDs, selected/LIVE separation, planned fields, actual timestamps, status, lower-third automation and optional linked screen content.
 - `src/show-storage/repository.js` writes the current show atomically under `userData`, keeps bounded backups and detects an unclean session.
-- `src/show-storage/package.js` exports/imports portable `.protimer-show` packages with checksums, schema validation and referenced assets only.
+- `src/show-storage/package.js` exports/imports portable `.showslate-show` packages with checksums, schema validation and referenced assets only; legacy `.protimer-show` packages remain importable.
 - `src/show-storage/preflight.js` returns blocking/warning/ready checks without changing Program.
 - localStorage remains a compatibility/preferences layer; it is not the only show-recovery mechanism.
 
@@ -25,12 +25,12 @@ Preview selection must never change the LIVE cue, running timer or Program outpu
 - Scenes and layers remain in `S.scenes`; a timer layer controls `#stage` inside the Program renderer.
 - `src/report/model.js` builds the post-show report from canonical cue actual fields, with legacy log fallback and spreadsheet-safe CSV output.
 
-Window capture is intentionally absent. ProTimer Studio is a rundown, timing, graphics and display-distribution product, not an OBS/Resolume replacement.
+Window capture is intentionally absent. ShowSlate is a rundown, timing, graphics and display-distribution product, not an OBS/Resolume replacement.
 
 ## Lower thirds
 
 - `src/lower-third/model.js`, `validate.js`, `migrate.js` and `resolve.js` define the versioned template/runtime contract.
-- `src/lower-third/package.js` imports/exports `.protimer-lt` packages and their referenced media.
+- `src/lower-third/package.js` imports/exports `.showslate-lt` packages and their referenced media; legacy `.protimer-lt` packages remain importable.
 - Lower Third Studio edits templates locally. PREVIEW resolves selected-cue data without touching Program; TAKE resolves the active template with LIVE cue data.
 - `output.html` renders resolved runtime layers and retains the legacy lower-third renderer as a compatibility fallback.
 - MP4/H.264, WebM VP8 and WebM VP9 fixture decode/compositing are covered by smoke. Claims remain limited to the exact tested environment and fixtures.
@@ -61,13 +61,13 @@ Window capture is intentionally absent. ProTimer Studio is a rundown, timing, gr
 ## Verification and release
 
 - `npm test`: deterministic headless module suite.
-- `npm run test:renderers:philips`: five real renderer workflows pinned to PHL 243V7.
+- `npm run test:renderers:display`: five real renderer workflows pinned to an explicitly selected display.
 - `npm run test:beta-ui`: responsive product matrix.
-- `npm run smoke:philips`: full source smoke.
-- `npm run smoke:packaged:philips`: full packaged smoke.
+- `npm run smoke:display`: full source smoke.
+- `npm run smoke:packaged:display`: full packaged smoke.
 - `npm run smoke:lt-soak`: condition-driven lower-third soak.
 
-Local visual regression is pinned to the configured PHL 243V7 test display and aborts when that monitor is unavailable. Stable Mac distribution still requires Developer ID signing and notarization; stable Windows distribution still requires real Windows x64 QA and signing.
+Local visual regression is pinned to an explicitly configured display and aborts when that display is unavailable or ambiguous. Stable Mac distribution still requires Developer ID signing and notarization; stable Windows distribution still requires real Windows x64 QA and signing.
 
 ## Non-negotiable compatibility rules
 

@@ -6,15 +6,15 @@
 npm test
 ```
 
-Runs 93 checks across lower-third packages, show storage and recovery data, portable show packages, preflight, screen-content models, control API normalization, post-show reports, pure output-routing rules, localization, build provenance, signing preflight and exact-artifact release evidence. This suite is deterministic and runs in GitHub Actions.
+Runs 13 deterministic module scripts across brand migration, lower-third packages, show storage and recovery data, portable show packages, preflight, screen-content models, control API normalization, post-show reports, pure output-routing rules, localization, build provenance, signing preflight and exact-artifact release evidence. Free-build, icon and public-site checks run before that suite. The same command runs in GitHub Actions.
 
 ## Local renderer suite
 
 ```bash
-npm run test:renderers:philips
+npm run test:renderers:display
 ```
 
-Runs five real Electron renderer workflows. Every visible test window resolves the configured `PHL 243V7` display and aborts if that monitor is unavailable. It must never fall back to the HP E24u G5 or another display.
+Runs five real Electron renderer workflows. Every visible test window resolves the explicitly configured display and aborts if that display is unavailable; it never silently falls back to another screen. Set `SHOWSLATE_SMOKE_DISPLAY` to a unique display label or use the ignored local `.showslate-smoke-display.json` file.
 
 ## Responsive product matrix
 
@@ -22,22 +22,22 @@ Runs five real Electron renderer workflows. Every visible test window resolves t
 npm run test:beta-ui
 ```
 
-Checks the real operator workspace at 1440x900, 1280x800, 1024x700 and 900x600. It covers Standard, Compact, Advanced, panels, Output Routing, Lower Third Studio, wizard, preflight, slides, recovery and report workflows. Current expected result: 53/53.
+Checks the real operator workspace at 1440x900, 1280x800, 1024x700 and 900x600. It covers Standard, Compact, Advanced, panels, Output Routing, Lower Third Studio, wizard, preflight, slides, recovery and report workflows. Current expected result: 55/55.
 
 ## Full source and packaged smoke
 
 ```bash
-npm run smoke:philips
+npm run smoke:display -- --display "PHL 243V7"
 npm run dist:mac
-npm run smoke:packaged:philips
+npm run smoke:packaged:display -- --display "PHL 243V7"
 ```
 
-The source and packaged smoke suites cover Program state, timer/GO invariants, media/codecs, localization, simultaneous output routes, Lower Third runtime/editor behavior and responsive UI. They abort before opening the application when the configured Philips monitor is missing.
+Replace the example label with the screen selected for the run. The source and packaged smoke suites cover Program state, timer/GO invariants, media/codecs, localization, simultaneous output routes, Lower Third runtime/editor behavior and responsive UI. They abort before opening the application when the requested display is missing or ambiguous.
 
 Focused routing verification is available as:
 
 ```bash
-npm run smoke:output-routing
+npm run smoke:output-routing -- --display "PHL 243V7"
 ```
 
 ## Soak

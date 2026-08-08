@@ -1,18 +1,18 @@
 {
-  "name": "protimer-studio",
-  "productName": "ProTimer Studio",
-  "version": "0.9.0-beta.2",
+  "name": "showslate",
+  "productName": "ShowSlate",
+  "version": "0.9.0-beta.3",
   "description": "Free open-source event rundown, stage timer, lower-third and multi-display control",
   "main": "main.js",
   "author": "Srdjan Kotarlic",
   "license": "MIT",
-  "homepage": "https://srdjankotarlic.github.io/protimer-studio/",
+  "homepage": "https://srdjankotarlic.github.io/showslate/",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/srdjankotarlic/protimer-studio.git"
+    "url": "git+https://github.com/srdjankotarlic/showslate.git"
   },
   "bugs": {
-    "url": "https://github.com/srdjankotarlic/protimer-studio/issues"
+    "url": "https://github.com/srdjankotarlic/showslate/issues"
   },
   "keywords": [
     "stage-timer",
@@ -37,13 +37,16 @@
     "check:icons": "node tools/check-icon-assets.js",
     "check:packaged-free": "node tools/check-packaged-free-build.js",
     "check:site": "node tools/check-public-site.js",
-    "test:renderers:philips": "node tools/run-test-suite.js renderers",
-    "test:all:philips": "node tools/run-test-suite.js all",
+    "test:renderers:display": "node tools/run-test-suite.js renderers",
+    "test:all:display": "node tools/run-test-suite.js all",
+    "test:renderers:philips": "npm run test:renderers:display",
+    "test:all:philips": "npm run test:all:display",
     "start": "electron .",
     "smoke": "electron . --smoke",
     "smoke:lt-soak": "node tools/run-lt-soak.js",
     "smoke:output-routing": "node tools/run-smoke-on-display.js --source --output-routing-only",
     "test:lt-package": "node test/lower-third-package.test.js",
+    "test:brand-migration": "node test/brand-migration.test.js",
     "test:show-storage": "node test/show-repository.test.js",
     "test:show-recovery": "electron test/show-recovery-renderer.test.js",
     "test:show-package": "node test/show-package.test.js",
@@ -62,8 +65,10 @@
     "test:report-ui": "electron test/report-renderer.test.js",
     "test:beta-ui": "electron test/beta-usability-matrix.test.js",
     "displays:list": "electron tools/list-displays.js",
-    "smoke:philips": "node tools/run-smoke-on-display.js --source",
-    "smoke:packaged:philips": "node tools/run-smoke-on-display.js --packaged",
+    "smoke:display": "node tools/run-smoke-on-display.js --source",
+    "smoke:packaged:display": "node tools/run-smoke-on-display.js --packaged",
+    "smoke:philips": "npm run smoke:display",
+    "smoke:packaged:philips": "npm run smoke:packaged:display",
     "dist:mac": "node tools/write-build-info.js && CSC_IDENTITY_AUTO_DISCOVERY=false electron-builder --mac --arm64 --publish never -c.mac.identity=- -c.mac.hardenedRuntime=false -c.mac.notarize=false",
     "dist:mac:release": "node tools/assert-release-signing.js mac && node tools/write-build-info.js && electron-builder --mac --arm64 --publish never -c.forceCodeSigning=true",
     "dist:win": "node tools/write-build-info.js && electron-builder --win --x64 --publish never",
@@ -87,8 +92,8 @@
     "axios": "^1.18.1"
   },
   "build": {
-    "appId": "com.srdjankotarlic.protimerstudio",
-    "productName": "ProTimer Studio",
+    "appId": "com.srdjankotarlic.showslate",
+    "productName": "ShowSlate",
     "directories": {
       "buildResources": "build",
       "output": "dist-installers"
@@ -129,12 +134,12 @@
       "icon": "build/icon.icns",
       "entitlements": "build/entitlements.mac.plist",
       "entitlementsInherit": "build/entitlements.mac.inherit.plist",
-      "artifactName": "ProTimer-Studio-${version}-${arch}.${ext}",
+      "artifactName": "ShowSlate-${version}-${arch}.${ext}",
       "hardenedRuntime": true,
       "notarize": true
     },
     "dmg": {
-      "title": "ProTimer Studio ${version}"
+      "title": "ShowSlate ${version}"
     },
     "win": {
       "target": [
@@ -154,11 +159,11 @@
       "perMachine": false,
       "allowToChangeInstallationDirectory": true,
       "createDesktopShortcut": true,
-      "shortcutName": "ProTimer Studio",
-      "artifactName": "ProTimer-Studio-Setup-${version}.${ext}"
+      "shortcutName": "ShowSlate",
+      "artifactName": "ShowSlate-Setup-${version}.${ext}"
     },
     "portable": {
-      "artifactName": "ProTimer-Studio-${version}-portable.${ext}"
+      "artifactName": "ShowSlate-${version}-portable.${ext}"
     }
   },
   "dependencies": {

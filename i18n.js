@@ -66,7 +66,7 @@
     shareOnline:'Share online', publicLabel:'Public link (any network)',
     connecting:'Connecting…', stopSharing:'Stop sharing', shareFail:'Failed, try again',
     shareNote:'QR = scan with a phone (same Wi-Fi). “Share online” = a link that works from any network.',
-    netNote:'All devices must be on the <b>SAME Wi-Fi</b> network. OBS: <b>Browser Source</b> → Screen URL (enable “Transparent background” for overlay; NDI via DistroAV). Phone: open the Remote URL in a browser. OSC: UDP port <b>7879</b>, addresses <b>/protimer/start</b> · reset · go · blackout · adjust · setDuration.',
+    netNote:'All devices must be on the <b>SAME Wi-Fi</b> network. OBS: <b>Browser Source</b> → Screen URL (enable “Transparent background” for overlay; NDI via DistroAV). Phone: open the Remote URL in a browser. OSC: UDP port <b>7879</b>, addresses <b>/showslate/start</b> · reset · go · blackout · adjust · setDuration.',
     chimes:'Sound', chimesTitle:'Audible chime on screen: 1 tone yellow · 2 tones red · 3 tones zero',
     schedLabel:'Auto-start at', schedTitle:'Timer starts by itself at the set time',
     logoBtn:'Logo image', logoBig:'Image too large (max 8 MB).',
@@ -110,7 +110,7 @@
     shareOnline:'Deli online', publicLabel:'Javni link (bilo koja mreža)',
     connecting:'Povezivanje…', stopSharing:'Prekini deljenje', shareFail:'Nije uspelo, pokušaj opet',
     shareNote:'QR = skeniraj telefonom (ista Wi-Fi). „Deli online" = link sa bilo koje mreže.',
-    netNote:'Svi uređaji moraju biti na <b>ISTOJ Wi-Fi</b> mreži. OBS: <b>Browser Source</b> → Ekran URL („Providna pozadina" za overlay; NDI preko DistroAV). Telefon: otvori Daljinski URL u pretraživaču. OSC: UDP port <b>7879</b>, adrese <b>/protimer/start</b> · reset · go · blackout · adjust · setDuration.',
+    netNote:'Svi uređaji moraju biti na <b>ISTOJ Wi-Fi</b> mreži. OBS: <b>Browser Source</b> → Ekran URL („Providna pozadina" za overlay; NDI preko DistroAV). Telefon: otvori Daljinski URL u pretraživaču. OSC: UDP port <b>7879</b>, adrese <b>/showslate/start</b> · reset · go · blackout · adjust · setDuration.',
     chimes:'Zvuk', chimesTitle:'Zvučni signal na ekranu: 1 ton žuto · 2 tona crveno · 3 tona nula',
     schedLabel:'Auto-start u', schedTitle:'Tajmer sam krene u zadato vreme',
     logoBtn:'Logo slika', logoBig:'Slika je prevelika (max 8 MB).',
@@ -306,14 +306,14 @@
     start:'▶ START', pause:'⏸ PAUSE', correction:'Adjust', goNext:'GO ▶ NEXT',
     quickDur:'Quick duration', msgToSpeaker:'Message to speaker',
     preset1:'Speed up', preset2:'Wrap up', preset3:'STOP', ownMsg:'Your message…', send:'Send',
-    foot:'Works while ProTimer Studio is open on the computer.'
+    foot:'Works while ShowSlate is open on the computer.'
   };
   const remoteSr = {
     remoteWord:'Daljinski', connecting:'povezivanje…', live:'uživo', lost:'veza pala…',
     start:'▶ START', pause:'⏸ PAUZA', correction:'Korekcija', goNext:'GO ▶ SLEDEĆI',
     quickDur:'Brzo trajanje', msgToSpeaker:'Poruka govorniku',
     preset1:'Ubrzaj', preset2:'Završavaj', preset3:'STOP', ownMsg:'Svoja poruka…', send:'Pošalji',
-    foot:'Kontrola radi dok je ProTimer Studio otvoren na računaru.'
+    foot:'Kontrola radi dok je ShowSlate otvoren na računaru.'
   };
 
   const backstageEn = {

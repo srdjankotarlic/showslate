@@ -6,10 +6,10 @@ const P = require('../src/show-storage/package.js');
 const M = require('../src/lower-third/model.js');
 const { ShowRepository } = require('../src/show-storage/repository.js');
 
-const root = fs.mkdtempSync(path.join(os.tmpdir(), 'protimer-show-package-'));
+const root = fs.mkdtempSync(path.join(os.tmpdir(), 'showslate-show-package-'));
 const sourceMedia = path.join(root, 'source-media');
 const importedMedia = path.join(root, 'clean-profile', 'media');
-const packagePath = path.join(root, 'Demo Conference.protimer-show');
+const packagePath = path.join(root, 'Demo Conference.showslate-show');
 fs.mkdirSync(sourceMedia, { recursive: true });
 fs.writeFileSync(path.join(sourceMedia, 'plate.png'), Buffer.from('portable-png-data'));
 fs.writeFileSync(path.join(sourceMedia, 'intro.webm'), Buffer.from('portable-webm-data'));
@@ -35,7 +35,7 @@ const template = M.makeTemplate({
 function makeShow() {
   return {
     schemaVersion: 1,
-    app: { productName: 'ProTimer Studio' },
+    app: { productName: 'ShowSlate' },
     show: {
       id: 'show-demo-conference',
       name: 'Demo Conference',
@@ -128,6 +128,14 @@ function check(name, fn) {
       const bad = new Map(entries);
       bad.set('manifest.json', Buffer.from('{bad json'));
       assert.throws(() => P.validateShowPackageEntries(bad), error => error.code === 'INVALID_JSON');
+    });
+
+    check('SHOW_PACKAGE_LEGACY_FORMAT_ACCEPTED_OK', () => {
+      const legacy = new Map(entries);
+      const manifest = JSON.parse(legacy.get('manifest.json').toString('utf8'));
+      manifest.format = 'protimer-show';
+      legacy.set('manifest.json', Buffer.from(JSON.stringify(manifest)));
+      assert.strictEqual(P.validateShowPackageEntries(legacy).document.show.id, document.show.id);
     });
 
     check('SHOW_PACKAGE_CHECKSUM_REJECTED_OK', () => {

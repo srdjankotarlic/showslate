@@ -1,6 +1,6 @@
 # Contributing
 
-Thanks for helping make ProTimer Studio more reliable for real events.
+Thanks for helping make ShowSlate more reliable for real events.
 
 ## Before coding
 
@@ -12,8 +12,8 @@ Thanks for helping make ProTimer Studio more reliable for real events.
 ## Setup
 
 ```bash
-git clone https://github.com/srdjankotarlic/protimer-studio.git
-cd protimer-studio
+git clone https://github.com/srdjankotarlic/showslate.git
+cd showslate
 npm ci
 npm test
 npm start
@@ -29,7 +29,7 @@ npm audit
 npm test
 ```
 
-Visual Electron tests require an explicit safe display. Configure `.protimer-smoke-display.json` locally (it is ignored) or pass a display label:
+Visual Electron tests require an explicit safe display. Configure `.showslate-smoke-display.json` locally (it is ignored) or pass a display label:
 
 ```bash
 node tools/run-smoke-on-display.js --display "Your test monitor" --source

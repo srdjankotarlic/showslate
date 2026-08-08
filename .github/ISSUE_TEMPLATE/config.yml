@@ -1,8 +1,8 @@
 blank_issues_enabled: false
 contact_links:
   - name: Questions and ideas
-    url: https://github.com/srdjankotarlic/protimer-studio/discussions
+    url: https://github.com/srdjankotarlic/showslate/discussions
     about: Use Discussions for setup help and feature ideas.
   - name: Security report
-    url: https://github.com/srdjankotarlic/protimer-studio/security/advisories/new
+    url: https://github.com/srdjankotarlic/showslate/security/advisories/new
     about: Report vulnerabilities privately.

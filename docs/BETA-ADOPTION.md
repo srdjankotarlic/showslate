@@ -22,7 +22,7 @@ At least three should complete a full dry run. At least one independent operator
 4. Add one lower third and one image/video/PDF screen item.
 5. Configure every available output and reconnect one display.
 6. Open phone remote, backstage and Signal Light on the local network.
-7. Export and reopen a `.protimer-show` package.
+7. Export and reopen a `.showslate-show` package.
 8. Report the first confusing step, any failure and the workflow they would actually use.
 
 Ask for the app version, OS, CPU, display arrangement and exact reproduction steps. Never ask testers to post client names, IP addresses, tokens or confidential media.
@@ -33,12 +33,12 @@ Ask for the app version, OS, CPU, display arrangement and exact reproduction ste
 
 **Title:** I built a free open-source stage timer and rundown app - looking for off-air testers
 
-I built ProTimer Studio for live-event teams that need a rundown, speaker timer, messages, lower thirds and multiple screen outputs in one local app.
+I built ShowSlate for live-event teams that need a rundown, speaker timer, messages, lower thirds and multiple screen outputs in one local app.
 
 Create or import a rundown, prepare the next cue, press GO to make it live, then send the timer or screen content to one or more displays.
 
 It is free, open source, and available for Apple Silicon Mac and Windows:
-https://srdjankotarlic.github.io/protimer-studio/
+https://srdjankotarlic.github.io/showslate/
 
 I am looking for operators willing to test it off-air and tell me what is confusing or breaks on their setup.
 
@@ -46,14 +46,14 @@ Disclosure: I am the creator and development was AI-assisted. The packaged Mac b
 
 Use the real product image below with the post:
 
-![ProTimer Studio Reddit promo](images/reddit-promo.png)
+![ShowSlate Reddit promo](images/reddit-promo.png)
 
 Do not describe the app as OBS/vMix certified, signed, notarized or production-proven.
 
 ## Feedback and metrics
 
 - Bugs: GitHub bug-report form.
-- Setup questions and workflow feedback: [public beta Discussion](https://github.com/srdjankotarlic/protimer-studio/discussions/1).
+- Setup questions and workflow feedback: [GitHub Discussions](https://github.com/srdjankotarlic/showslate/discussions).
 - Private security issues: GitHub private vulnerability reporting.
 - Weekly signals: repository visitors/clones, release-asset counters, completed test reports and unresolved blockers.
 

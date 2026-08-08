@@ -76,7 +76,7 @@ expectSuccess(
   'RELEASE_SIGNING_MAC_KEYCHAIN_PROFILE_READY_OK',
   run('mac', {
     CSC_LINK: 'test-certificate',
-    APPLE_KEYCHAIN_PROFILE: 'protimer-notary'
+    APPLE_KEYCHAIN_PROFILE: 'showslate-notary'
   }),
   'macOS'
 );

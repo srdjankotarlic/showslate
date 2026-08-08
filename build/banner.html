@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=1600, initial-scale=1">
+  <title>ShowSlate social preview</title>
+  <style>
+    * { box-sizing: border-box; }
+    html, body { width: 1600px; height: 900px; margin: 0; overflow: hidden; }
+    body {
+      background: #0c0f12;
+      color: #f4f6f8;
+      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Helvetica Neue", Arial, sans-serif;
+      letter-spacing: 0;
+    }
+    .frame { display: grid; grid-template-columns: 535px 1fr; width: 100%; height: 100%; }
+    .intro {
+      position: relative;
+      padding: 72px 64px 56px 76px;
+      border-right: 1px solid #263039;
+      background: #101419;
+    }
+    .brand { display: flex; align-items: center; gap: 24px; }
+    .brand img { width: 68px; height: 68px; object-fit: contain; }
+    .brand-name { font-size: 30px; font-weight: 780; line-height: 1; }
+    .brand-kind { margin-top: 10px; color: #9ba7b2; font: 700 12px/1.2 ui-monospace, SFMono-Regular, Menlo, monospace; text-transform: uppercase; }
+    .open { margin-top: 90px; color: #45df89; font: 800 13px/1 ui-monospace, SFMono-Regular, Menlo, monospace; text-transform: uppercase; }
+    h1 { max-width: 390px; margin: 28px 0 26px; font-size: 64px; line-height: 1.02; font-weight: 800; }
+    .lead { max-width: 390px; margin: 0; color: #c6cdd4; font-size: 21px; line-height: 1.48; }
+    .platforms { margin-top: 36px; color: #e7ebef; font-size: 15px; font-weight: 700; }
+    .platforms span { margin: 0 13px; color: #65717c; }
+    .url { position: absolute; left: 76px; bottom: 56px; color: #88bfe9; font: 700 15px/1 ui-monospace, SFMono-Regular, Menlo, monospace; }
+    .product { position: relative; padding: 74px 76px 52px 40px; }
+    .product-top { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 17px; }
+    .eyebrow { font: 800 13px/1 ui-monospace, SFMono-Regular, Menlo, monospace; text-transform: uppercase; }
+    .proof { color: #98a4ae; font-size: 14px; }
+    .shot {
+      display: block;
+      width: 949px;
+      height: 593px;
+      object-fit: cover;
+      object-position: top left;
+      border: 1px solid #3a4650;
+      background: #11161a;
+    }
+    .steps { display: grid; grid-template-columns: repeat(3, 1fr); gap: 28px; margin-top: 18px; padding-top: 21px; border-top: 1px solid #39434c; }
+    .step { position: relative; }
+    .num { color: #45df89; font: 800 12px/1 ui-monospace, SFMono-Regular, Menlo, monospace; }
+    .label { margin-top: 8px; font-size: 17px; font-weight: 740; }
+    .step:not(:last-child)::after { content: "→"; position: absolute; right: -15px; top: 16px; color: #687682; font-size: 23px; }
+  </style>
+</head>
+<body>
+  <main class="frame">
+    <section class="intro">
+      <div class="brand">
+        <img src="icon.png" alt="">
+        <div>
+          <div class="brand-name">ShowSlate</div>
+          <div class="brand-kind">Live event control</div>
+        </div>
+      </div>
+      <div class="open">Free &amp; open source</div>
+      <h1>Run the show.<br>Keep every screen in sync.</h1>
+      <p class="lead">Rundown, speaker timer, lower thirds and multi-display Program routing in one local app.</p>
+      <div class="platforms">macOS <span>•</span> Windows <span>•</span> No account</div>
+      <div class="url">srdjankotarlic.github.io/showslate</div>
+    </section>
+    <section class="product">
+      <div class="product-top">
+        <div class="eyebrow">Real operator workspace</div>
+        <div class="proof">Built for live-event rehearsals</div>
+      </div>
+      <img class="shot" src="../docs/images/operator-workspace.png" alt="ShowSlate operator workspace">
+      <div class="steps">
+        <div class="step"><div class="num">01</div><div class="label">Prepare NEXT</div></div>
+        <div class="step"><div class="num">02</div><div class="label">Press GO</div></div>
+        <div class="step"><div class="num">03</div><div class="label">Route Program</div></div>
+      </div>
+    </section>
+  </main>
+</body>
+</html>

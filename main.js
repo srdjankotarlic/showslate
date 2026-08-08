@@ -12,12 +12,13 @@ const showPreflight = require('./src/show-storage/preflight.js');
 const controlApi = require('./src/control-api/commands.js');
 const outputRouting = require('./src/output-routing/model.js');
 const { ShowRepository } = require('./src/show-storage/repository.js');
+const { migrateLegacyUserData } = require('./src/brand/migrate-user-data.js');
 
 const SMOKE = process.argv.includes('--smoke');
 const LT2_SOAK_ONLY = SMOKE && process.argv.includes('--lt2-soak-only');
 const OUTPUT_ROUTING_SMOKE_ONLY = SMOKE && process.argv.includes('--output-routing-only');
-// Smoke/test windows are pinned to ONE monitor (default: Philips) so they never disturb
-// the user's HP monitor. Resolver has no deps; normal (non-smoke) mode is unaffected.
+// Smoke/test windows are pinned to one explicitly configured display. The resolver has
+// no dependencies; normal (non-smoke) mode is unaffected.
 let smokeDisplay = null;
 try { smokeDisplay = require('./tools/smoke-display.js'); } catch (e) { /* dev/test-only helper; only needed under --smoke */ }
 let SMOKE_TARGET = null;   // resolved target display for all smoke/test windows
@@ -47,7 +48,7 @@ function hasAsarSegment(p) {
 }
 function getTestArtifactDirectory() {
   const cliDir = cliValue('--artifact-dir');
-  const envDir = process.env.PROTIMER_TEST_ARTIFACT_DIR || '';
+  const envDir = process.env.SHOWSLATE_TEST_ARTIFACT_DIR || process.env.PROTIMER_TEST_ARTIFACT_DIR || '';
   const raw = cliDir || envDir || (!app.isPackaged ? path.join(__dirname, 'artifacts', 'generated') : path.join(app.getPath('userData'), 'test-artifacts'));
   const dir = path.resolve(raw);
   if (hasAsarSegment(dir)) throw new Error('test artifact directory cannot be inside app.asar: ' + dir);
@@ -79,7 +80,7 @@ function getBuildInfo() {
   } catch (e) {}
   return {
     version: app.getVersion(),
-    productName: app.name || 'ProTimer Studio',
+    productName: app.name || 'ShowSlate',
     commit: fileInfo.commit || 'dev',
     commitFull: fileInfo.commitFull || '',
     dirty: fileInfo.dirty === true,
@@ -160,7 +161,7 @@ function writeJson(res, statusCode, payload) {
 }
 
 function requestCommandToken(req, query) {
-  return req.headers['x-pt-token'] || query.get('t');
+  return req.headers['x-showslate-token'] || req.headers['x-pt-token'] || query.get('t');
 }
 
 function statusSectionForPath(url) {
@@ -185,12 +186,12 @@ function lanIP() {
 function startServer(port, attempt = 0) {
   const outputHtml = () => {
     try { return fs.readFileSync(path.join(__dirname, 'output.html'), 'utf8'); }
-    catch (e) { return '<h1>ProTimer Studio</h1>'; }
+    catch (e) { return '<h1>ShowSlate</h1>'; }
   };
 
   const fileHtml = (name) => {
     try { return fs.readFileSync(path.join(__dirname, name), 'utf8'); }
-    catch (e) { return '<h1>ProTimer Studio</h1>'; }
+    catch (e) { return '<h1>ShowSlate</h1>'; }
   };
 
   server = http.createServer((req, res) => {
@@ -360,7 +361,7 @@ function pushSSE(state) {
 }
 
 // ---------------- OSC ULAZ (QLab / Companion / TouchOSC / bilo koji OSC sender) ----------------
-// UDP, adrese /protimer/<type> — isti skup komandi kao HTTP API. LAN-poverenje kao kod
+// UDP, preferred /showslate/<type> addresses plus the legacy /protimer/<type> alias.
 // Ontime/QLab: OSC nema token (dokumentovano u SECURITY.md).
 let oscSocket = null, oscPort = 0;
 function parseOSC(buf) {
@@ -396,9 +397,11 @@ function startOSC(port, attempt = 0) {
   oscSocket.on('message', (buf) => {
     try {
       const m = parseOSC(buf);
-      if (!m || !m.address.startsWith('/protimer/')) return;
+      if (!m) return;
+      const prefix = ['/showslate/', '/protimer/'].find(value => m.address.startsWith(value));
+      if (!prefix) return;
       const normalized = controlApi.normalizeCommand({
-        type: m.address.slice('/protimer/'.length),
+        type: m.address.slice(prefix.length),
         value: m.args.length ? m.args[0] : undefined
       });
       if (!normalized.ok) return;
@@ -487,7 +490,7 @@ function pushOutputState() {
 function createControlWindow() {
   controlWin = new BrowserWindow({
     width: 1280, height: 800, minWidth: 900, minHeight: 600,
-    title: 'ProTimer Studio — Control', backgroundColor: '#0b0d11',
+    title: 'ShowSlate — Control', backgroundColor: '#0b0d11',
     webPreferences: { preload: path.join(__dirname, 'preload.js'), contextIsolation: true, nodeIntegration: false, backgroundThrottling: false }
   });
   controlWin.loadFile('controller.html');
@@ -627,7 +630,7 @@ function createAuxOutputWindow(cfg, target) {
   const win = new BrowserWindow({
     x: target.bounds.x, y: target.bounds.y,
     width: normalized.width || 1000, height: normalized.height || 1000, minWidth: 80, minHeight: 60, show: false,
-    title: `ProTimer Studio — ${normalized.name}`,
+    title: `ShowSlate — ${normalized.name}`,
     backgroundColor: transparent ? '#00000000' : '#000000',
     transparent,
     frame: !frameless,
@@ -748,7 +751,7 @@ function createOutputWindow(displayId) {
   outputWin = new BrowserWindow({
     ...smokeXY,
     width: 900, height: 506, minWidth: 80, minHeight: 60, show: false,
-    title: 'ProTimer Studio — Output',
+    title: 'ShowSlate — Output',
     backgroundColor: transparent ? '#00000000' : '#000000',
     transparent: transparent,
     frame: !frameless,
@@ -877,20 +880,20 @@ ipcMain.handle('show-storage-recover', async (event, choice) => {
 ipcMain.handle('show-package-export', async (event, payload) => {
   try {
     const document = payload && payload.document;
-    const showName = String(document && document.show && document.show.name || 'ProTimer Show')
-      .replace(/[^A-Za-z0-9 _.-]+/g, '').trim().slice(0, 100) || 'ProTimer Show';
+    const showName = String(document && document.show && document.show.name || 'ShowSlate Show')
+      .replace(/[^A-Za-z0-9 _.-]+/g, '').trim().slice(0, 100) || 'ShowSlate Show';
     let destination = '';
     if (SMOKE && payload && payload.testPath) destination = path.resolve(String(payload.testPath));
     else {
       const picked = await dialog.showSaveDialog(controlWin, {
-        title: 'Export ProTimer Show',
-        defaultPath: showName + '.protimer-show',
-        filters: [{ name: 'ProTimer Show', extensions: ['protimer-show'] }]
+        title: 'Export ShowSlate Show',
+        defaultPath: showName + '.showslate-show',
+        filters: [{ name: 'ShowSlate Show', extensions: ['showslate-show'] }]
       });
       if (picked.canceled || !picked.filePath) return { ok: false, canceled: true };
       destination = picked.filePath;
     }
-    if (!destination.toLowerCase().endsWith('.protimer-show')) destination += '.protimer-show';
+    if (!destination.toLowerCase().endsWith('.showslate-show')) destination += '.showslate-show';
     return await showPackage.exportShowPackage({
       destination,
       document,
@@ -907,9 +910,9 @@ ipcMain.handle('show-package-import', async (event, payload) => {
     if (SMOKE && payload && payload.testPath) packagePath = path.resolve(String(payload.testPath));
     else {
       const picked = await dialog.showOpenDialog(controlWin, {
-        title: 'Import ProTimer Show',
+        title: 'Import ShowSlate Show',
         properties: ['openFile'],
-        filters: [{ name: 'ProTimer Show', extensions: ['protimer-show'] }]
+        filters: [{ name: 'ShowSlate Show', extensions: ['showslate-show', 'protimer-show'] }]
       });
       if (picked.canceled || !picked.filePaths[0]) return { ok: false, canceled: true };
       packagePath = picked.filePaths[0];
@@ -982,13 +985,13 @@ ipcMain.handle('lt-package-export', async (e, payload) => {
     else {
       const picked = await dialog.showSaveDialog(controlWin, {
         title: 'Export Lower Third Template',
-        defaultPath: requestedName + '.protimer-lt',
-        filters: [{ name: 'ProTimer Lower Third', extensions: ['protimer-lt'] }]
+        defaultPath: requestedName + '.showslate-lt',
+        filters: [{ name: 'ShowSlate Lower Third', extensions: ['showslate-lt'] }]
       });
       if (picked.canceled || !picked.filePath) return { ok: false, canceled: true };
       destination = picked.filePath;
     }
-    if (!destination.toLowerCase().endsWith('.protimer-lt')) destination += '.protimer-lt';
+    if (!destination.toLowerCase().endsWith('.showslate-lt')) destination += '.showslate-lt';
     return await lowerThirdPackage.exportLowerThirdPackage({
       destination,
       template,
@@ -1007,7 +1010,7 @@ ipcMain.handle('lt-package-import', async (e, payload) => {
       const picked = await dialog.showOpenDialog(controlWin, {
         title: 'Import Lower Third Template',
         properties: ['openFile'],
-        filters: [{ name: 'ProTimer Lower Third', extensions: ['protimer-lt'] }]
+        filters: [{ name: 'ShowSlate Lower Third', extensions: ['showslate-lt', 'protimer-lt'] }]
       });
       if (picked.canceled || !picked.filePaths[0]) return { ok: false, canceled: true };
       packagePath = picked.filePaths[0];
@@ -1344,6 +1347,22 @@ async function waitForAuxOutputRoutes(ids, timeoutMs = 3500) {
   return ids.map(id => auxOutputs.get(id));
 }
 
+async function waitForAuxOutputBounds(records, expected, timeoutMs = 2400) {
+  const deadline = Date.now() + timeoutMs;
+  let bounds = records.map(() => ({}));
+  while (Date.now() < deadline) {
+    bounds = records.map(rec => rec && rec.win && !rec.win.isDestroyed() ? rec.win.getBounds() : ({}));
+    const stable = bounds.every((actual, index) => {
+      const wanted = expected[index];
+      return wanted && Math.abs((actual.x || 0) - wanted.x) < 3 && Math.abs((actual.y || 0) - wanted.y) < 3
+        && Math.abs((actual.width || 0) - wanted.width) < 3 && Math.abs((actual.height || 0) - wanted.height) < 3;
+    });
+    if (stable) return { stable: true, bounds };
+    await new Promise(resolve => setTimeout(resolve, 40));
+  }
+  return { stable: false, bounds };
+}
+
 async function runOutputRoutingSmoke() {
   let multiOutOK = false, routingDisabledOK = false, routingPositionOK = false;
   let multiOutStateOK = false, missingDisplaySafeOK = false, missingDisplayUiOK = false, fingerprintReconnectOK = false;
@@ -1351,16 +1370,26 @@ async function runOutputRoutingSmoke() {
   try {
     const did = controlDisplayId();
     const disp = screen.getAllDisplays().find(display => display.id === did) || screen.getPrimaryDisplay();
+    // Custom coordinates are relative to the display bounds. Keep this smoke route
+    // inside the usable work area so macOS does not clamp it below the menu bar.
+    const workInsetX = Math.max(0, disp.workArea.x - disp.bounds.x);
+    const workInsetY = Math.max(0, disp.workArea.y - disp.bounds.y);
+    const routeAX = workInsetX + 40;
+    const routeBX = workInsetX + 380;
+    const routeY = workInsetY + 30;
+    const expectedBounds = [
+      { x: disp.bounds.x + routeAX, y: disp.bounds.y + routeY, width: 320, height: 180 },
+      { x: disp.bounds.x + routeBX, y: disp.bounds.y + routeY, width: 280, height: 180 }
+    ];
     await controlWin.webContents.executeJavaScript(`(function(){S.bgColor='#164e63';S.message={text:'ROUTE SYNC',flash:false};send(true);})()`);
     applyOutputConfigs([
-      {id:'smoke-out-a',name:'Smoke Output A',enabled:true,displayId:did,displayLabel:disp.label,displayWidth:disp.bounds.width,displayHeight:disp.bounds.height,mode:'custom',width:320,height:180,placement:'custom',x:40,y:30,gridSize:3,gridCell:0},
-      {id:'smoke-out-b',name:'Smoke Output B',enabled:true,displayId:did,displayLabel:disp.label,displayWidth:disp.bounds.width,displayHeight:disp.bounds.height,mode:'custom',width:280,height:180,placement:'custom',x:380,y:30,gridSize:3,gridCell:0},
+      {id:'smoke-out-a',name:'Smoke Output A',enabled:true,displayId:did,displayLabel:disp.label,displayWidth:disp.bounds.width,displayHeight:disp.bounds.height,mode:'custom',width:320,height:180,placement:'custom',x:routeAX,y:routeY,gridSize:3,gridCell:0},
+      {id:'smoke-out-b',name:'Smoke Output B',enabled:true,displayId:did,displayLabel:disp.label,displayWidth:disp.bounds.width,displayHeight:disp.bounds.height,mode:'custom',width:280,height:180,placement:'custom',x:routeBX,y:routeY,gridSize:3,gridCell:0},
       {id:'smoke-disabled',name:'Disabled Output',enabled:false,displayId:did,mode:'fullscreen'}
     ]);
     const [recA, recB] = await waitForAuxOutputRoutes(['smoke-out-a','smoke-out-b']);
-    await new Promise(resolve => setTimeout(resolve, 280));
-    const b = recA && recA.win && !recA.win.isDestroyed() ? recA.win.getBounds() : {};
-    const b2 = recB && recB.win && !recB.win.isDestroyed() ? recB.win.getBounds() : {};
+    const positionWait = await waitForAuxOutputBounds([recA, recB], expectedBounds);
+    const [b, b2] = positionWait.bounds;
     const noOverlap = (b.x+b.width)<=b2.x || (b2.x+b2.width)<=b.x || (b.y+b.height)<=b2.y || (b2.y+b2.height)<=b.y;
     multiOutOK = auxOutputs.size === 2 && Math.abs((b.width||0)-320) < 8 && Math.abs((b.height||0)-180) < 8
       && Math.abs((b2.width||0)-280) < 8 && Math.abs((b2.height||0)-180) < 8 && noOverlap;
@@ -1368,12 +1397,11 @@ async function runOutputRoutingSmoke() {
     const runtime = outputRuntimeSnapshot();
     routingDisabledOK = outputConfigs.length === 3 && !auxOutputs.has('smoke-disabled') && runtime.routes.length === 3
       && runtime.routes.some(route => route.id === 'smoke-disabled' && !route.open && route.status === 'disabled');
-    routingPositionOK = !!target && Math.abs((b.x||0)-(target.bounds.x+40)) < 3 && Math.abs((b.y||0)-(target.bounds.y+30)) < 3
-      && Math.abs((b2.x||0)-(target.bounds.x+380)) < 3 && Math.abs((b2.y||0)-(target.bounds.y+30)) < 3;
+    routingPositionOK = !!target && positionWait.stable;
     const states = await Promise.all([recA,recB].map(rec => rec.win.webContents.executeJavaScript(`JSON.stringify({bg:S&&S.bgColor,message:S&&S.message&&S.message.text,scene:S&&S.activeSceneId})`)));
     const parsedStates = states.map(JSON.parse);
     multiOutStateOK = parsedStates.length === 2 && parsedStates.every(state => state.bg === '#164e63' && state.message === 'ROUTE SYNC' && state.scene === parsedStates[0].scene);
-    detail = JSON.stringify({count:auxOutputs.size,configs:outputConfigs.length,bounds:[b,b2],states:parsedStates,runtime});
+    detail = JSON.stringify({count:auxOutputs.size,configs:outputConfigs.length,bounds:[b,b2],expectedBounds,positionStable:positionWait.stable,states:parsedStates,runtime});
     applyOutputConfigs([]);
     await new Promise(resolve => setTimeout(resolve, 250));
 
@@ -1420,7 +1448,7 @@ app.whenReady().then(async () => {
   }
   if (process.argv.includes('--promo')) { runPromo(); return; }
   if (process.argv.includes('--banner')) {
-    const bw = new BrowserWindow({ width:1200, height:630, useContentSize:true, frame:false, show:false, webPreferences:{ contextIsolation:true } });
+    const bw = new BrowserWindow({ width:1600, height:900, useContentSize:true, frame:false, show:false, webPreferences:{ contextIsolation:true } });
     bw.loadFile('build/banner.html');
     bw.webContents.on('did-finish-load', async () => {
       await new Promise(r=>setTimeout(r,400));
@@ -1430,14 +1458,14 @@ app.whenReady().then(async () => {
     setTimeout(()=>{ console.error('BANNER_TIMEOUT'); app.exit(1); }, 15000);
     return;
   }
-  // SMOKE: resolve the target monitor (Philips) BEFORE opening any window. Abort — never
-  // fall back to primary/HP — if it isn't connected, so tests can't leak onto the user's screen.
+  // Resolve the configured smoke display before opening any test window. Ambiguous or
+  // unavailable assignments fail closed instead of moving windows to another display.
   if (SMOKE) {
     const res = smokeDisplay.resolveTargetDisplay(screen);
     if (!res.display) {
       console.error(res.ambiguous ? 'SMOKE_DISPLAY_AMBIGUOUS' : 'SMOKE_DISPLAY_NOT_FOUND');
       console.error('Requested: ' + res.requested);
-      if (res.ambiguous) console.error('Matches: ' + JSON.stringify(res.matches) + ' — use --smoke-display-id=<id> or .protimer-smoke-display.json {"id":...}');
+      if (res.ambiguous) console.error('Matches: ' + JSON.stringify(res.matches) + ' — use --smoke-display-id=<id> or .showslate-smoke-display.json {"id":...}');
       console.error('Available: ' + JSON.stringify(res.available));
       app.exit(1); return;
     }
@@ -1446,6 +1474,18 @@ app.whenReady().then(async () => {
     console.log('  ID: ' + SMOKE_TARGET.id);
     console.log('  Label: ' + (SMOKE_TARGET.label || '(none)'));
     console.log('  WorkArea: ' + JSON.stringify(SMOKE_TARGET.workArea));
+  }
+
+  if (!SMOKE) {
+    try {
+      const migration = migrateLegacyUserData({
+        appDataDir: app.getPath('appData'),
+        currentUserDataDir: app.getPath('userData')
+      });
+      if (migration.migrated) console.log('SHOWSLATE_USER_DATA_MIGRATED files=' + migration.copiedFiles);
+    } catch (error) {
+      console.error('SHOWSLATE_USER_DATA_MIGRATION_FAILED ' + String(error && error.message || error));
+    }
   }
 
   showStorageReady = initializeShowStorage().catch((error) => {
@@ -1457,8 +1497,8 @@ app.whenReady().then(async () => {
   startServer(7878);
   startOSC(7879);
   createControlWindow();
-  // Pin controller to the target's TOP-LEFT (not centered): responsive smoke resizes it via
-  // setContentSize keeping top-left fixed, so left-anchoring keeps growth within Philips.
+  // Pin controller to the target's top-left: responsive smoke resizes it via setContentSize
+  // while keeping that anchor fixed, so growth remains inside the selected work area.
   if (SMOKE && SMOKE_TARGET) {
     const wa = SMOKE_TARGET.workArea;
     try { controlWin.setBounds({ x: wa.x, y: wa.y, width: Math.min(1280, wa.width), height: Math.min(800, wa.height) }); } catch (e) {}
@@ -1593,7 +1633,7 @@ app.whenReady().then(async () => {
 
         // ===== PORTABLE SHOW / WIZARD / PREFLIGHT / STANDARD SCREEN CONTENT =====
         {
-          const showPackagePath = path.join(getTestArtifactDirectory(), 'show-package', 'smoke-roundtrip.protimer-show');
+          const showPackagePath = path.join(getTestArtifactDirectory(), 'show-package', 'smoke-roundtrip.showslate-show');
           fs.mkdirSync(path.dirname(showPackagePath), { recursive:true });
           fs.rmSync(showPackagePath, { force:true });
           const productWorkflow = await controlWin.webContents.executeJavaScript(`(async function(){
@@ -1650,14 +1690,13 @@ app.whenReady().then(async () => {
           fs.rmSync(showPackagePath, { force:true });
         }
 
-        // ===== DISPLAY ISOLATION (target resolved, controller pinned, no HP leak) =====
+        // ===== DISPLAY ISOLATION (configured target resolved; every test window stays there) =====
         {
           const allD = screen.getAllDisplays();
-          const primaryId = screen.getPrimaryDisplay().id;
           smokeCheck('DISPLAY_INVENTORY_OK', allD.length >= 1 && allD.every(d => d.id != null && d.bounds && d.workArea), 'monitors=' + allD.length);
           smokeCheck('SMOKE_TARGET_DISPLAY_FOUND_OK', !!SMOKE_TARGET, 'target=' + (SMOKE_TARGET && SMOKE_TARGET.id));
           smokeCheck('SMOKE_TARGET_DISPLAY_MATCHES_CONFIG_OK', !!SMOKE_TARGET && allD.some(d => d.id === SMOKE_TARGET.id), 'label=' + (SMOKE_TARGET && SMOKE_TARGET.label));
-          smokeCheck('SMOKE_NO_PRIMARY_FALLBACK_OK', !!SMOKE_TARGET && (allD.length === 1 || SMOKE_TARGET.id !== primaryId), 'targetIsPrimary=' + (SMOKE_TARGET && SMOKE_TARGET.id === primaryId));
+          smokeCheck('SMOKE_CONFIGURED_TARGET_NO_FALLBACK_OK', !!SMOKE_TARGET && allD.some(d => d.id === SMOKE_TARGET.id), 'target=' + (SMOKE_TARGET && SMOKE_TARGET.label));
           // resolver returns null (→ abort path) for a monitor that isn't connected; no silent fallback
           const bogus = smokeDisplay.resolveTargetDisplay(screen, { argv: ['--smoke-display=NoSuchMonitor_ZZZ'], env: {}, root: '/nonexistent' });
           smokeCheck('SMOKE_DISPLAY_MISSING_ABORTS_OK', bogus.display === null, 'bogusResolved=' + (bogus.display ? bogus.display.id : 'null'));
@@ -1712,7 +1751,7 @@ app.whenReady().then(async () => {
               ],
               getPrimaryDisplay: () => ({ id: 91 })
             };
-            const amb = smokeDisplay.resolveTargetDisplay(stub, { argv: [], env: {}, root: '/nonexistent-no-config' });
+            const amb = smokeDisplay.resolveTargetDisplay(stub, { argv: ['--smoke-display=PHL 243V7'], env: {}, root: '/nonexistent-no-config' });
             smokeCheck('SMOKE_AMBIGUOUS_DISPLAY_MATCH_ABORTS_OK', amb.display === null && amb.ambiguous === true && amb.matches.length === 2, JSON.stringify({ amb: amb.ambiguous, n: amb.matches.length }));
           } catch (e) { smokeCheck('SMOKE_AMBIGUOUS_DISPLAY_MATCH_ABORTS_OK', false, 'ERR ' + e); }
           // real native fullscreen — the ONLY allowed bounds-exception, and only while fullscreen
@@ -1768,15 +1807,15 @@ app.whenReady().then(async () => {
           if (demo) { await new Promise(r=>setTimeout(r,500)); await controlWin.webContents.executeJavaScript(`loadCue(0,false); startPause();`); }
         }
         await new Promise(r => setTimeout(r, 1800));
-        fs.writeFileSync('/tmp/protimer_ctl.png', (await controlWin.webContents.capturePage()).toPNG());
-        fs.writeFileSync('/tmp/protimer_out.png', (await ow.webContents.capturePage()).toPNG());
+        fs.writeFileSync('/tmp/showslate_ctl.png', (await controlWin.webContents.capturePage()).toPNG());
+        fs.writeFileSync('/tmp/showslate_out.png', (await ow.webContents.capturePage()).toPNG());
         // snimak backstage stranice (učita živi /backstage preko servera)
         if (demo) {
           const bw = new BrowserWindow({ width:1280, height:720, show:false, backgroundColor:'#0a0c10',
             webPreferences:{ contextIsolation:true } });
           await bw.loadURL(`http://127.0.0.1:${serverPort}/backstage`);
           await new Promise(r=>setTimeout(r,1600));
-          fs.writeFileSync('/tmp/protimer_backstage.png', (await bw.webContents.capturePage()).toPNG());
+          fs.writeFileSync('/tmp/showslate_backstage.png', (await bw.webContents.capturePage()).toPNG());
           bw.destroy();
         }
         // NAPREDNO prekidač: default = jednostavan mod (Preview/switcher sakriveni, Direct forsiran);
@@ -1811,7 +1850,7 @@ app.whenReady().then(async () => {
         // test mrežnog izlaza: HTML stranica
         const got = await new Promise((resolve) => {
           http.get(`http://127.0.0.1:${serverPort}/`, r => {
-            let d = ''; r.on('data', c => d += c); r.on('end', () => resolve(d.includes('ProTimer Studio') || d.includes('ProTimer')));
+            let d = ''; r.on('data', c => d += c); r.on('end', () => resolve(d.includes('ShowSlate')));
           }).on('error', () => resolve(false));
         });
         smokeCheck('SERVER_OK', got, 'PORT=' + serverPort);
@@ -1900,20 +1939,20 @@ app.whenReady().then(async () => {
         };
         await new Promise(resolve => {
           const socket = require('dgram').createSocket('udp4');
-          socket.send(oscPacket('/protimer/message/send', 'OSC CHECK'), oscPort, '127.0.0.1', () => { socket.close(); resolve(); });
+          socket.send(oscPacket('/showslate/message/send', 'OSC CHECK'), oscPort, '127.0.0.1', () => { socket.close(); resolve(); });
         });
         await new Promise(resolve => setTimeout(resolve, 160));
         const oscMessageStatus = await getJson(`/api/status/show?t=${CMD_TOKEN}`);
         await new Promise(resolve => {
           const socket = require('dgram').createSocket('udp4');
-          socket.send(oscPacket('/protimer/message/clear'), oscPort, '127.0.0.1', () => { socket.close(); resolve(); });
+          socket.send(oscPacket('/showslate/message/clear'), oscPort, '127.0.0.1', () => { socket.close(); resolve(); });
         });
         smokeCheck('PRO_CONTROL_OSC_ALIAS_OK', oscMessageStatus.body && oscMessageStatus.body.status.message.text === 'OSC CHECK');
-        // OSC: pošalji /protimer/setDuration 180000 (int32) na UDP oscPort → stanje se menja
+        // OSC: send /showslate/setDuration 180000 (int32) to the active UDP port.
         const oscBuf = (() => {
           const pad = (s) => { const b = Buffer.from(s + '\0'); return Buffer.concat([b, Buffer.alloc((4 - (b.length % 4)) % 4)]); };
           const arg = Buffer.alloc(4); arg.writeInt32BE(180000);
-          return Buffer.concat([pad('/protimer/setDuration'), pad(',i'), arg]);
+          return Buffer.concat([pad('/showslate/setDuration'), pad(',i'), arg]);
         })();
         await new Promise((resolve) => {
           const s = require('dgram').createSocket('udp4');
@@ -3509,7 +3548,7 @@ app.whenReady().then(async () => {
             await controlWin.webContents.executeJavaScript(`setCueEditorOpen(false)`);
           } catch(e) { rundownEditorShot=''; }
           smokeCheck('LT_RUNDOWN_EDITOR_SCREENSHOT_OK', !!rundownEditorShot && fs.existsSync(rundownEditorShot), rundownEditorShot);
-          const lt2SoakMs = Math.max(0, parseInt(process.env.PROTIMER_LT2_SOAK_MS || '0', 10) || 0);
+          const lt2SoakMs = Math.max(0, parseInt(process.env.SHOWSLATE_LT2_SOAK_MS || process.env.PROTIMER_LT2_SOAK_MS || '0', 10) || 0);
           if(lt2SoakMs > 0){
             const showSoakStatic = async (cycle) => ltJparse(`(function(){
               initLtLibrary();
@@ -3916,7 +3955,13 @@ app.whenReady().then(async () => {
             const runtimeText=(rt.resolvedLayers||[]).map(l=>l.resolvedText||'').join('|');
             const takeUsesLive=rt.cueId===String(live.id) && runtimeText.includes(live.ltName || '') && runtimeText.includes(live.ltTitle || '');
             const selectedIgnored=!runtimeText.includes(selected.ltName || '___') && !runtimeText.includes(selected.ltTitle || '___');
-            return JSON.stringify({previewNotLive,previewText,cueId:rt.cueId,liveId:String(live.id),runtimeText,takeUsesLive,selectedIgnored,runtimeVersion:S.lowerThird.runtimeVersion});
+            renderStage('pg',ensureProgramState(),Date.now());
+            const programRuntime=document.getElementById('pgLtRuntime');
+            const programMonitorText=[...document.querySelectorAll('#pgLtRuntime .pv-lt-runtime-copy')].map(el=>el.textContent).join('|');
+            const programMonitorMatchesLive=!!programRuntime && getComputedStyle(programRuntime).display!=='none' &&
+              programRuntime.dataset.instanceId===String(rt.instanceId||'') &&
+              programMonitorText.includes(live.ltName || '') && programMonitorText.includes(live.ltTitle || '');
+            return JSON.stringify({previewNotLive,previewText,cueId:rt.cueId,liveId:String(live.id),runtimeText,takeUsesLive,selectedIgnored,runtimeVersion:S.lowerThird.runtimeVersion,programMonitorText,programMonitorMatchesLive});
           })()`);
           smokeCheck('LT_STUDIO_PREVIEW_NOT_LIVE_OK', studioPreviewTake.previewNotLive, JSON.stringify(studioPreviewTake));
           try {
@@ -3926,6 +3971,7 @@ app.whenReady().then(async () => {
           smokeCheck('LT_STUDIO_TAKE_USES_LIVE_CUE_OK',
             studioPreviewTake.takeUsesLive && studioPreviewTake.selectedIgnored && studioPreviewTake.runtimeVersion===1,
             JSON.stringify(studioPreviewTake));
+          smokeCheck('LT_STUDIO_PROGRAM_MONITOR_MATCHES_LIVE_OK', studioPreviewTake.programMonitorMatchesLive, JSON.stringify(studioPreviewTake));
           smokeCheck('LT_STUDIO_SELECTED_CUE_IGNORED_OK', studioPreviewTake.selectedIgnored, JSON.stringify(studioPreviewTake));
           await new Promise(r=>setTimeout(r,900));
           try { writeTestArtifact('lower-third/studio-live-output.png', (await outputWin.webContents.capturePage()).toPNG()); } catch(e) {}
@@ -3946,7 +3992,7 @@ app.whenReady().then(async () => {
             const webm=t && t.layers.find(l=>l.id==='demo-webm');
             return JSON.stringify({template:t&&t.name, name:{x:name&&name.x,y:name&&name.y,w:name&&name.width,h:name&&name.height}, title:{x:title&&title.x,y:title&&title.y}, webm:!!webm, open:document.getElementById('ltStudio').classList.contains('open')});
           })()`);
-          const ltPackageWorkflowPath = path.resolve(getTestArtifactDirectory(), 'lower-third', 'demo-custom.protimer-lt');
+          const ltPackageWorkflowPath = path.resolve(getTestArtifactDirectory(), 'lower-third', 'demo-custom.showslate-lt');
           const ltPackageButtons = await ltJparse(`(function(){
             const imp=document.getElementById('btnLtStudioImport');
             const exp=document.getElementById('btnLtStudioExport');
@@ -4249,7 +4295,7 @@ app.whenReady().then(async () => {
             try {
               const jsonPath = writeTestArtifact('lower-third/codec-capabilities.json', JSON.stringify(pr, null, 2));
               const txtPath = writeTestArtifact('lower-third/codec-capabilities.txt',
-                'ProTimer Studio LT-1 codec probe\nelectron='+pr.versions.electron+' chrome='+pr.versions.chrome+'\n\n'+
+                'ShowSlate LT-1 codec probe\nelectron='+pr.versions.electron+' chrome='+pr.versions.chrome+'\n\n'+
                 pr.results.map(r=>((r.ok?'OK   ':(r.skipped?'SKIP ':'FAIL '))+r.filename+'  '+JSON.stringify(r))).join('\n')+
                 '\n\nNAPOMENA: ovo dokazuje DECODE, ne alpha compositing (to je LT-2).\n');
               artDir = path.dirname(jsonPath);
@@ -4572,7 +4618,7 @@ app.whenReady().then(async () => {
           .map(file => fs.readFileSync(path.join(__dirname, file), 'utf8')).join('\n');
         smokeCheck('FREE_BUILD_NO_LICENSE_GATE_OK',
           !fs.existsSync(path.join(__dirname, 'license.js'))
-            && !/license-activate|ProTimer Studio\s*[—-]\s*TRIAL/.test(freeBuildSource));
+            && !/license-activate|(?:ShowSlate|ProTimer Studio)\s*[—-]\s*TRIAL/.test(freeBuildSource));
 
         // ===== FAZA A: responsive + compact operator interface =====
         smokeCheck('WINDOW_MIN_SIZE_OK',
@@ -4679,6 +4725,33 @@ app.whenReady().then(async () => {
 
         const jx = (code) => controlWin.webContents.executeJavaScript(code);
         const jparse = async (code) => JSON.parse(await jx(code));
+        const waitForUtilityColumnState = async ({ collapsed, minMainWidth = 0, timeoutMs = 1800 }) => {
+          const deadline = Date.now() + timeoutMs;
+          let sample = {};
+          let previousSignature = '';
+          let stableSamples = 0;
+          while (Date.now() < deadline) {
+            sample = await jparse(`(function(){
+              var uc=document.querySelector('.utility-column'), main=document.querySelector('.operator-main'), workspace=document.querySelector('.main.operator-workspace'), btn=document.getElementById('btnMsgDrawer');
+              var r=uc.getBoundingClientRect(), cs=getComputedStyle(uc), ws=getComputedStyle(workspace);
+              var tracks=ws.gridTemplateColumns.split(/\\s+/).map(function(value){return parseFloat(value)||0;});
+              var utilityTrack=tracks.length ? tracks[tracks.length-1] : -1;
+              var transitions=workspace.getAnimations().concat(uc.getAnimations()).filter(function(animation){return animation.playState==='running';}).length;
+              return JSON.stringify({hidden:cs.visibility==='hidden'&&cs.pointerEvents==='none', width:r.width,
+                mainWidth:Math.round(main.getBoundingClientRect().width), expanded:btn.getAttribute('aria-expanded')==='true',
+                visible:cs.visibility!=='hidden'&&r.width>40, utilityTrack:utilityTrack, transitions:transitions});
+            })()`);
+            const targetState = collapsed
+              ? sample.hidden && sample.utilityTrack <= 1 && sample.mainWidth >= minMainWidth && !sample.expanded
+              : sample.visible && sample.utilityTrack > 40 && sample.expanded;
+            const signature = `${sample.mainWidth}:${Math.round(sample.utilityTrack * 10) / 10}:${sample.expanded}:${sample.hidden}`;
+            stableSamples = targetState && sample.transitions === 0 && signature === previousSignature ? stableSamples + 1 : 0;
+            previousSignature = signature;
+            if (stableSamples >= 2) return { ...sample, settled:true };
+            await new Promise(resolve => setTimeout(resolve, 40));
+          }
+          return { ...sample, settled:false };
+        };
 
         // ===== FAZA 1A regression fence: lock behaviour + key DOM BEFORE shell scaffolding =====
         const fenceDom = await jparse(`(function(){
@@ -5215,20 +5288,10 @@ app.whenReady().then(async () => {
         })()`);
         smokeCheck('UTILITY_COLUMN_WIDE_OK', uw.visible && !uw.overlap && uw.ownScroll && uw.ovfX<=2, JSON.stringify(uw));
         await jx(`document.getElementById('btnMsgDrawer').click()`);
-        await new Promise(r=>setTimeout(r,220));
-        const uwCollapsed = await jparse(`(function(){
-          var uc=document.querySelector('.utility-column'), main=document.querySelector('.operator-main'), btn=document.getElementById('btnMsgDrawer');
-          var r=uc.getBoundingClientRect(), cs=getComputedStyle(uc);
-          return JSON.stringify({hidden:cs.visibility==='hidden'&&cs.pointerEvents==='none', width:r.width,
-            mainWidth:Math.round(main.getBoundingClientRect().width), expanded:btn.getAttribute('aria-expanded')==='true'});
-        })()`);
+        const uwCollapsed = await waitForUtilityColumnState({ collapsed:true, minMainWidth:uw.mainWidth+201 });
         await jx(`document.getElementById('btnMsgDrawer').click()`);
-        await new Promise(r=>setTimeout(r,220));
-        const uwRestored = await jparse(`(function(){
-          var uc=document.querySelector('.utility-column'), r=uc.getBoundingClientRect(), cs=getComputedStyle(uc), btn=document.getElementById('btnMsgDrawer');
-          return JSON.stringify({visible:cs.visibility!=='hidden'&&r.width>40, expanded:btn.getAttribute('aria-expanded')==='true'});
-        })()`);
-        smokeCheck('UTILITY_COLUMN_NO_MAIN_SQUEEZE_OK', uw.mainWidth >= 360 && uwCollapsed.hidden && uwCollapsed.mainWidth>uw.mainWidth+200 && !uwCollapsed.expanded && uwRestored.visible && uwRestored.expanded,
+        const uwRestored = await waitForUtilityColumnState({ collapsed:false });
+        smokeCheck('UTILITY_COLUMN_NO_MAIN_SQUEEZE_OK', uw.mainWidth >= 360 && uwCollapsed.settled && uwCollapsed.hidden && uwCollapsed.mainWidth>uw.mainWidth+200 && !uwCollapsed.expanded && uwRestored.settled && uwRestored.visible && uwRestored.expanded,
           'wide='+uw.mainWidth+' collapsed='+JSON.stringify(uwCollapsed)+' restored='+JSON.stringify(uwRestored));
         smokeCheck('UTILITY_COLUMN_INTERNAL_SCROLL_OK', uw.ownScroll, 'overflowY-auto='+uw.ownScroll);
 
@@ -5271,9 +5334,9 @@ app.whenReady().then(async () => {
         smokeCheck('RESIZE_PRESERVES_OUTPUT_OK', !!outputWin && !outputWin.isDestroyed(), 'outputOpen='+(!!outputWin&&!outputWin.isDestroyed()));
         await jx(`reset(); cues=[]; currentCue=-1; selectedCue=-1; renderCues();`);
 
-        // ===== LARGE VIEWPORT 1920×1080 — emulirano, NIKAD kao vidljivi OS prozor > workArea =====
-        // (Philips workArea je 1920×1050 ⇒ pravi 1080p prozor ne staje; spec dozvoljava
-        //  DevTools emulation umesto hidden prozora — spoljni bounds ostaju clampovani.)
+        // ===== LARGE VIEWPORT 1920×1080 — emulated, never a visible OS window larger than workArea =====
+        // DevTools emulation covers the viewport while the outer bounds remain clamped to
+        // the explicitly selected display's usable work area.
         {
           const preLV = { b: controlWin.getBounds(), foc: controlWin.isFocused() };
           const lv = await measureAt(1920, 1080, { advanced:false });
@@ -5376,7 +5439,7 @@ app.whenReady().then(async () => {
         app.exit(0);
       } catch (err) { console.error('SMOKE_FAIL', err); app.exit(1); }
     })();
-    const soakMs = Math.max(0, parseInt(process.env.PROTIMER_LT2_SOAK_MS || '0', 10) || 0);
+    const soakMs = Math.max(0, parseInt(process.env.SHOWSLATE_LT2_SOAK_MS || process.env.PROTIMER_LT2_SOAK_MS || '0', 10) || 0);
     const smokeTimeoutMs = Math.max(300000, soakMs + 300000);
     setTimeout(() => { console.error("SMOKE_TIMEOUT"); app.exit(1); }, smokeTimeoutMs);
   }

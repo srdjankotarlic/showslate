@@ -5,6 +5,7 @@ const { spawnSync } = require('child_process');
 
 const groups = {
   modules: [
+    'test:brand-migration',
     'test:lt-package',
     'test:show-storage',
     'test:show-package',
