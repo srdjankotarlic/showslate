@@ -40,6 +40,7 @@ The live-input service also passed its targeted synthetic-stream test. A hidden 
 - Production dependency audit: zero known vulnerabilities.
 - Mac and Windows packaged-content checks: `PACKAGED_FREE_BUILD_OK`, 1,449 archive entries each, MIT package and no activation/private-key files.
 - Mac DMG checksum verification: valid.
+- Untagged native release rehearsal [GitHub Actions run 31277947984](https://github.com/srdjankotarlic/showslate/actions/runs/31277947984): macOS and Windows jobs both passed; each package reported the exact clean commit `2959869`, and the Windows runner successfully booted the packaged EXE in CLI verification mode.
 
 Release builds record the exact full commit and dirty state. Tagged GitHub builds generate SHA-256 checksums and provenance attestations.
 
@@ -50,10 +51,10 @@ Release builds record the exact full commit and dirty state. Tagged GitHub build
 - Apple Silicon macOS application on a physical Philips display.
 - Source and packaged output routing, custom Canvas/layer composition, local network renderer and lower-third/media workflows.
 
-### Built and structurally inspected, not physically certified
+### Built natively and structurally inspected, not physically certified
 
 - Windows 10/11 x64 NSIS installer and portable package.
-- Their PE format and packaged application contents were inspected locally; native Windows execution still requires the Windows CI run and a clean physical-machine beta test.
+- Their PE format and packaged contents were inspected locally, and the native Windows workflow completed package construction plus packaged CLI boot. A clean physical-machine GUI test is still required.
 
 ### Still not proven
 
