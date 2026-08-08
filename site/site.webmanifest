@@ -1,7 +1,7 @@
 {
-  "name": "ShowSlate",
+  "name": "ShowSlate Conference Desk",
   "short_name": "ShowSlate",
-  "description": "Free open-source live event rundown, timer and multi-display control.",
+  "description": "Free offline conference room control for rundowns, speaker timing, linked media and role-based displays.",
   "start_url": "/showslate/",
   "display": "standalone",
   "background_color": "#0b0e12",

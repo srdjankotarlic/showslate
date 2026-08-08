@@ -1,5 +1,5 @@
 name: Bug report
-description: Report a reproducible problem in ShowSlate
+description: Report a reproducible problem in ShowSlate Conference Desk
 title: "[Bug]: "
 labels: [bug, needs-triage]
 body:
@@ -10,7 +10,7 @@ body:
     id: version
     attributes:
       label: Version and build commit
-      placeholder: "0.9.0-beta.3 / abc1234"
+      placeholder: "0.10.0-beta.1 / abc1234"
     validations:
       required: true
   - type: dropdown
@@ -30,6 +30,22 @@ body:
     attributes:
       label: Display setup
       placeholder: "Laptop display + 1920x1080 projector over HDMI"
+    validations:
+      required: true
+  - type: dropdown
+    id: workflow
+    attributes:
+      label: Workflow area
+      options:
+        - Show-folder import or setup
+        - Rundown, NEXT, LIVE or GO
+        - Audience output
+        - Confidence or Timer output
+        - Stream Graphics or Door Agenda
+        - Lower thirds
+        - Saving, recovery or reports
+        - Network, remote or API
+        - Other
     validations:
       required: true
   - type: textarea

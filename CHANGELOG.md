@@ -4,6 +4,34 @@ All notable changes to ShowSlate are documented here.
 
 ## Unreleased
 
+## 0.10.0-beta.1 - 2026-08-08
+
+### Added
+
+- Added safe show-folder import for CSV/TSV schedules and supported media, with conservative cue-to-asset matching and bounded scan limits.
+- Added Audience, Confidence, Timer, Stream Graphics and Door Agenda output roles.
+- Added per-route Program revision dispatch and renderer acknowledgement shown as SYNCING or RENDER CONFIRMED.
+- Added conference-specific preflight checks for Audience routing, display assignments, cue actions, media mapping and output delivery.
+- Added a visible Live Mode and a built-in six-cue conference demo.
+- Added the Conference Desk workflow reference, source-user sample folder and desktop/mobile public-site renderer checks.
+
+### Changed
+
+- Repositioned the product as ShowSlate Conference Desk for one local conference room while retaining the ShowSlate executable and user-data identity.
+- GO now sends the LIVE cue, timer, linked content and immediate automatic lower third in one Program revision.
+- Rebuilt the public website, metadata, social preview, README and download guidance around the Conference Desk workflow.
+
+### Fixed
+
+- Stream Graphics now remains fully transparent during state changes and does not acknowledge a revision until transparency and the expected lower third are rendered.
+- Live Mode commands remain readable and reachable at 900x600.
+- Conference UI tests now finish autosave before removing their isolated profile.
+
+### Scope
+
+- Direct Excel workbook parsing, camera switching, audio, NDI, encoding, PTZ, DMX, cloud collaboration and multi-room synchronization remain outside this beta.
+- External OBS/vMix alpha capture and physical Windows operation remain unproven until separately tested.
+
 ## 0.9.0-beta.3 - 2026-08-08
 
 ### Changed

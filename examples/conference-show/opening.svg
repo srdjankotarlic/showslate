@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="900" viewBox="0 0 1600 900">
+  <rect width="1600" height="900" fill="#101419"/>
+  <rect x="112" y="108" width="14" height="684" rx="7" fill="#67a27c"/>
+  <text x="184" y="406" fill="#f5f7f8" font-family="Arial, sans-serif" font-size="112" font-weight="700">Welcome</text>
+  <text x="190" y="510" fill="#9ba6b2" font-family="Arial, sans-serif" font-size="48">Conference Desk sample show</text>
+</svg>

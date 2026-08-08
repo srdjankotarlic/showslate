@@ -1,11 +1,11 @@
 <p align="center">
-  <img src="build/icon.png" width="112" alt="ShowSlate icon">
+  <img src="build/icon.png" width="112" alt="ShowSlate Conference Desk icon">
 </p>
 
-<h1 align="center">ShowSlate</h1>
+<h1 align="center">ShowSlate Conference Desk</h1>
 
 <p align="center">
-  Free, open-source live event cue control for rundowns, speaker timing, lower thirds, screen content and multiple displays.
+  Offline conference room control for the rundown, speaker timer, linked media, lower thirds and every room display.
 </p>
 
 <p align="center">
@@ -19,78 +19,100 @@
 <p align="center">
   <a href="https://srdjankotarlic.github.io/showslate/"><strong>Product page</strong></a>
   ·
-  <a href="#download-and-install"><strong>Download</strong></a>
+  <a href="#download-one-installer"><strong>Download</strong></a>
+  ·
+  <a href="docs/CONFERENCE-DESK.md"><strong>Conference workflow</strong></a>
   ·
   <a href="docs/USER-GUIDE.md"><strong>User guide</strong></a>
 </p>
 
-![ShowSlate operator workspace](docs/images/operator-workspace.png)
+![ShowSlate Conference Desk operator workspace](docs/images/conference-desk-workspace.png)
 
-ShowSlate is a local-first live event control app for conferences, venues, churches and production teams. Build a rundown, prepare NEXT without disturbing LIVE, press GO, run the speaker timer, create lower thirds and route Program to several displays from one operator workspace.
+ShowSlate Conference Desk is built for a single conference room operated from one Mac or Windows PC. Import a schedule and its media, assign explicit output roles, run preflight, then use one **GO** action to update the LIVE cue, timer, linked content, automatic speaker lower third and every active destination from the same Program state.
 
-> Need only a fast countdown, OBS overlay, phone remote and simple rundown? Use the smaller **[ProTimer](https://github.com/srdjankotarlic/protimer)** app. Choose **ShowSlate** for a cue-driven NEXT/LIVE/GO workflow, lower thirds, screen content and multiple independent outputs.
+It is useful for conferences, corporate events, education, community venues, houses of worship and small AV teams that currently synchronize a spreadsheet, timer, slide folder and speaker graphics by hand.
 
-## Download and install
+> Need only a large countdown, OBS overlay, phone remote and simple rundown? Use the smaller **[ProTimer](https://github.com/srdjankotarlic/protimer)**. Choose ShowSlate Conference Desk when the room needs a cue-driven workflow and several purpose-built outputs.
 
-> **Download exactly one recommended installer for your computer.** GitHub's automatic `Source code` ZIP and TAR.GZ files are developer archives and will not install the app.
+## The room workflow
+
+1. Put `rundown.csv` or `schedule.tsv` and the event media in one folder.
+2. Select **Import Show Folder**, review media matches and assign the Audience display.
+3. Add any Confidence, Timer, Stream Graphics or Door Agenda destinations.
+4. Run **Preflight** and **Test outputs**. A route is not marked live until its renderer confirms the current revision.
+5. Enter **Live Mode**. Select the next cue, then press **GO**.
+
+Selecting a row prepares NEXT and never changes LIVE. GO creates one transaction and sends one consistent Program revision. The built-in **Load conference demo** action lets you try the workflow without preparing files first.
+
+## Output roles
+
+| Role | Intended destination | What it shows |
+|---|---|---|
+| **Audience** | projector, LED wall or room display | Linked media, holding screens, timer and full Program content |
+| **Confidence** | presenter confidence monitor | Current cue, next cue, speaker details, timer and urgent messages |
+| **Timer** | dedicated stage timer display | A clean large timer and urgent messages only |
+| **Stream Graphics** | transparent window for OBS or vMix testing | Lower thirds and show graphics without the room background |
+| **Door Agenda** | display outside the room | Room name, current session, next session and clock |
+
+Each role can be fullscreen, windowed, an exact pixel size or a grid region. ShowSlate does not silently move a route to another monitor when a display disappears.
+
+## Download one installer
+
+> **Choose one recommended installer for your computer.** GitHub's automatic `Source code` ZIP and TAR.GZ files are developer archives and will not install the app.
 
 | Your computer | Recommended download | Install |
 |---|---|---|
-| Apple Silicon Mac (M1 or newer) | **[Download the macOS DMG](https://github.com/srdjankotarlic/showslate/releases/download/v0.9.0-beta.3/ShowSlate-0.9.0-beta.3-arm64.dmg)** | Open the DMG, then drag **ShowSlate** to Applications. |
-| Windows 10/11 x64 | **[Download the Windows installer](https://github.com/srdjankotarlic/showslate/releases/download/v0.9.0-beta.3/ShowSlate-Setup-0.9.0-beta.3.exe)** | Run Setup and follow the installer. |
+| Apple Silicon Mac (M1 or newer) | **[ShowSlate-0.10.0-beta.1-arm64.dmg](https://github.com/srdjankotarlic/showslate/releases/download/v0.10.0-beta.1/ShowSlate-0.10.0-beta.1-arm64.dmg)** | Open the DMG and drag **ShowSlate** to Applications. |
+| Windows 10/11 x64 | **[ShowSlate-Setup-0.10.0-beta.1.exe](https://github.com/srdjankotarlic/showslate/releases/download/v0.10.0-beta.1/ShowSlate-Setup-0.10.0-beta.1.exe)** | Run Setup and follow the installer. |
 
-Need a Windows build that does not install? Use the [portable EXE](https://github.com/srdjankotarlic/showslate/releases/download/v0.9.0-beta.3/ShowSlate-0.9.0-beta.3-portable.exe). This is an advanced option; most Windows users should choose Setup.
+The [portable Windows EXE](https://github.com/srdjankotarlic/showslate/releases/download/v0.10.0-beta.1/ShowSlate-0.10.0-beta.1-portable.exe) is an advanced no-install option.
 
 <details>
 <summary><strong>First-launch security warning</strong></summary>
 
 The public beta is not yet Apple-notarized or Windows Authenticode-signed.
 
-- On macOS, open **System Settings → Privacy & Security** and choose **Open Anyway** after confirming the app came from this repository.
+- On macOS, confirm the app came from this repository, then use **System Settings > Privacy & Security > Open Anyway** if required.
 - On Windows, SmartScreen may show **Unknown publisher**. Continue only for the installer downloaded from this repository.
-- Optional integrity hashes are in [SHA256SUMS.txt](https://github.com/srdjankotarlic/showslate/releases/download/v0.9.0-beta.3/SHA256SUMS.txt).
+- Optional integrity hashes are in [SHA256SUMS.txt](https://github.com/srdjankotarlic/showslate/releases/download/v0.10.0-beta.1/SHA256SUMS.txt).
 
 </details>
 
-See [system requirements](docs/SYSTEM-REQUIREMENTS.md), [known limitations](docs/KNOWN-LIMITATIONS.md) and the exact [verification evidence](docs/PUBLIC-BETA-VERIFICATION.md). Intel Mac is not currently published.
+See the [system requirements](docs/SYSTEM-REQUIREMENTS.md), [known limitations](docs/KNOWN-LIMITATIONS.md) and exact [beta verification](docs/PUBLIC-BETA-VERIFICATION.md). Intel Mac is not currently published.
 
-## How it works
+## Show folder format
 
-1. **Build the rundown.** Create a show, paste rows from Excel or Google Sheets, or import CSV/TSV.
-2. **Prepare NEXT, then press GO.** Selecting a cue never changes LIVE. **GO NEXT** updates the live cue and timer together.
-3. **Send Program where it belongs.** Route the timer, lower third or screen content to one or more fullscreen, windowed, pixel-sized or grid-cell outputs.
+The importer scans the selected folder safely, copies supported assets into ShowSlate storage and conservatively matches each cue by the `media` filename or an exact cue title.
 
-The complete operator workflow is in the [User Guide](docs/USER-GUIDE.md).
+```csv
+session,duration,speaker,speaker title,company,media,room
+Opening,05:00,Ana Markovic,Conference Host,Example Events,opening.png,Main Room
+Keynote,30:00,Dr Maya Chen,Keynote Speaker,Northstar,keynote.pdf,Main Room
+Coffee Break,15:00,,,,break.png,Main Room
+```
 
-## What it controls
+Supported folder media includes PNG, JPEG, WebP, GIF, SVG, MP4, WebM, MOV, M4V and PDF. For Excel workbooks, export the rundown sheet as CSV/TSV or paste the rows into the wizard. Import limits and the full column reference are in [Conference Desk workflow](docs/CONFERENCE-DESK.md).
 
-- Countdown, stopwatch and clock with warning colors, overtime and scheduled start.
-- Rundown-first **NEXT / LIVE / GO** workflow with autosave, recovery and reports.
-- Speaker messages, phone remote, backstage view and podium Signal Light on the local network.
-- Lower Third Studio with dynamic cue fields, text, shapes, logos, images and muted video.
+## Included production tools
+
+- Rundown with NEXT, LIVE, GO, planned times, actual timing and post-show CSV reports.
+- Countdown, stopwatch and clock with warning colors, overtime, chimes and speaker messages.
 - Screen content for images, video, PDF pages, text, logos, timer and blank states.
-- Multiple Program destinations with explicit display assignment and no silent monitor fallback.
-- HTTP and OSC control plus portable `.showslate-show` and `.showslate-lt` packages.
-- English and Serbian full UI, plus 35 core language packs with English fallback.
+- Lower Third Studio with cue-driven dynamic fields, shapes, logos, images and muted video.
+- Explicit multi-display routing with render acknowledgements and unavailable-display blocking.
+- Autosave, crash recovery and portable `.showslate-show` and `.showslate-lt` packages.
+- Local phone remote, backstage view, Signal Light, HTTP and OSC control.
+- English default UI, full Serbian UI and 35 core language packs with English fallback.
 
-ShowSlate is event-control software, not a video switcher or a replacement for show-critical hardware redundancy. Test the exact computer, displays, network and media off-air before every event.
+## Deliberate scope
 
-## Product views
+ShowSlate Conference Desk is not a camera switcher, audio mixer, encoder, NDI router, PTZ controller or multi-room cloud platform. Keep OBS, vMix or dedicated production hardware for those jobs. The product is intentionally focused on making one conference room easier and safer to operate.
 
-| Lower Third Studio | Output Routing |
-|---|---|
-| ![Lower Third Studio](docs/images/lower-third-studio.png) | ![Output Routing](docs/images/output-routing.png) |
-
-## Existing projects
-
-ShowSlate automatically copies compatible local projects and settings from the former **ProTimer Studio** app on first launch. The old data is left untouched. New exports use `.showslate-show` and `.showslate-lt`; legacy `.protimer-show` and `.protimer-lt` packages remain importable.
-
-## Local network safety
-
-The app serves output, remote, backstage and Signal Light pages on the production LAN. Control/API links include a per-launch token, while several read-only views are intentionally accessible on the local network. Use a trusted show network and do not expose ports directly to the public internet. See [Security](SECURITY.md).
+External OBS/vMix alpha behavior is not certified in this beta. Test the exact show computer, displays, network, media and capture path off-air before every event. Show-critical productions still need an independent fallback timer and rundown.
 
 ## Documentation
 
+- [Conference Desk workflow and CSV reference](docs/CONFERENCE-DESK.md)
 - [User Guide](docs/USER-GUIDE.md)
 - [System Requirements](docs/SYSTEM-REQUIREMENTS.md)
 - [Known Limitations](docs/KNOWN-LIMITATIONS.md)
@@ -98,8 +120,6 @@ The app serves output, remote, backstage and Signal Light pages on the productio
 - [Companion / HTTP / OSC](docs/COMPANION.md)
 - [Testing](docs/TESTING.md)
 - [Signing and release](docs/SIGNING-AND-RELEASE.md)
-- [Release readiness](docs/RELEASE-READINESS.md)
-- [Public beta adoption](docs/BETA-ADOPTION.md)
 - [Public beta verification](docs/PUBLIC-BETA-VERIFICATION.md)
 - [Architecture](ARCHITECTURE.md)
 - [Privacy](docs/PRIVACY.md)
@@ -115,30 +135,16 @@ npm ci
 npm start
 ```
 
-Headless tests:
+Run deterministic checks with `npm test`. Display and packaged renderer checks require an available graphical display; see [Testing](docs/TESTING.md).
 
-```bash
-npm test
-npm audit
-```
+## Privacy and network safety
 
-Local package builds:
-
-```bash
-npm run dist:mac
-npm run dist:win
-```
+The core workflow is local-first and does not require an account. Show files and imported media remain on the show computer unless the operator exports or shares them. Browser, remote, backstage and Signal Light pages are served on the trusted production LAN. Do not expose local ports directly to the public internet; see [Security](SECURITY.md) and [Privacy](docs/PRIVACY.md).
 
 ## Feedback
 
-This beta exists to learn from real operators. Start with [GitHub Discussions](https://github.com/srdjankotarlic/showslate/discussions), or open a [bug report](https://github.com/srdjankotarlic/showslate/issues/new?template=bug_report.yml) with the app version, operating system, display setup and reproducible steps.
-
-Contributions are welcome; read [CONTRIBUTING.md](CONTRIBUTING.md) first. Security issues should use GitHub's private vulnerability reporting instead of a public issue.
-
-## Language support
-
-English is the default interface. Serbian also has full interface coverage and can be selected from the language menu. The other 35 language packs cover core operator controls and use English fallback for advanced areas; see [Languages](docs/LOCALIZATION.md) for the exact coverage policy.
+This is a public evaluation beta, not a production-certified release. Try the built-in demo off-air, then use [GitHub Discussions](https://github.com/srdjankotarlic/showslate/discussions) for workflow feedback or open a [bug report](https://github.com/srdjankotarlic/showslate/issues/new?template=bug_report.yml) with the app version, operating system, display setup and reproducible steps.
 
 ## License
 
-[MIT](LICENSE) — free to use, modify and distribute. Please keep the copyright and license notice with substantial copies.
+[MIT](LICENSE) - free to use, modify and distribute. Keep the copyright and license notice with substantial copies.

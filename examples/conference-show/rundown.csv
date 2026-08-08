@@ -1,0 +1,5 @@
+session,duration,note,speaker,speaker title,company,media,room,auto lower third,auto content
+Doors Open,10:00,Audience seating,,,,opening.svg,Main Room,no,yes
+Opening,05:00,Host welcome,Ana Markovic,Conference Host,Example Events,,Main Room,yes,no
+Keynote,30:00,Main presentation,Dr Maya Chen,Keynote Speaker,Northstar,keynote.svg,Main Room,yes,yes
+Coffee Break,15:00,Lobby refreshments,,,,coffee-break.svg,Main Room,no,yes

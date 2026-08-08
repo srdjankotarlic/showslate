@@ -10,6 +10,8 @@ const groups = {
     'test:show-storage',
     'test:show-package',
     'test:show-preflight',
+    'test:conference-desk',
+    'test:show-folder-import',
     'test:screen-content',
     'test:control-api',
     'test:report',
@@ -22,6 +24,8 @@ const groups = {
   renderers: [
     'test:show-recovery',
     'test:show-setup-ui',
+    'test:conference-desk-ui',
+    'test:site-ui',
     'test:screen-content-ui',
     'test:control-api-ui',
     'test:report-ui'
