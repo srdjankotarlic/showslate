@@ -4,9 +4,9 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="google-site-verification" content="8XQrjWTrPu_H5qRAX91drrvps-Gkw1Ywux-kTV5GHx0">
-  <title>ShowSlate | Free Live Event Rundown, Timer &amp; Graphics</title>
-  <meta name="description" content="Free stage timer, event rundown, lower-third and multi-display software for live production. Download the installer for Apple Silicon Mac or Windows x64.">
-  <meta name="keywords" content="event rundown software, run of show software, stage timer, speaker timer, lower third software, multi display control, live production software, conference timer, OBS browser source, show control">
+  <title>ShowSlate Conference Desk | Offline Conference Room Control</title>
+  <meta name="description" content="Free offline conference room control for rundowns, speaker timers, linked media, lower thirds and role-based displays on macOS and Windows.">
+  <meta name="keywords" content="conference room control software, conference timer, event rundown software, confidence monitor, speaker timer, door agenda display, lower third software, multi display control, run of show software, offline show control">
   <meta name="author" content="Srdjan Kotarlic">
   <meta name="robots" content="index,follow,max-image-preview:large,max-snippet:-1,max-video-preview:-1">
   <meta name="theme-color" content="#101419">
@@ -20,44 +20,46 @@
   <link rel="stylesheet" href="styles.css">
 
   <meta property="og:type" content="website">
-  <meta property="og:site_name" content="ShowSlate">
+  <meta property="og:site_name" content="ShowSlate Conference Desk">
   <meta property="og:locale" content="en_US">
-  <meta property="og:title" content="ShowSlate | Free Live Event Rundown, Timer &amp; Graphics">
-  <meta property="og:description" content="Prepare NEXT, press GO and send the speaker timer, lower thirds or screen content to multiple displays.">
+  <meta property="og:title" content="ShowSlate Conference Desk | Offline Conference Room Control">
+  <meta property="og:description" content="Import the schedule and media, test each room display, then use one GO to update the cue, timer, content and speaker lower third.">
   <meta property="og:url" content="https://srdjankotarlic.github.io/showslate/">
   <meta property="og:image" content="https://srdjankotarlic.github.io/showslate/assets/social-preview.png">
   <meta property="og:image:width" content="1600">
   <meta property="og:image:height" content="900">
-  <meta property="og:image:alt" content="ShowSlate operator workspace">
+  <meta property="og:image:alt" content="ShowSlate Conference Desk operator workspace">
   <meta name="twitter:card" content="summary_large_image">
-  <meta name="twitter:title" content="ShowSlate | Free Live Event Rundown, Timer &amp; Graphics">
-  <meta name="twitter:description" content="A free stage timer, rundown, lower-third and multi-display app for live production.">
+  <meta name="twitter:title" content="ShowSlate Conference Desk | Offline Conference Room Control">
+  <meta name="twitter:description" content="One local desk for the conference rundown, speaker timer, linked media, lower thirds and room displays.">
   <meta name="twitter:image" content="https://srdjankotarlic.github.io/showslate/assets/social-preview.png">
 
   <script type="application/ld+json">
   {
     "@context": "https://schema.org",
     "@type": "SoftwareApplication",
-    "name": "ShowSlate",
+    "name": "ShowSlate Conference Desk",
+    "alternateName": "ShowSlate",
     "applicationCategory": "MultimediaApplication",
-    "applicationSubCategory": "Live event production software",
+    "applicationSubCategory": "Offline conference room control software",
     "operatingSystem": "macOS, Windows 10, Windows 11",
-    "softwareVersion": "0.9.0-beta.3",
-    "description": "Free open-source event rundown, stage timer, lower-third studio and multi-display control.",
+    "softwareVersion": "0.10.0-beta.1",
+    "description": "Free offline conference room control for rundowns, speaker timers, linked media, lower thirds and role-based displays.",
     "url": "https://srdjankotarlic.github.io/showslate/",
     "sameAs": "https://github.com/srdjankotarlic/showslate",
     "softwareHelp": "https://github.com/srdjankotarlic/showslate/discussions",
     "downloadUrl": [
-      "https://github.com/srdjankotarlic/showslate/releases/download/v0.9.0-beta.3/ShowSlate-0.9.0-beta.3-arm64.dmg",
-      "https://github.com/srdjankotarlic/showslate/releases/download/v0.9.0-beta.3/ShowSlate-Setup-0.9.0-beta.3.exe"
+      "https://github.com/srdjankotarlic/showslate/releases/download/v0.10.0-beta.1/ShowSlate-0.10.0-beta.1-arm64.dmg",
+      "https://github.com/srdjankotarlic/showslate/releases/download/v0.10.0-beta.1/ShowSlate-Setup-0.10.0-beta.1.exe"
     ],
     "softwareRequirements": "Apple Silicon Mac, or Windows 10/11 x64",
     "featureList": [
-      "Event rundown with NEXT, LIVE and GO workflow",
-      "Speaker countdown, stopwatch and clock",
-      "Lower-third template studio",
-      "Multiple fullscreen and windowed Program outputs",
-      "Phone remote, backstage view and Signal Light"
+      "Conference show-folder import with schedule and media matching",
+      "Atomic NEXT, LIVE and GO workflow",
+      "Audience, Confidence, Timer, Stream Graphics and Door Agenda outputs",
+      "Speaker countdown and operator messages",
+      "Cue-driven lower thirds and linked screen content",
+      "Local-first operation with preflight and render confirmation"
     ],
     "license": "https://opensource.org/license/mit",
     "isAccessibleForFree": true,
@@ -72,9 +74,9 @@
       "url": "https://github.com/srdjankotarlic"
     },
     "screenshot": [
-      "https://srdjankotarlic.github.io/showslate/assets/operator-workspace.png",
-      "https://srdjankotarlic.github.io/showslate/assets/lower-third-studio.png",
-      "https://srdjankotarlic.github.io/showslate/assets/output-routing.png"
+      "https://srdjankotarlic.github.io/showslate/assets/conference-desk-workspace.png",
+      "https://srdjankotarlic.github.io/showslate/assets/output-routing.png",
+      "https://srdjankotarlic.github.io/showslate/assets/lower-third-studio.png"
     ]
   }
   </script>
@@ -85,33 +87,33 @@
     "mainEntity": [
       {
         "@type": "Question",
-        "name": "Is ShowSlate free?",
-        "acceptedAnswer": {"@type": "Answer", "text": "Yes. ShowSlate is free and open source under the MIT License. There is no account, subscription, trial limit or output watermark."}
+        "name": "What does ShowSlate Conference Desk control?",
+        "acceptedAnswer": {"@type": "Answer", "text": "It coordinates one room's rundown, speaker timer, linked media, lower thirds and role-based displays from one local operator workspace."}
       },
       {
         "@type": "Question",
-        "name": "Which ShowSlate file should I download?",
-        "acceptedAnswer": {"@type": "Answer", "text": "Apple Silicon Mac users should download the ARM64 DMG. Windows 10 or 11 x64 users should download the Setup EXE. GitHub Source code archives are for developers and do not install the app."}
+        "name": "Is ShowSlate Conference Desk free?",
+        "acceptedAnswer": {"@type": "Answer", "text": "Yes. It is free and open source under the MIT License, with no account, subscription, trial limit or output watermark."}
       },
       {
         "@type": "Question",
-        "name": "Does ShowSlate work without internet?",
-        "acceptedAnswer": {"@type": "Answer", "text": "The core app works locally and offline. Phone, backstage and browser views use the local production network. Optional public sharing requires internet access."}
+        "name": "Which installer should I download?",
+        "acceptedAnswer": {"@type": "Answer", "text": "Apple Silicon Mac users should download the ARM64 DMG. Windows 10 or 11 x64 users should download the Setup EXE. GitHub Source code archives do not install the app."}
       },
       {
         "@type": "Question",
-        "name": "Which computers are supported?",
-        "acceptedAnswer": {"@type": "Answer", "text": "The public beta provides an Apple Silicon Mac DMG and Windows 10/11 x64 installer and portable app. Intel Mac is not currently published."}
+        "name": "Can I import an Excel conference schedule?",
+        "acceptedAnswer": {"@type": "Answer", "text": "Export the rundown sheet as CSV or TSV, or paste the rows into the setup wizard. Direct XLSX parsing is intentionally not included in this beta."}
       },
       {
         "@type": "Question",
-        "name": "Can I use ShowSlate with OBS or vMix?",
-        "acceptedAnswer": {"@type": "Answer", "text": "ShowSlate provides a local browser output suitable for production testing. External OBS and vMix alpha workflows are not yet certified, so verify the exact path before a live event."}
+        "name": "Does it work without internet?",
+        "acceptedAnswer": {"@type": "Answer", "text": "The core app works locally and offline. Confidence, backstage, phone and browser views use the trusted local production network."}
       },
       {
         "@type": "Question",
-        "name": "Should I use ProTimer or ShowSlate?",
-        "acceptedAnswer": {"@type": "Answer", "text": "Choose ProTimer for a fast stage countdown, OBS overlay, phone remote and simple rundown. Choose ShowSlate when you also need a NEXT/LIVE/GO workflow, lower thirds, screen content and multiple independent outputs."}
+        "name": "Does ShowSlate replace OBS, vMix or a hardware switcher?",
+        "acceptedAnswer": {"@type": "Answer", "text": "No. It does not switch cameras, mix audio or encode a stream. It coordinates the room schedule, timing, graphics and displays while those tools keep their existing jobs."}
       }
     ]
   }
@@ -120,15 +122,16 @@
 <body>
   <a class="skip-link" href="#main">Skip to content</a>
   <header class="site-header">
-    <a class="brand" href="#top" aria-label="ShowSlate home">
+    <a class="brand" href="#top" aria-label="ShowSlate Conference Desk home">
       <img src="assets/icon.png" width="34" height="34" alt="">
       <span>ShowSlate</span>
+      <span class="edition">Conference Desk</span>
       <span class="beta">Beta</span>
     </a>
     <nav aria-label="Primary navigation">
-      <a href="#features">Features</a>
+      <a href="#workflow">Workflow</a>
+      <a href="#outputs">Outputs</a>
       <a href="#screens">Screens</a>
-      <a href="#install">Install</a>
       <a href="#faq">FAQ</a>
       <a class="nav-download" href="#install">Download</a>
     </nav>
@@ -138,91 +141,91 @@
     <section class="hero" id="top" aria-labelledby="hero-title">
       <div class="hero-shade" aria-hidden="true"></div>
       <div class="hero-content">
-        <p class="eyebrow">Free and open source</p>
-        <h1 id="hero-title">ShowSlate</h1>
-        <p class="hero-lead">Prepare NEXT, press GO and send the speaker timer, lower thirds or screen content to every event display from one local app.</p>
+        <p class="eyebrow">Free, local-first and open source</p>
+        <h1 id="hero-title">ShowSlate Conference Desk</h1>
+        <p class="hero-lead">Import the schedule and media, test every room display, then use one GO to update the live cue, speaker timer, screen content and lower third.</p>
         <div class="hero-actions">
-          <a class="button primary" href="https://github.com/srdjankotarlic/showslate/releases/download/v0.9.0-beta.3/ShowSlate-0.9.0-beta.3-arm64.dmg">Download for Mac</a>
-          <a class="button secondary" href="https://github.com/srdjankotarlic/showslate/releases/download/v0.9.0-beta.3/ShowSlate-Setup-0.9.0-beta.3.exe">Download for Windows</a>
+          <a class="button primary" href="https://github.com/srdjankotarlic/showslate/releases/download/v0.10.0-beta.1/ShowSlate-0.10.0-beta.1-arm64.dmg">Download for Mac</a>
+          <a class="button secondary" href="https://github.com/srdjankotarlic/showslate/releases/download/v0.10.0-beta.1/ShowSlate-Setup-0.10.0-beta.1.exe">Download for Windows</a>
         </div>
         <div class="hero-facts" aria-label="Product facts">
-          <span>macOS Apple Silicon</span>
-          <span>Windows x64 beta</span>
+          <span>One conference room</span>
+          <span>Works offline</span>
           <span>No account</span>
           <span>MIT License</span>
         </div>
-        <p class="edition-link">Need only a simple stage countdown and OBS overlay? <a href="https://srdjankotarlic.github.io/protimer/">Use ProTimer instead.</a></p>
+        <p class="edition-link">Need only a simple countdown and OBS timer overlay? <a href="https://srdjankotarlic.github.io/protimer/">Use ProTimer instead.</a></p>
       </div>
     </section>
 
     <section class="problem-band" aria-labelledby="problem-title">
       <div class="section-inner problem-layout">
         <div>
-          <p class="eyebrow">Built for the show site</p>
-          <h2 id="problem-title">One operator view. One source of truth.</h2>
+          <p class="eyebrow">Built for the room operator</p>
+          <h2 id="problem-title">Stop synchronizing five separate tools by hand.</h2>
         </div>
-        <p>Prepare NEXT without changing LIVE, keep Program visible, route it to several destinations and give speakers, crew and stream operators the views they need. The core workflow stays on your computer and production LAN.</p>
+        <p>A conference room often runs from a spreadsheet, timer, slide folder, speaker-name document and several displays. ShowSlate turns them into one cue state, while leaving cameras, audio and streaming in the tools already built for those jobs.</p>
       </div>
     </section>
 
-    <section class="workflow" aria-labelledby="workflow-title">
+    <section class="workflow" id="workflow" aria-labelledby="workflow-title">
       <div class="section-inner">
-        <p class="eyebrow">Three-step workflow</p>
-        <h2 id="workflow-title">From rundown to every screen</h2>
+        <p class="eyebrow">Conference Desk workflow</p>
+        <h2 id="workflow-title">From show folder to a confirmed Program state</h2>
         <div class="workflow-steps">
           <article>
             <span>01</span>
-            <h3>Build the rundown</h3>
-            <p>Create cues or paste rows from Excel and Google Sheets. Selecting a row prepares NEXT without changing LIVE.</p>
+            <h3>Import and match</h3>
+            <p>Select a folder containing CSV/TSV and media. ShowSlate matches exact filenames, reports skipped rows and keeps the original files untouched.</p>
           </article>
           <article>
             <span>02</span>
-            <h3>Press GO</h3>
-            <p>GO NEXT updates the live cue and timer together. Program remains the operator's source of truth.</p>
+            <h3>Assign and preflight</h3>
+            <p>Give each display a role and run Test outputs. A destination stays SYNCING until it confirms the expected Program revision.</p>
           </article>
           <article>
             <span>03</span>
-            <h3>Route Program</h3>
-            <p>Send the timer, lower third or screen content to several fullscreen, windowed or precisely sized outputs.</p>
+            <h3>Select NEXT, then GO</h3>
+            <p>Selection never changes LIVE. GO updates the cue, timer, linked media and automatic speaker lower third as one transaction.</p>
           </article>
         </div>
       </div>
     </section>
 
-    <section class="features" id="features" aria-labelledby="features-title">
+    <section class="features" id="outputs" aria-labelledby="outputs-title">
       <div class="section-inner">
-        <p class="eyebrow">Core workflows</p>
-        <h2 id="features-title">More than a countdown clock</h2>
+        <p class="eyebrow">Purpose-built destinations</p>
+        <h2 id="outputs-title">The right information on each room display</h2>
         <div class="feature-grid">
           <article>
             <span class="feature-number">01</span>
-            <h3>Rundown and GO</h3>
-            <p>Clear selected, NEXT and LIVE states with planned duration, notes, actual timing and safe GO progression.</p>
+            <h3>Audience</h3>
+            <p>Linked media, holding screens, timers and full Program content for the projector, LED wall or room display.</p>
           </article>
           <article>
             <span class="feature-number">02</span>
-            <h3>Speaker timing</h3>
-            <p>Countdown, stopwatch and clock modes with warning colors, overtime, messages, chimes and Signal Light.</p>
+            <h3>Confidence</h3>
+            <p>Current cue, next cue, speaker details, timer and urgent operator messages for the presenter.</p>
           </article>
           <article>
             <span class="feature-number">03</span>
-            <h3>Lower thirds</h3>
-            <p>Build reusable 16:9 templates from cue fields, text, shapes, logos, images and muted video.</p>
+            <h3>Timer</h3>
+            <p>A clean large countdown with warning colors and urgent messages for a dedicated stage display.</p>
           </article>
           <article>
             <span class="feature-number">04</span>
-            <h3>Screen content</h3>
-            <p>Take images, video, PDF pages, text, logos, timers or a blank state to Program.</p>
+            <h3>Stream Graphics</h3>
+            <p>A transparent lower-third and graphics window for off-air OBS or vMix capture testing.</p>
           </article>
           <article>
             <span class="feature-number">05</span>
-            <h3>Multiple outputs</h3>
-            <p>Send Program to fullscreen displays, normal windows, exact pixel regions or grid cells at the same time.</p>
+            <h3>Door Agenda</h3>
+            <p>Room name, current session, next session and clock for signage outside the room.</p>
           </article>
           <article>
             <span class="feature-number">06</span>
-            <h3>Local integration</h3>
-            <p>Phone remote, backstage, browser output, HTTP, OSC, autosave, portable show files and post-show reports.</p>
+            <h3>Operator safeguards</h3>
+            <p>Explicit display identity, render acknowledgement, autosave, recovery, preflight and a focused Live Mode.</p>
           </article>
         </div>
       </div>
@@ -231,21 +234,27 @@
     <section class="screens" id="screens" aria-labelledby="screens-title">
       <div class="section-inner">
         <p class="eyebrow">Real product screens</p>
-        <h2 id="screens-title">Inspect the workflow before you install</h2>
+        <h2 id="screens-title">See the actual operator workflow</h2>
         <figure class="screen-feature">
-          <img src="assets/lower-third-studio.png" width="1440" height="900" loading="lazy" alt="Lower Third Studio with templates, layers, preview canvas and inspector">
-          <figcaption><strong>Lower Third Studio</strong><span>Preview locally, then TAKE with data from the LIVE cue.</span></figcaption>
+          <img src="assets/conference-desk-workspace.png" width="1280" height="800" loading="eager" alt="ShowSlate Conference Desk with Program, rundown, GO controls and room outputs">
+          <figcaption><strong>Conference Desk</strong><span>Program, LIVE/NEXT, GO and output status stay visible together.</span></figcaption>
         </figure>
-        <figure class="screen-feature">
-          <img src="assets/output-routing.png" width="1280" height="768" loading="lazy" alt="Output Routing with two independently configured destinations">
-          <figcaption><strong>Output Routing</strong><span>Keep destinations explicit and fail safely when a display disappears.</span></figcaption>
-        </figure>
+        <div class="screen-pair">
+          <figure class="screen-feature">
+            <img src="assets/output-routing.png" width="1280" height="768" loading="lazy" alt="Output Routing with explicit display, role and placement controls">
+            <figcaption><strong>Output Routing</strong><span>Every destination keeps an explicit role and display identity.</span></figcaption>
+          </figure>
+          <figure class="screen-feature">
+            <img src="assets/lower-third-studio.png" width="1440" height="900" loading="lazy" alt="Lower Third Studio with templates, layers, canvas and inspector">
+            <figcaption><strong>Lower Third Studio</strong><span>Preview locally, then TAKE with data from the LIVE cue.</span></figcaption>
+          </figure>
+        </div>
       </div>
     </section>
 
     <section class="install" id="install" aria-labelledby="install-title">
       <div class="section-inner">
-        <p class="eyebrow">Public beta downloads</p>
+        <p class="eyebrow">Public evaluation beta</p>
         <h2 id="install-title">Download one installer</h2>
         <p class="download-guidance"><strong>Choose the recommended file for your computer.</strong> GitHub's automatic <code>Source code</code> ZIP and TAR.GZ files are for developers and will not install ShowSlate.</p>
         <div class="install-grid">
@@ -256,25 +265,25 @@
               <li>Open it and drag ShowSlate to Applications.</li>
               <li>Approve the first launch in Privacy &amp; Security if macOS asks.</li>
             </ol>
-            <a class="button primary" href="https://github.com/srdjankotarlic/showslate/releases/download/v0.9.0-beta.3/ShowSlate-0.9.0-beta.3-arm64.dmg">Download macOS DMG</a>
+            <a class="button primary" href="https://github.com/srdjankotarlic/showslate/releases/download/v0.10.0-beta.1/ShowSlate-0.10.0-beta.1-arm64.dmg">Download macOS DMG</a>
           </article>
           <article>
             <div class="platform-head"><h3>Windows</h3><span>x64 beta</span></div>
             <ol class="install-steps">
               <li>Download Setup for Windows 10 or 11 x64.</li>
               <li>Run the installer and follow the prompts.</li>
-              <li>Allow private-network access for remote and browser views.</li>
+              <li>Allow private-network access for browser and remote views.</li>
             </ol>
-            <a class="button primary" href="https://github.com/srdjankotarlic/showslate/releases/download/v0.9.0-beta.3/ShowSlate-Setup-0.9.0-beta.3.exe">Download Windows Setup</a>
+            <a class="button primary" href="https://github.com/srdjankotarlic/showslate/releases/download/v0.10.0-beta.1/ShowSlate-Setup-0.10.0-beta.1.exe">Download Windows Setup</a>
             <details class="advanced-download">
               <summary>Need a no-install version?</summary>
-              <p>The <a href="https://github.com/srdjankotarlic/showslate/releases/download/v0.9.0-beta.3/ShowSlate-0.9.0-beta.3-portable.exe">portable EXE</a> is intended for advanced users who cannot install software.</p>
+              <p>The <a href="https://github.com/srdjankotarlic/showslate/releases/download/v0.10.0-beta.1/ShowSlate-0.10.0-beta.1-portable.exe">portable EXE</a> is intended for advanced users who cannot install software.</p>
             </details>
           </article>
         </div>
         <div class="integrity-note">
           <strong>Verify your download.</strong>
-          <span>Every release includes <a href="https://github.com/srdjankotarlic/showslate/releases/download/v0.9.0-beta.3/SHA256SUMS.txt"><code>SHA256SUMS.txt</code></a>. Download only from the official repository and see the <a href="https://github.com/srdjankotarlic/showslate/releases/tag/v0.9.0-beta.3">release details</a> when needed.</span>
+          <span>The beta is unsigned. Download only from this repository and compare <a href="https://github.com/srdjankotarlic/showslate/releases/download/v0.10.0-beta.1/SHA256SUMS.txt"><code>SHA256SUMS.txt</code></a> when needed. See the <a href="https://github.com/srdjankotarlic/showslate/releases/tag/v0.10.0-beta.1">release details</a> before overriding an operating-system warning.</span>
         </div>
       </div>
     </section>
@@ -283,11 +292,11 @@
       <div class="section-inner beta-layout">
         <div>
           <p class="eyebrow">Why public beta</p>
-          <h2 id="beta-title">Real operators make the product better.</h2>
-          <p>Try it off-air, then tell us what was unclear, what failed and what would save time on a real show. Display setup and reproducible steps matter more than a generic “doesn't work”.</p>
+          <h2 id="beta-title">The next proof must come from real room operators.</h2>
+          <p>Try the built-in demo off-air, then report what was unclear, what failed and what would save time in an actual conference room. Independent venue feedback matters more than download counters.</p>
         </div>
         <div class="platform-actions">
-          <a class="button primary" href="https://github.com/srdjankotarlic/showslate/discussions">Join beta testing</a>
+          <a class="button primary" href="https://github.com/srdjankotarlic/showslate/discussions">Share workflow feedback</a>
           <a class="button secondary" href="https://github.com/srdjankotarlic/showslate/issues/new?template=bug_report.yml">Report a bug</a>
         </div>
       </div>
@@ -301,28 +310,32 @@
         </div>
         <div class="faq-list">
           <details open>
+            <summary>What problem does it solve?</summary>
+            <p>It replaces manual synchronization between a conference spreadsheet, speaker timer, media folder, lower-third notes and several room displays. One GO action applies the prepared cue state everywhere.</p>
+          </details>
+          <details>
+            <summary>Can it import my Excel schedule?</summary>
+            <p>Export the rundown sheet as CSV/TSV or paste its rows into the wizard. Direct XLSX parsing is intentionally not included in this beta.</p>
+          </details>
+          <details>
+            <summary>Is it really free and offline?</summary>
+            <p>Yes. The MIT License permits use, modification and redistribution. The core workflow needs no account or internet. Network views stay on the trusted production LAN.</p>
+          </details>
+          <details>
             <summary>Which file should I download?</summary>
-            <p>Apple Silicon Mac users need the ARM64 DMG. Windows 10/11 x64 users should choose the Setup EXE. Do not download GitHub's Source code ZIP or TAR.GZ files unless you are building the app yourself.</p>
+            <p>Apple Silicon Mac users need the ARM64 DMG. Windows 10/11 x64 users should choose the Setup EXE. GitHub Source code archives are not installers.</p>
           </details>
           <details>
-            <summary>Is it really free?</summary>
-            <p>Yes. The MIT License permits use, modification and redistribution. There is no account, subscription, trial limit or output watermark.</p>
+            <summary>Does it replace OBS, vMix or a video switcher?</summary>
+            <p>No. ShowSlate does not switch cameras, mix audio or encode a stream. It coordinates conference timing, content, lower thirds and displays while those tools keep their existing jobs.</p>
           </details>
           <details>
-            <summary>Does it need internet?</summary>
-            <p>No for the core app. Phone, backstage, Signal Light and browser views use your local production network. Optional public sharing needs internet.</p>
+            <summary>Is Stream Graphics certified with OBS or vMix?</summary>
+            <p>No. Internal transparent rendering is tested, but external alpha capture depends on the other application's pipeline. Verify the exact workflow off-air before a live event.</p>
           </details>
           <details>
-            <summary>Why does the operating system warn me?</summary>
-            <p>The public beta is not yet Developer ID notarized or Windows Authenticode signed. Confirm the GitHub source and SHA-256 before overriding a warning.</p>
-          </details>
-          <details>
-            <summary>Can it replace every dedicated timer or media server?</summary>
-            <p>No. It is a software-first option for event teams. Dedicated hardware still wins where physical redundancy is essential, and ShowSlate is not a video switcher or full media server.</p>
-          </details>
-          <details>
-            <summary>Should I use ProTimer or ShowSlate?</summary>
-            <p>Choose <a href="https://srdjankotarlic.github.io/protimer/">ProTimer</a> for a fast countdown, OBS overlay, phone remote and simple rundown. Choose ShowSlate when you also need NEXT/LIVE/GO, lower thirds, screen content and several independent outputs.</p>
+            <summary>Should I use ProTimer or ShowSlate Conference Desk?</summary>
+            <p>Choose <a href="https://srdjankotarlic.github.io/protimer/">ProTimer</a> for a fast countdown, OBS overlay, phone remote and simple rundown. Choose ShowSlate when the room also needs linked content, speaker lower thirds, LIVE/NEXT/GO and role-based outputs.</p>
           </details>
         </div>
       </div>
@@ -334,14 +347,14 @@
           <p class="eyebrow">Language support</p>
           <h2 id="languages-title">English by default. Serbian when you need it.</h2>
         </div>
-        <p>English and Serbian have full interface coverage. The other 35 language choices cover core operator controls and fall back to English for advanced areas. Every language pack is labeled <strong>FULL</strong> or <strong>CORE</strong> in the app; the exact policy is documented in <a href="https://github.com/srdjankotarlic/showslate/blob/main/docs/LOCALIZATION.md">Languages</a>.</p>
+        <p>English and Serbian have full interface coverage. The other 35 language choices cover core operator controls and fall back to English for advanced areas. The exact policy is documented in <a href="https://github.com/srdjankotarlic/showslate/blob/main/docs/LOCALIZATION.md">Languages</a>.</p>
       </div>
     </section>
   </main>
 
   <footer>
     <div class="section-inner footer-layout">
-      <div><strong>ShowSlate</strong><span>Free live event control under the MIT License.</span></div>
+      <div><strong>ShowSlate Conference Desk</strong><span>Free local-first conference room control under the MIT License.</span></div>
       <nav aria-label="Footer navigation">
         <a href="https://github.com/srdjankotarlic/showslate">GitHub</a>
         <a href="https://github.com/srdjankotarlic/showslate/releases">Releases</a>

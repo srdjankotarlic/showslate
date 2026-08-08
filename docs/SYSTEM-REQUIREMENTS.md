@@ -2,7 +2,7 @@
 
 ## Release status
 
-The current public beta targets Apple Silicon Macs and Windows x64. Windows packages are produced in CI but still need broader real-hardware feedback.
+ShowSlate Conference Desk `0.10.0-beta.1` targets Apple Silicon Macs and Windows x64. Windows packages are produced in CI but still need broader real-hardware feedback.
 
 ## macOS release candidate
 
@@ -12,6 +12,7 @@ The current public beta targets Apple Silicon Macs and Windows x64. Windows pack
 - 500 MB free disk space for the app, plus space for show media and backups.
 - 1280x800 recommended controller workspace; the responsive UI is tested down to 900x600.
 - One or more external displays for speaker, confidence or venue output workflows.
+- A dedicated show computer is strongly recommended when several output roles or video/PDF media are active.
 
 Intel Macs are not part of the current release candidate.
 
@@ -37,7 +38,9 @@ The controller, browser outputs, remote, backstage and Signal Light are designed
 
 ## Media
 
-Show content accepts common PNG, JPEG, GIF, WebP, SVG, MP4, WebM, MOV, M4V and PDF files. Lower Third Studio accepts PNG, SVG, JPEG, MP4/H.264 and WebM VP8/VP9.
+Show-folder and screen content accepts PNG, JPEG, GIF, WebP, SVG, MP4, WebM, MOV, M4V and PDF files. Lower Third Studio accepts PNG, SVG, JPEG, MP4/H.264 and WebM VP8/VP9.
+
+Schedules must be CSV, TSV or text. Export an Excel workbook to CSV/TSV or paste its rows into the setup wizard.
 
 Codec support is not the same as guaranteed alpha behavior in every external production application. Test every final media asset on the actual show computer and output path before doors open.
 

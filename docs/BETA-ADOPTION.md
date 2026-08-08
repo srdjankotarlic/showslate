@@ -1,68 +1,70 @@
-# Public beta adoption plan
+# Conference Desk public beta plan
 
-The immediate objective is not a large download number. It is to find a small group of real operators, observe whether the product solves a show-site problem and collect reproducible evidence before stable release.
+The immediate objective is not a large download number. It is to learn whether a real single-room operator can prepare, preflight and run a conference without manually synchronizing a spreadsheet, timer, media folder and speaker graphics.
 
 ## First validation cohort
 
-Recruit 10 people across these roles:
+Recruit 8 to 10 people from these roles:
 
-- AV freelancers running conferences or corporate events;
-- church production volunteers or technical directors;
-- conference/venue operators using confidence monitors;
-- OBS/vMix operators who can evaluate the browser output off-air;
-- one Windows operator with two physical displays.
+- freelance AV technicians who run corporate conferences;
+- in-house conference-center or hotel AV operators;
+- university or training-room technicians;
+- small production teams using a projector plus confidence monitor;
+- one OBS/vMix operator who can evaluate Stream Graphics off-air;
+- at least one Windows operator with two physical displays.
 
-At least three should complete a full dry run. At least one independent operator must complete the documented external-beta release gate with no unresolved blocker.
+At least three should complete the room workflow below. At least one independent operator must complete a documented beta with no unresolved release blocker before any stable claim.
 
-## What to ask them to do
+## Operator task
 
-1. Install the published package on a non-critical machine.
-2. Create or import a five-cue rundown.
-3. Exercise NEXT/LIVE/GO, timer, message and BLACKOUT.
-4. Add one lower third and one image/video/PDF screen item.
-5. Configure every available output and reconnect one display.
-6. Open phone remote, backstage and Signal Light on the local network.
-7. Export and reopen a `.showslate-show` package.
-8. Report the first confusing step, any failure and the workflow they would actually use.
+1. Install the beta on a non-critical computer.
+2. Run **Load conference demo** and identify the attached displays.
+3. Assign Audience and Confidence roles, then run **Test outputs**.
+4. Select NEXT and complete three GO transitions.
+5. Confirm timer, linked media and speaker lower third stay on the same cue.
+6. Send and clear one presenter message.
+7. Disconnect and reconnect one output display, then confirm fail-safe behavior.
+8. Import a small real or anonymized CSV/media folder.
+9. Export and reopen a `.showslate-show` package.
+10. Report the first confusing step, any incorrect output and whether this would replace part of their current room workflow.
 
-Ask for the app version, OS, CPU, display arrangement and exact reproduction steps. Never ask testers to post client names, IP addresses, tokens or confidential media.
+Ask for app version, OS, CPU, display arrangement and exact reproduction steps. Never ask testers to publish client names, speaker data, private IP addresses, tokens or confidential media.
 
 ## Natural outreach copy
 
-### Suggested Reddit post
+### Suggested Reddit title
 
-**Title:** I built a free open-source stage timer and rundown app - looking for off-air testers
+`Free offline conference room control app - looking for AV operators to test it off-air`
 
-I built ShowSlate for live-event teams that need a rundown, speaker timer, messages, lower thirds and multiple screen outputs in one local app.
+### Suggested post
 
-Create or import a rundown, prepare the next cue, press GO to make it live, then send the timer or screen content to one or more displays.
+I built ShowSlate Conference Desk for one-room conference setups that currently use a spreadsheet, speaker timer, media folder and separate speaker-name graphics.
 
-It is free, open source, and available for Apple Silicon Mac and Windows:
+Import a CSV/TSV and its media, assign Audience/Confidence/Timer/Stream/Door outputs, run preflight, then use one GO to update the live cue, timer, linked content and lower third.
+
+It is free, open source and local-first for Apple Silicon Mac and Windows x64:
 https://srdjankotarlic.github.io/showslate/
 
-I am looking for operators willing to test it off-air and tell me what is confusing or breaks on their setup.
+I am looking for room operators willing to try the built-in demo off-air and tell me where the workflow is unclear or wrong. It is a public beta, unsigned, and external OBS/vMix alpha capture is not certified.
 
-Disclosure: I am the creator and development was AI-assisted. The packaged Mac build was tested on a real two-display setup; Windows still needs physical beta feedback.
+Use the current social preview with the post:
 
-Use the real product image below with the post:
-
-![ShowSlate Reddit promo](images/reddit-promo.png)
-
-Do not describe the app as OBS/vMix certified, signed, notarized or production-proven.
+![ShowSlate Conference Desk preview](../site/assets/social-preview.png)
 
 ## Feedback and metrics
 
 - Bugs: GitHub bug-report form.
 - Setup questions and workflow feedback: [GitHub Discussions](https://github.com/srdjankotarlic/showslate/discussions).
 - Private security issues: GitHub private vulnerability reporting.
-- Weekly signals: repository visitors/clones, release-asset counters, completed test reports and unresolved blockers.
+- Weekly signals: completed operator workflows, first-run blockers, unresolved defects, repository visitors/clones and release-asset counters.
 
-GitHub asset counts are aggregate downloads, not verified people or successful installations. The primary success metric is a completed operator workflow with enough evidence to reproduce and fix problems.
+GitHub asset counters are aggregate downloads, not verified people, installations or successful room tests. The primary success metric is a completed independent workflow with enough evidence to reproduce and fix failures.
 
 ## Weekly loop
 
-1. Invite a small, relevant group rather than posting identical copy everywhere.
-2. Reproduce every credible issue before changing the product.
-3. Fix release blockers first; record nice-to-have ideas separately.
-4. Publish a new beta only after designated-display and native package gates pass.
-5. Summarize what changed and ask previous testers to retry the exact failed workflow.
+1. Invite a small relevant group instead of repeating the same post broadly.
+2. Reproduce every credible issue on the same viewport/output role before changing the product.
+3. Fix setup and live-output blockers before adding features.
+4. Publish a beta only after source, packaged and designated-display gates pass.
+5. Ask the original reporter to retry the exact failed step.
+6. Stop expanding scope if operators do not value the Conference Desk workflow after three complete pilots.

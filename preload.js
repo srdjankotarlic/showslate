@@ -2,6 +2,7 @@ const { contextBridge, ipcRenderer } = require('electron');
 
 contextBridge.exposeInMainWorld('pt', {
   sendState: (s) => ipcRenderer.send('state', s),
+  ackOutput: (payload) => ipcRenderer.send('output-rendered', payload),
   sendControlStatus: (status) => ipcRenderer.send('control-status', status),
   onState: (cb) => ipcRenderer.on('state', (e, s) => cb(s)),
   openOutput: (displayId) => ipcRenderer.send('open-output', displayId),
@@ -23,6 +24,7 @@ contextBridge.exposeInMainWorld('pt', {
   showStorageRecover: (choice) => ipcRenderer.invoke('show-storage-recover', choice),
   showPackageExport: (payload) => ipcRenderer.invoke('show-package-export', payload),
   showPackageImport: (payload) => ipcRenderer.invoke('show-package-import', payload),
+  showFolderImport: (payload) => ipcRenderer.invoke('show-folder-import', payload),
   showPreflightInspect: (payload) => ipcRenderer.invoke('show-preflight-inspect', payload),
   getNetworkInfo: () => ipcRenderer.invoke('network-info'),
   identifyDisplays: () => ipcRenderer.invoke('identify-displays'),

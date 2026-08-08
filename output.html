@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'unsafe-inline'; connect-src 'self'; img-src 'self' http://127.0.0.1:* data: blob:; media-src 'self' http://127.0.0.1:* data: blob:; frame-src 'self' http://127.0.0.1:* data: blob:;">
-<title>ShowSlate — Output</title>
+<title>ShowSlate Conference Desk — Output</title>
 <style>
   *{box-sizing:border-box; user-select:none; margin:0;}
   html,body{height:100%; overflow:hidden;
@@ -96,6 +96,45 @@
   #ltTitle{font-weight:560; font-size:2.3vh; color:rgba(255,255,255,.73); margin-top:.55vh; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
   #ltMeta{font-weight:700; font-size:1.65vh; color:rgba(255,255,255,.52); margin-top:.7vh; letter-spacing:.12em; text-transform:uppercase; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
 
+  #roleView{position:fixed; inset:0; z-index:14; display:none; pointer-events:none; color:#f7f8fa; background:#080a0d;}
+  .role-kicker{font-size:2.1vh; font-weight:800; letter-spacing:.12em; text-transform:uppercase; color:#8d97a6;}
+  .role-show{font-size:3.2vh; font-weight:720; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+  .role-clock{font:700 2.5vh/1 ui-monospace,SFMono-Regular,Menlo,monospace; color:#b9c1cb;}
+  .role-current,.role-next{min-width:0;}
+  .role-current strong,.role-next strong{display:block; overflow:hidden; text-overflow:ellipsis;}
+  .role-current span,.role-next span{display:block; margin-top:1vh; color:#9aa4b2; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+  body.role-confidence #sceneRoot,body.role-confidence #lowerThird,body.role-confidence #ltCanvas,body.role-confidence #logo,body.role-confidence #nownext,body.role-confidence #prog{display:none!important;}
+  body.role-confidence #roleView{display:grid; grid-template-rows:auto minmax(0,1fr) auto; padding:4vh 4vw; background:#080a0d;}
+  body.role-confidence .role-head{display:grid; grid-template-columns:minmax(0,1fr) auto; align-items:start; gap:3vw;}
+  body.role-confidence .role-show{margin-top:.8vh;}
+  body.role-confidence .role-current{align-self:start; margin-top:3.5vh; max-width:76vw;}
+  body.role-confidence .role-current strong{font-size:5.1vh; line-height:1.05;}
+  body.role-confidence .role-current span{font-size:2.6vh;}
+  body.role-confidence .role-next{align-self:end; padding-top:2.4vh; border-top:1px solid rgba(255,255,255,.16);}
+  body.role-confidence .role-next strong{font-size:3.4vh; white-space:nowrap;}
+  body.role-confidence .role-next span{font-size:2.1vh;}
+  body.role-confidence #stage{inset:25% 4vw 22%!important; left:4vw!important; top:25%!important; right:4vw!important; bottom:22%!important; width:auto!important; height:auto!important; opacity:1!important; display:flex!important; z-index:16; align-items:flex-end; justify-content:center;}
+  body.role-confidence #timer{font-size:min(18vw,25vh)!important;}
+  body.role-confidence #msg{bottom:19vh; z-index:18; font-size:4.5vh; padding:1.4vh 3vw; color:#fff; background:#a02e2b;}
+  body.role-timer #sceneRoot,body.role-timer #lowerThird,body.role-timer #ltCanvas,body.role-timer #logo,body.role-timer #nownext,body.role-timer #prog,body.role-timer #roleView{display:none!important;}
+  body.role-timer #stage{inset:0!important; left:0!important; top:0!important; right:0!important; bottom:0!important; width:auto!important; height:auto!important; opacity:1!important; display:flex!important;}
+  body.role-timer #text{display:none!important;}
+  body.role-stream{background:transparent!important; transition:none!important;}
+  body.role-stream #sceneRoot,body.role-stream #stage,body.role-stream #msg,body.role-stream #nownext,body.role-stream #prog,body.role-stream #paused,body.role-stream #roleView{display:none!important;}
+  body.role-door #sceneRoot,body.role-door #stage,body.role-door #msg,body.role-door #nownext,body.role-door #prog,body.role-door #paused,body.role-door #lowerThird,body.role-door #ltCanvas,body.role-door #logo{display:none!important;}
+  body.role-door #roleView{display:grid; grid-template-rows:auto minmax(0,1fr) auto; gap:5vh; padding:6vh 6vw; background:#f4f1ea; color:#13161b;}
+  body.role-door .role-head{display:grid; grid-template-columns:minmax(0,1fr) auto; gap:4vw; align-items:start; padding-bottom:3vh; border-bottom:2px solid rgba(19,22,27,.18);}
+  body.role-door .role-kicker{color:#5c6570;}
+  body.role-door .role-show{margin-top:1vh; font-size:4vh;}
+  body.role-door .role-clock{font-size:3.2vh; color:#353d47;}
+  body.role-door .role-current{align-self:center; max-width:88vw;}
+  body.role-door .role-current strong{font-size:min(8vw,10vh); line-height:1.02; white-space:normal;}
+  body.role-door .role-current span{font-size:3.2vh; color:#525c67; white-space:normal;}
+  body.role-door .role-next{display:grid; grid-template-columns:auto minmax(0,1fr); align-items:baseline; gap:3vw; padding-top:3vh; border-top:2px solid rgba(19,22,27,.18);}
+  body.role-door .role-next .role-kicker{white-space:nowrap;}
+  body.role-door .role-next strong{font-size:4vh; white-space:nowrap;}
+  body.role-door .role-next span{grid-column:2; font-size:2.4vh; color:#59636e;}
+
   /* providni (frameless) prozor — prevlačenje za pomeranje */
   body.overlay #stage{ -webkit-app-region: drag; }
 </style>
@@ -123,17 +162,29 @@
     </div>
   </div>
   <div id="ltCanvas" aria-hidden="true"></div>
+  <div id="roleView" aria-live="polite">
+    <div class="role-head">
+      <div><div class="role-kicker" id="roleRoomLabel">ROOM</div><div class="role-show" id="roleShowName">ShowSlate Conference Desk</div></div>
+      <div class="role-clock" id="roleClock">--:--</div>
+    </div>
+    <div class="role-current"><div class="role-kicker" id="roleCurrentLabel">NOW</div><strong id="roleCurrent">Waiting for first cue</strong><span id="roleCurrentMeta"></span></div>
+    <div class="role-next"><div class="role-kicker" id="roleNextLabel">NEXT</div><strong id="roleNext">—</strong><span id="roleNextMeta"></span></div>
+  </div>
 
 <script src="i18n.js?v=20260703-i18n2"></script>
 <script>
 const IS_ELECTRON = !!window.pt;
 const api = window.pt || null;
+const OUTPUT_QUERY = new URLSearchParams(location.search);
+const OUTPUT_ROLES = ['audience','confidence','timer','stream','door'];
+let outputRole = OUTPUT_ROLES.includes(OUTPUT_QUERY.get('outputRole')) ? OUTPUT_QUERY.get('outputRole') : 'audience';
 const OUT_I18N = window.PT_I18N_OUTPUT || { en:{paused:'⏸ PAUSED', now:'NOW', next:'NEXT'}, sr:{paused:'⏸ PAUZA', now:'SADA', next:'SLEDI'} };
 const langUtil = window.PT_I18N_UTIL || { normalizeLang:c=>(OUT_I18N[c]?c:'en'), langMeta:c=>({}) };
 function outLang(){ return langUtil.normalizeLang((S && S.lang) || 'en'); }
 function outT(key){ const l=outLang(); return (OUT_I18N[l] && OUT_I18N[l][key]) || OUT_I18N.en[key] || key; }
 
 let S = null, prevRem = null, lastKey = '', lastSceneKey = '', lastLtRuntimeKey = '', ltSequenceTimer = null;
+let lastAckRevision = 0;
 const ltPhaseMediaFailures = new Map();
 const ltPhaseAnchors = new Map();
 let isFS = false, fitMode = false, lastFitH = 0;   // kompaktan prozor (prati tajmer)
@@ -175,6 +226,10 @@ function applyState(s){
   const fitStateChanged=!S || !!s.fitWindow!==!!S.fitWindow || !!s.gridOn!==!!S.gridOn;
   if (S && (s.mode!==S.mode || s.durationMs!==S.durationMs)) prevRem = null;
   S = s;
+  outputRole = OUTPUT_ROLES.includes(s && s._outputRoute && s._outputRoute.role) ? s._outputRoute.role : outputRole;
+  document.body.classList.remove(...OUTPUT_ROLES.map(role=>'role-'+role));
+  document.body.classList.add('role-'+outputRole);
+  document.body.dataset.outputRole=outputRole;
   const meta = langUtil.langMeta(outLang());
   document.documentElement.lang = outLang();
   document.documentElement.dir = meta.dir || 'ltr';
@@ -193,9 +248,89 @@ function applyState(s){
   // State-driven overlays must not depend on a future animation frame. Chromium may
   // suspend RAF after repeated hidden/video viewport transitions during long shows.
   renderLowerThird();
+  renderRoleView();
+  scheduleOutputAcknowledgement(s);
   if(fitStateChanged) lastFitH=0;
   fitMode=IS_ELECTRON && !!S.fitWindow && !isFS && !S.gridOn;
   if(fitMode) requestFit();
+}
+
+function roleText(key){
+  const sr=outLang()==='sr';
+  const values={room:sr?'SALA':'ROOM',now:sr?'SADA':'NOW',next:sr?'SLEDI':'NEXT',waiting:sr?'Čeka se prva tačka':'Waiting for first cue'};
+  return values[key] || key;
+}
+function cueMeta(cue){
+  if(!cue) return '';
+  return [cue.speakerName||cue.ltName||'',cue.speakerTitle||cue.ltTitle||'',cue.company||'',cue.room||''].filter(Boolean).join(' · ');
+}
+function renderRoleView(){
+  if(!S) return;
+  const cues=Array.isArray(S.cues)?S.cues:[];
+  const index=Number.isInteger(S.currentCue)?S.currentCue:-1;
+  const current=index>=0?cues[index]:null;
+  let nextIndex=index+1;
+  while(nextIndex<cues.length&&cues[nextIndex]&&cues[nextIndex].status==='skipped') nextIndex++;
+  const next=nextIndex<cues.length?cues[nextIndex]:null;
+  const details=S.show&&S.show.details||{};
+  $('roleRoomLabel').textContent=details.room||details.venue||roleText('room');
+  $('roleShowName').textContent=(S.show&&S.show.name)||'ShowSlate Conference Desk';
+  $('roleCurrentLabel').textContent=roleText('now');
+  $('roleNextLabel').textContent=roleText('next');
+  $('roleCurrent').textContent=current&&current.name||roleText('waiting');
+  $('roleCurrentMeta').textContent=cueMeta(current);
+  $('roleNext').textContent=next&&next.name||'—';
+  $('roleNextMeta').textContent=cueMeta(next);
+  const now=new Date();
+  $('roleClock').textContent=`${pad(now.getHours())}:${pad(now.getMinutes())}`;
+}
+setInterval(()=>{ if(S&&(outputRole==='confidence'||outputRole==='door')) renderRoleView(); },1000);
+function outputDomReadyForState(state){
+  const dispatchRole=state&&state._dispatch&&state._dispatch.role;
+  if(dispatchRole&&dispatchRole!==outputRole) return false;
+  const expectedCue=state&&Number.isInteger(state.currentCue)&&Array.isArray(state.cues)?state.cues[state.currentCue]:null;
+  if((outputRole==='confidence'||outputRole==='door')&&expectedCue&&$('roleCurrent').textContent!==String(expectedCue.name||'')) return false;
+  if(outputRole==='timer'&&$('timer').textContent==='--:--') return false;
+  if(outputRole==='stream'&&!['transparent','rgba(0, 0, 0, 0)'].includes(getComputedStyle(document.body).backgroundColor)) return false;
+  const lower=state&&state.lowerThird;
+  if((outputRole==='audience'||outputRole==='stream')&&lower&&lower.visible){
+    const runtime=lower.runtime;
+    const runtimeVisible=getComputedStyle($('ltCanvas')).display!=='none';
+    const legacyVisible=getComputedStyle($('lowerThird')).display!=='none';
+    if(runtime&&runtime.visible!==false&&runtime.phase!=='hidden'){
+      if(!runtimeVisible||$('ltCanvas').dataset.templateId!==String(runtime.templateId||'')||$('ltCanvas').dataset.instanceId!==String(runtime.instanceId||'')) return false;
+    } else if(!runtime&&!legacyVisible) return false;
+  }
+  return document.body.dataset.outputRole===outputRole;
+}
+function scheduleOutputAcknowledgement(state){
+  if(!IS_ELECTRON||!api||!api.ackOutput||!state||!state._dispatch) return;
+  const dispatch={...state._dispatch};
+  const revision=Math.max(0,Number(dispatch.revision)||0);
+  if(!revision||revision<=lastAckRevision) return;
+  const started=Date.now();
+  const attempt=()=>{
+    if(!S||!S._dispatch||Number(S._dispatch.revision)!==revision) return;
+    renderRoleView();
+    if(!outputDomReadyForState(S)){
+      if(Date.now()-started<1500) setTimeout(attempt,40);
+      return;
+    }
+    lastAckRevision=revision;
+    const cue=S.currentCue>=0&&Array.isArray(S.cues)?S.cues[S.currentCue]:null;
+    const runtime=S.lowerThird&&S.lowerThird.runtime;
+    api.ackOutput({
+      revision,
+      routeId:String(dispatch.routeId||OUTPUT_QUERY.get('routeId')||'primary'),
+      role:outputRole,
+      cueId:String(cue&&cue.id||''),
+      transactionId:String(S.goTransaction&&S.goTransaction.id||''),
+      templateId:String(runtime&&runtime.templateId||''),
+      instanceId:String(runtime&&runtime.instanceId||''),
+      renderedAt:Date.now()
+    });
+  };
+  requestAnimationFrame(()=>requestAnimationFrame(attempt));
 }
 
 // media:// → HTTP URL (Electron: 127.0.0.1 baza iz state-a; browser/OBS: relativno)

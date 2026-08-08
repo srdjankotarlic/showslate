@@ -1,4 +1,4 @@
-# ShowSlate architecture
+# ShowSlate Conference Desk architecture
 
 Current public product architecture.
 
@@ -10,6 +10,15 @@ Current public product architecture.
 - `main.js` owns Electron windows, HTTP/SSE, OSC, IPC, media storage, output routing and the full source/packaged smoke harness.
 
 Preview selection must never change the LIVE cue, running timer or Program output until an explicit TAKE/GO/direct action.
+
+## Conference Desk transaction
+
+- `src/conference-desk/model.js` parses CSV/TSV schedules, normalizes output roles, performs conservative media matching and defines the GO/delivery contracts.
+- `src/conference-desk/import.js` scans a selected show folder without following symbolic links, applies bounded file/size limits and copies supported assets into private media storage.
+- `controller.html` turns imported cues and assets into standard show, scene, content and output records. There is no separate hidden conference document model.
+- GO builds one transaction, closes the previous cue, updates LIVE, timer, linked content and immediate lower third, then emits one Program revision. A deliberately delayed lower third can emit a later revision.
+- `main.js` stamps each Program revision and route role. `output.html` acknowledges only after the expected role, cue and required lower third are represented in the rendered DOM.
+- Preflight uses those acknowledgements to distinguish `SYNCING` from `RENDER CONFIRMED`; an open BrowserWindow alone is not proof of delivery.
 
 ## Show data and recovery
 
@@ -40,6 +49,8 @@ Window capture is intentionally absent. ShowSlate is a rundown, timing, graphics
 - `src/output-routing/model.js` contains pure normalization, display identity, fail-safe resolution and pixel/grid bounds rules.
 - `main.js` owns `outputConfigs` and the `auxOutputs` BrowserWindow map.
 - Each enabled route receives the same Program state and can use fullscreen, normal window, pixel-accurate custom or grid-cell placement.
+- Routes have explicit Audience, Confidence, Timer, Stream Graphics or Door Agenda roles. Role rendering is a view of canonical Program state, not an independent timeline.
+- Stream Graphics windows are transparent and hide room content; Confidence, Timer and Door roles suppress unrelated Program layers.
 - Display IDs are paired with a stable label/size fingerprint. A missing or ambiguous display is reported as unavailable and never silently replaced by another monitor.
 - Display add/remove/metrics events reconcile routes. Custom routes are frameless so macOS cannot cascade or clamp requested pixel coordinates.
 
@@ -60,8 +71,8 @@ Window capture is intentionally absent. ShowSlate is a rundown, timing, graphics
 
 ## Verification and release
 
-- `npm test`: deterministic headless module suite.
-- `npm run test:renderers:display`: five real renderer workflows pinned to an explicitly selected display.
+- `npm test`: fifteen deterministic headless module scripts plus repository/site/icon contracts.
+- `npm run test:renderers:display`: seven real renderer workflows pinned to an explicitly selected display, including Conference Desk and public-site viewports.
 - `npm run test:beta-ui`: responsive product matrix.
 - `npm run smoke:display`: full source smoke.
 - `npm run smoke:packaged:display`: full packaged smoke.

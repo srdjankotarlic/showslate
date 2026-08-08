@@ -60,4 +60,24 @@ check('PREFLIGHT_AUTO_LT_REQUIRES_REAL_TEMPLATE_OK', () => {
   assert(result.checks.find(row => row.id === 'lowerThirdTemplate').status === 'block');
 });
 
+check('PREFLIGHT_CONFERENCE_DESK_REQUIRES_AUDIENCE_ROUTE_OK', () => {
+  const document = showDocument();
+  document.show.details.productMode = 'conference-desk';
+  const result = evaluatePreflight(document, readyFacts);
+  assert.strictEqual(result.overall, 'blocking');
+  assert.strictEqual(result.checks.find(row => row.id === 'conferenceAudienceRoute').status, 'block');
+});
+
+check('PREFLIGHT_CONFERENCE_DESK_ACCEPTS_ACKED_ROLE_OUTPUTS_OK', () => {
+  const document = showDocument();
+  document.show.details.productMode = 'conference-desk';
+  document.show.outputs.configs = [{ id: 'audience', name: 'Audience', role: 'audience', enabled: true, displayId: 7 }];
+  const result = evaluatePreflight(document, {
+    ...readyFacts,
+    outputRuntime: { revision: 9, routes: [{ id: 'audience', enabled: true, open: true, ackRevision: 9 }] }
+  });
+  assert.notStrictEqual(result.overall, 'blocking');
+  assert.strictEqual(result.checks.find(row => row.id === 'conferenceOutputDelivery').status, 'ok');
+});
+
 console.log('SHOW_PREFLIGHT_TESTS_OK count=' + passed);

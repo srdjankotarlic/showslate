@@ -6,7 +6,7 @@
 npm test
 ```
 
-Runs 13 deterministic module scripts across brand migration, lower-third packages, show storage and recovery data, portable show packages, preflight, screen-content models, control API normalization, post-show reports, pure output-routing rules, localization, build provenance, signing preflight and exact-artifact release evidence. Free-build, icon and public-site checks run before that suite. The same command runs in GitHub Actions.
+Runs 15 deterministic module scripts across brand migration, lower-third packages, show storage and recovery data, portable show packages, Conference Desk schedule/folder import, preflight, screen-content models, control API normalization, post-show reports, pure output-routing rules, localization, build provenance, signing preflight and exact-artifact release evidence. Free-build, icon and public-site checks run before that suite. The same command runs in GitHub Actions.
 
 ## Local renderer suite
 
@@ -14,7 +14,11 @@ Runs 13 deterministic module scripts across brand migration, lower-third package
 npm run test:renderers:display
 ```
 
-Runs five real Electron renderer workflows. Every visible test window resolves the explicitly configured display and aborts if that display is unavailable; it never silently falls back to another screen. Set `SHOWSLATE_SMOKE_DISPLAY` to a unique display label or use the ignored local `.showslate-smoke-display.json` file.
+Runs seven real Electron renderer workflows. Every visible test window resolves the explicitly configured display and aborts if that display is unavailable; it never silently falls back to another screen. Set `SHOWSLATE_SMOKE_DISPLAY` to a unique display label or use the ignored local `.showslate-smoke-display.json` file.
+
+The Conference Desk renderer suite uses visible normal controls to import a fixture folder, finish setup, inspect output-role controls, press GO, verify one Program transaction and require render acknowledgements for Audience, Confidence, Timer, Stream Graphics and Door Agenda. It also checks Live Mode at 900x600.
+
+The public-site renderer suite loads the real static site at desktop and mobile sizes, verifies local screenshots, installer links, horizontal fit and a visible hint of the next section.
 
 ## Responsive product matrix
 

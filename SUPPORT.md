@@ -1,9 +1,9 @@
 # Support
 
-ShowSlate is a community-supported public beta.
+ShowSlate Conference Desk is a community-supported public beta.
 
 - Use the bug-report form for reproducible software defects.
-- Use Discussions for setup questions, ideas and workflow feedback.
+- Use Discussions for show-folder setup, output-role questions and conference workflow feedback.
 - Include the version/build commit, operating system, CPU architecture, display arrangement and exact steps.
 - Remove client names, speaker data, private network addresses and control tokens from screenshots or logs.
 

@@ -1,5 +1,7 @@
 'use strict';
 
+const conference = require('../conference-desk/model.js');
+
 const OUTPUT_MODES = new Set(['fullscreen', 'window', 'custom', 'grid']);
 const PLACEMENTS = new Set(['center', 'top-left', 'top-right', 'bottom-left', 'bottom-right', 'custom']);
 
@@ -33,6 +35,7 @@ function normalizeConfig(config, index = 0, context = {}) {
   const normalized = {
     id: String(source.id || `out-${context.now || Date.now()}-${index}`),
     name: String(source.name || `Output ${index + 1}`),
+    role: conference.normalizeOutputRole(source.role),
     enabled: source.enabled !== false,
     displayId,
     displayLabel: String(source.displayLabel || ''),

@@ -1,4 +1,4 @@
-# Repository map
+# ShowSlate Conference Desk repository map
 
 Current public repository map. Line counts are approximate and should be checked with `wc -l` before line-sensitive work.
 
@@ -19,6 +19,7 @@ Current public repository map. Line counts are approximate and should be checked
 
 | Directory | Responsibility |
 |---|---|
+| `src/conference-desk/` | Schedule parsing, show-folder import, media matching, output-role definitions, GO transaction and delivery confirmation contracts. |
 | `src/lower-third/` | Versioned template model, validation, migration, runtime resolution, fixture probe and package import/export. |
 | `src/show-storage/` | Atomic show repository, recovery, portable show packages and preflight. |
 | `src/screen-content/` | Standard screen-content model and validation. |
@@ -34,12 +35,16 @@ Current public repository map. Line counts are approximate and should be checked
 - `build/icon.svg`: source application icon.
 - `build/icon.png`, `build/icon.icns`, `build/icon.iconset/`: generated packaging assets.
 - `build/banner.html`: repository/social banner source.
+- `site/`: static product page, structured data, installer guidance and real product screenshots.
+- `examples/conference-show/`: source-user sample CSV and import media.
 
 ## Tests
 
 - `tools/run-test-suite.js`: cross-platform aggregate module/renderer runner.
-- `npm test`: deterministic free-build/site/icon checks plus thirteen module scripts.
-- `test/*-renderer.test.js`: five real Electron workflow suites pinned to an explicitly selected display.
+- `npm test`: deterministic free-build/site/icon checks plus fifteen module scripts.
+- `test/*-renderer.test.js`: seven real Electron workflow suites pinned to an explicitly selected display.
+- `test/conference-desk-renderer.test.js`: visible folder-import, role-routing, atomic GO, render acknowledgement and Live Mode workflow.
+- `test/site-renderer.test.js`: desktop/mobile landing-page layout and real-image verification.
 - `test/beta-usability-matrix.test.js`: 55 responsive checks at four viewport sizes.
 - `main.js --smoke`: source/packaged integration and visual assertions.
 - `tools/run-lt-soak.js`: targeted condition-driven soak.
@@ -59,6 +64,7 @@ Generated evidence lives under `artifacts/generated/` and is not release code. `
 | `tools/check-packaged-free-build.js` | Actual ASAR audit for MIT metadata and forbidden licensing material. |
 | `tools/assert-release-tag.js` | Exact package-version and beta/stable tag classifier. |
 | `tools/verify-release-evidence.js` | Exact commit/artifact/physical-QA evidence gate for stable publication. |
+| `tools/build-social-preview.js` | Deterministic 1600x900 social-preview capture from `build/banner.html`. |
 
 `.github/workflows/stable-release.yml` builds and verifies a signed candidate, then creates a private draft release. `.github/workflows/publish-stable.yml` publishes that draft only after the committed evidence manifest matches its run, commit and artifact hashes.
 
@@ -67,6 +73,7 @@ Generated evidence lives under `artifacts/generated/` and is not release code. `
 - `README.md`: development and release entry point.
 - `ARCHITECTURE.md`: current system boundaries and invariants.
 - `docs/TESTING.md`: test layers and commands.
+- `docs/CONFERENCE-DESK.md`: show-folder format, output roles, preflight and room-operation workflow.
 - `docs/LOCALIZATION.md`: exact language coverage.
 - `docs/PUBLIC-BETA-VERIFICATION.md`: verified release evidence and explicit gaps.
 - `docs/KNOWN-LIMITATIONS.md`: claims that must remain qualified.

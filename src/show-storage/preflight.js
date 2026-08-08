@@ -1,4 +1,5 @@
 const { validateShowDocument } = require('./repository.js');
+const conference = require('../conference-desk/model.js');
 
 function row(id, status, detail = '') {
   return { id, status, detail: String(detail || '') };
@@ -71,6 +72,40 @@ function evaluatePreflight(input, facts = {}) {
     displayResolutionValid && configResolutionsValid ? selectedDisplay.width + 'x' + selectedDisplay.height : 'invalid'));
 
   checks.push(row('recoveryStatus', facts.recoveryAvailable ? 'block' : 'ok', facts.recoveryAvailable ? 'recovery-pending' : 'clear'));
+
+  if (String(show.details && show.details.productMode || '') === 'conference-desk') {
+    checks.push(row('conferenceMode', 'ok', 'conference-desk'));
+    const enabledConfigs = configs.map((config, index) => ({ ...config, id: String(config.id || `route-${index}`), role: conference.normalizeOutputRole(config.role) }));
+    const audienceRoutes = enabledConfigs.filter(config => config.role === 'audience');
+    checks.push(row('conferenceAudienceRoute', audienceRoutes.length ? 'ok' : 'block', audienceRoutes.length ? `${audienceRoutes.length}-configured` : 'audience-required'));
+
+    const unavailableRoutes = enabledConfigs.filter(config => {
+      const id = Number(config.displayId);
+      const label = String(config.displayLabel || '');
+      return !displays.some(display => Number(display.id) === id || (label && String(display.label || '') === label));
+    });
+    checks.push(row('conferenceRouteAssignments', unavailableRoutes.length ? 'block' : 'ok', unavailableRoutes.length ? unavailableRoutes.map(config => config.name || config.id).join(', ') : 'all-assigned'));
+
+    const content = show.screenContent || {};
+    const contentIds = new Set((Array.isArray(content.items) ? content.items : []).map(item => String(item && item.id || '')).filter(Boolean));
+    const brokenCueActions = cues.filter(cue => cue && cue.autoTakeContentOnGo && !contentIds.has(String(cue.contentItemId || '')));
+    const automatedCues = cues.filter(cue => cue && (cue.autoTakeContentOnGo || cue.lowerThirdAuto));
+    checks.push(row('conferenceCueActions', brokenCueActions.length ? 'block' : (automatedCues.length ? 'ok' : 'warn'),
+      brokenCueActions.length ? `${brokenCueActions.length}-broken` : `${automatedCues.length}-automated`));
+
+    const importedAssets = Math.max(0, Number(show.details && show.details.importedAssets) || 0);
+    const matchedAssets = Math.max(0, Number(show.details && show.details.matchedAssets) || 0);
+    checks.push(row('conferenceMediaMapping', importedAssets && !matchedAssets ? 'warn' : 'ok', importedAssets ? `${matchedAssets}/${importedAssets}-matched` : 'manual-content'));
+
+    const runtime = facts.outputRuntime && typeof facts.outputRuntime === 'object' ? facts.outputRuntime : { revision: 0, routes: [] };
+    const runtimeById = new Map((Array.isArray(runtime.routes) ? runtime.routes : []).map(route => [String(route && route.id || ''), route]));
+    const deliveryRoutes = enabledConfigs.map(config => runtimeById.get(config.id) || { id: config.id, enabled: true, open: false, ackRevision: 0 });
+    const delivery = conference.deliverySummary(deliveryRoutes, Number(runtime.revision) || 0);
+    const deliveryStatus = delivery.ready ? 'ok' : 'warn';
+    const deliveryDetail = delivery.ready ? `${delivery.acknowledged}/${delivery.expected}-confirmed`
+      : (!deliveryRoutes.some(route => route.open) ? 'not-tested' : `${delivery.acknowledged}/${delivery.expected}-confirmed`);
+    checks.push(row('conferenceOutputDelivery', deliveryStatus, deliveryDetail));
+  }
 
   const overall = checks.some(check => check.status === 'block') ? 'blocking'
     : checks.some(check => check.status === 'warn') ? 'warning' : 'ready';

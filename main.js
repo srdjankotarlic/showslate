@@ -11,6 +11,8 @@ const showPackage = require('./src/show-storage/package.js');
 const showPreflight = require('./src/show-storage/preflight.js');
 const controlApi = require('./src/control-api/commands.js');
 const outputRouting = require('./src/output-routing/model.js');
+const conferenceDesk = require('./src/conference-desk/model.js');
+const showFolderImport = require('./src/conference-desk/import.js');
 const { ShowRepository } = require('./src/show-storage/repository.js');
 const { migrateLegacyUserData } = require('./src/brand/migrate-user-data.js');
 
@@ -127,6 +129,8 @@ let outputFrameless = false;     // da li je bez okvira (providan ili grid)
 let outputTargetId = null;       // na kom monitoru je Ekran
 let outputConfigs = [];          // dodatni profesionalni izlazi (multi-display)
 const auxOutputs = new Map();    // id -> { win, config, frameless, transparent }
+let stateRevision = 0;
+let primaryDelivery = { lastDispatchRevision: 0, lastDispatchAt: 0, ackRevision: 0, ackAt: 0, ackCueId: '', ackTransactionId: '' };
 let showRepository = null;
 let showStorageReady = null;
 let cleanQuitInProgress = false;
@@ -450,16 +454,53 @@ function displayList() {
 function broadcast(channel, payload) {
   [controlWin, outputWin].forEach(w => { if (w && !w.isDestroyed()) w.webContents.send(channel, payload); });
 }
+function outputPayload(state, routeId, role, revision = stateRevision) {
+  const normalizedRole = conferenceDesk.normalizeOutputRole(role);
+  const payload = {
+    ...(state || {}),
+    transparent: normalizedRole === 'stream' ? true : !!(state && state.transparent),
+    _outputRoute: { id: String(routeId || 'primary'), role: normalizedRole },
+    _dispatch: {
+      revision: Math.max(0, Number(revision) || 0),
+      routeId: String(routeId || 'primary'),
+      role: normalizedRole,
+      sentAt: Date.now()
+    }
+  };
+  return withBase(payload, localBase());
+}
+function dispatchPrimaryState(state) {
+  if (!outputWin || outputWin.isDestroyed()) return false;
+  primaryDelivery.lastDispatchRevision = stateRevision;
+  primaryDelivery.lastDispatchAt = Date.now();
+  outputWin.webContents.send('state', outputPayload(state, 'primary', 'audience'));
+  return true;
+}
+function dispatchAuxState(rec, state) {
+  if (!rec || !rec.win || rec.win.isDestroyed()) return false;
+  rec.lastDispatchRevision = stateRevision;
+  rec.lastDispatchAt = Date.now();
+  rec.win.webContents.send('state', outputPayload(state, rec.config.id, rec.config.role));
+  return true;
+}
 function sendStateToOutputs(state) {
-  if (outputWin && !outputWin.isDestroyed()) outputWin.webContents.send('state', withBase(state, localBase()));
+  dispatchPrimaryState(state);
   for (const rec of auxOutputs.values()) {
-    if (rec && rec.win && !rec.win.isDestroyed()) rec.win.webContents.send('state', withBase(state, localBase()));
+    dispatchAuxState(rec, state);
   }
 }
 function pushDisplays() { broadcast('displays', displayList()); }
 function outputRuntimeSnapshot() {
   return {
     primaryOpen: !!(outputWin && !outputWin.isDestroyed()),
+    revision: stateRevision,
+    primary: {
+      role: 'audience',
+      lastDispatchRevision: primaryDelivery.lastDispatchRevision,
+      ackRevision: primaryDelivery.ackRevision,
+      acknowledged: primaryDelivery.lastDispatchRevision > 0 && primaryDelivery.ackRevision >= primaryDelivery.lastDispatchRevision,
+      latencyMs: primaryDelivery.ackAt && primaryDelivery.lastDispatchAt ? Math.max(0, primaryDelivery.ackAt - primaryDelivery.lastDispatchAt) : null
+    },
     routes: outputConfigs.map(cfg => {
       const rec = auxOutputs.get(cfg.id);
       const target = resolveOutputDisplay(cfg);
@@ -467,13 +508,20 @@ function outputRuntimeSnapshot() {
       const issue = rec && rec.issue ? rec.issue : (!target.display && cfg.enabled !== false ? target.reason : '');
       return {
         id: cfg.id,
+        role: conferenceDesk.normalizeOutputRole(cfg.role),
         enabled: cfg.enabled !== false,
         open,
         displayId: cfg.displayId,
         actualDisplayId: open ? rec.actualDisplayId : null,
         displayAvailable: !!target.display,
         displayMatch: target.match,
-        status: cfg.enabled === false ? 'disabled' : (open ? 'live' : (issue || 'opening')),
+        status: cfg.enabled === false ? 'disabled' : (open ? ((rec.ackRevision || 0) >= (rec.lastDispatchRevision || 0) && (rec.lastDispatchRevision || 0) > 0 ? 'live' : 'syncing') : (issue || 'opening')),
+        lastDispatchRevision: rec ? Number(rec.lastDispatchRevision) || 0 : 0,
+        ackRevision: rec ? Number(rec.ackRevision) || 0 : 0,
+        acknowledged: !!(rec && rec.lastDispatchRevision > 0 && rec.ackRevision >= rec.lastDispatchRevision),
+        latencyMs: rec && rec.ackAt && rec.lastDispatchAt ? Math.max(0, rec.ackAt - rec.lastDispatchAt) : null,
+        ackCueId: rec ? String(rec.ackCueId || '') : '',
+        ackTransactionId: rec ? String(rec.ackTransactionId || '') : '',
         mode: cfg.mode,
         bounds: open ? rec.win.getBounds() : null,
         fullscreen: open ? rec.win.isFullScreen() : false
@@ -490,7 +538,7 @@ function pushOutputState() {
 function createControlWindow() {
   controlWin = new BrowserWindow({
     width: 1280, height: 800, minWidth: 900, minHeight: 600,
-    title: 'ShowSlate — Control', backgroundColor: '#0b0d11',
+    title: 'ShowSlate Conference Desk — Control', backgroundColor: '#0b0d11',
     webPreferences: { preload: path.join(__dirname, 'preload.js'), contextIsolation: true, nodeIntegration: false, backgroundThrottling: false }
   });
   controlWin.loadFile('controller.html');
@@ -587,18 +635,22 @@ function positionAuxOutput(rec, targetOverride = null) {
   rec.actualDisplayId = target.id;
   rememberOutputDisplay(cfg, target);
   const b = target.bounds;
-  if (rec.win.isFullScreen()) rec.win.setFullScreen(false);
 
   if (cfg.mode === 'fullscreen') {
-    rec.win.setBounds(b);
-    rec.win.setFullScreen(true);
+    if (!rec.win.isFullScreen()) {
+      rec.win.setBounds(b);
+      rec.win.setFullScreen(true);
+    }
   } else if (cfg.mode === 'grid') {
+    if (rec.win.isFullScreen()) rec.win.setFullScreen(false);
     rec.win.setBounds(outputRouting.gridBounds(b, cfg.gridSize, cfg.gridCell));
   } else if (cfg.mode === 'custom') {
+    if (rec.win.isFullScreen()) rec.win.setFullScreen(false);
     const width = Math.min(cfg.width || 1000, b.width);
     const height = Math.min(cfg.height || 1000, b.height);
     rec.win.setBounds(placedOutputBounds(b, width, height, cfg, 0));
   } else {
+    if (rec.win.isFullScreen()) rec.win.setFullScreen(false);
     const area = target.workArea;
     const width = Math.min(cfg.width || 960, Math.floor(area.width * 0.8));
     const height = Math.min(cfg.height || Math.round(width * 9 / 16), Math.floor(area.height * 0.8));
@@ -625,12 +677,12 @@ function createAuxOutputWindow(cfg, target) {
   const normalized = normalizeOutputConfig(cfg);
   if (!target) return null;
   rememberOutputDisplay(normalized, target);
-  const transparent = !!(lastState && lastState.transparent);
+  const transparent = normalized.role === 'stream' || !!(lastState && lastState.transparent);
   const frameless = transparent || auxFrameMode(normalized);
   const win = new BrowserWindow({
     x: target.bounds.x, y: target.bounds.y,
     width: normalized.width || 1000, height: normalized.height || 1000, minWidth: 80, minHeight: 60, show: false,
-    title: `ShowSlate — ${normalized.name}`,
+    title: `ShowSlate Conference Desk — ${normalized.name}`,
     backgroundColor: transparent ? '#00000000' : '#000000',
     transparent,
     frame: !frameless,
@@ -639,11 +691,14 @@ function createAuxOutputWindow(cfg, target) {
     webPreferences: { preload: path.join(__dirname, 'preload.js'), contextIsolation: true, nodeIntegration: false, backgroundThrottling: false }
   });
   if (frameless) win.setAlwaysOnTop(true, 'floating');
-  const rec = { win, config: normalized, frameless, transparent, actualDisplayId: target.id, issue: '' };
+  const rec = {
+    win, config: normalized, frameless, transparent, actualDisplayId: target.id, issue: '',
+    lastDispatchRevision: 0, lastDispatchAt: 0, ackRevision: 0, ackAt: 0, ackCueId: '', ackTransactionId: ''
+  };
   auxOutputs.set(normalized.id, rec);
-  win.loadFile('output.html');
+  win.loadFile('output.html', { query: { routeId: normalized.id, outputRole: normalized.role } });
   win.webContents.on('did-finish-load', () => {
-    if (lastState) win.webContents.send('state', withBase(lastState, localBase()));
+    if (lastState) dispatchAuxState(rec, lastState);
   });
   win.once('ready-to-show', () => {
     positionAuxOutput(rec, target);
@@ -683,8 +738,9 @@ function applyOutputConfigs(configs) {
   next.forEach(({ cfg, target, issue }) => {
     if (!target) return;
     const rec = auxOutputs.get(cfg.id);
-    const desiredFrameless = !!(lastState && lastState.transparent) || auxFrameMode(cfg);
-    const needsRecreate = rec && (!rec.win || rec.win.isDestroyed() || rec.frameless !== desiredFrameless || rec.transparent !== !!(lastState && lastState.transparent));
+    const desiredTransparent = cfg.role === 'stream' || !!(lastState && lastState.transparent);
+    const desiredFrameless = desiredTransparent || auxFrameMode(cfg);
+    const needsRecreate = rec && (!rec.win || rec.win.isDestroyed() || rec.frameless !== desiredFrameless || rec.transparent !== desiredTransparent || rec.config.role !== cfg.role);
     if (needsRecreate) {
       closeAuxOutput(cfg.id, rec);
     }
@@ -697,7 +753,7 @@ function applyOutputConfigs(configs) {
       positionAuxOutput(live, target);
       scheduleAuxOutputPosition(live);
     }
-    if (lastState && live.win && !live.win.isDestroyed()) live.win.webContents.send('state', withBase(lastState, localBase()));
+    if (lastState && live.win && !live.win.isDestroyed()) dispatchAuxState(live, lastState);
   });
   pushOutputState();
   pushDisplays();
@@ -748,10 +804,10 @@ function createOutputWindow(displayId) {
 
   // SMOKE: create already on the target monitor (so it never exists at HP coords even pre-positionOutput)
   const smokeXY = (SMOKE && SMOKE_TARGET) ? { x: SMOKE_TARGET.workArea.x + 20, y: SMOKE_TARGET.workArea.y + 20 } : {};
-  outputWin = new BrowserWindow({
+  const win = new BrowserWindow({
     ...smokeXY,
     width: 900, height: 506, minWidth: 80, minHeight: 60, show: false,
-    title: 'ShowSlate — Output',
+    title: 'ShowSlate Conference Desk — Output',
     backgroundColor: transparent ? '#00000000' : '#000000',
     transparent: transparent,
     frame: !frameless,
@@ -759,25 +815,32 @@ function createOutputWindow(displayId) {
     alwaysOnTop: frameless,
     webPreferences: { preload: path.join(__dirname, 'preload.js'), contextIsolation: true, nodeIntegration: false, backgroundThrottling: false }
   });
-  if (frameless) outputWin.setAlwaysOnTop(true, 'floating');
+  outputWin = win;
+  if (frameless) win.setAlwaysOnTop(true, 'floating');
   if (SMOKE) {
-    outputWin.loadFile('output.html', { query: {
+    win.loadFile('output.html', { query: {
       ptSmoke: '1',
-      browserWindowId: String(outputWin.id),
-      webContentsId: String(outputWin.webContents.id)
+      routeId: 'primary',
+      outputRole: 'audience',
+      browserWindowId: String(win.id),
+      webContentsId: String(win.webContents.id)
     } });
   } else {
-    outputWin.loadFile('output.html');
+    win.loadFile('output.html', { query: { routeId: 'primary', outputRole: 'audience' } });
   }
-  if (SMOKE) outputWin.webContents.on('console-message', (e, l, m, ln) => console.log(`OUT_CONSOLE [${l}] ${m} (line ${ln})`));
-  outputWin.webContents.on('did-finish-load', () => {
-    if (lastState) outputWin.webContents.send('state', withBase(lastState, localBase()));
+  if (SMOKE) win.webContents.on('console-message', (e, l, m, ln) => console.log(`OUT_CONSOLE [${l}] ${m} (line ${ln})`));
+  win.webContents.on('did-finish-load', () => {
+    if (lastState && outputWin === win) dispatchPrimaryState(lastState);
     pushDisplays(); pushOutMode();
   });
-  outputWin.on('enter-full-screen', pushOutMode);
-  outputWin.on('leave-full-screen', pushOutMode);
-  outputWin.once('ready-to-show', () => positionOutput(target));
-  outputWin.on('closed', () => { outputWin = null; pushOutputState(); pushDisplays(); });
+  win.on('enter-full-screen', pushOutMode);
+  win.on('leave-full-screen', pushOutMode);
+  win.once('ready-to-show', () => { if (outputWin === win) positionOutput(target); });
+  win.on('closed', () => {
+    if (outputWin === win) outputWin = null;
+    pushOutputState();
+    pushDisplays();
+  });
   pushOutputState();
 }
 
@@ -791,8 +854,9 @@ function pushOutMode() {
 function recreateOutputForTransparency() {
   if (!outputWin || outputWin.isDestroyed()) return;
   const id = outputTargetId;
-  outputWin.destroy();
+  const previous = outputWin;
   outputWin = null;
+  previous.destroy();
   createOutputWindow(id);
 }
 
@@ -803,12 +867,13 @@ ipcMain.on('state', (e, s) => {
   const wantFrameless = !!s.transparent || !!s.gridOn;
   const transparentChanged = !!s.transparent !== outputTransparent;
   s.licExpired = false; // Backward-compatible state field; public builds never watermark output.
+  stateRevision += 1;
   lastState = s;
   if (outputWin && !outputWin.isDestroyed()) {
     if (transparentChanged || wantFrameless !== outputFrameless) {
       recreateOutputForTransparency();   // providnost ili okvir (grid uklj/isklj) → novi prozor (sam se pozicionira)
     } else {
-      outputWin.webContents.send('state', withBase(s, localBase()));
+      dispatchPrimaryState(s);
       if (gridPosChanged && s.gridOn) {   // druga kockica / veličina grida → presloži prozor
         const d = screen.getAllDisplays().find(x => x.id === outputTargetId) || screen.getPrimaryDisplay();
         positionOutput(d);
@@ -819,11 +884,53 @@ ipcMain.on('state', (e, s) => {
     if (transparentChanged) applyOutputConfigs(outputConfigs);
     else {
       for (const rec of auxOutputs.values()) {
-        if (rec && rec.win && !rec.win.isDestroyed()) rec.win.webContents.send('state', withBase(s, localBase()));
+        dispatchAuxState(rec, s);
       }
     }
   }
+  pushOutputState();
   pushSSE(s);
+});
+ipcMain.on('output-rendered', (event, payload) => {
+  const revision = Math.max(0, Number(payload && payload.revision) || 0);
+  const senderId = event.sender && event.sender.id;
+  let delivery = null;
+  let expectedRouteId = '';
+  let expectedRole = 'audience';
+  if (outputWin && !outputWin.isDestroyed() && outputWin.webContents.id === senderId) {
+    delivery = primaryDelivery;
+    expectedRouteId = 'primary';
+  } else {
+    for (const rec of auxOutputs.values()) {
+      if (rec && rec.win && !rec.win.isDestroyed() && rec.win.webContents.id === senderId) {
+        delivery = rec;
+        expectedRouteId = String(rec.config && rec.config.id || '');
+        expectedRole = conferenceDesk.normalizeOutputRole(rec.config && rec.config.role);
+        break;
+      }
+    }
+  }
+  if (!delivery || !revision || revision > Number(delivery.lastDispatchRevision || 0)) return;
+  if (String(payload && payload.routeId || '') !== expectedRouteId) return;
+  if (conferenceDesk.normalizeOutputRole(payload && payload.role) !== expectedRole) return;
+  if (revision === Number(delivery.lastDispatchRevision || 0)) {
+    const cue = lastState && Number.isInteger(lastState.currentCue) && Array.isArray(lastState.cues)
+      ? lastState.cues[lastState.currentCue] : null;
+    const runtime = lastState && lastState.lowerThird && lastState.lowerThird.runtime;
+    const expectedCueId = String(cue && cue.id || '');
+    const expectedTransactionId = String(lastState && lastState.goTransaction && lastState.goTransaction.id || '');
+    const expectedTemplateId = String(runtime && runtime.templateId || '');
+    const expectedInstanceId = String(runtime && runtime.instanceId || '');
+    if (String(payload && payload.cueId || '') !== expectedCueId) return;
+    if (String(payload && payload.transactionId || '') !== expectedTransactionId) return;
+    if (String(payload && payload.templateId || '') !== expectedTemplateId) return;
+    if (String(payload && payload.instanceId || '') !== expectedInstanceId) return;
+  }
+  delivery.ackRevision = Math.max(Number(delivery.ackRevision) || 0, revision);
+  delivery.ackAt = Date.now();
+  delivery.ackCueId = String(payload && payload.cueId || '');
+  delivery.ackTransactionId = String(payload && payload.transactionId || '');
+  pushOutputState();
 });
 ipcMain.on('control-status', (event, status) => {
   if (!controlWin || controlWin.isDestroyed() || event.sender.id !== controlWin.webContents.id) return;
@@ -922,6 +1029,23 @@ ipcMain.handle('show-package-import', async (event, payload) => {
     return { ok: false, error: String(error.message || error), code: error.code || 'IMPORT_FAILED' };
   }
 });
+ipcMain.handle('show-folder-import', async (event, payload) => {
+  try {
+    let rootDirectory = '';
+    if (SMOKE && payload && payload.testPath) rootDirectory = path.resolve(String(payload.testPath));
+    else {
+      const picked = await dialog.showOpenDialog(controlWin, {
+        title: 'Import Conference Show Folder',
+        properties: ['openDirectory']
+      });
+      if (picked.canceled || !picked.filePaths[0]) return { ok: false, canceled: true };
+      rootDirectory = picked.filePaths[0];
+    }
+    return await showFolderImport.importShowFolder({ rootDirectory, mediaDirectory: mediaDir() });
+  } catch (error) {
+    return { ok: false, error: String(error.message || error), code: error.code || 'SHOW_FOLDER_IMPORT_FAILED' };
+  }
+});
 ipcMain.handle('show-preflight-inspect', async (event, payload) => {
   if (showStorageReady) await showStorageReady;
   const document = payload && payload.document;
@@ -954,7 +1078,8 @@ ipcMain.handle('show-preflight-inspect', async (event, payload) => {
     apiReady: !!serverPort && !!CMD_TOKEN && !!oscPort,
     displays: displayList(),
     selectedDisplayId: payload && payload.selectedDisplayId,
-    recoveryAvailable: !!storageStatus.recoveryAvailable
+    recoveryAvailable: !!storageStatus.recoveryAvailable,
+    outputRuntime: outputRuntimeSnapshot()
   });
 });
 ipcMain.on('set-output-configs', (e, configs) => applyOutputConfigs(configs));
@@ -1524,8 +1649,29 @@ app.whenReady().then(async () => {
       if (w && !w.webContents.isLoading()) return res();
       w.webContents.once('did-finish-load', res);
     });
-    const waitOutput = () => new Promise(res => {
-      const t = setInterval(() => { if (outputWin) { clearInterval(t); res(outputWin); } }, 50);
+    const waitOutput = () => new Promise((resolve, reject) => {
+      const startedAt = Date.now();
+      let candidate = null;
+      let stableChecks = 0;
+      const t = setInterval(() => {
+        const win = outputWin;
+        const ready = !!(win && !win.isDestroyed() && win.webContents && !win.webContents.isDestroyed());
+        if (ready) {
+          if (candidate === win) stableChecks += 1;
+          else { candidate = win; stableChecks = 1; }
+          if (stableChecks >= 2) {
+            clearInterval(t);
+            resolve(win);
+          }
+        } else {
+          candidate = null;
+          stableChecks = 0;
+        }
+        if (Date.now() - startedAt > 10000) {
+          clearInterval(t);
+          reject(new Error('Timed out waiting for a stable output window'));
+        }
+      }, 50);
     });
     (async () => {
       try {
@@ -3755,6 +3901,10 @@ app.whenReady().then(async () => {
               close:!!document.getElementById('btnLtStudioClose')
             });
           })()`);
+          for (let i=0; i<100 && outputWin && !outputWin.isDestroyed(); i++) await new Promise(r=>setTimeout(r,30));
+          createOutputWindow(SMOKE_TARGET && SMOKE_TARGET.id);
+          const studioOutput = await waitOutput();
+          await waitLoad(studioOutput);
           smokeCheck('LT_STUDIO_VISIBLE_FROM_NORMAL_UI_OK',
             studioVisible.openBtnVisible && studioVisible.open && (studioVisible.display==='flex' || studioVisible.display==='grid') &&
             studioVisible.templates && studioVisible.layers && studioVisible.canvas && studioVisible.inspector &&
@@ -3939,8 +4089,15 @@ app.whenReady().then(async () => {
           } catch(e) {}
           const studioPreviewTake = await ltJparse(`(function(){
             openLtStudio();
-            if(!cues[currentCue]) goLiveWithCue(2,{autostart:false});
-            selectedCue=4;
+            cues=migrateCues([
+              {id:'studio-live-cue',name:'Live segment',durationMs:60000,ltName:'Live Studio Speaker',ltTitle:'Live Studio Role'},
+              {id:'studio-preview-cue',name:'Preview segment',durationMs:60000,ltName:'Preview Studio Speaker',ltTitle:'Preview Studio Role'}
+            ]);
+            currentCue=-1;
+            selectedCue=0;
+            goLiveWithCue(0,{autostart:false});
+            selectedCue=1;
+            renderCues();
             const before=JSON.stringify(S.lowerThird||{});
             const beforeProgram=JSON.stringify(programState||{});
             ltPreviewStudio();
@@ -3973,12 +4130,14 @@ app.whenReady().then(async () => {
             JSON.stringify(studioPreviewTake));
           smokeCheck('LT_STUDIO_PROGRAM_MONITOR_MATCHES_LIVE_OK', studioPreviewTake.programMonitorMatchesLive, JSON.stringify(studioPreviewTake));
           smokeCheck('LT_STUDIO_SELECTED_CUE_IGNORED_OK', studioPreviewTake.selectedIgnored, JSON.stringify(studioPreviewTake));
+          const studioLiveOutput = await waitOutput();
+          await waitLoad(studioLiveOutput);
           await new Promise(r=>setTimeout(r,900));
-          try { writeTestArtifact('lower-third/studio-live-output.png', (await outputWin.webContents.capturePage()).toPNG()); } catch(e) {}
+          try { writeTestArtifact('lower-third/studio-live-output.png', (await studioLiveOutput.webContents.capturePage()).toPNG()); } catch(e) {}
           try { await studioCapture('studio-live-take.png', { output:true }); } catch(e) {}
           await ltJparse(`(function(){ ltHideStudio(); return JSON.stringify({visible:S.lowerThird.visible,runtime:S.lowerThird.runtime,runtimeVersion:S.lowerThird.runtimeVersion}); })()`);
           await new Promise(r=>setTimeout(r,300));
-          const studioHidden = JSON.parse(await outputWin.webContents.executeJavaScript(`(function(){
+          const studioHidden = JSON.parse(await studioLiveOutput.webContents.executeJavaScript(`(function(){
             const canvas=document.getElementById('ltCanvas');
             return JSON.stringify({display:getComputedStyle(canvas).display, videos:document.querySelectorAll('#ltCanvas video').length, children:canvas.children.length});
           })()`));

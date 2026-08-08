@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' http://127.0.0.1:* data: blob:; media-src 'self' http://127.0.0.1:* data: blob:; frame-src 'self' http://127.0.0.1:* data: blob:">
-<title>ShowSlate — Control</title>
+<title>ShowSlate Conference Desk — Control</title>
 <link rel="stylesheet" href="styles/operator-shell.css">
 <style>
   :root{
@@ -3249,6 +3249,15 @@
     .slide-badges{display:none;}
     .slides-tools{grid-template-columns:repeat(3,minmax(0,1fr));}
   }
+  .conference-live-button{min-width:132px; border-color:rgba(255,255,255,.14);}
+  .conference-live-button.active{color:#d9eadf; border-color:#547760; background:#24352a; box-shadow:inset 0 0 0 1px rgba(123,170,139,.12);}
+  body.conference-live-mode .app-header{box-shadow:inset 0 -2px 0 #547760,0 8px 24px rgba(0,0,0,.22);}
+  body.conference-live-mode .golane{border-color:#4f765b!important; box-shadow:inset 0 0 0 1px rgba(92,137,105,.2);}
+  body.conference-live-mode .cue-editor-toggle,
+  body.conference-live-mode #btnCueImport,
+  body.conference-live-mode #btnCueAdd,
+  body.conference-live-mode #btnCueSave{opacity:.45;}
+  @media (max-width:1080px){.conference-live-button{min-width:84px; max-width:96px; overflow:hidden; white-space:nowrap;}}
 </style>
 <link rel="stylesheet" href="styles/pro-ui.css">
 </head>
@@ -3256,7 +3265,7 @@
 <div id="app-shell" class="mode-standard shell-layout">
 
 <div class="topbar app-header">
-  <div class="brand"><img class="brand-mark" src="build/icon.png" alt=""><span>ShowSlate</span><span class="probadge">BETA</span></div>
+  <div class="brand"><img class="brand-mark" src="build/icon.png" alt=""><span>ShowSlate</span><span class="probadge">CONFERENCE DESK</span></div>
   <button id="btnRundownDrawer" class="ghost tb-drawerbtn sidebar-toggle" type="button"
     aria-label="Toggle navigation sidebar" aria-controls="primarySidebar" aria-expanded="true"
     data-i18n-title="sidebarToggle" title="Show or hide navigation">
@@ -3279,6 +3288,7 @@
     <span data-i18n="sendScreen">Pošalji na ekran</span>
     <select id="displaySel" data-i18n-title="displayTitle" title="Monitor za izlazni ekran" tabindex="-1"></select>
   </div>
+  <button id="btnConferenceLive" class="ghost conference-live-button" type="button" aria-pressed="false" data-i18n="enterLiveMode">Enter Live Mode</button>
   <button id="btnOpenOut" class="primary output-routing-button" data-i18n="outputRouting">Izlazi</button>
   <span class="output-route-badge" id="outputRouteBadge" aria-label="0 live outputs">0</span>
   <div class="tb-menuwrap">
@@ -3858,7 +3868,8 @@
         </section>
         <section class="wizard-pane" data-wizard-pane="1">
           <h3 data-i18n="wizardRundownTitle">Import the rundown</h3><p data-i18n="wizardRundownBody">Paste rows from Excel/Sheets or load CSV/TSV. Use name, duration and optional note columns.</p>
-          <div class="flow-inline"><button id="btnWizardRundownFile" class="ghost" data-i18n="wizardChooseFile">Choose CSV…</button><input id="wizardRundownFile" type="file" accept=".csv,.txt,.tsv" hidden></div>
+          <div class="flow-inline"><button id="btnWizardShowFolder" class="primary" data-i18n="wizardChooseFolder">Import Show Folder…</button><button id="btnWizardRundownFile" class="ghost" data-i18n="wizardChooseFile">Choose CSV…</button><input id="wizardRundownFile" type="file" accept=".csv,.txt,.tsv" hidden></div>
+          <div class="flow-preview" id="wizardFolderStatus" data-i18n="wizardNoFolder">No show folder imported.</div>
           <label class="flow-field" style="margin-top:10px"><textarea id="wizardRundownText" spellcheck="false" placeholder="Opening,10:00,Host welcome&#10;Keynote,30:00,Main stage"></textarea></label>
           <div class="flow-preview" id="wizardRundownPreview" data-testid="wizard-rundown-preview">0 cues</div>
         </section>
@@ -3906,7 +3917,7 @@
     <section class="flow-dialog preflight-dialog" data-testid="preflight-panel">
       <header class="flow-head"><div class="flow-head-copy"><div class="flow-eyebrow" data-i18n="preflightEyebrow">OPERATOR PREFLIGHT</div><h2 id="preflightTitle" data-i18n="preflightTitle">Show readiness</h2></div><span id="preflightResult" class="preflight-result">Checking</span><button id="btnPreflightClose" class="ghost flow-close" aria-label="Close">✕</button></header>
       <main class="flow-content"><div class="preflight-list" id="preflightList"></div></main>
-      <footer class="flow-foot"><span class="preflight-detail" id="preflightSummary"></span><span class="grow"></span><button id="btnPreflightIdentify" class="ghost" data-i18n="identify">Identify displays</button><button id="btnPreflightRefresh" data-i18n="preflightRefresh">Refresh</button><button id="btnPreflightContinue" class="primary" data-i18n="preflightContinue">Continue to workspace</button></footer>
+      <footer class="flow-foot"><span class="preflight-detail" id="preflightSummary"></span><span class="grow"></span><button id="btnPreflightIdentify" class="ghost" data-i18n="identify">Identify displays</button><button id="btnPreflightTestOutputs" data-i18n="preflightTestOutputs">Test outputs</button><button id="btnPreflightRefresh" data-i18n="preflightRefresh">Refresh</button><button id="btnPreflightContinue" class="primary" data-i18n="preflightContinue">Continue to workspace</button></footer>
     </section>
   </div>
   <div class="flow-overlay" id="reportOverlay" role="dialog" aria-modal="true" aria-labelledby="postShowReportTitle" aria-hidden="true">
@@ -3959,6 +3970,7 @@
   <div class="tb-menu" id="tbMenu" data-testid="topbar-overflow-menu" role="menu" aria-hidden="true">
     <div class="lang"><select id="langSel" data-i18n-title="languageTitle" title="Interface language"></select></div>
     <button id="btnNewShow" class="ghost" data-i18n="newShow" data-testid="new-show-button">New Show…</button>
+    <button id="btnImportShowFolder" class="ghost" data-i18n="importShowFolder" data-testid="import-show-folder-button">Import Show Folder…</button>
     <button id="btnPreflight" class="ghost" data-i18n="preflight" data-testid="preflight-button">Preflight</button>
     <div class="tb-msep"></div>
     <button id="btnShowExport" class="ghost" data-i18n="showExport" data-testid="show-export-button">Export Show…</button>
@@ -4052,6 +4064,7 @@
 <script src="src/lower-third/migrate.js"></script>
 <script src="src/lower-third/resolve.js"></script>
 <script src="src/screen-content/model.js"></script>
+<script src="src/conference-desk/model.js"></script>
 <script src="src/report/model.js"></script>
 <script src="i18n.js?v=20260703-i18n2"></script>
 <script>
@@ -4063,11 +4076,17 @@ const api = window.pt || {
   showStorageStatus:async()=>({ok:false,autosaveEnabled:false,recoveryAvailable:false,currentAvailable:false}), showStorageSave:async()=>({ok:false,error:'preview'}),
   showStorageLoadCurrent:async()=>({ok:false,error:'preview'}), showStorageRecover:async()=>({ok:false,error:'preview'}),
   showPackageExport:async()=>({ok:false,error:'preview'}), showPackageImport:async()=>({ok:false,error:'preview'}),
+  showFolderImport:async()=>({ok:false,error:'preview'}),
   showPreflightInspect:async()=>({ok:false,overall:'blocking',checks:[],counts:{ok:0,warning:0,blocking:1}}),
   getNetworkInfo:async()=>({}), onDisplays(){}, onOutputState(){}, onOutputConfigState(){}, onNetworkInfo(){},
   onRemoteCmd(){}, sendToDisplay(){}, identifyDisplays:async()=>0,
   qr:async()=>null, shareStart:async()=>({error:'preview'}), shareStop:async()=>true,
   shareInfo:async()=>({}), onShareInfo(){}, buildInfo:async()=>({})
+};
+const PTCD = window.SHOWSLATE_CONFERENCE || {
+  parseSchedule:()=>({cues:[],errors:[],warnings:[]}), matchScheduleAssets:(cues,assets)=>({cues,assets,matches:[],unmatchedCues:[],unmatchedAssets:assets||[]}),
+  normalizeOutputRole:()=> 'audience', outputRoleDefinition:()=>({label:'Audience',description:''}),
+  buildGoTransaction:(cue,options)=>({version:1,id:options.id||'',cueId:String(cue&&cue.id||''),createdAt:options.now||Date.now()})
 };
 
 // ---------- JEZIK / LANGUAGE ----------
@@ -4076,13 +4095,13 @@ const I18N = {
     outLabel:'Izlaz na', displayTitle:'Monitor za izlazni ekran', sendScreen:'Pošalji na ekran', outputRouting:'Izlazi',
     outputRouterEyebrow:'DISTRIBUCIJA PROGRAMA', outputRouterTitle:'Usmeravanje izlaza', outputRouterBody:'Pošaljite Program na jedan ili više ekrana, prozora ili precizno pozicioniranih oblasti.',
     outputLiveDestinations:'aktivnih destinacija', outputProgramFeed:'PROGRAM signal', outputExplicitApply:'Izmene ne idu uživo dok ne izaberete Primeni usmeravanje.', outputAddDestination:'Dodaj destinaciju', outputManage:'Upravljaj', outputStopAll:'Zaustavi sve', outputApplyRouting:'Primeni usmeravanje', outputReady:'Usmeravanje je spremno.',
-    outputName:'Naziv', outputDisplay:'Ekran', outputMode:'Režim', outputPlacement:'Pozicija', outputResolution:'Rezolucija', outputCoordinates:'Koordinate', outputGrid:'Grid', outputCell:'Polje', outputEnabled:'Aktivan', outputLiveState:'UŽIVO', outputOffState:'ISKLJUČENO', outputPendingState:'ČEKA PRIMENU', outputUnavailableState:'EKRAN NIJE DOSTUPAN', outputAmbiguousState:'EKRAN NIJE JEDINSTVEN', outputUnavailableDisplay:'Nedostupan ekran', outputNoDestinations:'Nema podešenih izlaza. Dodajte destinaciju za projektor, confidence monitor ili poseban prozor.', outputRouteApplied:'Usmeravanje je primenjeno.', outputAllStopped:'Svi izlazi su zaustavljeni.', outputRemove:'Ukloni izlaz',
+    outputName:'Naziv', outputDisplay:'Ekran', outputRole:'Uloga', outputRole_audience:'Publika', outputRole_confidence:'Govornik / confidence', outputRole_timer:'Samo tajmer', outputRole_stream:'Stream grafika', outputRole_door:'Agenda na vratima', outputMode:'Režim', outputPlacement:'Pozicija', outputResolution:'Rezolucija', outputCoordinates:'Koordinate', outputGrid:'Grid', outputCell:'Polje', outputEnabled:'Aktivan', outputLiveState:'PRIKAZ POTVRĐEN', outputSyncingState:'SINHRONIZACIJA', outputOffState:'ISKLJUČENO', outputPendingState:'ČEKA PRIMENU', outputUnavailableState:'EKRAN NIJE DOSTUPAN', outputAmbiguousState:'EKRAN NIJE JEDINSTVEN', outputUnavailableDisplay:'Nedostupan ekran', outputNoDestinations:'Nema podešenih izlaza. Dodajte destinaciju za publiku, govornika, stream ili agendu na vratima.', outputRouteApplied:'Usmeravanje je primenjeno.', outputAllStopped:'Svi izlazi su zaustavljeni.', outputRemove:'Ukloni izlaz',
     outputFullscreen:'Ceo ekran', outputWindow:'Prozor', outputCustom:'Tačna veličina', outputGridMode:'Grid polje', outputCenter:'Centar', outputTopLeft:'Gore levo', outputTopRight:'Gore desno', outputBottomLeft:'Dole levo', outputBottomRight:'Dole desno', outputCustomPosition:'X / Y',
     fsTitle:'Pun ekran (F)', closeTitle:'Zatvori izlazni prozor', onTop:'Na vrhu',
     sources:'Izvori', tabRundown:'Rundown', sceneNamePrompt:'Naziv scene:',
     canvasTitle:'Canvas — odnos stranica platna (i vertikalni ekrani)', fadeTitle:'Trajanje prelaza scene na izlazu', fadeCut:'Cut',
-    lockLive:'Zaključaj program', lockTitle:'Štiti živ program: GO, RESET i preskakanje traže otključavanje; poruke i ±vreme rade',
-    demoShow:'▶ Učitaj demo događaj', identify:'Prepoznaj ekrane', identifyTitle:'Na svakom fizičkom ekranu prikaži veliki broj (3s)',
+    lockLive:'Zaključaj program', lockTitle:'Štiti živ program: GO, RESET i preskakanje traže otključavanje; poruke i ±vreme rade', enterLiveMode:'Live režim', exitLiveMode:'Izađi iz Live',
+    demoShow:'Učitaj konferencijski demo', identify:'Prepoznaj ekrane', identifyTitle:'Na svakom fizičkom ekranu prikaži veliki broj (3s)',
     liveLabel:'U PROGRAMU', goNextOnly:'SLEDEĆI RED', goNextOnlyTitle:'Ide na sledeći red u rundown-u, bez obzira na izabrani red.', statusTitle:'IZLAZI · STATUS',
     stStage:'Ekran govornika', stServer:'Mrežni prikazi (OBS · Backstage · Signal)', stRemote:'Telefon daljinski', stApi:'API / Companion',
     badgeLive:'U PROGRAMU', badgeSelected:'IZABRANO', badgeNext:'SLEDI', badgeSkipped:'PRESKOČENO',
@@ -4117,19 +4136,19 @@ const I18N = {
     recoveryRecover:'Oporavi autosave', recoveryLastSaved:'Otvori poslednje sačuvano', recoveryDiscard:'Odbaci', recoverySafeSummary:'Biće vraćeni rundown, vremena, izgled i sadržaj. Sve live akcije ostaju isključene.',
     saveStatusSaved:'Sačuvano', saveStatusSaving:'Čuvam…', saveStatusError:'Greška čuvanja', recoveryApplied:'Show je oporavljen bez live emitovanja.', lastShowOpened:'Otvoren je poslednji sačuvani show.',
     showExport:'Izvezi show…', showImport:'Uvezi show…', showImportConfirm:'Uvoz show-a menja trenutni radni prostor. Nastaviti?', showExportDone:'Show paket je izvezen.', showImportDone:'Show paket je bezbedno uvezen. Tajmer i izlazi su ostali isključeni.', showPackageFailed:'Show paket nije uspeo:',
-    newShow:'Novi show…', preflight:'Preflight', wizardEyebrow:'NOVI SHOW', wizardTitle:'Postavi produkciju',
+    newShow:'Novi show…', importShowFolder:'Uvezi show folder…', preflight:'Preflight', wizardEyebrow:'CONFERENCE DESK', wizardTitle:'Postavi konferencijsku salu',
     wizardStepDetails:'Podaci', wizardStepRundown:'Rundown', wizardStepScreens:'Ekrani', wizardStepBranding:'Brending', wizardStepContent:'Sadržaj', wizardStepTest:'Provera', wizardStepFinish:'Kraj',
     wizardDetailsTitle:'Podaci o show-u', wizardDetailsBody:'Dajte produkciji jasno ime kako bi autosave, izveštaji i prenosivi paketi bili lako prepoznatljivi.', wizardShowName:'Naziv show-a', wizardClient:'Klijent / organizacija', wizardVenue:'Lokacija', wizardDate:'Datum događaja', wizardStartTime:'Planirani početak',
-    wizardRundownTitle:'Uvezi rundown', wizardRundownBody:'Nalepite redove iz Excel-a/Sheets-a ili učitajte CSV/TSV. Kolone su naziv, trajanje i opciona beleška.', wizardChooseFile:'Izaberi CSV…',
-    wizardScreensTitle:'Dodeli ekran govornika', wizardScreensBody:'Izaberite gde se otvara Program. Ništa se ne šalje dok izričito ne testirate ili pokrenete izlaz.', wizardDisplay:'Ekran', wizardOutputMode:'Režim izlaza', wizardCanvas:'Platno', wizardWidth:'Širina', wizardHeight:'Visina',
+    wizardRundownTitle:'Uvezi raspored i materijale', wizardRundownBody:'Uvezite folder sa CSV/TSV rasporedom i medijima, nalepite redove iz Excel-a/Sheets-a ili izaberite samo CSV.', wizardChooseFolder:'Uvezi show folder…', wizardChooseFile:'Izaberi CSV…', wizardNoFolder:'Show folder nije uvezen.', wizardFolderReady:'{name} · {assets} medijskih fajlova spremno', wizardFolderFailed:'Show folder nije mogao da se uveze.', wizardImportSummary:'{cues} tačaka · {matched}/{assets} medija povezano · {errors} preskočenih redova', wizardRowsSkipped:'preskočenih redova', wizardWarnings:'upozorenja',
+    wizardScreensTitle:'Dodeli Audience izlaz', wizardScreensBody:'Izaberite gde se otvara prikaz za publiku. Dodatne Confidence, Timer, Stream i Door uloge podešavaju se u Outputs.', wizardDisplay:'Ekran', wizardOutputMode:'Režim izlaza', wizardCanvas:'Platno', wizardWidth:'Širina', wizardHeight:'Visina',
     wizardBrandingTitle:'Brending i potpis', wizardBrandingBody:'Postavite osnovni izgled i izaberite template za automatske potpise.', wizardLogo:'Logo show-a', wizardChooseLogo:'Izaberi logo…', wizardNoLogo:'Logo nije izabran',
     wizardContentTitle:'Početni sadržaj ekrana', wizardContentBody:'Pripremite jednostavnu holding poruku. Slajdove i vezani sadržaj možete dodati posle postavke.', wizardHoldingText:'Holding tekst', wizardOpeningTimer:'Početni tajmer', wizardInitialView:'Početni prikaz',
     wizardTestTitle:'Testiraj postavku', wizardTestBody:'Identifikujte fizičke ekrane i proverite lokalne browser servise bez pokretanja tajmera ili menjanja Programa.', wizardRunCheck:'Pokreni proveru veze', wizardNotTested:'Još nije testirano',
     wizardFinishTitle:'Spremno za preflight', wizardFinishBody:'Pregledajte postavku. Završetak pravi pauziran, off-air show i otvara završnu kontrolnu listu.', wizardBack:'Nazad', wizardNext:'Dalje', wizardFinishAction:'Napravi show i proveri',
     wizardNameRequired:'Unesite naziv show-a.', wizardRundownRequired:'Uvezite bar jedan ispravan rundown red.', wizardDisplayRequired:'Izaberite ekran.', wizardInvalidTimer:'Unesite ispravno početno vreme tajmera.', wizardCueCount:'{n} ispravnih cue-ova', wizardConnectionGood:'Lokalni output servisi su dostupni.', wizardConnectionBad:'Neki lokalni output servisi nisu dostupni.',
-    preflightEyebrow:'OPERATOR PREFLIGHT', preflightTitle:'Spremnost show-a', preflightRefresh:'Osveži', preflightContinue:'Nastavi u radni prostor', preflightReady:'Spremno', preflightWarning:'Upozorenje', preflightBlocking:'Blokirano', preflightChecking:'Proveravam',
+    preflightEyebrow:'OPERATOR PREFLIGHT', preflightTitle:'Spremnost show-a', preflightRefresh:'Osveži', preflightTestOutputs:'Testiraj izlaze', preflightTestingOutputs:'Čekam potvrde…', preflightContinue:'Nastavi u radni prostor', preflightReady:'Spremno', preflightWarning:'Upozorenje', preflightBlocking:'Blokirano', preflightChecking:'Proveravam',
     preflightSummary:'{ok} prolazi · {warn} upozorenja · {block} blokira',
-    preflightCheck_showSaved:'Show je sačuvan', preflightCheck_autosaveWritable:'Autosave je upisiv', preflightCheck_rundownValid:'Rundown je ispravan', preflightCheck_missingAssets:'Svi asseti postoje', preflightCheck_speakerScreen:'Ekran govornika', preflightCheck_programBrowser:'Program / browser output', preflightCheck_backstage:'Backstage', preflightCheck_phoneRemote:'Telefon daljinski', preflightCheck_apiCompanion:'API / Companion', preflightCheck_soundChime:'Zvuk / chime', preflightCheck_lowerThirdTemplate:'Lower-third template', preflightCheck_displayAssignment:'Dodela ekrana', preflightCheck_outputResolution:'Rezolucija izlaza', preflightCheck_recoveryStatus:'Recovery stanje',
+    preflightCheck_showSaved:'Show je sačuvan', preflightCheck_autosaveWritable:'Autosave je upisiv', preflightCheck_rundownValid:'Rundown je ispravan', preflightCheck_missingAssets:'Svi asseti postoje', preflightCheck_speakerScreen:'Ekran govornika', preflightCheck_programBrowser:'Program / browser output', preflightCheck_backstage:'Backstage', preflightCheck_phoneRemote:'Telefon daljinski', preflightCheck_apiCompanion:'API / Companion', preflightCheck_soundChime:'Zvuk / chime', preflightCheck_lowerThirdTemplate:'Lower-third template', preflightCheck_displayAssignment:'Dodela ekrana', preflightCheck_outputResolution:'Rezolucija izlaza', preflightCheck_recoveryStatus:'Recovery stanje', preflightCheck_conferenceMode:'Conference Desk režim', preflightCheck_conferenceAudienceRoute:'Audience izlaz', preflightCheck_conferenceRouteAssignments:'Uloge i dodela ekrana', preflightCheck_conferenceCueActions:'GO akcije po tački', preflightCheck_conferenceMediaMapping:'Povezani mediji', preflightCheck_conferenceOutputDelivery:'Potvrda prikaza izlaza',
     slides:'SLIDES', slideMedia:'Medija', slideHolding:'Holding', slideLogo:'Logo', slideTimer:'Tajmer', slideBlank:'Prazno', slideSelected:'Izabrano', slideTake:'TAKE', slideClear:'CLEAR', slideEmpty:'Dodajte sliku, video, PDF, holding tekst, logo ili tajmer.', slideNamePrompt:'Naziv sadržaja:', slideHoldingPrompt:'Holding tekst:', slideLogoMissing:'Prvo dodajte logo u brendingu.', slideCount:'{n} stavki', slidePage:'Strana {n}',
     cueContent:'Vezani sadržaj ekrana', cueContentAuto:'Auto TAKE sadržaja na GO', cueContentNone:'Bez vezanog sadržaja',
     backstageLabel:'Backstage (raspored / crew)', signalLabel:'Signal svetlo (govornica)', onTime:'NA VREME', late:'kasni', early:'ispred',
@@ -4172,13 +4191,13 @@ const I18N = {
     outLabel:'Output to', displayTitle:'Monitor for the output screen', sendScreen:'Send to screen', outputRouting:'Outputs',
     outputRouterEyebrow:'PROGRAM DISTRIBUTION', outputRouterTitle:'Output Routing', outputRouterBody:'Send Program to one or more displays, windows or precisely positioned regions.',
     outputLiveDestinations:'live destinations', outputProgramFeed:'PROGRAM feed', outputExplicitApply:'Changes stay off-air until Apply Routing.', outputAddDestination:'Add destination', outputManage:'Manage', outputStopAll:'Stop all', outputApplyRouting:'Apply routing', outputReady:'Routing ready.',
-    outputName:'Name', outputDisplay:'Display', outputMode:'Mode', outputPlacement:'Placement', outputResolution:'Resolution', outputCoordinates:'Coordinates', outputGrid:'Grid', outputCell:'Cell', outputEnabled:'Enabled', outputLiveState:'LIVE', outputOffState:'OFF', outputPendingState:'PENDING APPLY', outputUnavailableState:'DISPLAY UNAVAILABLE', outputAmbiguousState:'DISPLAY NOT UNIQUE', outputUnavailableDisplay:'Unavailable display', outputNoDestinations:'No outputs configured. Add a destination for a projector, confidence monitor or dedicated window.', outputRouteApplied:'Routing applied.', outputAllStopped:'All outputs stopped.', outputRemove:'Remove output',
+    outputName:'Name', outputDisplay:'Display', outputRole:'Role', outputRole_audience:'Audience', outputRole_confidence:'Confidence', outputRole_timer:'Timer only', outputRole_stream:'Stream graphics', outputRole_door:'Door agenda', outputMode:'Mode', outputPlacement:'Placement', outputResolution:'Resolution', outputCoordinates:'Coordinates', outputGrid:'Grid', outputCell:'Cell', outputEnabled:'Enabled', outputLiveState:'RENDER CONFIRMED', outputSyncingState:'SYNCING', outputOffState:'OFF', outputPendingState:'PENDING APPLY', outputUnavailableState:'DISPLAY UNAVAILABLE', outputAmbiguousState:'DISPLAY NOT UNIQUE', outputUnavailableDisplay:'Unavailable display', outputNoDestinations:'No outputs configured. Add a destination for the audience, confidence, stream or door agenda.', outputRouteApplied:'Routing applied.', outputAllStopped:'All outputs stopped.', outputRemove:'Remove output',
     outputFullscreen:'Fullscreen', outputWindow:'Window', outputCustom:'Custom size', outputGridMode:'Grid cell', outputCenter:'Center', outputTopLeft:'Top left', outputTopRight:'Top right', outputBottomLeft:'Bottom left', outputBottomRight:'Bottom right', outputCustomPosition:'X / Y',
     fsTitle:'Fullscreen (F)', closeTitle:'Close output window', onTop:'On top',
     sources:'Sources', tabRundown:'Rundown', sceneNamePrompt:'Scene name:',
     canvasTitle:'Canvas — output aspect ratio (incl. vertical screens)', fadeTitle:'Scene transition duration on outputs', fadeCut:'Cut',
-    lockLive:'Lock Live', lockTitle:'Protects the live show: GO, RESET and skip require unlocking; messages and ±time still work',
-    demoShow:'▶ Load demo show', identify:'Identify displays', identifyTitle:'Show a big number on every physical display (3s)',
+    lockLive:'Lock Live', lockTitle:'Protects the live show: GO, RESET and skip require unlocking; messages and ±time still work', enterLiveMode:'Live Mode', exitLiveMode:'Exit Live',
+    demoShow:'Load conference demo', identify:'Identify displays', identifyTitle:'Show a big number on every physical display (3s)',
     liveLabel:'LIVE', goNextOnly:'NEXT ROW', goNextOnlyTitle:'Advances to the next rundown row, regardless of the selected row.', statusTitle:'OUTPUTS · STATUS',
     stStage:'Speaker screen', stServer:'Network views (OBS · Backstage · Signal)', stRemote:'Phone remote', stApi:'API / Companion',
     badgeLive:'LIVE', badgeSelected:'SELECTED', badgeNext:'NEXT', badgeSkipped:'SKIPPED',
@@ -4213,19 +4232,19 @@ const I18N = {
     recoveryRecover:'Recover autosave', recoveryLastSaved:'Open last saved', recoveryDiscard:'Discard', recoverySafeSummary:'Rundown, timings, design and content will be restored. Every live action stays off.',
     saveStatusSaved:'Saved', saveStatusSaving:'Saving…', saveStatusError:'Save failed', recoveryApplied:'Show recovered without sending anything live.', lastShowOpened:'Last saved show opened.',
     showExport:'Export Show…', showImport:'Import Show…', showImportConfirm:'Importing a show replaces the current workspace. Continue?', showExportDone:'Show package exported.', showImportDone:'Show package imported safely. Timer and outputs remain off.', showPackageFailed:'Show package failed:',
-    newShow:'New Show…', preflight:'Preflight', wizardEyebrow:'NEW SHOW', wizardTitle:'Set up a production',
+    newShow:'New Show…', importShowFolder:'Import Show Folder…', preflight:'Preflight', wizardEyebrow:'CONFERENCE DESK', wizardTitle:'Set up a conference room',
     wizardStepDetails:'Details', wizardStepRundown:'Rundown', wizardStepScreens:'Screens', wizardStepBranding:'Branding', wizardStepContent:'Content', wizardStepTest:'Test', wizardStepFinish:'Finish',
     wizardDetailsTitle:'Show details', wizardDetailsBody:'Name this production so autosaves, reports and portable packages are easy to recognize.', wizardShowName:'Show name', wizardClient:'Client / organization', wizardVenue:'Venue', wizardDate:'Event date', wizardStartTime:'Planned start',
-    wizardRundownTitle:'Import the rundown', wizardRundownBody:'Paste rows from Excel/Sheets or load CSV/TSV. Use name, duration and optional note columns.', wizardChooseFile:'Choose CSV…',
-    wizardScreensTitle:'Assign the speaker screen', wizardScreensBody:'Choose where Program will open. Nothing is sent until you explicitly test or start an output.', wizardDisplay:'Display', wizardOutputMode:'Output mode', wizardCanvas:'Canvas', wizardWidth:'Width', wizardHeight:'Height',
+    wizardRundownTitle:'Import the schedule and media', wizardRundownBody:'Import a folder containing a CSV/TSV schedule and media, paste rows from Excel/Sheets, or choose a schedule file only.', wizardChooseFolder:'Import Show Folder…', wizardChooseFile:'Choose CSV…', wizardNoFolder:'No show folder imported.', wizardFolderReady:'{name} · {assets} media files ready', wizardFolderFailed:'The show folder could not be imported.', wizardImportSummary:'{cues} cues · {matched}/{assets} media matched · {errors} skipped rows', wizardRowsSkipped:'rows skipped', wizardWarnings:'warnings',
+    wizardScreensTitle:'Assign the Audience output', wizardScreensBody:'Choose where the audience feed opens. Additional Confidence, Timer, Stream and Door roles are configured in Outputs.', wizardDisplay:'Display', wizardOutputMode:'Output mode', wizardCanvas:'Canvas', wizardWidth:'Width', wizardHeight:'Height',
     wizardBrandingTitle:'Branding and lower third', wizardBrandingBody:'Set a restrained base look and choose the template used by AUTO lower thirds.', wizardLogo:'Show logo', wizardChooseLogo:'Choose logo…', wizardNoLogo:'No logo selected',
     wizardContentTitle:'Default screen content', wizardContentBody:'Prepare a simple holding message. Slides and linked content can be added after setup.', wizardHoldingText:'Holding text', wizardOpeningTimer:'Opening timer', wizardInitialView:'Initial view',
     wizardTestTitle:'Test the setup', wizardTestBody:'Identify physical displays and verify local browser services without starting the timer or changing Program.', wizardRunCheck:'Run connection check', wizardNotTested:'Not tested yet',
     wizardFinishTitle:'Ready for preflight', wizardFinishBody:'Review the setup. Finishing creates a paused, off-air show and opens the final preflight checklist.', wizardBack:'Back', wizardNext:'Next', wizardFinishAction:'Create Show & Preflight',
     wizardNameRequired:'Enter a show name.', wizardRundownRequired:'Import at least one valid rundown row.', wizardDisplayRequired:'Choose a display.', wizardInvalidTimer:'Enter a valid opening timer.', wizardCueCount:'{n} valid cues', wizardConnectionGood:'Local output services are reachable.', wizardConnectionBad:'Some local output services are unavailable.',
-    preflightEyebrow:'OPERATOR PREFLIGHT', preflightTitle:'Show readiness', preflightRefresh:'Refresh', preflightContinue:'Continue to workspace', preflightReady:'Ready', preflightWarning:'Warning', preflightBlocking:'Blocking', preflightChecking:'Checking',
+    preflightEyebrow:'OPERATOR PREFLIGHT', preflightTitle:'Show readiness', preflightRefresh:'Refresh', preflightTestOutputs:'Test outputs', preflightTestingOutputs:'Waiting for confirmation…', preflightContinue:'Continue to workspace', preflightReady:'Ready', preflightWarning:'Warning', preflightBlocking:'Blocking', preflightChecking:'Checking',
     preflightSummary:'{ok} pass · {warn} warnings · {block} blocking',
-    preflightCheck_showSaved:'Show saved', preflightCheck_autosaveWritable:'Autosave writable', preflightCheck_rundownValid:'Rundown valid', preflightCheck_missingAssets:'Assets available', preflightCheck_speakerScreen:'Speaker screen', preflightCheck_programBrowser:'Program / browser output', preflightCheck_backstage:'Backstage', preflightCheck_phoneRemote:'Phone remote', preflightCheck_apiCompanion:'API / Companion', preflightCheck_soundChime:'Sound / chime', preflightCheck_lowerThirdTemplate:'Lower-third template', preflightCheck_displayAssignment:'Display assignment', preflightCheck_outputResolution:'Output resolution', preflightCheck_recoveryStatus:'Recovery status',
+    preflightCheck_showSaved:'Show saved', preflightCheck_autosaveWritable:'Autosave writable', preflightCheck_rundownValid:'Rundown valid', preflightCheck_missingAssets:'Assets available', preflightCheck_speakerScreen:'Speaker screen', preflightCheck_programBrowser:'Program / browser output', preflightCheck_backstage:'Backstage', preflightCheck_phoneRemote:'Phone remote', preflightCheck_apiCompanion:'API / Companion', preflightCheck_soundChime:'Sound / chime', preflightCheck_lowerThirdTemplate:'Lower-third template', preflightCheck_displayAssignment:'Display assignment', preflightCheck_outputResolution:'Output resolution', preflightCheck_recoveryStatus:'Recovery status', preflightCheck_conferenceMode:'Conference Desk mode', preflightCheck_conferenceAudienceRoute:'Audience output', preflightCheck_conferenceRouteAssignments:'Role and display assignments', preflightCheck_conferenceCueActions:'Cue GO actions', preflightCheck_conferenceMediaMapping:'Media mapping', preflightCheck_conferenceOutputDelivery:'Output render confirmation',
     slides:'SLIDES', slideMedia:'Media', slideHolding:'Holding', slideLogo:'Logo', slideTimer:'Timer', slideBlank:'Blank', slideSelected:'Selected', slideTake:'TAKE', slideClear:'CLEAR', slideEmpty:'Add an image, video, PDF, holding text, logo or timer.', slideNamePrompt:'Content name:', slideHoldingPrompt:'Holding text:', slideLogoMissing:'Add a branding logo first.', slideCount:'{n} items', slidePage:'Page {n}',
     cueContent:'Linked screen content', cueContentAuto:'Auto TAKE content on GO', cueContentNone:'No linked content',
     backstageLabel:'Backstage (schedule / crew)', signalLabel:'Signal light (podium)', onTime:'ON TIME', late:'behind', early:'ahead',
@@ -4302,6 +4321,7 @@ function applyLang(){
   document.querySelectorAll('[data-i18n-title]').forEach(el => el.title = t(el.dataset.i18nTitle));
   document.querySelectorAll('[data-i18n-html]').forEach(el => el.innerHTML = t(el.dataset.i18nHtml));
   buildLanguageSelect();
+  if(typeof setConferenceLiveMode==='function') setConferenceLiveMode(!!conferenceLiveMode);
   updateUtilityToggle();
   updateButtons(); renderCues(); renderScenesUI(); renderContentItems(); renderOutputRows(); showNet(lastNetInfo); fillDisplays(lastDisplays);
   if($('ltStudio')?.classList.contains('open')) renderLtStudio();
@@ -4333,13 +4353,14 @@ let S = {
   studioDirect:true,
   scenes:[{id:'scene-default', name:'Timer', layers:[]}],
   activeSceneId:'scene-default',
+  goTransaction:null,
   // rundown / raspored
   cues:[], currentCue:-1, showStart:'', showNowNext:false,
   lang:lang
 };
 let lastNetInfo = null, lastDisplays = [];
 let cues = [], currentCue = -1, selectedCue = -1, autoNext = false, zeroFired = false, outputOpen = false;
-let outputRuntime = {primaryOpen:false,routes:[]};
+let outputRuntime = {primaryOpen:false,revision:0,primary:null,routes:[]};
 let lowerThirdTimer = null;
 let lowerThirdOutroTimer = null;
 let lowerThirdAutoTimer = null;
@@ -4423,6 +4444,7 @@ function outputSnapshot(st=S){
   out.cues=cues;
   out.currentCue=currentCue;
   out.lang=lang;
+  out.show={id:String(showMeta.id||''),name:String(showMeta.name||'Untitled show'),details:jsonCopy(showMeta.details||{}, {})};
   return out;
 }
 function snapshotLowerThirdForSave(lt=S.lowerThird){
@@ -4740,17 +4762,52 @@ function updateButtons(){
 
 // ---------- RUNDOWN ----------
 function clock(ms){ const d=new Date(ms); return pad(d.getHours())+':'+pad(d.getMinutes()); }
+function demoConferenceGraphic(title,subtitle,accent){
+  const svg=`<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="900" viewBox="0 0 1600 900"><rect width="1600" height="900" fill="#101419"/><rect x="112" y="108" width="14" height="684" rx="7" fill="${accent}"/><text x="184" y="406" fill="#f5f7f8" font-family="Arial,sans-serif" font-size="112" font-weight="700">${title}</text><text x="190" y="510" fill="#9ba6b2" font-family="Arial,sans-serif" font-size="48">${subtitle}</text></svg>`;
+  return 'data:image/svg+xml;charset=utf-8,'+encodeURIComponent(svg);
+}
+function demoConferenceContent(name,subtitle,accent){
+  const sceneId=makeId('scene'), itemId='content-'+sceneId;
+  return {
+    scene:{id:sceneId,name,layers:[{id:makeId('layer'),type:'image',name,src:demoConferenceGraphic(name,subtitle,accent),visible:true,fit:'contain',x:0,y:0,w:100,h:100,opacity:1}]},
+    item:{id:itemId,name,type:'image',sceneId,assetId:'demo:'+name.toLocaleLowerCase().replace(/[^a-z0-9]+/g,'-'),page:1}
+  };
+}
 function seedDemoShow(){
-  cues = migrateCues([
-    {name:'Welcome / Holding', durationMs:600000, note:'Muzika + holding slajd', color:'#a371f7', ltName:'', ltTitle:''},
-    {name:'Opening',           durationMs:300000, note:'Organizator otvara',    color:'#4493f8', ltName:'Marko Marić',  ltTitle:'Direktor konferencije'},
-    {name:'Keynote',           durationMs:1200000,note:'Glavno predavanje',     color:'#3fb950', ltName:'Dr Ana Antić', ltTitle:'Keynote Speaker'},
-    {name:'Coffee Break',      durationMs:900000, note:'Pauza — holding',       color:'#d9a441', ltName:'', ltTitle:''},
-    {name:'Panel Discussion',  durationMs:1500000,note:'3 gosta + moderator',   color:'#ec6cb9', ltName:'Panel', ltTitle:'Gosti programa'},
-    {name:'Closing',           durationMs:300000, note:'Zahvalnice',            color:'#e6edf3', ltName:'Marko Marić', ltTitle:'Direktor konferencije'}
+  const welcome=demoConferenceContent('Welcome','Conference Desk demo','#67a27c');
+  const keynote=demoConferenceContent('Keynote','Main room · 10:00','#6f91b1');
+  const panel=demoConferenceContent('Panel discussion','Four guests · Main room','#9a83ad');
+  const breakSlide=demoConferenceContent('Coffee break','Program resumes in 15 minutes','#b28c4e');
+  S.scenes=[welcome.scene,keynote.scene,panel.scene,breakSlide.scene];
+  S.activeSceneId=welcome.scene.id;
+  contentItems=[welcome.item,keynote.item,panel.item,breakSlide.item];
+  selectedContentItemId=welcome.item.id;
+  liveContentItemId='';
+  const cue=(data)=>({
+    color:'#586573',status:'pending',actualStart:null,actualEnd:null,actualDurationMs:null,
+    lowerThirdAuto:!!data.speakerName,lowerThirdDelayMs:0,lowerThirdDurationMs:8000,
+    lowerThirdHideBeforeNextGo:true,lowerThirdNoRepeat:true,autoTakeContentOnGo:!!data.contentItemId,
+    ...data
+  });
+  cues=migrateCues([
+    cue({name:'Doors open',durationMs:600000,note:'Audience seating',contentItemId:welcome.item.id,color:'#6f8f7a'}),
+    cue({name:'Opening',durationMs:300000,note:'Host welcome',speakerName:'Ana Markovic',speakerTitle:'Conference host',company:'Example Events',contentItemId:welcome.item.id,color:'#6787a2'}),
+    cue({name:'Keynote',durationMs:1200000,note:'Main presentation',speakerName:'Dr Maya Chen',speakerTitle:'Keynote speaker',company:'Northstar',contentItemId:keynote.item.id,color:'#6f91b1'}),
+    cue({name:'Panel discussion',durationMs:1800000,note:'Moderator plus four guests',speakerName:'Luka Petrovic',speakerTitle:'Moderator',company:'Industry Forum',contentItemId:panel.item.id,color:'#8a759b'}),
+    cue({name:'Coffee break',durationMs:900000,note:'Lobby refreshments',contentItemId:breakSlide.item.id,color:'#a98546'}),
+    cue({name:'Closing',durationMs:300000,note:'Final remarks',speakerName:'Ana Markovic',speakerTitle:'Conference host',company:'Example Events',contentItemId:welcome.item.id,color:'#72808b'})
   ]);
-  currentCue=-1; selectedCue=-1;
-  saveCues(); send(); renderCues(); updateGoLabel(); updateLiveInfo();
+  showMeta={id:'show-demo-conference',name:'Conference Desk Demo',details:{client:'Example Events',venue:'Main Room',productMode:'conference-desk',showFolder:'Built-in demo',importedAssets:4,matchedAssets:4}};
+  currentCue=-1; selectedCue=-1; showLog=[];
+  S.mode='countdown'; S.durationMs=cues[0].durationMs; S.remMs=S.durationMs; S.running=false; S.endAt=0; S.startAt=0;
+  S.text=''; S.textOnly=false; S.blackout=false; S.transparent=false; S.gridOn=false; S.goTransaction=null; S.canvasAspect='16:9';
+  outputConfigs=[{id:makeId('out'),name:'Audience',role:'audience',enabled:true,displayId:Number($('displaySel')?.value)||null,mode:'fullscreen',width:1920,height:1080,gridSize:3,gridCell:4}];
+  try{ api.setOutputConfigs([]); api.closeOutput(); }catch(e){}
+  outputOpen=false;
+  programState=outputSnapshot(S);
+  saveCues(); saveOutputConfigsLocal(); saveSettings();
+  renderCues(); renderContentItems(); renderScenesUI(); updateGoLabel(); updateLiveInfo(); updateButtons(); publishControlStatus();
+  scheduleShowAutosave('conference-demo',80);
 }
 function renderCues(){
   const el=$('cueList'); el.innerHTML='';
@@ -4881,6 +4938,7 @@ function goLiveWithCue(i, opts={}){
   if(i<0||i>=cues.length) return;
   clearScheduledLowerThirdAuto();
   const now=Date.now();
+  const autostart = ('autostart' in opts) ? !!opts.autostart : (S.goAutoStart!==false);
   const previousCue=currentCue>=0&&cues[currentCue]?cues[currentCue]:null;
   if(currentCue>=0 && cues[currentCue] && cues[currentCue].status==='live'){
     const prev=cues[currentCue];
@@ -4890,9 +4948,17 @@ function goLiveWithCue(i, opts={}){
   }
   logClose();
   const c=cues[i];
+  S.goTransaction=PTCD.buildGoTransaction(c,{
+    id:'go-'+now.toString(36)+'-'+Math.random().toString(36).slice(2,7),
+    now,
+    autoStart:autostart,
+    contentItemExists:id=>contentItems.some(item=>String(item.id)===String(id))
+  });
   c.actualStart=now; c.actualEnd=null; c.actualDurationMs=null; c.status='live';
   currentCue=i; selectedCue=-1;
-  S.mode='countdown'; S.durationMs=c.durationMs; S.remMs=c.durationMs; S.running=false;
+  S.mode='countdown'; S.durationMs=c.durationMs; S.remMs=c.durationMs; S.running=autostart;
+  S.endAt=autostart?now+c.durationMs:0;
+  S.startAt=0;
   zeroFired=false; setModeTabs();
   const contentPlan=PTSC.cueTakePlan(c,{items:contentItems});
   if(contentPlan.enabled){
@@ -4909,12 +4975,11 @@ function goLiveWithCue(i, opts={}){
     if(!autoPlan.speakerName) hideLowerThird({force:true,silent:true,keepAutoSchedule:true});
     else if(autoPlan.delayMs<=0) takeCueLowerThirdAuto(autoPlan,{silent:true});
   }
+  if(autostart) logStart(i);
   saveCues();
-  send(true,{takeContent:contentPlan.enabled}); // jedna konzistentna emisija svim izlazima
+  send(true,{takeContent:contentPlan.enabled}); // cue, timer, content and lower third share one Program revision
   if(autoPlan.enabled&&autoPlan.delayMs>0) scheduleCueLowerThirdAuto(autoPlan);
   updateButtons(); renderCues(); renderContentItems(); updateGoLabel(); updateLiveInfo();
-  const autostart = ('autostart' in opts) ? !!opts.autostart : (S.goAutoStart!==false);
-  if(autostart) startPause();      // START posle emisije (šalje svež snapshot)
 }
 // kompatibilnost sa postojećim pozivima (remote/OSC/demo)
 function loadCue(i,autostart){ goLiveWithCue(i, {autostart: !!autostart}); }
@@ -5022,7 +5087,7 @@ function collectShowDocument(){
   const runtime=S.lowerThird&&S.lowerThird.runtime;
   return {
     schemaVersion:1,
-    app:{productName:'ShowSlate'},
+    app:{productName:'ShowSlate Conference Desk'},
     show:{
       id:String(showMeta.id||'show-current'),
       name:String(showMeta.name||'Untitled show'),
@@ -5152,19 +5217,33 @@ $('btnShowImport')?.addEventListener('click',()=>importPortableShow());
 // ---------- NEW SHOW WIZARD / PREFLIGHT ----------
 let wizardStep=0;
 let wizardLogo='';
+let wizardFolderImport={rootName:'',schedule:null,assets:[],warnings:[]};
 function textVars(value,vars={}){ return Object.entries(vars).reduce((text,[key,item])=>text.replaceAll('{'+key+'}',String(item)),String(value||'')); }
 function setFlowOpen(id,open){
   const overlay=$(id); if(!overlay) return;
   overlay.classList.toggle('open',!!open);
   overlay.setAttribute('aria-hidden',open?'false':'true');
 }
-function wizardRundown(){ return parseRundownCSV($('wizardRundownText').value); }
+function wizardSchedule(){ return PTCD.parseSchedule($('wizardRundownText').value); }
+function wizardRundown(){ return wizardSchedule().cues; }
+function wizardAssetMatch(){ return PTCD.matchScheduleAssets(wizardRundown(),wizardFolderImport.assets); }
 function updateWizardRundownPreview(){
-  const count=wizardRundown().length;
+  const parsed=wizardSchedule();
+  const match=PTCD.matchScheduleAssets(parsed.cues,wizardFolderImport.assets);
+  const count=parsed.cues.length;
   const el=$('wizardRundownPreview');
-  el.textContent=textVars(t('wizardCueCount'),{n:count});
+  el.textContent=wizardFolderImport.assets.length
+    ? textVars(t('wizardImportSummary'),{cues:count,matched:match.matches.length,assets:wizardFolderImport.assets.length,errors:parsed.errors.length})
+    : textVars(t('wizardCueCount'),{n:count})+(parsed.errors.length?` · ${parsed.errors.length} ${t('wizardRowsSkipped')}`:'');
   el.classList.toggle('good',count>0);
   el.classList.toggle('bad',!count&&!!$('wizardRundownText').value.trim());
+}
+function updateWizardFolderStatus(){
+  const box=$('wizardFolderStatus'); if(!box) return;
+  if(!wizardFolderImport.rootName){ box.textContent=t('wizardNoFolder'); box.className='flow-preview'; return; }
+  const warnings=wizardFolderImport.warnings.length?` · ${wizardFolderImport.warnings.length} ${t('wizardWarnings')}`:'';
+  box.textContent=textVars(t('wizardFolderReady'),{name:wizardFolderImport.rootName,assets:wizardFolderImport.assets.length})+warnings;
+  box.className='flow-preview good';
 }
 function populateWizardDisplays(){
   const select=$('wizardDisplay'); if(!select) return;
@@ -5240,14 +5319,34 @@ async function openNewShowWizard(){
   $('wizardDate').value=`${today.getFullYear()}-${pad(today.getMonth()+1)}-${pad(today.getDate())}`;
   $('wizardStartTime').value=S.showStart||'';
   $('wizardRundownText').value='';
+  wizardFolderImport={rootName:'',schedule:null,assets:[],warnings:[]};
   $('wizardBg').value='#000000'; $('wizardFg').value='#ffffff';
   $('wizardHoldingText').value='WELCOME'; $('wizardOpeningTimer').value='10:00'; $('wizardInitialView').value='timer';
   $('wizardOutputMode').value='fullscreen'; $('wizardCanvas').value='16:9';
   wizardLogo=''; $('wizardLogoStatus').textContent=t('wizardNoLogo');
-  populateWizardDisplays(); populateWizardTemplates(); updateWizardRundownPreview(); setWizardStep(0);
+  populateWizardDisplays(); populateWizardTemplates(); updateWizardFolderStatus(); updateWizardRundownPreview(); setWizardStep(0);
   setFlowOpen('newShowOverlay',true);
   setTimeout(()=>$('wizardShowName').focus(),30);
 }
+async function importConferenceShowFolder(){
+  const result=await api.showFolderImport({});
+  if(!result||!result.ok){
+    if(result&&!result.canceled) $('wizardError').textContent=result.error||t('wizardFolderFailed');
+    return result;
+  }
+  wizardFolderImport={
+    rootName:String(result.rootName||''),
+    schedule:result.schedule||null,
+    assets:Array.isArray(result.assets)?result.assets:[],
+    warnings:Array.isArray(result.warnings)?result.warnings:[]
+  };
+  if(result.schedule&&typeof result.schedule.text==='string') $('wizardRundownText').value=result.schedule.text;
+  if(!$('wizardShowName').value.trim()&&result.rootName) $('wizardShowName').value=result.rootName;
+  updateWizardFolderStatus(); updateWizardRundownPreview();
+  setWizardStep(1);
+  return result;
+}
+async function openWizardAndImportFolder(){ await openNewShowWizard(); return importConferenceShowFolder(); }
 function closeNewShowWizard(){ setFlowOpen('newShowOverlay',false); }
 function buildWizardScenes(initialView,holdingText,fg){
   const timerScene={id:makeId('scene'),name:'Timer',layers:[makeTimerLayer()]};
@@ -5256,9 +5355,24 @@ function buildWizardScenes(initialView,holdingText,fg){
   const scenes=[timerScene,holdingScene,blankScene];
   return {scenes,activeSceneId:initialView==='holding'?holdingScene.id:initialView==='blank'?blankScene.id:timerScene.id};
 }
+function buildWizardImportedContent(sceneSetup,assets){
+  const scenes=sceneSetup.scenes.slice();
+  const items=[];
+  const itemByAssetId=new Map();
+  (Array.isArray(assets)?assets:[]).forEach(asset=>{
+    if(!asset||!asset.src||!['image','video','pdf'].includes(asset.kind)) return;
+    const sceneId=makeId('scene');
+    const layer={id:makeId('layer'),type:asset.kind,name:asset.name||'Media',src:asset.src,visible:true,fit:'contain',x:0,y:0,w:100,h:100,opacity:1};
+    if(asset.kind==='pdf') layer.page=1;
+    const scene={id:sceneId,name:asset.name||'Media',layers:[layer]};
+    const item={id:'content-'+sceneId,name:asset.name||'Media',type:asset.kind,sceneId,assetId:asset.src,page:asset.kind==='pdf'?1:1};
+    scenes.push(scene); items.push(item); itemByAssetId.set(String(asset.id),item);
+  });
+  return {scenes,items,itemByAssetId,activeSceneId:sceneSetup.activeSceneId};
+}
 async function finishNewShowWizard(){
   for(let step=0;step<=4;step++){ if(!wizardStepValid(step)){ setWizardStep(step); return {ok:false}; } }
-  const rundown=migrateCues(wizardRundown().map(cue=>({...cue,id:makeId('cue'),status:'pending',actualStart:null,actualEnd:null,actualDurationMs:null})));
+  const matched=wizardAssetMatch();
   const displayId=Number($('wizardDisplay').value);
   const mode=$('wizardOutputMode').value;
   const width=Math.max(160,Math.min(8192,Number($('wizardWidth').value)||1920));
@@ -5268,19 +5382,26 @@ async function finishNewShowWizard(){
   const library=jsonCopy(ltLibrary||null,null);
   if(library) library.activeTemplateId=chosenTemplateId||null;
   const sceneSetup=buildWizardScenes($('wizardInitialView').value,$('wizardHoldingText').value.trim(),$('wizardFg').value);
+  const importedContent=buildWizardImportedContent(sceneSetup,matched.assets);
+  const rundown=migrateCues(matched.cues.map(cue=>{
+    const item=cue.matchedAsset?importedContent.itemByAssetId.get(String(cue.matchedAsset.id)):null;
+    const clean={...cue}; delete clean.matchedAsset; delete clean.assetMatchMethod; delete clean.assetRef; delete clean.sourceRow;
+    return {...clean,id:makeId('cue'),status:'pending',actualStart:null,actualEnd:null,actualDurationMs:null,
+      contentItemId:item?item.id:'',autoTakeContentOnGo:!!(item&&cue.autoTakeContentOnGo)};
+  }));
   const document=collectShowDocument();
   document.show={
     ...document.show,
     id:'show-'+Date.now().toString(36)+'-'+Math.random().toString(36).slice(2,8),
     name:$('wizardShowName').value.trim(),
-    details:{client:$('wizardClient').value.trim(),venue:$('wizardVenue').value.trim(),eventDate:$('wizardDate').value,primaryDisplayId:displayId},
+    details:{client:$('wizardClient').value.trim(),venue:$('wizardVenue').value.trim(),eventDate:$('wizardDate').value,primaryDisplayId:displayId,productMode:'conference-desk',showFolder:wizardFolderImport.rootName||'',importedAssets:matched.assets.length,matchedAssets:matched.matches.length},
     rundown,selectedCue:rundown.length?0:-1,liveCue:-1,
     timer:{mode:'countdown',durationMs:duration,remainingMs:duration,elapsedMs:0,wasRunning:false,capturedAt:Date.now(),yellowSec:S.yellowSec,redSec:S.redSec,overtime:true},
     actualTimes:[],message:{text:'',flash:false},
     lowerThird:{library,activeTemplateId:chosenTemplateId,state:{...snapshotLowerThirdForSave(S.lowerThird),visible:false,runtime:null,runtimeVersion:null},autoCue:false,wasVisible:false,runtimeRef:null},
-    screenContent:{...sceneSetup,text:'',textOnly:false,transparent:false},
+    screenContent:{scenes:importedContent.scenes,activeSceneId:importedContent.activeSceneId,items:importedContent.items,selectedContentItemId:'',liveContentItemId:'',text:'',textOnly:false,transparent:false},
     branding:{...document.show.branding,bgColor:$('wizardBg').value,fgColor:$('wizardFg').value,logo:wizardLogo||'',logoPos:'tr',logoSize:16},
-    outputs:{configs:[{id:makeId('out'),name:'Program',enabled:true,displayId,mode,width,height,gridSize:3,gridCell:4}],primaryDisplayId:displayId,canvasAspect:$('wizardCanvas').value,sceneFadeMs:300,gridOn:false,gridSize:3,gridCell:4,fitWindow:false},
+    outputs:{configs:[{id:makeId('out'),name:'Audience',role:'audience',enabled:true,displayId,mode,width,height,gridSize:3,gridCell:4}],primaryDisplayId:displayId,canvasAspect:$('wizardCanvas').value,sceneFadeMs:300,gridOn:false,gridSize:3,gridCell:4,fitWindow:false},
     preferences:{...document.show.preferences,showStart:$('wizardStartTime').value||'',showNowNext:false,autoNext:false}
   };
   if(!applyShowDocument(document,{source:'new-show',announce:false})) return {ok:false,error:'apply-failed'};
@@ -5294,7 +5415,7 @@ async function finishNewShowWizard(){
 function preflightDetail(check){
   const detail=String(check&&check.detail||'');
   if(check.id==='missingAssets'&&detail!=='all-found') return detail;
-  if(['rundownValid','lowerThirdTemplate','displayAssignment','outputResolution'].includes(check.id)
+  if(['rundownValid','lowerThirdTemplate','displayAssignment','outputResolution','conferenceAudienceRoute','conferenceRouteAssignments','conferenceCueActions','conferenceMediaMapping','conferenceOutputDelivery'].includes(check.id)
       && !['invalid-or-empty','none-selected','not-assigned','invalid'].includes(detail)) return detail;
   return check.status==='ok'?t('preflightReady'):check.status==='warn'?t('preflightWarning'):t('preflightBlocking');
 }
@@ -5327,6 +5448,20 @@ async function refreshPreflight(){
 }
 async function openPreflight(){ closeTopbarMenu(); setFlowOpen('preflightOverlay',true); return refreshPreflight(); }
 function closePreflight(){ setFlowOpen('preflightOverlay',false); }
+async function testConferenceOutputs(){
+  const button=$('btnPreflightTestOutputs');
+  if(button){ button.disabled=true; button.textContent=t('preflightTestingOutputs'); }
+  applyOutputConfigs();
+  const started=Date.now();
+  while(Date.now()-started<5000){
+    const delivery=PTCD.deliverySummary(outputRuntime.routes,outputRuntime.revision||0);
+    if(delivery.ready) break;
+    await new Promise(resolve=>setTimeout(resolve,80));
+  }
+  const result=await refreshPreflight();
+  if(button){ button.disabled=false; button.textContent=t('preflightTestOutputs'); }
+  return result;
+}
 async function runWizardConnectionCheck(){
   const result=await api.showPreflightInspect({document:collectShowDocument(),selectedDisplayId:Number($('wizardDisplay').value)||null,lastSaveOk:true});
   const ids=new Set(['programBrowser','backstage','phoneRemote','apiCompanion']);
@@ -5336,6 +5471,7 @@ async function runWizardConnectionCheck(){
 }
 window.__ptShowSetup={openWizard:openNewShowWizard,finishWizard:finishNewShowWizard,openPreflight,refreshPreflight};
 $('btnNewShow')?.addEventListener('click',openNewShowWizard);
+$('btnImportShowFolder')?.addEventListener('click',openWizardAndImportFolder);
 $('btnPreflight')?.addEventListener('click',openPreflight);
 $('btnWizardClose')?.addEventListener('click',closeNewShowWizard);
 $('btnWizardCancel')?.addEventListener('click',closeNewShowWizard);
@@ -5343,6 +5479,7 @@ $('btnWizardBack')?.addEventListener('click',()=>setWizardStep(wizardStep-1));
 $('btnWizardNext')?.addEventListener('click',()=>{ if(wizardStepValid(wizardStep)) setWizardStep(wizardStep+1); });
 $('btnWizardFinish')?.addEventListener('click',finishNewShowWizard);
 $('wizardRundownText')?.addEventListener('input',updateWizardRundownPreview);
+$('btnWizardShowFolder')?.addEventListener('click',importConferenceShowFolder);
 $('btnWizardRundownFile')?.addEventListener('click',()=>$('wizardRundownFile').click());
 $('wizardRundownFile')?.addEventListener('change',event=>{
   const file=event.target.files[0]; if(!file) return;
@@ -5364,6 +5501,7 @@ $('btnWizardCheck')?.addEventListener('click',runWizardConnectionCheck);
 $('btnPreflightClose')?.addEventListener('click',closePreflight);
 $('btnPreflightRefresh')?.addEventListener('click',refreshPreflight);
 $('btnPreflightIdentify')?.addEventListener('click',()=>api.identifyDisplays());
+$('btnPreflightTestOutputs')?.addEventListener('click',testConferenceOutputs);
 $('btnPreflightContinue')?.addEventListener('click',closePreflight);
 
 function applyShowDocument(document,{source='current',announce=true}={}){
@@ -5396,6 +5534,7 @@ function applyShowDocument(document,{source='current',announce=true}={}){
       showStart:String(preferences.showStart||''),showNowNext:!!preferences.showNowNext,flashZero:preferences.flashZero??S.flashZero,
       soundZero:preferences.soundZero??S.soundZero,showProgress:preferences.showProgress??S.showProgress,chimes:preferences.chimes??S.chimes,
       clock12:preferences.clock12??S.clock12,goAutoStart:preferences.goAutoStart??S.goAutoStart,studioDirect:preferences.studioDirect??S.studioDirect,
+      goTransaction:null,
       lowerThird:{...S.lowerThird,...(lower.state||{}),visible:false,until:0,runtimeVersion:null,runtime:null},lowerThirdAutoCue:!!lower.autoCue,
       message:{text:'',flash:false},blackout:false
     });
@@ -5968,6 +6107,7 @@ function normalizeOutputConfigUI(cfg={}, i=0){
   const normalized={
     id:String(cfg.id||makeId('out')),
     name:String(cfg.name||`Output ${i+1}`),
+    role:PTCD.normalizeOutputRole(cfg.role),
     enabled:cfg.enabled!==false,
     displayId:Number(cfg.displayId || outputFallbackDisplay()),
     displayLabel:String(cfg.displayLabel||''),
@@ -5999,6 +6139,9 @@ function outputDisplayName(id,cfg={}){
 function outputModeName(mode){
   return t({fullscreen:'outputFullscreen',window:'outputWindow',custom:'outputCustom',grid:'outputGridMode'}[mode]||'outputFullscreen');
 }
+function outputRoleName(role){
+  return t('outputRole_'+PTCD.normalizeOutputRole(role));
+}
 function outputPlacementName(placement){
   return t({center:'outputCenter','top-left':'outputTopLeft','top-right':'outputTopRight','bottom-left':'outputBottomLeft','bottom-right':'outputBottomRight',custom:'outputCustomPosition'}[placement]||'outputCenter');
 }
@@ -6007,7 +6150,7 @@ function outputLiveCount(){
 }
 function outputRouteStateText(cfg,runtime){
   if(!cfg.enabled) return t('outputOffState');
-  if(runtime&&runtime.open) return t('outputLiveState');
+  if(runtime&&runtime.open) return runtime.status==='syncing'?t('outputSyncingState'):t('outputLiveState');
   if(runtime&&runtime.status==='ambiguous-display') return t('outputAmbiguousState');
   if(runtime&&runtime.status==='missing-display') return t('outputUnavailableState');
   return t('outputPendingState');
@@ -6049,7 +6192,7 @@ function renderOutputRows(){
     row.className='output-summary-route'+(runtime&&runtime.open?' live':'')+(!cfg.enabled?' disabled':'')+(unavailable?' unavailable':'');
     const dot=document.createElement('span'); dot.className='output-route-dot'+(runtime&&runtime.open?' live':'');
     const copy=document.createElement('button'); copy.className='output-summary-copy'; copy.type='button';
-    const strong=document.createElement('strong'); strong.textContent=cfg.name;
+    const strong=document.createElement('strong'); strong.textContent=`${outputRoleName(cfg.role)} · ${cfg.name}`;
     const meta=document.createElement('span'); meta.textContent=`${outputDisplayName(cfg.displayId,cfg)} · ${outputRuntimeDescription(cfg)}`;
     copy.append(strong,meta); copy.addEventListener('click',openOutputRouter);
     const state=document.createElement('span'); state.className='output-summary-state'; state.textContent=outputRouteStateText(cfg,runtime);
@@ -6091,6 +6234,7 @@ function renderOutputRouterRows(){
       </div>
       <div class="output-route-fields">
         <label class="route-field route-display"><span>${t('outputDisplay')}</span><select class="out-display"></select></label>
+        <label class="route-field route-role"><span>${t('outputRole')}</span><select class="out-role"></select></label>
         <label class="route-field route-mode"><span>${t('outputMode')}</span><select class="out-mode"></select></label>
         <label class="route-field route-placement"><span>${t('outputPlacement')}</span><select class="out-placement"></select></label>
         <div class="route-field-group route-size"><span>${t('outputResolution')}</span><div><input class="out-w" type="number" min="160" max="8192" aria-label="Width"><span>×</span><input class="out-h" type="number" min="120" max="8192" aria-label="Height"></div></div>
@@ -6113,6 +6257,9 @@ function renderOutputRouterRows(){
       displaySel.appendChild(option);
     });
     displaySel.value=String(cfg.displayId);
+    const role=row.querySelector('.out-role');
+    ['audience','confidence','timer','stream','door'].forEach(value=>{ const option=document.createElement('option'); option.value=value; option.textContent=outputRoleName(value); role.appendChild(option); });
+    role.value=cfg.role;
     const mode=row.querySelector('.out-mode');
     [['fullscreen','outputFullscreen'],['window','outputWindow'],['custom','outputCustom'],['grid','outputGridMode']].forEach(([value,key])=>{ const option=document.createElement('option'); option.value=value; option.textContent=t(key); mode.appendChild(option); });
     mode.value=cfg.mode;
@@ -6125,6 +6272,7 @@ function renderOutputRouterRows(){
     const sync=()=>{
       cfg.enabled=enabled.checked;
       cfg.name=name.value.trim()||`Output ${i+1}`;
+      cfg.role=PTCD.normalizeOutputRole(role.value);
       cfg.displayId=Number(displaySel.value);
       const selectedDisplay=lastDisplays.find(item=>Number(item.id)===cfg.displayId);
       if(selectedDisplay){ cfg.displayLabel=selectedDisplay.label||''; cfg.displayWidth=selectedDisplay.width||0; cfg.displayHeight=selectedDisplay.height||0; }
@@ -6172,7 +6320,7 @@ async function loadOutputConfigs(){
 function addOutputConfig(options={}){
   outputConfigs.push(normalizeOutputConfigUI({
     id:makeId('out'), name:`Output ${outputConfigs.length+1}`,
-    displayId:outputFallbackDisplay(), mode:'fullscreen', width:960, height:540, placement:'center', x:0, y:0, gridSize:S.gridSize||3, gridCell:S.gridCell||0
+    role:'audience', displayId:outputFallbackDisplay(), mode:'fullscreen', width:960, height:540, placement:'center', x:0, y:0, gridSize:S.gridSize||3, gridCell:S.gridCell||0
   }, outputConfigs.length));
   saveOutputConfigsLocal(); markOutputRoutingDirty(); renderOutputRows();
   if(options.open!==false) openOutputRouter();
@@ -8522,6 +8670,24 @@ $('cueLtTitle').addEventListener('keydown',e=>{ if(e.key==='Enter') addCue(); })
 $('btnGo').addEventListener('click',go);
 $('btnGoNext').addEventListener('click',goNext);
 $('btnIdentify').addEventListener('click',()=>api.identifyDisplays&&api.identifyDisplays());
+let conferenceLiveMode=false;
+function setConferenceLiveMode(enabled){
+  conferenceLiveMode=!!enabled;
+  document.body.classList.toggle('conference-live-mode',conferenceLiveMode);
+  const button=$('btnConferenceLive');
+  if(button){
+    button.classList.toggle('active',conferenceLiveMode);
+    button.setAttribute('aria-pressed',conferenceLiveMode?'true':'false');
+    button.textContent=conferenceLiveMode?t('exitLiveMode'):t('enterLiveMode');
+    button.title=conferenceLiveMode?(lang==='sr'?'Izađi iz Live režima':'Exit Live Mode'):(lang==='sr'?'Uđi u Live režim':'Enter Live Mode');
+    button.setAttribute('aria-label',button.title);
+  }
+  ['btnNewShow','btnImportShowFolder','btnShowImport','btnCueImport','btnCueAdd','btnCueEdit','btnCueSave'].forEach(id=>{
+    const element=$(id); if(element) element.disabled=conferenceLiveMode;
+  });
+  if(conferenceLiveMode&&cueEditorOpen) setCueEditorOpen(false);
+}
+$('btnConferenceLive')?.addEventListener('click',()=>setConferenceLiveMode(!conferenceLiveMode));
 $('chkLock').addEventListener('change',e=>{
   liveLocked=e.target.checked;
   document.body.classList.toggle('live-locked', liveLocked);
@@ -8650,7 +8816,7 @@ $('btnAbout')?.addEventListener('click',async()=>{
   let info={};
   try{ info=await api.buildInfo(); }catch(e){ info={error:String(e&&e.message||e)}; }
   const lines=[
-    'ShowSlate',
+    'ShowSlate Conference Desk',
     'Version: '+(info.version || '1.0.0'),
     'Commit: '+(info.commit || 'unknown'),
     'Source state: '+(info.dirty ? 'modified (non-release build)' : 'clean'),
@@ -8667,7 +8833,7 @@ $('btnMsgSendC').addEventListener('click',()=>{ $('msgInput').value=$('msgInputC
 
 api.onOutputState(open=>{ outputOpen=open; updateStatusCard(); updateOutputRoutingStatus(); publishControlStatus(); });
 api.onOutputConfigState(state=>{
-  outputRuntime=state&&typeof state==='object'?{primaryOpen:!!state.primaryOpen,routes:Array.isArray(state.routes)?state.routes:[]}:{primaryOpen:false,routes:[]};
+  outputRuntime=state&&typeof state==='object'?{primaryOpen:!!state.primaryOpen,revision:Number(state.revision)||0,primary:state.primary||null,routes:Array.isArray(state.routes)?state.routes:[]}:{primaryOpen:false,revision:0,primary:null,routes:[]};
   let rebound=false;
   outputRuntime.routes.forEach(route=>{
     if(!route.open||!route.actualDisplayId) return;
