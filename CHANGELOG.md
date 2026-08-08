@@ -4,6 +4,37 @@ All notable changes to ShowSlate are documented here.
 
 ## Unreleased
 
+## 0.11.0-beta.1 - 2026-08-08
+
+### Added
+
+- Added a custom-resolution Canvas with 1080p, 720p, vertical, square, UHD and bounded custom presets.
+- Added reusable scenes with ordered picture, video, PDF, color, text, timer, window/display and camera/UVC capture layers.
+- Added one hidden capture hub that acquires each live source once and distributes it to Preview and local desktop Program outputs through local WebRTC.
+- Added optional capture-device audio, muted Preview monitoring and a single-Program-audio-route safety guard.
+- Added visible scene controls, exact layer inspector fields, drag/resize handles, source replacement and live input status.
+- Added Canvas/output aspect-ratio preflight warnings and targeted compositor, live-input and multi-output checks.
+
+### Changed
+
+- Canvas media now uses the same 200 MB per-file safety limit as show-folder assets.
+- New output routes default to the active Canvas dimensions.
+- Preview and Program monitors now follow square, vertical and custom Canvas aspect ratios reliably at every supported controller size.
+- Live-input smoke waits for actual media-time progression instead of relying on a fixed delay.
+
+### Fixed
+
+- Replacing a window or device source preserves layer position, size, opacity, rotation and stack position.
+- Layer transforms update the inspector while dragging or resizing and finish safely even when pointer capture is lost.
+- Live input reconnect stops sibling media tracks and preserves complete status details.
+- Capture permissions and media-save IPC are restricted to their intended renderer boundaries.
+
+### Scope
+
+- Local live sources render only in the desktop app and Electron desktop output windows; browser/OBS URL outputs do not receive local capture streams.
+- ShowSlate remains a room-display compositor, not a streaming encoder, multibus audio mixer, NDI router or advanced broadcast switcher.
+- Physical capture-card compatibility and physical Windows operation require device-specific testing; synthetic and packaged checks do not certify every hardware/driver combination.
+
 ## 0.10.0-beta.1 - 2026-08-08
 
 ### Added

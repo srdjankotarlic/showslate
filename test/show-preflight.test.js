@@ -80,4 +80,38 @@ check('PREFLIGHT_CONFERENCE_DESK_ACCEPTS_ACKED_ROLE_OUTPUTS_OK', () => {
   assert.strictEqual(result.checks.find(row => row.id === 'conferenceOutputDelivery').status, 'ok');
 });
 
+check('PREFLIGHT_BLOCKS_MISSING_LIVE_INPUT_DEFINITION_OK', () => {
+  const document = showDocument();
+  document.show.screenContent = {
+    activeSceneId: 'live-scene',
+    scenes: [{ id: 'live-scene', layers: [{ id: 'camera', type: 'capture', inputId: 'missing-card' }] }],
+    liveInputs: []
+  };
+  const result = evaluatePreflight(document, readyFacts);
+  assert.strictEqual(result.checks.find(row => row.id === 'liveInputSources').status, 'block');
+});
+
+check('PREFLIGHT_LIVE_INPUT_STATUS_AND_AUDIO_ROUTE_OK', () => {
+  const document = showDocument();
+  document.show.screenContent = {
+    activeSceneId: 'live-scene',
+    scenes: [{ id: 'live-scene', layers: [{ id: 'camera', type: 'capture', inputId: 'card-1' }] }],
+    liveInputs: [{ id: 'card-1', type: 'device', videoDeviceId: 'video-1' }]
+  };
+  document.show.outputs = { primaryLiveAudio: true, configs: [{ id: 'aux', name: 'Recorder', enabled: true, liveAudio: true }] };
+  const result = evaluatePreflight(document, { ...readyFacts, liveInputStatuses: [{ inputId: 'card-1', state: 'live' }] });
+  assert.strictEqual(result.checks.find(row => row.id === 'liveInputSources').status, 'ok');
+  assert.strictEqual(result.checks.find(row => row.id === 'liveInputAudio').status, 'block');
+});
+
+check('PREFLIGHT_WARNS_ON_CANVAS_OUTPUT_ASPECT_MISMATCH_OK', () => {
+  const document = showDocument();
+  document.show.screenContent = { canvas: { width: 1000, height: 1000, fps: 30 }, scenes: [], liveInputs: [] };
+  document.show.outputs.configs = [{ id: 'wide', name: 'Wide wall', enabled: true, mode: 'custom', width: 1920, height: 1080 }];
+  const result = evaluatePreflight(document, readyFacts);
+  const aspect = result.checks.find(row => row.id === 'outputAspect');
+  assert.strictEqual(aspect.status, 'warn');
+  assert(aspect.detail.includes('Wide wall:1920x1080'));
+});
+
 console.log('SHOW_PREFLIGHT_TESTS_OK count=' + passed);

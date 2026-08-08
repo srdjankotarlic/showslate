@@ -37,6 +37,7 @@ function normalizeConfig(config, index = 0, context = {}) {
     name: String(source.name || `Output ${index + 1}`),
     role: conference.normalizeOutputRole(source.role),
     enabled: source.enabled !== false,
+    liveAudio: source.liveAudio === true,
     displayId,
     displayLabel: String(source.displayLabel || ''),
     displayWidth: Math.max(0, parseInt(source.displayWidth, 10) || 0),
@@ -49,7 +50,7 @@ function normalizeConfig(config, index = 0, context = {}) {
     y: Number.isFinite(Number(source.y)) ? Number(source.y) : null,
     gridSize,
     gridCell,
-    frameless: mode === 'grid' || !!source.frameless
+    frameless: mode === 'fullscreen' || mode === 'custom' || mode === 'grid' || !!source.frameless
   };
   const exact = displays.find(display => display.id === displayId);
   if (exact && !normalized.displayLabel) rememberDisplay(normalized, exact);

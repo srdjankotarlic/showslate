@@ -44,7 +44,8 @@ Select **Outputs** from the header.
 3. Choose its role and exact physical display.
 4. Choose **Fullscreen**, **Window**, **Custom size** or **Grid cell**.
 5. For Custom size, enter width, height and coordinates.
-6. Enable the route and select **Apply routing**.
+6. Enable **Program audio** on no more than one local desktop route when a scene really needs source audio.
+7. Enable the route and select **Apply routing**.
 
 Available roles:
 
@@ -74,6 +75,25 @@ Warnings do not always block entry to the workspace, but the operator must under
 - The previous cue receives actual end and duration data for the post-show report.
 
 The Live strip always shows LIVE and NEXT together. **NEXT ROW** advances strictly in rundown order; the main GO control can also take an explicitly selected row.
+
+## Canvas and scene composition
+
+Select **Canvas** in the visible header to open the scene compositor. This workspace stays available at narrow window sizes and keeps the scene selector, scene actions, Add Source, layer list and inspector reachable by scrolling.
+
+1. Select an existing scene or create, duplicate or delete one from the Canvas header.
+2. Choose a standard preset or enter a custom width, height and frame rate.
+3. Select **Add Source** and add a picture/video/PDF, solid color, text, timer, application window/display or video capture device.
+4. For a camera or UVC capture card, select the video device, optional audio device, requested resolution and frame rate.
+5. Arrange the stack in **Layers**. The top row is visually in front.
+6. Select a layer, then drag it in Preview or use the inspector for exact position, size, opacity, rotation and fit.
+7. Use **Change source** to reconnect a window or device without losing that layer's transform.
+8. Keep **Direct Program** off while preparing. Select **TAKE** to send the complete Preview scene to Program.
+
+Preview capture is always muted. To hear audio from an enabled video/capture layer, enable **Program audio** on exactly one local desktop output. It is off by default to prevent feedback.
+
+Window, display and capture-device streams are local to the desktop app. They appear in ShowSlate desktop output windows, but not in the browser/OBS URL output. Device identifiers can change after moving a show to another computer, so use **Change source** and run Preflight again.
+
+If Preflight warns about a Canvas/output aspect mismatch, the scene can be stretched by that destination. Either match the Canvas to the destination or confirm that the non-matching format is intentional.
 
 ## Speaker timing and messages
 
@@ -131,10 +151,11 @@ English is the default. English and Serbian have full interface coverage. The ot
 ## Before doors open
 
 - Connect and power all displays before opening ShowSlate.
+- Grant Screen Recording only when using window/display capture, and Camera/Microphone only when using a selected capture device.
 - Disable sleep, notifications and automatic system updates.
 - Prefer wired Ethernet for browser devices.
 - Open the final show and verify every media asset.
 - Identify displays, apply routing and run Preflight.
 - Test GO, START, BLACKOUT, messages, lower thirds and every output role.
-- Confirm the exact stream-capture path separately when used.
+- Test every live window/device source, Program-audio route and stream-capture path separately when used.
 - Keep a fallback timer and a copy of the rundown available.

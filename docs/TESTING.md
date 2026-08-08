@@ -6,7 +6,7 @@
 npm test
 ```
 
-Runs 15 deterministic module scripts across brand migration, lower-third packages, show storage and recovery data, portable show packages, Conference Desk schedule/folder import, preflight, screen-content models, control API normalization, post-show reports, pure output-routing rules, localization, build provenance, signing preflight and exact-artifact release evidence. Free-build, icon and public-site checks run before that suite. The same command runs in GitHub Actions.
+Runs 16 deterministic module scripts across brand migration, lower-third packages, show storage and recovery data, portable show packages, Conference Desk schedule/folder import, preflight, screen-content and compositor models, control API normalization, post-show reports, pure output-routing rules, localization, build provenance, signing preflight and exact-artifact release evidence. Free-build, icon and public-site checks run before that suite. The same command runs in GitHub Actions.
 
 ## Local renderer suite
 
@@ -14,7 +14,7 @@ Runs 15 deterministic module scripts across brand migration, lower-third package
 npm run test:renderers:display
 ```
 
-Runs seven real Electron renderer workflows. Every visible test window resolves the explicitly configured display and aborts if that display is unavailable; it never silently falls back to another screen. Set `SHOWSLATE_SMOKE_DISPLAY` to a unique display label or use the ignored local `.showslate-smoke-display.json` file.
+Runs eight real Electron renderer workflows. Every visible test window resolves the explicitly configured display and aborts if that display is unavailable; it never silently falls back to another screen. Set `SHOWSLATE_SMOKE_DISPLAY` to a unique display label or use the ignored local `.showslate-smoke-display.json` file.
 
 The Conference Desk renderer suite uses visible normal controls to import a fixture folder, finish setup, inspect output-role controls, press GO, verify one Program transaction and require render acknowledgements for Audience, Confidence, Timer, Stream Graphics and Door Agenda. It also checks Live Mode at 900x600.
 
@@ -43,6 +43,14 @@ Focused routing verification is available as:
 ```bash
 npm run smoke:output-routing -- --display "PHL 243V7"
 ```
+
+Focused live-input transport verification is available as:
+
+```bash
+npm run smoke:live-input -- --display "PHL 243V7"
+```
+
+It proves that one synthetic video-and-audio source is acquired once, advances in muted Preview, leaves Program unchanged before TAKE, then advances in the exact Program scene after TAKE. It does not certify a physical capture card or operating-system permission workflow.
 
 ## Soak
 

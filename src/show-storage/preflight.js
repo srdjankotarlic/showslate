@@ -1,5 +1,6 @@
 const { validateShowDocument } = require('./repository.js');
 const conference = require('../conference-desk/model.js');
+const compositor = require('../compositor/model.js');
 
 function row(id, status, detail = '') {
   return { id, status, detail: String(detail || '') };
@@ -32,6 +33,23 @@ function evaluatePreflight(input, facts = {}) {
   const missingAssets = Array.isArray(facts.missingAssets) ? facts.missingAssets.filter(Boolean) : [];
   checks.push(row('missingAssets', missingAssets.length ? 'block' : 'ok', missingAssets.length ? missingAssets.join(', ') : 'all-found'));
 
+  const content = show.screenContent || {};
+  const scenes = Array.isArray(content.scenes) ? content.scenes : [];
+  const liveInputs = compositor.normalizeLiveInputs(content.liveInputs);
+  const inputById = new Map(liveInputs.map(input => [input.id, input]));
+  const referencedInputIds = compositor.referencedLiveInputIds(scenes);
+  const missingInputIds = referencedInputIds.filter(id => !inputById.has(id));
+  const activeScene = scenes.find(scene => String(scene && scene.id || '') === String(content.activeSceneId || '')) || scenes[0];
+  const activeInputIds = compositor.activeLiveInputIds(activeScene ? [activeScene] : []);
+  const statusById = new Map((Array.isArray(facts.liveInputStatuses) ? facts.liveInputStatuses : [])
+    .filter(status => status && status.inputId).map(status => [String(status.inputId), status]));
+  const unavailableActiveIds = activeInputIds.filter(id => String(statusById.get(id) && statusById.get(id).state || '') !== 'live');
+  const liveInputStatus = missingInputIds.length ? 'block' : (unavailableActiveIds.length ? 'warn' : 'ok');
+  const liveInputDetail = missingInputIds.length ? 'missing:' + missingInputIds.join(',')
+    : (unavailableActiveIds.length ? 'not-live:' + unavailableActiveIds.join(',')
+      : (referencedInputIds.length ? referencedInputIds.length + '-ready' : 'none-configured'));
+  checks.push(row('liveInputSources', liveInputStatus, liveInputDetail));
+
   checks.push(row('speakerScreen', facts.speakerScreenReady ? 'ok' : 'warn', facts.speakerScreenReady ? 'open' : 'not-open'));
   const browserStatus = facts.programBrowserReady ? 'ok' : (facts.speakerScreenReady ? 'warn' : 'block');
   checks.push(row('programBrowser', browserStatus, facts.programBrowserReady ? 'reachable' : 'not-reachable'));
@@ -62,6 +80,12 @@ function evaluatePreflight(input, facts = {}) {
   checks.push(row('displayAssignment', selectedDisplay ? 'ok' : 'block', selectedDisplay ? String(selectedDisplay.label || selectedDisplay.id) : 'not-assigned'));
 
   const configs = show.outputs && Array.isArray(show.outputs.configs) ? show.outputs.configs.filter(config => config && config.enabled !== false) : [];
+  const audioRoutes = [
+    ...(show.outputs && show.outputs.primaryLiveAudio === true ? ['Primary output'] : []),
+    ...configs.filter(config => config.liveAudio === true).map(config => String(config.name || config.id || 'Output'))
+  ];
+  checks.push(row('liveInputAudio', referencedInputIds.length && audioRoutes.length > 1 ? 'block' : 'ok',
+    referencedInputIds.length && audioRoutes.length > 1 ? audioRoutes.join(', ') : (audioRoutes[0] || 'muted')));
   const configResolutionsValid = configs.every(config => {
     const mode = String(config.mode || 'fullscreen');
     if (mode !== 'custom' && mode !== 'window') return true;
@@ -70,6 +94,28 @@ function evaluatePreflight(input, facts = {}) {
   const displayResolutionValid = !!selectedDisplay && Number(selectedDisplay.width) >= 320 && Number(selectedDisplay.height) >= 180;
   checks.push(row('outputResolution', displayResolutionValid && configResolutionsValid ? 'ok' : 'block',
     displayResolutionValid && configResolutionsValid ? selectedDisplay.width + 'x' + selectedDisplay.height : 'invalid'));
+
+  const canvas = compositor.normalizeCanvas(content.canvas);
+  const canvasAspect = canvas.width / canvas.height;
+  const aspectDestinations = [];
+  if (selectedDisplay) {
+    aspectDestinations.push({ name: 'Primary', width: Number(selectedDisplay.width), height: Number(selectedDisplay.height) });
+  }
+  for (const config of configs) {
+    const mode = String(config.mode || 'fullscreen');
+    const assignedDisplay = displays.find(display => Number(display.id) === Number(config.displayId)
+      || (config.displayLabel && String(display.label || '') === String(config.displayLabel)));
+    const width = mode === 'custom' || mode === 'window' ? Number(config.width) : Number(assignedDisplay && assignedDisplay.width);
+    const height = mode === 'custom' || mode === 'window' ? Number(config.height) : Number(assignedDisplay && assignedDisplay.height);
+    if (width > 0 && height > 0) aspectDestinations.push({ name: String(config.name || config.id || 'Output'), width, height });
+  }
+  const aspectMismatches = aspectDestinations.filter(destination => {
+    const outputAspect = destination.width / destination.height;
+    return Math.abs(outputAspect - canvasAspect) / canvasAspect > 0.015;
+  });
+  checks.push(row('outputAspect', aspectMismatches.length ? 'warn' : 'ok', aspectMismatches.length
+    ? aspectMismatches.map(destination => `${destination.name}:${destination.width}x${destination.height}`).join(', ')
+    : `${canvas.width}x${canvas.height}`));
 
   checks.push(row('recoveryStatus', facts.recoveryAvailable ? 'block' : 'ok', facts.recoveryAvailable ? 'recovery-pending' : 'clear'));
 
@@ -86,7 +132,6 @@ function evaluatePreflight(input, facts = {}) {
     });
     checks.push(row('conferenceRouteAssignments', unavailableRoutes.length ? 'block' : 'ok', unavailableRoutes.length ? unavailableRoutes.map(config => config.name || config.id).join(', ') : 'all-assigned'));
 
-    const content = show.screenContent || {};
     const contentIds = new Set((Array.isArray(content.items) ? content.items : []).map(item => String(item && item.id || '')).filter(Boolean));
     const brokenCueActions = cues.filter(cue => cue && cue.autoTakeContentOnGo && !contentIds.has(String(cue.contentItemId || '')));
     const automatedCues = cues.filter(cue => cue && (cue.autoTakeContentOnGo || cue.lowerThirdAuto));

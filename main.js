@@ -1,4 +1,4 @@
-const { app, BrowserWindow, ipcMain, screen, dialog } = require('electron');
+const { app, BrowserWindow, ipcMain, screen, dialog, desktopCapturer, session, systemPreferences, webContents } = require('electron');
 const path = require('path');
 const fs = require('fs');
 const http = require('http');
@@ -15,10 +15,13 @@ const conferenceDesk = require('./src/conference-desk/model.js');
 const showFolderImport = require('./src/conference-desk/import.js');
 const { ShowRepository } = require('./src/show-storage/repository.js');
 const { migrateLegacyUserData } = require('./src/brand/migrate-user-data.js');
+const compositor = require('./src/compositor/model.js');
 
 const SMOKE = process.argv.includes('--smoke');
+app.commandLine.appendSwitch('autoplay-policy', 'no-user-gesture-required');
 const LT2_SOAK_ONLY = SMOKE && process.argv.includes('--lt2-soak-only');
 const OUTPUT_ROUTING_SMOKE_ONLY = SMOKE && process.argv.includes('--output-routing-only');
+const LIVE_INPUT_SMOKE_ONLY = SMOKE && process.argv.includes('--live-input-only');
 // Smoke/test windows are pinned to one explicitly configured display. The resolver has
 // no dependencies; normal (non-smoke) mode is unaffected.
 let smokeDisplay = null;
@@ -129,6 +132,11 @@ let outputFrameless = false;     // da li je bez okvira (providan ili grid)
 let outputTargetId = null;       // na kom monitoru je Ekran
 let outputConfigs = [];          // dodatni profesionalni izlazi (multi-display)
 const auxOutputs = new Map();    // id -> { win, config, frameless, transparent }
+let liveInputHubWin = null;
+let liveInputHubReady = false;
+let pendingDesktopSourceId = '';
+let liveInputDefinitions = [];
+const liveInputStatuses = new Map();
 let stateRevision = 0;
 let primaryDelivery = { lastDispatchRevision: 0, lastDispatchAt: 0, ackRevision: 0, ackAt: 0, ackCueId: '', ackTransactionId: '' };
 let showRepository = null;
@@ -148,6 +156,92 @@ async function flushRendererShow() {
   } catch (error) {
     return { ok: false, error: String(error && error.message || error) };
   }
+}
+
+function trustedLiveInputConsumer(sender) {
+  if (!sender || sender.isDestroyed()) return false;
+  if (controlWin && !controlWin.isDestroyed() && controlWin.webContents.id === sender.id) return true;
+  if (outputWin && !outputWin.isDestroyed() && outputWin.webContents.id === sender.id) return true;
+  for (const rec of auxOutputs.values()) {
+    if (rec && rec.win && !rec.win.isDestroyed() && rec.win.webContents.id === sender.id) return true;
+  }
+  return false;
+}
+
+function sendLiveHubCommand(command) {
+  if (!liveInputHubWin || liveInputHubWin.isDestroyed() || !liveInputHubReady) return false;
+  liveInputHubWin.webContents.send('live-hub-command', command);
+  return true;
+}
+
+function broadcastLiveInputStatus(payload) {
+  const windows = [controlWin, outputWin, ...[...auxOutputs.values()].map(rec => rec && rec.win)];
+  windows.forEach(win => {
+    if (win && !win.isDestroyed()) win.webContents.send('live-input-status', payload);
+  });
+}
+
+function releaseLiveInputConsumer(senderId) {
+  if (!senderId) return;
+  sendLiveHubCommand({ type: 'release-consumer', consumerId: Number(senderId) });
+}
+
+function watchLiveInputConsumer(win) {
+  if (!win || win.isDestroyed()) return;
+  const id = win.webContents.id;
+  win.webContents.once('destroyed', () => releaseLiveInputConsumer(id));
+}
+
+function setupLiveInputPermissions() {
+  const ses = session.defaultSession;
+  ses.setPermissionCheckHandler((wc, permission) => {
+    if (!wc || wc.isDestroyed()) return false;
+    const hub = liveInputHubWin && !liveInputHubWin.isDestroyed() && wc.id === liveInputHubWin.webContents.id;
+    return !!hub && ['media', 'display-capture'].includes(permission);
+  });
+  ses.setPermissionRequestHandler((wc, permission, callback) => {
+    const hub = liveInputHubWin && !liveInputHubWin.isDestroyed() && wc && wc.id === liveInputHubWin.webContents.id;
+    callback(!!hub && ['media', 'display-capture'].includes(permission));
+  });
+  ses.setDisplayMediaRequestHandler(async (request, callback) => {
+    try {
+      const sender = request && request.frame ? webContents.fromFrame(request.frame) : null;
+      const trusted = sender && liveInputHubWin && !liveInputHubWin.isDestroyed() && sender.id === liveInputHubWin.webContents.id;
+      if (!trusted || !pendingDesktopSourceId) { callback({}); return; }
+      const sources = await desktopCapturer.getSources({ types: ['window', 'screen'], thumbnailSize: { width: 0, height: 0 }, fetchWindowIcons: false });
+      const source = sources.find(row => row.id === pendingDesktopSourceId);
+      pendingDesktopSourceId = '';
+      callback(source ? { video: source } : {});
+    } catch (_) {
+      pendingDesktopSourceId = '';
+      callback({});
+    }
+  });
+}
+
+function createLiveInputHub() {
+  if (liveInputHubWin && !liveInputHubWin.isDestroyed()) return liveInputHubWin;
+  liveInputHubReady = false;
+  liveInputHubWin = new BrowserWindow({
+    width: 320, height: 180, show: false, skipTaskbar: true,
+    title: 'ShowSlate Live Inputs', backgroundColor: '#050607',
+    webPreferences: {
+      preload: path.join(__dirname, 'live-input-preload.js'), contextIsolation: true,
+      nodeIntegration: false, backgroundThrottling: false
+    }
+  });
+  liveInputHubWin.loadFile('live-input.html', { query: SMOKE ? { test: '1' } : {} });
+  liveInputHubWin.webContents.on('render-process-gone', (event, details) => {
+    liveInputHubReady = false;
+    const reason = String(details && details.reason || 'renderer-gone');
+    liveInputDefinitions.forEach(definition => {
+      const payload = { inputId: definition.id, state: 'error', error: 'Live input service stopped: ' + reason, at: Date.now() };
+      liveInputStatuses.set(definition.id, payload);
+      broadcastLiveInputStatus(payload);
+    });
+  });
+  liveInputHubWin.on('closed', () => { liveInputHubWin = null; liveInputHubReady = false; });
+  return liveInputHubWin;
 }
 
 // ---------------- MREŽNI IZLAZ (OBS Browser Source / NDI most / confidence monitor) ----------------
@@ -211,6 +305,13 @@ function startServer(port, attempt = 0) {
     if (url === '/i18n.js') {
       res.writeHead(200, { 'Content-Type': 'application/javascript; charset=utf-8', 'Cache-Control': 'no-store' });
       res.end(fileHtml('i18n.js'));
+      return;
+    }
+
+    if (url === '/src/compositor/model.js' || url === '/src/live-input/consumer.js') {
+      const relative = url.slice(1);
+      res.writeHead(200, { 'Content-Type': 'application/javascript; charset=utf-8', 'Cache-Control': 'no-store' });
+      res.end(fileHtml(relative));
       return;
     }
 
@@ -454,12 +555,12 @@ function displayList() {
 function broadcast(channel, payload) {
   [controlWin, outputWin].forEach(w => { if (w && !w.isDestroyed()) w.webContents.send(channel, payload); });
 }
-function outputPayload(state, routeId, role, revision = stateRevision) {
+function outputPayload(state, routeId, role, revision = stateRevision, routeConfig = {}) {
   const normalizedRole = conferenceDesk.normalizeOutputRole(role);
   const payload = {
     ...(state || {}),
     transparent: normalizedRole === 'stream' ? true : !!(state && state.transparent),
-    _outputRoute: { id: String(routeId || 'primary'), role: normalizedRole },
+    _outputRoute: { id: String(routeId || 'primary'), role: normalizedRole, liveAudio: routeConfig.liveAudio === true },
     _dispatch: {
       revision: Math.max(0, Number(revision) || 0),
       routeId: String(routeId || 'primary'),
@@ -473,14 +574,14 @@ function dispatchPrimaryState(state) {
   if (!outputWin || outputWin.isDestroyed()) return false;
   primaryDelivery.lastDispatchRevision = stateRevision;
   primaryDelivery.lastDispatchAt = Date.now();
-  outputWin.webContents.send('state', outputPayload(state, 'primary', 'audience'));
+  outputWin.webContents.send('state', outputPayload(state, 'primary', 'audience', stateRevision, { liveAudio: state && state.primaryLiveAudio === true }));
   return true;
 }
 function dispatchAuxState(rec, state) {
   if (!rec || !rec.win || rec.win.isDestroyed()) return false;
   rec.lastDispatchRevision = stateRevision;
   rec.lastDispatchAt = Date.now();
-  rec.win.webContents.send('state', outputPayload(state, rec.config.id, rec.config.role));
+  rec.win.webContents.send('state', outputPayload(state, rec.config.id, rec.config.role, stateRevision, rec.config));
   return true;
 }
 function sendStateToOutputs(state) {
@@ -524,7 +625,9 @@ function outputRuntimeSnapshot() {
         ackTransactionId: rec ? String(rec.ackTransactionId || '') : '',
         mode: cfg.mode,
         bounds: open ? rec.win.getBounds() : null,
-        fullscreen: open ? rec.win.isFullScreen() : false
+        fullscreen: open ? cfg.mode === 'fullscreen' : false,
+        nativeFullscreen: open ? rec.win.isFullScreen() : false,
+        simpleFullscreen: open ? isAuxSimpleFullscreen(rec.win) : false
       };
     })
   };
@@ -542,6 +645,7 @@ function createControlWindow() {
     webPreferences: { preload: path.join(__dirname, 'preload.js'), contextIsolation: true, nodeIntegration: false, backgroundThrottling: false }
   });
   controlWin.loadFile('controller.html');
+  watchLiveInputConsumer(controlWin);
   controlWin.webContents.on('render-process-gone', (event, details) => {
     if (!details || details.reason !== 'clean-exit') rendererCrashed = true;
   });
@@ -562,6 +666,7 @@ function createControlWindow() {
       try { if (rec.win && !rec.win.isDestroyed()) rec.win.destroy(); } catch (e) {}
     }
     auxOutputs.clear();
+    if (liveInputHubWin && !liveInputHubWin.isDestroyed()) liveInputHubWin.destroy();
     app.quit();
   });
 }
@@ -614,9 +719,22 @@ function targetDisplayForConfig(cfg) {
 }
 
 function auxFrameMode(cfg) {
-  // Pixel-accurate custom routes cannot use a native title bar: macOS clamps and
+  // Pixel-accurate routes cannot use a native title bar: macOS clamps and
   // cascades framed windows around the work area, changing requested X/Y bounds.
-  return !!(cfg && (cfg.mode === 'grid' || cfg.mode === 'custom' || cfg.frameless));
+  // A display-fill window is deterministic when several Program routes are
+  // active, unlike native macOS fullscreen Spaces.
+  return !!(cfg && (cfg.mode === 'fullscreen' || cfg.mode === 'grid' || cfg.mode === 'custom' || cfg.frameless));
+}
+
+function isAuxSimpleFullscreen(win) {
+  if (process.platform !== 'darwin' || !win || typeof win.isSimpleFullScreen !== 'function') return false;
+  try { return win.isSimpleFullScreen(); } catch (e) { return false; }
+}
+
+function leaveAuxFullscreen(win) {
+  if (!win || win.isDestroyed()) return;
+  if (win.isFullScreen()) win.setFullScreen(false);
+  if (isAuxSimpleFullscreen(win)) win.setSimpleFullScreen(false);
 }
 
 function placedOutputBounds(area, width, height, cfg, margin = 24) {
@@ -637,20 +755,22 @@ function positionAuxOutput(rec, targetOverride = null) {
   const b = target.bounds;
 
   if (cfg.mode === 'fullscreen') {
-    if (!rec.win.isFullScreen()) {
-      rec.win.setBounds(b);
-      rec.win.setFullScreen(true);
+    rec.win.setBounds(b);
+    if (process.platform === 'darwin') {
+      if (!isAuxSimpleFullscreen(rec.win)) rec.win.setSimpleFullScreen(true);
+    } else if (rec.win.isFullScreen()) {
+      rec.win.setFullScreen(false);
     }
   } else if (cfg.mode === 'grid') {
-    if (rec.win.isFullScreen()) rec.win.setFullScreen(false);
+    leaveAuxFullscreen(rec.win);
     rec.win.setBounds(outputRouting.gridBounds(b, cfg.gridSize, cfg.gridCell));
   } else if (cfg.mode === 'custom') {
-    if (rec.win.isFullScreen()) rec.win.setFullScreen(false);
+    leaveAuxFullscreen(rec.win);
     const width = Math.min(cfg.width || 1000, b.width);
     const height = Math.min(cfg.height || 1000, b.height);
     rec.win.setBounds(placedOutputBounds(b, width, height, cfg, 0));
   } else {
-    if (rec.win.isFullScreen()) rec.win.setFullScreen(false);
+    leaveAuxFullscreen(rec.win);
     const area = target.workArea;
     const width = Math.min(cfg.width || 960, Math.floor(area.width * 0.8));
     const height = Math.min(cfg.height || Math.round(width * 9 / 16), Math.floor(area.height * 0.8));
@@ -696,6 +816,7 @@ function createAuxOutputWindow(cfg, target) {
     lastDispatchRevision: 0, lastDispatchAt: 0, ackRevision: 0, ackAt: 0, ackCueId: '', ackTransactionId: ''
   };
   auxOutputs.set(normalized.id, rec);
+  watchLiveInputConsumer(win);
   win.loadFile('output.html', { query: { routeId: normalized.id, outputRole: normalized.role } });
   win.webContents.on('did-finish-load', () => {
     if (lastState) dispatchAuxState(rec, lastState);
@@ -816,6 +937,7 @@ function createOutputWindow(displayId) {
     webPreferences: { preload: path.join(__dirname, 'preload.js'), contextIsolation: true, nodeIntegration: false, backgroundThrottling: false }
   });
   outputWin = win;
+  watchLiveInputConsumer(win);
   if (frameless) win.setAlwaysOnTop(true, 'floating');
   if (SMOKE) {
     win.loadFile('output.html', { query: {
@@ -965,6 +1087,102 @@ ipcMain.handle('output-open', () => !!outputWin || auxOutputs.size > 0);
 ipcMain.handle('network-info', () => networkInfo());
 ipcMain.handle('output-configs', () => outputConfigs);
 ipcMain.handle('build-info', () => getBuildInfo());
+ipcMain.handle('live-input-desktop-sources', async (event) => {
+  if (!controlWin || controlWin.isDestroyed() || event.sender.id !== controlWin.webContents.id) return [];
+  const rows = await desktopCapturer.getSources({
+    types: ['window', 'screen'], thumbnailSize: { width: 320, height: 180 }, fetchWindowIcons: true
+  });
+  return rows.map(source => ({
+    id: source.id,
+    name: source.name,
+    kind: source.id.startsWith('screen:') ? 'screen' : 'window',
+    thumbnail: source.thumbnail && !source.thumbnail.isEmpty() ? source.thumbnail.toDataURL() : '',
+    appIcon: source.appIcon && !source.appIcon.isEmpty() ? source.appIcon.toDataURL() : ''
+  }));
+});
+ipcMain.handle('live-input-devices', async (event, requestPermission) => {
+  if (!controlWin || controlWin.isDestroyed() || event.sender.id !== controlWin.webContents.id) return [];
+  if (!liveInputHubWin || liveInputHubWin.isDestroyed()) createLiveInputHub();
+  await new Promise(resolve => {
+    if (liveInputHubReady) { resolve(); return; }
+    const started = Date.now();
+    const poll = () => liveInputHubReady || Date.now() - started > 5000 ? resolve() : setTimeout(poll, 40);
+    poll();
+  });
+  if (!liveInputHubReady) return [];
+  return liveInputHubWin.webContents.executeJavaScript(`window.liveCapture.enumerateDevices(${requestPermission === true ? 'true' : 'false'})`);
+});
+ipcMain.handle('live-input-permissions', async () => {
+  if (process.platform !== 'darwin') return { camera: 'unknown', microphone: 'unknown', screen: 'unknown' };
+  return {
+    camera: systemPreferences.getMediaAccessStatus('camera'),
+    microphone: systemPreferences.getMediaAccessStatus('microphone'),
+    screen: systemPreferences.getMediaAccessStatus('screen')
+  };
+});
+ipcMain.handle('live-input-configure', async (event, definitions) => {
+  if (!controlWin || controlWin.isDestroyed() || event.sender.id !== controlWin.webContents.id) return { ok: false, error: 'unauthorized' };
+  liveInputDefinitions = compositor.normalizeLiveInputs(definitions);
+  const configuredIds = new Set(liveInputDefinitions.map(row => row.id));
+  for (const id of liveInputStatuses.keys()) if (!configuredIds.has(id)) liveInputStatuses.delete(id);
+  if (!liveInputHubWin || liveInputHubWin.isDestroyed()) createLiveInputHub();
+  const sent = sendLiveHubCommand({ type: 'configure', definitions: liveInputDefinitions });
+  return { ok: true, queued: !sent, count: liveInputDefinitions.length };
+});
+ipcMain.handle('live-input-restart', async (event, inputId) => {
+  if (!controlWin || controlWin.isDestroyed() || event.sender.id !== controlWin.webContents.id) return { ok: false, error: 'unauthorized' };
+  return { ok: sendLiveHubCommand({ type: 'restart', inputId: String(inputId || '') }) };
+});
+ipcMain.handle('live-input-statuses', event => trustedLiveInputConsumer(event.sender) ? [...liveInputStatuses.values()] : []);
+ipcMain.handle('live-input-subscribe', async (event, inputId) => {
+  if (!trustedLiveInputConsumer(event.sender)) return { ok: false, error: 'unauthorized' };
+  const id = String(inputId || '');
+  if (!liveInputDefinitions.some(row => row.id === id && row.active)) return { ok: false, error: 'input-not-active' };
+  return { ok: sendLiveHubCommand({ type: 'subscribe', consumerId: event.sender.id, inputId: id }) };
+});
+ipcMain.on('live-input-unsubscribe', (event, inputId) => {
+  if (!trustedLiveInputConsumer(event.sender)) return;
+  sendLiveHubCommand({ type: 'unsubscribe', consumerId: event.sender.id, inputId: String(inputId || '') });
+});
+ipcMain.handle('live-input-signal-to-hub', async (event, payload) => {
+  if (!trustedLiveInputConsumer(event.sender)) return { ok: false, error: 'unauthorized' };
+  const clean = payload && typeof payload === 'object' ? { ...payload, inputId: String(payload.inputId || '') } : {};
+  return { ok: sendLiveHubCommand({ type: 'signal', payload: { ...clean, consumerId: event.sender.id } }) };
+});
+ipcMain.handle('live-hub-select-desktop-source', async (event, sourceId) => {
+  if (!liveInputHubWin || liveInputHubWin.isDestroyed() || event.sender.id !== liveInputHubWin.webContents.id) return { ok: false };
+  pendingDesktopSourceId = String(sourceId || '');
+  return { ok: !!pendingDesktopSourceId };
+});
+ipcMain.on('live-hub-ready', event => {
+  if (!liveInputHubWin || liveInputHubWin.isDestroyed() || event.sender.id !== liveInputHubWin.webContents.id) return;
+  liveInputHubReady = true;
+  sendLiveHubCommand({ type: 'configure', definitions: liveInputDefinitions });
+});
+ipcMain.on('live-hub-status', (event, payload) => {
+  if (!liveInputHubWin || liveInputHubWin.isDestroyed() || event.sender.id !== liveInputHubWin.webContents.id) return;
+  if (!payload || !payload.inputId) return;
+  const clean = {
+    inputId: String(payload.inputId), state: String(payload.state || 'unknown'), at: Number(payload.at) || Date.now(),
+    name: String(payload.name || ''), type: String(payload.type || ''), error: String(payload.error || ''),
+    hasVideo: payload.hasVideo === true, hasAudio: payload.hasAudio === true,
+    videoLabel: String(payload.videoLabel || ''), audioLabel: String(payload.audioLabel || ''),
+    width: Math.max(0, Math.min(8192, Math.round(Number(payload.width) || 0))),
+    height: Math.max(0, Math.min(8192, Math.round(Number(payload.height) || 0))),
+    frameRate: Math.max(0, Math.min(120, Number(payload.frameRate) || 0))
+  };
+  liveInputStatuses.set(clean.inputId, clean);
+  broadcastLiveInputStatus(clean);
+});
+ipcMain.on('live-hub-signal', (event, payload) => {
+  if (!liveInputHubWin || liveInputHubWin.isDestroyed() || event.sender.id !== liveInputHubWin.webContents.id) return;
+  const target = webContents.fromId(Number(payload && payload.consumerId));
+  if (!target || target.isDestroyed() || !trustedLiveInputConsumer(target)) return;
+  target.send('live-input-signal', {
+    inputId: String(payload.inputId || ''), type: String(payload.type || ''),
+    description: payload.description || null, candidate: payload.candidate || null
+  });
+});
 ipcMain.handle('show-storage-status', async () => {
   if (showStorageReady) await showStorageReady;
   return showRepository
@@ -1079,12 +1297,14 @@ ipcMain.handle('show-preflight-inspect', async (event, payload) => {
     displays: displayList(),
     selectedDisplayId: payload && payload.selectedDisplayId,
     recoveryAvailable: !!storageStatus.recoveryAvailable,
-    outputRuntime: outputRuntimeSnapshot()
+    outputRuntime: outputRuntimeSnapshot(),
+    liveInputStatuses: [...liveInputStatuses.values()]
   });
 });
 ipcMain.on('set-output-configs', (e, configs) => applyOutputConfigs(configs));
 ipcMain.handle('media-save', (e, payload) => {
   try {
+    if (!controlWin || controlWin.isDestroyed() || e.sender.id !== controlWin.webContents.id) return { ok: false, error: 'unauthorized' };
     const { name, dataURL } = payload || {};
     const m = /^data:([^;,]+);base64,(.+)$/.exec(String(dataURL || ''));
     if (!m) return { ok: false, error: 'bad data url' };
@@ -1488,6 +1708,115 @@ async function waitForAuxOutputBounds(records, expected, timeoutMs = 2400) {
   return { stable: false, bounds };
 }
 
+async function runLiveInputSmoke(waitLoad) {
+  const inputId = 'smoke-live-input';
+  const sceneId = 'smoke-live-scene';
+  const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
+  const waitUntil = async (probe, timeoutMs = 9000) => {
+    const deadline = Date.now() + timeoutMs;
+    let last = null;
+    while (Date.now() < deadline) {
+      try { last = await probe(); } catch (error) { last = { error: String(error && error.message || error) }; }
+      if (last && last.ok) return last;
+      await sleep(60);
+    }
+    return last || { ok: false, error: 'timeout' };
+  };
+
+  await waitLoad(controlWin);
+  const hub = await waitUntil(async () => ({ ok: !!(liveInputHubReady && liveInputHubWin && !liveInputHubWin.isDestroyed()) }), 6000);
+  if (!hub.ok) return { ok: false, stage: 'hub-ready', hub };
+
+  createOutputWindow(SMOKE_TARGET && SMOKE_TARGET.id);
+  const output = await waitUntil(async () => ({ ok: !!(outputWin && !outputWin.isDestroyed() && !outputWin.webContents.isLoading()) }), 8000);
+  if (!output.ok) return { ok: false, stage: 'output-ready', output };
+  await waitLoad(outputWin);
+
+  const setup = JSON.parse(await controlWin.webContents.executeJavaScript(`JSON.stringify((function(){
+    ensureScenes();
+    applyAdvancedMode(true);
+    document.getElementById('chkAdvanced').checked=true;
+    S.studioDirect=false;
+    document.getElementById('chkDirectProgram').checked=false;
+    S.primaryLiveAudio=false;
+    programState=outputSnapshot(S);
+    pushProgramState(programState);
+    S.canvas=PTCOMP.normalizeCanvas({width:1280,height:720,fps:30,background:'#12161d',transparent:false});
+    S.canvasAspect=legacyAspectForCanvas(S.canvas);
+    S.liveInputs=[PTCOMP.normalizeLiveInput({
+      id:${JSON.stringify(inputId)},type:'device',name:'Synthetic capture card',
+      videoDeviceId:'__showslate_synthetic__',videoDeviceLabel:'Synthetic capture card',
+      audioDeviceId:'__showslate_synthetic_audio__',audioDeviceLabel:'Synthetic capture audio',withAudio:true,
+      width:1280,height:720,fps:30,active:true,autoReconnect:true
+    })];
+    S.scenes=[PTCOMP.normalizeScene({id:${JSON.stringify(sceneId)},name:'Live input smoke',layers:[
+      {id:'smoke-live-background',type:'color',name:'Background',color:'#12161d',visible:true,x:0,y:0,w:100,h:100,opacity:1},
+      {id:'smoke-live-layer',type:'capture',name:'Synthetic capture card',inputId:${JSON.stringify(inputId)},visible:true,fit:'cover',x:0,y:0,w:100,h:100,opacity:1,audioEnabled:true,volume:1}
+    ]})];
+    S.activeSceneId=${JSON.stringify(sceneId)};
+    selectedLayerId='smoke-live-layer';
+    liveInputConfigKey='';
+    renderScenesUI();
+    renderStage('pv',S,Date.now());
+    syncLiveInputService();
+    send();
+    return {previewScene:S.activeSceneId,programScene:programState.activeSceneId,direct:S.studioDirect};
+  })())`));
+
+  const service = await waitUntil(async () => {
+    const row = liveInputStatuses.get(inputId);
+    return { ok: !!(row && row.state === 'live' && row.hasVideo && row.hasAudio), row: row || null };
+  }, 10000);
+  const hubMedia = JSON.parse(await liveInputHubWin.webContents.executeJavaScript(`JSON.stringify((function(){const stream=window.liveCapture.inputs.get(${JSON.stringify(inputId)})?.stream;const video=stream&&stream.getVideoTracks()[0];const audio=stream&&stream.getAudioTracks()[0];return {video:video?video.getSettings():null,audio:audio?audio.getSettings():null};})())`));
+  const preview = await waitUntil(async () => {
+    const value = JSON.parse(await controlWin.webContents.executeJavaScript(`JSON.stringify((function(){
+      const video=document.querySelector('#pvScene video[data-live-input-id=${JSON.stringify(inputId)}]');
+      const stream=video&&video.srcObject;
+      const track=stream&&stream.getVideoTracks()[0];
+      return {ok:!!(video&&stream&&video.readyState>=2&&video.videoWidth>=1000&&video.videoHeight>=560),muted:video?video.muted:null,paused:video?video.paused:null,width:video?video.videoWidth:0,height:video?video.videoHeight:0,videoTracks:stream?stream.getVideoTracks().length:0,audioTracks:stream?stream.getAudioTracks().length:0,currentTime:video?video.currentTime:0,settings:track?track.getSettings():null};
+    })())`));
+    return value;
+  }, 10000);
+  const previewLater = await waitUntil(async () => {
+    const value = JSON.parse(await controlWin.webContents.executeJavaScript(`JSON.stringify((function(){const video=document.querySelector('#pvScene video[data-live-input-id=${JSON.stringify(inputId)}]');return {exists:!!video,readyState:video?video.readyState:0,currentTime:video?video.currentTime:0,muted:video?video.muted:null,paused:video?video.paused:null};})())`));
+    return {...value, baseline:preview.currentTime, ok:value.exists&&value.readyState>=2&&value.muted===true&&value.paused===false&&value.currentTime>preview.currentTime+0.04};
+  }, 3000);
+  const beforeTake = JSON.parse(await outputWin.webContents.executeJavaScript(`JSON.stringify({scene:S&&S.activeSceneId,liveVideo:!!document.querySelector('video[data-live-input-id=${JSON.stringify(inputId)}]')})`));
+
+  await controlWin.webContents.executeJavaScript(`document.getElementById('btnTake').click()`);
+  const program = await waitUntil(async () => {
+    const value = JSON.parse(await outputWin.webContents.executeJavaScript(`JSON.stringify((function(){
+      const video=document.querySelector('video[data-live-input-id=${JSON.stringify(inputId)}]');
+      const stream=video&&video.srcObject;
+      const track=stream&&stream.getVideoTracks()[0];
+      return {ok:!!(video&&stream&&video.readyState>=2&&video.videoWidth>=1000&&video.videoHeight>=560),scene:S&&S.activeSceneId,muted:video?video.muted:null,width:video?video.videoWidth:0,height:video?video.videoHeight:0,videoTracks:stream?stream.getVideoTracks().length:0,audioTracks:stream?stream.getAudioTracks().length:0,currentTime:video?video.currentTime:0,settings:track?track.getSettings():null};
+    })())`));
+    return value;
+  }, 10000);
+  const programLater = await waitUntil(async () => {
+    const value = JSON.parse(await outputWin.webContents.executeJavaScript(`JSON.stringify((function(){const video=document.querySelector('video[data-live-input-id=${JSON.stringify(inputId)}]');return {exists:!!video,readyState:video?video.readyState:0,currentTime:video?video.currentTime:0,paused:video?video.paused:null};})())`));
+    return {...value, baseline:program.currentTime, ok:value.exists&&value.readyState>=2&&value.paused===false&&value.currentTime>program.currentTime+0.04};
+  }, 3000);
+
+  const shot = await outputWin.webContents.capturePage();
+  const bitmap = shot.toBitmap();
+  let min = 255, max = 0, bright = 0;
+  for (let index = 0; index + 3 < bitmap.length; index += 400) {
+    const value = Math.max(bitmap[index], bitmap[index + 1], bitmap[index + 2]);
+    min = Math.min(min, value); max = Math.max(max, value); if (value > 80) bright++;
+  }
+  const screenshot = writeTestArtifact('compositor/live-input-program.png', shot.toPNG());
+  const visual = { ok: !shot.isEmpty() && max - min > 60 && bright > 20, min, max, bright, screenshot };
+
+  await controlWin.webContents.executeJavaScript(`S.liveInputs=[];liveInputConfigKey='';syncLiveInputService();send();`);
+  return {
+    ok: service.ok && preview.ok && program.ok && visual.ok,
+    setup, service, hubMedia, preview, previewLater, beforeTake, program, programLater, visual,
+    previewMoving: previewLater.ok === true,
+    programMoving: programLater.ok === true
+  };
+}
+
 async function runOutputRoutingSmoke() {
   let multiOutOK = false, routingDisabledOK = false, routingPositionOK = false;
   let multiOutStateOK = false, missingDisplaySafeOK = false, missingDisplayUiOK = false, fingerprintReconnectOK = false;
@@ -1619,6 +1948,8 @@ app.whenReady().then(async () => {
     return { ok: false };
   });
   await showStorageReady;
+  setupLiveInputPermissions();
+  createLiveInputHub();
   startServer(7878);
   startOSC(7879);
   createControlWindow();
@@ -1695,6 +2026,18 @@ app.whenReady().then(async () => {
             failure: targeted.failure ? { cycle: targeted.failure.cycle, kind: targeted.failure.kind } : null
           }));
           app.exit(targeted.ok ? 0 : 1);
+          return;
+        }
+        if (LIVE_INPUT_SMOKE_ONLY) {
+          const live = await runLiveInputSmoke(waitLoad);
+          smokeCheck('LIVE_INPUT_SERVICE_VIDEO_AUDIO_OK', live.service&&live.service.ok, JSON.stringify({service:live.service,hubMedia:live.hubMedia}));
+          smokeCheck('LIVE_INPUT_PREVIEW_MUTED_AND_MOVING_OK', live.preview&&live.preview.ok&&live.preview.muted===true&&live.preview.videoTracks===1&&live.preview.audioTracks===1&&live.previewMoving, JSON.stringify(live.preview||live));
+          smokeCheck('LIVE_INPUT_PREVIEW_DOES_NOT_CHANGE_PROGRAM_OK', live.setup&&live.beforeTake&&live.setup.previewScene!==live.setup.programScene&&live.beforeTake.scene===live.setup.programScene&&!live.beforeTake.liveVideo, JSON.stringify({setup:live.setup,beforeTake:live.beforeTake}));
+          smokeCheck('LIVE_INPUT_TAKE_SENDS_EXPECTED_SCENE_OK', live.program&&live.program.ok&&live.program.scene==='smoke-live-scene'&&live.programMoving, JSON.stringify(live.program||live));
+          smokeCheck('LIVE_INPUT_PROGRAM_AUDIO_DEFAULT_MUTED_OK', live.program&&live.program.audioTracks===1&&live.program.muted===true, JSON.stringify(live.program||live));
+          smokeCheck('LIVE_INPUT_PROGRAM_PIXELS_OK', live.visual&&live.visual.ok, JSON.stringify(live.visual||live));
+          console.log('LIVE_INPUT_TARGETED_OK=' + (smokeFailures.length === 0));
+          app.exit(smokeFailures.length ? 1 : 0);
           return;
         }
         if (OUTPUT_ROUTING_SMOKE_ONLY) {
@@ -2490,6 +2833,7 @@ app.whenReady().then(async () => {
         } catch (e) { isoStr = 'ERR ' + e; }
         smokeCheck('PREVIEW_ISOLATION_OK', isoOK, isoStr);
         // Aux izlaz: grid mod = tačna kockica monitora; fullscreen mod = ceo monitor
+        // bez macOS fullscreen Space-a, kako bi više ruta radilo istovremeno.
         let auxOK = false, auxStr = '?';
         try {
           const did = controlDisplayId();
@@ -2501,18 +2845,28 @@ app.whenReady().then(async () => {
           const cw = Math.floor(disp.bounds.width / 3), ch = Math.floor(disp.bounds.height / 3);
           const gridOK = Math.abs((b.width || 0) - cw) < 8 && Math.abs((b.height || 0) - ch) < 8 && rec.frameless === true;
           applyOutputConfigs([{ id: 'smoke-fs', name: 'F', displayId: did, mode: 'fullscreen' }]);
-          let rec2 = null;
-          for (let i = 0; i < 70; i++) {
+          let rec2 = null, fsBounds = {};
+          for (let i = 0; i < 40; i++) {
             rec2 = auxOutputs.get('smoke-fs');
-            try { if(rec2 && rec2.win && !rec2.win.isDestroyed()){ rec2.win.show(); rec2.win.focus(); } } catch(e) {}
-            if(rec2 && rec2.win && !rec2.win.isDestroyed() && rec2.win.isFullScreen()) break;
-            await new Promise(r => setTimeout(r, 120));
+            if (rec2 && rec2.win && !rec2.win.isDestroyed()) {
+              fsBounds = rec2.win.getBounds();
+              const fillModeOK = process.platform !== 'darwin' || isAuxSimpleFullscreen(rec2.win);
+              const settled = rec2.win.isVisible() && rec2.frameless === true && !rec2.win.isFullScreen() && fillModeOK
+                && Math.abs(fsBounds.x - disp.bounds.x) <= 2 && Math.abs(fsBounds.y - disp.bounds.y) <= 2
+                && Math.abs(fsBounds.width - disp.bounds.width) <= 2 && Math.abs(fsBounds.height - disp.bounds.height) <= 2;
+              if (settled) break;
+            }
+            await new Promise(r => setTimeout(r, 100));
           }
-          const fsOK = !!(rec2 && rec2.win && !rec2.win.isDestroyed() && rec2.win.isFullScreen());
+          const fsModeOK = !!(rec2 && rec2.win && (process.platform !== 'darwin' || isAuxSimpleFullscreen(rec2.win)));
+          const fsOK = !!(rec2 && rec2.win && !rec2.win.isDestroyed() && rec2.win.isVisible()
+            && rec2.frameless === true && !rec2.win.isFullScreen() && fsModeOK
+            && Math.abs((fsBounds.x || 0) - disp.bounds.x) <= 2 && Math.abs((fsBounds.y || 0) - disp.bounds.y) <= 2
+            && Math.abs((fsBounds.width || 0) - disp.bounds.width) <= 2 && Math.abs((fsBounds.height || 0) - disp.bounds.height) <= 2);
           applyOutputConfigs([]);
-          await new Promise(r => setTimeout(r, 700));
+          for (let i = 0; i < 30 && auxOutputs.size; i++) await new Promise(r => setTimeout(r, 80));
           auxOK = gridOK && fsOK && auxOutputs.size === 0;
-          auxStr = JSON.stringify({ grid: { w: b.width, h: b.height, cw, ch }, fsOK, left: auxOutputs.size });
+          auxStr = JSON.stringify({ grid: { w: b.width, h: b.height, cw, ch }, fullscreen: fsBounds, target: disp.bounds, fsOK, left: auxOutputs.size });
         } catch (e) { auxStr = 'ERR ' + e; }
         smokeCheck('AUX_MODES_OK', auxOK, auxStr);
         // MEDIA BIBLIOTEKA: upload → disk → media:// u sceni → output učita sliku sa 127.0.0.1
@@ -2648,15 +3002,23 @@ app.whenReady().then(async () => {
             renderScenesUI(); if(typeof renderStage==='function') renderStage('pv', S, Date.now()); send(true);
             return 'seeded';
           })()`);
-          for (let i = 0; i < 30; i++) {
-            const ready = await controlWin.webContents.executeJavaScript(`(function(){ if(typeof renderStage==='function') renderStage('pv', S, Date.now()); return !!document.querySelector('#preview .pv-scene-layer[data-layer-id="dg-1"]'); })()`);
-            if (ready) break;
-            await new Promise(r => setTimeout(r, 120));
+          let dragReady = false;
+          for (let i = 0; i < 40; i++) {
+            const ready = await controlWin.webContents.executeJavaScript(`(function(){
+              if(typeof applyCanvasAspect==='function') applyCanvasAspect();
+              if(typeof renderStage==='function') renderStage('pv', S, Date.now());
+              const preview=document.getElementById('preview'); const r=preview.getBoundingClientRect();
+              const canvas=PTCOMP.normalizeCanvas(S.canvas); const expected=canvas.width/canvas.height;
+              return !!document.querySelector('#preview .pv-scene-layer[data-layer-id="dg-1"]')
+                && r.width>100 && r.height>60 && Math.abs((r.width/r.height)-expected)<0.02;
+            })()`);
+            if (ready) { dragReady = true; break; }
+            await new Promise(r => setTimeout(r, 80));
           }
           const dragPoints = JSON.parse(await controlWin.webContents.executeJavaScript(`(function(){
             const box=document.getElementById('preview'); const r=box.getBoundingClientRect();
             const el=box.querySelector('.pv-scene-layer[data-layer-id="dg-1"]');
-            if(!el || r.width<20 || r.height<20) return JSON.stringify({ok:false,w:r.width,h:r.height});
+            if(!${dragReady} || !el || r.width<20 || r.height<20) return JSON.stringify({ok:false,settled:${dragReady},w:r.width,h:r.height});
             const er=el.getBoundingClientRect();
             const sx=er.left+er.width*0.35, sy=er.top+er.height*0.35;
             const hit=document.elementFromPoint(sx,sy), hitLayer=hit&&hit.closest&&hit.closest('.pv-scene-layer');
@@ -4627,20 +4989,31 @@ app.whenReady().then(async () => {
             n === expectIdentify && during >= before + n && closed,
             `n=${n} expect=${expectIdentify} during=${during} before=${before} closed=${closed}`);
         } catch (e) { smokeCheck('IDENTIFY_DISPLAYS_OK', false, 'ERR ' + e); }
-        // STATIKA: nema capture koda ni window-prompta u shipped fajlovima
+        // STATIKA: capture je izolovan u centralnom live-input servisu; nema direktnog
+        // capture pristupa iz kontrolera ili izlaznih renderera, niti window.prompt-a.
         try {
           const shipped = ['main.js', 'preload.js', 'controller.html', 'output.html', 'backstage.html', 'remote.html', 'signal.html', 'i18n.js'];
-          let cap = [], pr = [];
+          let pr = [];
           for (const f of shipped) {
             const txt = fs.readFileSync(path.join(__dirname, f), 'utf8');
             // šabloni sastavljeni iz delova da provera ne uhvati samu sebe
-            if (new RegExp('desktop' + 'Capturer|getDisplay' + 'Media|chromeMedia' + 'Source').test(txt)) cap.push(f);
             if (new RegExp('[^a-zA-Z_.]pro' + 'mpt\\s*\\(').test(txt)) pr.push(f);
           }
-          smokeCheck('NO_CAPTURE_CODE_OK', cap.length === 0, cap.join(','));
+          const mainSource = fs.readFileSync(path.join(__dirname, 'main.js'), 'utf8');
+          const hubSource = fs.readFileSync(path.join(__dirname, 'src/live-input/hub.js'), 'utf8');
+          const rendererSources = ['controller.html', 'output.html'].map(f => fs.readFileSync(path.join(__dirname, f), 'utf8'));
+          const mainOwnsDesktopCapture = new RegExp('desktop' + 'Capturer').test(mainSource)
+            && new RegExp('setDisplayMedia' + 'RequestHandler').test(mainSource);
+          const hubOwnsMediaCapture = new RegExp('getDisplay' + 'Media').test(hubSource)
+            && new RegExp('getUser' + 'Media').test(hubSource);
+          const rendererCaptureAccess = rendererSources.some(txt => new RegExp(
+            'desktop' + 'Capturer|getDisplay' + 'Media|getUser' + 'Media|chromeMedia' + 'Source'
+          ).test(txt));
+          smokeCheck('CAPTURE_SERVICE_ISOLATED_OK', mainOwnsDesktopCapture && hubOwnsMediaCapture && !rendererCaptureAccess,
+            JSON.stringify({ mainOwnsDesktopCapture, hubOwnsMediaCapture, rendererCaptureAccess }));
           smokeCheck('NO_WINDOW_PROMPT_OK', pr.length === 0, pr.join(','));
         } catch (e) {
-          smokeCheck('NO_CAPTURE_CODE_OK', false, 'ERR ' + e);
+          smokeCheck('CAPTURE_SERVICE_ISOLATED_OK', false, 'ERR ' + e);
           smokeCheck('NO_WINDOW_PROMPT_OK', false, 'ERR ' + e);
         }
         // PREVODI: sr i en inline rečnici imaju IDENTIČNE ključeve + svaki data-i18n postoji

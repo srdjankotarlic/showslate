@@ -4,9 +4,9 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="google-site-verification" content="8XQrjWTrPu_H5qRAX91drrvps-Gkw1Ywux-kTV5GHx0">
-  <title>ShowSlate Conference Desk | Offline Conference Room Control</title>
-  <meta name="description" content="Free offline conference room control for rundowns, speaker timers, linked media, lower thirds and role-based displays on macOS and Windows.">
-  <meta name="keywords" content="conference room control software, conference timer, event rundown software, confidence monitor, speaker timer, door agenda display, lower third software, multi display control, run of show software, offline show control">
+  <title>ShowSlate Conference Desk | Conference Control and Live Scene Canvas</title>
+  <meta name="description" content="Free offline conference room control with rundowns, speaker timing, layered scenes, window and capture-card inputs, lower thirds and multi-display Program outputs.">
+  <meta name="keywords" content="conference room control software, live scene compositor, window capture software, capture card display software, conference timer, event rundown software, confidence monitor, speaker timer, lower third software, multi display control, run of show software, offline show control">
   <meta name="author" content="Srdjan Kotarlic">
   <meta name="robots" content="index,follow,max-image-preview:large,max-snippet:-1,max-video-preview:-1">
   <meta name="theme-color" content="#101419">
@@ -22,16 +22,16 @@
   <meta property="og:type" content="website">
   <meta property="og:site_name" content="ShowSlate Conference Desk">
   <meta property="og:locale" content="en_US">
-  <meta property="og:title" content="ShowSlate Conference Desk | Offline Conference Room Control">
-  <meta property="og:description" content="Import the schedule and media, test each room display, then use one GO to update the cue, timer, content and speaker lower third.">
+  <meta property="og:title" content="ShowSlate Conference Desk | Conference Control and Live Scene Canvas">
+  <meta property="og:description" content="Build layered scenes from media, windows and capture devices, then run the conference cue, timer, lower thirds and room displays from one local desk.">
   <meta property="og:url" content="https://srdjankotarlic.github.io/showslate/">
   <meta property="og:image" content="https://srdjankotarlic.github.io/showslate/assets/social-preview.png">
   <meta property="og:image:width" content="1600">
   <meta property="og:image:height" content="900">
   <meta property="og:image:alt" content="ShowSlate Conference Desk operator workspace">
   <meta name="twitter:card" content="summary_large_image">
-  <meta name="twitter:title" content="ShowSlate Conference Desk | Offline Conference Room Control">
-  <meta name="twitter:description" content="One local desk for the conference rundown, speaker timer, linked media, lower thirds and room displays.">
+  <meta name="twitter:title" content="ShowSlate Conference Desk | Conference Control and Live Scene Canvas">
+  <meta name="twitter:description" content="One local desk for rundowns, layered scenes, live inputs, speaker timing, lower thirds and room displays.">
   <meta name="twitter:image" content="https://srdjankotarlic.github.io/showslate/assets/social-preview.png">
 
   <script type="application/ld+json">
@@ -43,20 +43,23 @@
     "applicationCategory": "MultimediaApplication",
     "applicationSubCategory": "Offline conference room control software",
     "operatingSystem": "macOS, Windows 10, Windows 11",
-    "softwareVersion": "0.10.0-beta.1",
-    "description": "Free offline conference room control for rundowns, speaker timers, linked media, lower thirds and role-based displays.",
+    "softwareVersion": "0.11.0-beta.1",
+    "description": "Free offline conference room control with rundowns, layered scenes, window and capture-device inputs, speaker timers, lower thirds and role-based displays.",
     "url": "https://srdjankotarlic.github.io/showslate/",
     "sameAs": "https://github.com/srdjankotarlic/showslate",
     "softwareHelp": "https://github.com/srdjankotarlic/showslate/discussions",
     "downloadUrl": [
-      "https://github.com/srdjankotarlic/showslate/releases/download/v0.10.0-beta.1/ShowSlate-0.10.0-beta.1-arm64.dmg",
-      "https://github.com/srdjankotarlic/showslate/releases/download/v0.10.0-beta.1/ShowSlate-Setup-0.10.0-beta.1.exe"
+      "https://github.com/srdjankotarlic/showslate/releases/download/v0.11.0-beta.1/ShowSlate-0.11.0-beta.1-arm64.dmg",
+      "https://github.com/srdjankotarlic/showslate/releases/download/v0.11.0-beta.1/ShowSlate-Setup-0.11.0-beta.1.exe"
     ],
     "softwareRequirements": "Apple Silicon Mac, or Windows 10/11 x64",
     "featureList": [
       "Conference show-folder import with schedule and media matching",
       "Atomic NEXT, LIVE and GO workflow",
       "Audience, Confidence, Timer, Stream Graphics and Door Agenda outputs",
+      "Custom-resolution Canvas with reusable layered scenes",
+      "Window, display, camera and UVC capture-card sources",
+      "Preview and Program scene switching with local source audio safeguards",
       "Speaker countdown and operator messages",
       "Cue-driven lower thirds and linked screen content",
       "Local-first operation with preflight and render confirmation"
@@ -113,7 +116,12 @@
       {
         "@type": "Question",
         "name": "Does ShowSlate replace OBS, vMix or a hardware switcher?",
-        "acceptedAnswer": {"@type": "Answer", "text": "No. It does not switch cameras, mix audio or encode a stream. It coordinates the room schedule, timing, graphics and displays while those tools keep their existing jobs."}
+        "acceptedAnswer": {"@type": "Answer", "text": "No. ShowSlate can compose local windows, media and capture devices for room displays, but it does not encode a stream, provide multibus audio mixing or replace an advanced production switcher."}
+      },
+      {
+        "@type": "Question",
+        "name": "Can ShowSlate capture a window or video capture card?",
+        "acceptedAnswer": {"@type": "Answer", "text": "Yes in the desktop app. Add a window, display, camera or standard UVC capture card as a Canvas layer. Local live streams appear in ShowSlate desktop output windows, not in browser or OBS URL outputs."}
       }
     ]
   }
@@ -130,6 +138,7 @@
     </a>
     <nav aria-label="Primary navigation">
       <a href="#workflow">Workflow</a>
+      <a href="#canvas">Canvas</a>
       <a href="#outputs">Outputs</a>
       <a href="#screens">Screens</a>
       <a href="#faq">FAQ</a>
@@ -143,10 +152,10 @@
       <div class="hero-content">
         <p class="eyebrow">Free, local-first and open source</p>
         <h1 id="hero-title">ShowSlate Conference Desk</h1>
-        <p class="hero-lead">Import the schedule and media, test every room display, then use one GO to update the live cue, speaker timer, screen content and lower third.</p>
+        <p class="hero-lead">Import the schedule and media, compose layered scenes from windows or capture devices, then run the cue, timer, lower thirds and room displays from one local desk.</p>
         <div class="hero-actions">
-          <a class="button primary" href="https://github.com/srdjankotarlic/showslate/releases/download/v0.10.0-beta.1/ShowSlate-0.10.0-beta.1-arm64.dmg">Download for Mac</a>
-          <a class="button secondary" href="https://github.com/srdjankotarlic/showslate/releases/download/v0.10.0-beta.1/ShowSlate-Setup-0.10.0-beta.1.exe">Download for Windows</a>
+          <a class="button primary" href="https://github.com/srdjankotarlic/showslate/releases/download/v0.11.0-beta.1/ShowSlate-0.11.0-beta.1-arm64.dmg">Download for Mac</a>
+          <a class="button secondary" href="https://github.com/srdjankotarlic/showslate/releases/download/v0.11.0-beta.1/ShowSlate-Setup-0.11.0-beta.1.exe">Download for Windows</a>
         </div>
         <div class="hero-facts" aria-label="Product facts">
           <span>One conference room</span>
@@ -164,7 +173,7 @@
           <p class="eyebrow">Built for the room operator</p>
           <h2 id="problem-title">Stop synchronizing five separate tools by hand.</h2>
         </div>
-        <p>A conference room often runs from a spreadsheet, timer, slide folder, speaker-name document and several displays. ShowSlate turns them into one cue state, while leaving cameras, audio and streaming in the tools already built for those jobs.</p>
+        <p>A conference room often runs from a spreadsheet, timer, slide folder, speaker-name document, ad-hoc video sources and several displays. ShowSlate turns them into one cue and Program state, while leaving encoding and advanced audio in the tools built for those jobs.</p>
       </div>
     </section>
 
@@ -180,8 +189,8 @@
           </article>
           <article>
             <span>02</span>
-            <h3>Assign and preflight</h3>
-            <p>Give each display a role and run Test outputs. A destination stays SYNCING until it confirms the expected Program revision.</p>
+            <h3>Compose and preflight</h3>
+            <p>Build layered scenes, give each display a role and run Test outputs. A destination stays SYNCING until it confirms the expected Program revision.</p>
           </article>
           <article>
             <span>03</span>
@@ -189,6 +198,46 @@
             <p>Selection never changes LIVE. GO updates the cue, timer, linked media and automatic speaker lower third as one transaction.</p>
           </article>
         </div>
+      </div>
+    </section>
+
+    <section class="features" id="canvas" aria-labelledby="canvas-title">
+      <div class="section-inner">
+        <p class="eyebrow">Built-in scene compositor</p>
+        <h2 id="canvas-title">Prepare the complete visual scene before it goes live</h2>
+        <div class="feature-grid">
+          <article>
+            <span class="feature-number">01</span>
+            <h3>Custom Canvas</h3>
+            <p>Choose HD, square, vertical, UHD or an exact custom resolution and frame rate for the destination.</p>
+          </article>
+          <article>
+            <span class="feature-number">02</span>
+            <h3>Media and color</h3>
+            <p>Stack pictures, video, PDF pages, solid colors, text and the live ShowSlate timer.</p>
+          </article>
+          <article>
+            <span class="feature-number">03</span>
+            <h3>Window capture</h3>
+            <p>Add a chosen application window or display, then resize and place it inside the scene.</p>
+          </article>
+          <article>
+            <span class="feature-number">04</span>
+            <h3>Capture devices</h3>
+            <p>Use a camera or standard UVC capture card with an optional audio input for local Program output.</p>
+          </article>
+          <article>
+            <span class="feature-number">05</span>
+            <h3>Ordered layers</h3>
+            <p>Control stack order, visibility, position, size, opacity, rotation and media fit from one inspector.</p>
+          </article>
+          <article>
+            <span class="feature-number">06</span>
+            <h3>Preview, then TAKE</h3>
+            <p>Prepare privately in Preview and send the complete scene to Program only when the operator is ready.</p>
+          </article>
+        </div>
+        <p class="download-guidance"><strong>Local capture boundary:</strong> window and device streams appear in ShowSlate desktop output windows. Browser and OBS URL outputs do not receive those local streams.</p>
       </div>
     </section>
 
@@ -265,7 +314,7 @@
               <li>Open it and drag ShowSlate to Applications.</li>
               <li>Approve the first launch in Privacy &amp; Security if macOS asks.</li>
             </ol>
-            <a class="button primary" href="https://github.com/srdjankotarlic/showslate/releases/download/v0.10.0-beta.1/ShowSlate-0.10.0-beta.1-arm64.dmg">Download macOS DMG</a>
+            <a class="button primary" href="https://github.com/srdjankotarlic/showslate/releases/download/v0.11.0-beta.1/ShowSlate-0.11.0-beta.1-arm64.dmg">Download macOS DMG</a>
           </article>
           <article>
             <div class="platform-head"><h3>Windows</h3><span>x64 beta</span></div>
@@ -274,16 +323,16 @@
               <li>Run the installer and follow the prompts.</li>
               <li>Allow private-network access for browser and remote views.</li>
             </ol>
-            <a class="button primary" href="https://github.com/srdjankotarlic/showslate/releases/download/v0.10.0-beta.1/ShowSlate-Setup-0.10.0-beta.1.exe">Download Windows Setup</a>
+            <a class="button primary" href="https://github.com/srdjankotarlic/showslate/releases/download/v0.11.0-beta.1/ShowSlate-Setup-0.11.0-beta.1.exe">Download Windows Setup</a>
             <details class="advanced-download">
               <summary>Need a no-install version?</summary>
-              <p>The <a href="https://github.com/srdjankotarlic/showslate/releases/download/v0.10.0-beta.1/ShowSlate-0.10.0-beta.1-portable.exe">portable EXE</a> is intended for advanced users who cannot install software.</p>
+              <p>The <a href="https://github.com/srdjankotarlic/showslate/releases/download/v0.11.0-beta.1/ShowSlate-0.11.0-beta.1-portable.exe">portable EXE</a> is intended for advanced users who cannot install software.</p>
             </details>
           </article>
         </div>
         <div class="integrity-note">
           <strong>Verify your download.</strong>
-          <span>The beta is unsigned. Download only from this repository and compare <a href="https://github.com/srdjankotarlic/showslate/releases/download/v0.10.0-beta.1/SHA256SUMS.txt"><code>SHA256SUMS.txt</code></a> when needed. See the <a href="https://github.com/srdjankotarlic/showslate/releases/tag/v0.10.0-beta.1">release details</a> before overriding an operating-system warning.</span>
+          <span>The beta is unsigned. Download only from this repository and compare <a href="https://github.com/srdjankotarlic/showslate/releases/download/v0.11.0-beta.1/SHA256SUMS.txt"><code>SHA256SUMS.txt</code></a> when needed. See the <a href="https://github.com/srdjankotarlic/showslate/releases/tag/v0.11.0-beta.1">release details</a> before overriding an operating-system warning. The previous <a href="https://github.com/srdjankotarlic/showslate/releases/tag/v0.10.0-beta.1">0.10 beta</a> remains available.</span>
         </div>
       </div>
     </section>
@@ -327,7 +376,11 @@
           </details>
           <details>
             <summary>Does it replace OBS, vMix or a video switcher?</summary>
-            <p>No. ShowSlate does not switch cameras, mix audio or encode a stream. It coordinates conference timing, content, lower thirds and displays while those tools keep their existing jobs.</p>
+            <p>No. ShowSlate can compose local windows, media and capture devices for room displays, but it does not encode a stream, provide multibus audio mixing or replace an advanced production switcher.</p>
+          </details>
+          <details>
+            <summary>Can it capture a window, camera or video capture card?</summary>
+            <p>Yes in the desktop app. Add a chosen window, display, camera or standard UVC capture card as a Canvas layer. Local live streams appear in ShowSlate desktop output windows, not in browser or OBS URL outputs.</p>
           </details>
           <details>
             <summary>Is Stream Graphics certified with OBS or vMix?</summary>

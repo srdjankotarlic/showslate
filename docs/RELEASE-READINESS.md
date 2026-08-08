@@ -1,6 +1,6 @@
 # Release readiness
 
-Status audited against the `0.10.0-beta.1` release candidate on 2026-08-08. `PROVEN` means the retained evidence covers the claim below. `PENDING` means the requirement is incomplete and must not be marketed as complete.
+Status audited against the `0.11.0-beta.1` release candidate on 2026-08-08. `PROVEN` means the retained evidence covers the claim below. `PENDING` means the requirement is incomplete and must not be marketed as complete.
 
 | Requirement | Status | Current evidence | Remaining gate |
 |---|---|---|---|
@@ -12,11 +12,14 @@ Status audited against the `0.10.0-beta.1` release candidate on 2026-08-08. `PRO
 | Lower Third Studio | PROVEN ON TESTED MAC | Template/layer editor, Preview isolation, LIVE-cue TAKE, HIDE cleanup, persistence, drag/resize and a 150-cycle static-runtime soak pass. | External production integrations remain pending. |
 | Lower-third codecs | PARTIAL | MP4/H.264 and WebM VP8/VP9 decode/runtime tests and internal alpha-pixel checks pass in source and packaged Electron. | External OBS/vMix alpha workflows remain uncertified. |
 | Screen content | PROVEN ON TESTED MAC | Images, logos, PDF navigation, MP4/WebM media, scenes and cue-linked content pass renderer and packaged smoke checks. | Test every final event asset before going on-air. |
+| Canvas compositor | PROVEN ON TESTED MAC | Custom Canvas dimensions/FPS, scene management, ordered color/picture/video/text/timer layers, exact transforms, drag/resize and Preview/TAKE isolation pass model, renderer, source and packaged checks. | Independent operator rehearsal with real event assets. |
+| Live window/display inputs | PARTIAL | Main-process capture ownership, source selection, one-time hidden capture hub, local WebRTC distribution, reconnection and desktop-output rendering pass automated checks. | Manual normal-UI capture of real applications/displays on clean Mac and Windows machines. |
+| Camera/capture-card input and audio | PARTIAL | Synthetic 1280x720/30 fps video plus audio reaches Preview and desktop Program consumers; Preview mute and the single Program-audio-route guard pass. | Physical UVC card/camera, real audio, driver, resolution, latency and HDCP testing. |
 | Operator UI and website | PROVEN FOR TESTED VIEWPORTS | The beta usability matrix passes `55/55` from 1440x900 to 900x600. The public site passes desktop/mobile overflow, first-viewport and local-image checks. | Broader accessibility review and independent operator feedback. |
 | Localization | PARTIAL | English and Serbian are maintained as `FULL`; 35 packs are labelled `CORE`, use English fallback and preserve RTL direction where required. | Native-language editorial review before any CORE pack is promoted to FULL. |
-| Automated regression | PROVEN | All 15 module scripts, all seven visible renderer workflows, the source smoke and the packaged Mac smoke pass. Production dependency audit reports zero known vulnerabilities. | Automation does not replace physical venue QA. |
+| Automated regression | PROVEN | All 16 module scripts, all eight visible renderer workflows, targeted compositor/live-input/output checks, the source smoke and the packaged Mac smoke pass. Production dependency audit reports zero known vulnerabilities. | Automation does not replace physical venue QA. |
 | Native unsigned packaging | PROVEN | The Apple Silicon DMG verifies successfully. Mac and Windows `app.asar` archives pass MIT/no-license-gate inspection. Windows installer and portable PE files build successfully. | Packages remain unsigned public-beta artifacts. |
-| Public beta distribution | READY TO PUBLISH | Landing page, README, release notes, example show folder, release workflow, checksums and provenance attestations target `0.10.0-beta.1`. | Verify tag assets, links, Pages deployment and native CI after publication. |
+| Public beta distribution | CANDIDATE | Landing page, README, release notes, example show folder, release workflow, checksums and provenance attestations target `0.11.0-beta.1`; the prior `0.10.0-beta.1` remains available. | Complete the manual live-source workflow, then verify tag assets, links, Pages deployment and native CI. |
 | Stable signing automation | IMPLEMENTED | Candidate workflow verifies Developer ID/notarization and Authenticode/timestamps; publication is a separate exact-artifact evidence gate. | Signing secrets are not configured, so no signed stable candidate exists. |
 | macOS stable release | PENDING | Local unsigned DMG, packaged smoke and package-integrity checks pass. | Developer ID, notarization, clean-machine install and Gatekeeper evidence. |
 | Windows stable release | PENDING | x64 installer and portable package cross-build and pass archive inspection. | Native Windows runtime, firewall, multi-display, uninstall and Authenticode evidence. |
@@ -25,8 +28,8 @@ Status audited against the `0.10.0-beta.1` release candidate on 2026-08-08. `PRO
 
 ## Current decision
 
-`0.10.0-beta.1` is suitable for an honest public evaluation release as **ShowSlate Conference Desk**. It is not ready to be called stable, signed or production-certified.
+`0.11.0-beta.1` is an honest public-beta candidate for **ShowSlate Conference Desk**. It is not ready to be called stable, signed or production-certified until the manual live-source gate above is closed.
 
-The strongest proven workflow is a local-first, single-room conference desk on the tested Apple Silicon Mac: import a schedule and media folder, assign output roles, run preflight, select NEXT and press GO. The product deliberately does not replace camera switching, audio mixing, streaming/encoding, NDI or a multi-room cloud platform.
+The strongest proven workflow is a local-first, single-room conference desk on the tested Apple Silicon Mac: import a schedule and media folder, compose Canvas scenes, assign output roles, run preflight, select NEXT and press GO. The product can now place local live sources inside scenes, but deliberately does not replace camera switching, multibus audio mixing, streaming/encoding, NDI or a multi-room cloud platform.
 
 Do not publish a stable release until the signed candidate passes every machine-readable gate in [release-evidence](../release-evidence/README.md), physical Windows QA and independent operator validation. The public MIT decision supersedes the earlier proprietary-license plan; do not reintroduce activation, trial watermarking or paid-license keys into this free build.

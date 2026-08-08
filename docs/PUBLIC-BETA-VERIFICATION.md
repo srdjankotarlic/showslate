@@ -1,6 +1,6 @@
 # Public Beta Verification
 
-Verified for `0.10.0-beta.1` on 2026-08-08. This page separates what was physically exercised from what was only built or inspected.
+Verified for the `0.11.0-beta.1` release candidate on 2026-08-08. This page separates what was exercised on the tested Mac from what was only automated, built or structurally inspected.
 
 ## Physical Mac verification
 
@@ -17,21 +17,28 @@ The verified Conference Desk workflow includes:
 - exact-display reconnection and safe handling of missing displays;
 - Live Mode with risky editing locked and GO reachable at 900x600;
 - images, logos, PDF navigation, MP4/WebM playback, scenes and linked screen content;
+- custom-resolution Canvas scenes with ordered color, picture, video, text and timer layers;
+- visible scene controls, layer selection, drag/resize handles, exact transform controls and Preview/TAKE isolation;
+- non-native display-fill fullscreen routes that cover the selected display without creating a separate macOS Space;
 - Lower Third Studio persistence, drag/resize, selected-cue Preview isolation, LIVE-cue TAKE and HIDE media cleanup;
 - PNG/JPG/SVG, MP4, WebM VP8 and WebM VP9 renderer fixtures, including internal alpha-pixel checks;
 - local network views, remote/API controls, reports, CSV export, localization, autosave, crash recovery and portable show packages.
 
-Both full smoke runs ended with `SMOKE_OK`. A targeted lower-third soak completed 150/150 cycles with the expected template, instance, cue and rendered text on every cycle; no first failure was recorded.
+Both full smoke runs ended with `SMOKE_OK`: one from source and one from the freshly packaged Apple Silicon `.app`. A targeted lower-third soak completed 150/150 cycles with the expected template, instance, cue and rendered text on every cycle; no first failure was recorded.
+
+The live-input service also passed its targeted synthetic-stream test. A hidden capture hub produced one 1280x720/30 fps video track and one audio track, distributed the stream to Preview and desktop Program consumers over local WebRTC, kept Preview muted and stopped/reconnected cleanly. This proves the internal transport and lifecycle, not compatibility with every physical capture device.
 
 ## Automated evidence
 
-- `npm test`: all 15 module scripts passed, together with free-build, icon and public-site checks.
-- Visible Electron renderer suite: all seven workflow scripts passed.
+- `npm test`: all 16 module scripts passed, together with free-build, icon and public-site checks.
+- Visible Electron renderer suite: all eight workflow scripts passed.
 - Conference Desk renderer: `13/13` checks passed.
+- Canvas/compositor renderer: `14/14` checks passed, including 900x600 reachability, layer order, hidden-source retention, transform persistence and Preview/TAKE isolation.
+- Targeted live-input and multi-output checks passed, including simultaneous Program routes, fail-closed missing-display handling and the one-Program-audio-route guard.
 - Responsive beta usability matrix: `55/55` checks passed at 1440x900, 1280x800, 1024x700 and 900x600.
 - Public website renderer: `7/7` desktop/mobile checks passed with no horizontal overflow and all local product images loaded.
 - Production dependency audit: zero known vulnerabilities.
-- Mac and Windows packaged-content checks: `PACKAGED_FREE_BUILD_OK`, 1,441 archive entries each, MIT package and no activation/private-key files.
+- Mac and Windows packaged-content checks: `PACKAGED_FREE_BUILD_OK`, 1,449 archive entries each, MIT package and no activation/private-key files.
 - Mac DMG checksum verification: valid.
 
 Release builds record the exact full commit and dirty state. Tagged GitHub builds generate SHA-256 checksums and provenance attestations.
@@ -41,7 +48,7 @@ Release builds record the exact full commit and dirty state. Tagged GitHub build
 ### Proven on physical hardware
 
 - Apple Silicon macOS application on a physical Philips display.
-- Source and packaged output routing, local network renderer and lower-third/media workflows.
+- Source and packaged output routing, custom Canvas/layer composition, local network renderer and lower-third/media workflows.
 
 ### Built and structurally inspected, not physically certified
 
@@ -53,8 +60,12 @@ Release builds record the exact full commit and dirty state. Tagged GitHub build
 - Developer ID signing/notarization and Windows Authenticode signing.
 - Clean physical Windows install, firewall, multi-display, portable and uninstall workflows.
 - Intel Mac support.
+- A manual normal-UI run with a real application-window/display source; the Mac was locked during the final release-candidate pass, so no manual screenshot is claimed.
+- Physical camera or UVC capture-card compatibility, including device audio, drivers, source formats and HDCP behavior.
 - External OBS/vMix video-alpha integration. Internal Electron alpha compositing is proven, but that does not certify another application's browser/media pipeline.
-- NDI, window capture, camera switching, streaming/encoding, audio mixing or cloud collaboration.
+- NDI, camera switching, streaming/encoding, multibus audio mixing or cloud collaboration.
 - Independent operator adoption or production certification.
+
+Window/display and device capture are local to ShowSlate and its desktop output windows. They are not sent through the browser/OBS URL. Preview is always muted, and only one local Program destination can carry live-input audio at a time.
 
 These gaps are why the release is labelled **public beta**. Test the exact show computer, display chain, network and final media before using it on-air.

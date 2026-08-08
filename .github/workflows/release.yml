@@ -1,4 +1,4 @@
-name: Build Conference Desk beta packages
+name: Build ShowSlate beta packages
 
 on:
   workflow_dispatch:
@@ -138,5 +138,5 @@ jobs:
             --repo "${GITHUB_REPOSITORY}" \
             --prerelease \
             --verify-tag \
-            --title "ShowSlate Conference Desk ${GITHUB_REF_NAME}" \
+            --title "ShowSlate ${GITHUB_REF_NAME}" \
             --generate-notes

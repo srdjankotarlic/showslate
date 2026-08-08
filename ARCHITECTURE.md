@@ -28,13 +28,17 @@ Preview selection must never change the LIVE cue, running timer or Program outpu
 - `src/show-storage/preflight.js` returns blocking/warning/ready checks without changing Program.
 - localStorage remains a compatibility/preferences layer; it is not the only show-recovery mechanism.
 
-## Screen content and reports
+## Canvas, scenes and live inputs
 
 - `src/screen-content/model.js` validates standard image, video, PDF, text, logo, timer and blank items.
-- Scenes and layers remain in `S.scenes`; a timer layer controls `#stage` inside the Program renderer.
+- `src/compositor/model.js` normalizes Canvas dimensions, scene/layer transforms, live-input definitions and audio-route conflicts.
+- Scenes and ordered layers remain in `S.scenes`; the Canvas contract is stored in `S.canvas`. A timer layer controls `#stage` inside the Program renderer.
+- `controller.html` edits Preview state and displays selected live streams muted. `output.html` renders the Program scene and may play enabled source audio only when its local route is the single selected Program-audio destination.
+- `main.js` owns one hidden `live-input.html` capture hub. The hub acquires an operator-selected window/display or camera/UVC device once, then shares that stream with controller and desktop output consumers through local WebRTC.
+- `src/live-input/hub.js` owns capture lifecycle, bounded reconnect and peer senders. `src/live-input/consumer.js` owns renderer subscriptions and media attachment.
+- Window and device IDs are machine-local configuration, not portable media assets. Imported shows retain the scene/layer contract but can require source re-selection on a different computer.
+- Browser and OBS URL outputs receive canonical Program state over SSE, but they do not receive local WebRTC capture streams. Local live inputs are supported only in Electron desktop output windows.
 - `src/report/model.js` builds the post-show report from canonical cue actual fields, with legacy log fallback and spreadsheet-safe CSV output.
-
-Window capture is intentionally absent. ShowSlate is a rundown, timing, graphics and display-distribution product, not an OBS/Resolume replacement.
 
 ## Lower thirds
 
@@ -53,6 +57,7 @@ Window capture is intentionally absent. ShowSlate is a rundown, timing, graphics
 - Stream Graphics windows are transparent and hide room content; Confidence, Timer and Door roles suppress unrelated Program layers.
 - Display IDs are paired with a stable label/size fingerprint. A missing or ambiguous display is reported as unavailable and never silently replaced by another monitor.
 - Display add/remove/metrics events reconcile routes. Custom routes are frameless so macOS cannot cascade or clamp requested pixel coordinates.
+- Preflight warns when a destination aspect ratio differs from the Canvas. The warning is non-blocking because an operator may intentionally target a non-matching projection surface.
 
 ## Network control
 
@@ -71,8 +76,8 @@ Window capture is intentionally absent. ShowSlate is a rundown, timing, graphics
 
 ## Verification and release
 
-- `npm test`: fifteen deterministic headless module scripts plus repository/site/icon contracts.
-- `npm run test:renderers:display`: seven real renderer workflows pinned to an explicitly selected display, including Conference Desk and public-site viewports.
+- `npm test`: deterministic headless module scripts plus repository/site/icon contracts, including Canvas/live-input normalization and preflight.
+- `npm run test:renderers:display`: real renderer workflows pinned to an explicitly selected display, including Conference Desk, Canvas authoring and public-site viewports.
 - `npm run test:beta-ui`: responsive product matrix.
 - `npm run smoke:display`: full source smoke.
 - `npm run smoke:packaged:display`: full packaged smoke.
@@ -83,7 +88,8 @@ Local visual regression is pinned to an explicitly configured display and aborts
 ## Non-negotiable compatibility rules
 
 - Do not use `window.prompt()`; use the application modal.
-- Do not reintroduce window capture without a new approved product scope.
+- Keep capture acquisition inside the hidden hub. Controller and output renderers must never call capture APIs directly.
+- Keep Preview consumers muted and allow Program audio on at most one local output route.
 - Do not change timer, GO, Program state or output protocols as part of unrelated work.
 - Do not remove the legacy lower-third renderer while legacy shows remain supported.
 - Any new preload method also needs a browser fallback in `controller.html`.

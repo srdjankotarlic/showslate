@@ -40,5 +40,16 @@ contextBridge.exposeInMainWorld('pt', {
   onShareInfo: (cb) => ipcRenderer.on('share-info', (e, info) => cb(info)),
   fitWindow: (h) => ipcRenderer.send('fit-window', h),
   onWinFs: (cb) => ipcRenderer.on('win-fs', (e, v) => cb(v)),
-  buildInfo: () => ipcRenderer.invoke('build-info')
+  buildInfo: () => ipcRenderer.invoke('build-info'),
+  liveInputDesktopSources: () => ipcRenderer.invoke('live-input-desktop-sources'),
+  liveInputDevices: (requestPermission = false) => ipcRenderer.invoke('live-input-devices', requestPermission === true),
+  liveInputPermissions: () => ipcRenderer.invoke('live-input-permissions'),
+  liveInputConfigure: (definitions) => ipcRenderer.invoke('live-input-configure', definitions),
+  liveInputRestart: (inputId) => ipcRenderer.invoke('live-input-restart', inputId),
+  liveInputStatuses: () => ipcRenderer.invoke('live-input-statuses'),
+  liveInputSubscribe: (inputId) => ipcRenderer.invoke('live-input-subscribe', inputId),
+  liveInputUnsubscribe: (inputId) => ipcRenderer.send('live-input-unsubscribe', inputId),
+  liveInputSignalToHub: (payload) => ipcRenderer.invoke('live-input-signal-to-hub', payload),
+  onLiveInputSignal: (cb) => ipcRenderer.on('live-input-signal', (event, payload) => cb(payload)),
+  onLiveInputStatus: (cb) => ipcRenderer.on('live-input-status', (event, payload) => cb(payload))
 });
