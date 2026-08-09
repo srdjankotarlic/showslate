@@ -6241,7 +6241,7 @@ function renderScenesUI(){
     });
     const layerSelect=row.querySelector('.layer-select');
     layerSelect.setAttribute('aria-label',uiText('layerSelect',{name:layer.name||layer.sourceName||layer.type}));
-    layerSelect.setAttribute('aria-pressed',layer.id===selectedLayerId?'true':'false');
+    if(layer.id===selectedLayerId) layerSelect.setAttribute('aria-current','true');
     layerSelect.addEventListener('click',()=>selectLayer(layer.id));
     const meta=row.querySelector('.layer-meta');
     if(layer.type==='window'||layer.type==='capture'){
