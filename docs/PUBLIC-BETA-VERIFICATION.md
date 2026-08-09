@@ -44,6 +44,8 @@ The live-input service also passed its targeted synthetic-stream test. A hidden 
 
 Release builds record the exact full commit and dirty state. Tagged GitHub builds generate SHA-256 checksums and provenance attestations.
 
+The compositor beta tag has an additional fail-closed publication gate. It requires retained evidence for real window and display capture, camera and physical UVC capture-card video/audio, Preview mute, the single Program-audio route, Preview/TAKE isolation, resize/persistence, physical Mac/Windows installation and output routing. The evidence must reference a successful native candidate workflow run for the exact tested commit, and the tag commit may contain only the completed evidence file. No completed `0.11.0-beta.1` evidence file exists yet, so publication remains blocked.
+
 ## Platform truth
 
 ### Proven on physical hardware

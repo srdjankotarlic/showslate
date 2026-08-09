@@ -1,5 +1,7 @@
 # Stable release evidence
 
+This directory contains the stable-release gate. Public compositor betas use the separate, earlier gate in [`beta/`](beta/README.md). A beta tag cannot publish until real live-source, audio, installation and output-routing evidence is committed in the required evidence-only commit.
+
 Stable releases use two separate workflows:
 
 1. **Build signed stable candidate** creates signed/notarized artifacts and a private draft GitHub Release.
