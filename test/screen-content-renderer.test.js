@@ -78,6 +78,24 @@ app.whenReady().then(async () => {
     const holding=addContentScene('Welcome','text',[{id:makeId('layer'),type:'text',name:'Welcome',text:'WELCOME',color:'#ffffff',bg:'transparent',fontSize:10,visible:true,fit:'contain',x:4,y:4,w:92,h:92,opacity:1}]);
     const deck=addContentScene('Sponsor Deck','pdf',[{id:makeId('layer'),type:'pdf',name:'Sponsor Deck',src:'media://test-deck.pdf',page:1,visible:true,fit:'contain',x:0,y:0,w:100,h:100,opacity:1}],{assetId:'media://test-deck.pdf',page:1});
     selectContentItem(timer.id); liveContentItemId=timer.id; programState=outputSnapshot(S);
+    cues=[]; currentCue=-1; selectedCue=-1; renderCues();
+    document.getElementById('btnCueNew').click();
+    const newEditorVisible=document.querySelector('.card-rundown').classList.contains('edit-open') && cueEditorMode==='new' && !document.getElementById('btnCueAdd').hidden;
+    document.getElementById('cueName').value='Welcome cue';
+    document.getElementById('cueDur').value='1:00';
+    document.getElementById('cueContentItem').value=holding.id;
+    document.getElementById('cueContentItem').dispatchEvent(new Event('change',{bubbles:true}));
+    S.studioDirect=true;
+    document.getElementById('btnCuePreviewScene').click();
+    const previewButtonSafe=programState.activeSceneId===timer.sceneId && S.activeSceneId===holding.sceneId && liveContentItemId===timer.id;
+    S.studioDirect=false;
+    document.getElementById('btnCueAdd').click();
+    const cueRow=document.querySelector('#cueList .cue');
+    const cueCreated=cues.length===1 && selectedCue===0 && cues[0].name==='Welcome cue' && cues[0].contentItemId===holding.id && cues[0].autoTakeContentOnGo===true && cueEditorMode==='edit' && document.getElementById('btnCueAdd').hidden && !document.getElementById('btnCueSave').hidden && cueRow?.querySelector('.cue-scene-link')?.textContent.includes('Welcome');
+    document.getElementById('btnGo').click();
+    const cueGoWorked=currentCue===0 && programState.activeSceneId===holding.sceneId && liveContentItemId===holding.id;
+    S.running=false; S.endAt=0; currentCue=-1; selectedCue=-1; cues=[]; S.activeSceneId=timer.sceneId; selectedContentItemId=timer.id; liveContentItemId=timer.id; programState=outputSnapshot(S); setCueEditorOpen(false); renderCues();
+    const rundownSceneFlow=newEditorVisible && previewButtonSafe && cueCreated && cueGoWorked;
     const slidesTab=document.getElementById('btnSidebarSlides');
     const slidesTabVisible=!!slidesTab && slidesTab.getClientRects().length>0;
     if(slidesTabVisible) slidesTab.click();
@@ -119,7 +137,7 @@ app.whenReady().then(async () => {
     renderStage('pg',programState,Date.now());
     const clearWorked=liveContentItemId==='' && programState.activeSceneId==='scene-content-clear' && document.getElementById('pgScene').textContent.trim()==='';
     const saved=await flushShowAutosave({reason:'screen-content-test',force:true});
-    return JSON.stringify({normalUi,sceneUi,selectedSafe,previewRendered,timerSafe,takeWorked,directWorked,pageWorked,goWorked,clearWorked,saved,ids:{timer:timer.id,holding:holding.id,deck:deck.id}});
+    return JSON.stringify({normalUi,sceneUi,rundownSceneFlow,selectedSafe,previewRendered,timerSafe,takeWorked,directWorked,pageWorked,goWorked,clearWorked,saved,ids:{timer:timer.id,holding:holding.id,deck:deck.id}});
   })()`));
   win.webContents.reload();
   const reloadReady = await waitFor(() => win.webContents.executeJavaScript('showAutosaveReady===true && lastDisplays.length>0'));
@@ -135,6 +153,7 @@ app.whenReady().then(async () => {
     });
   })()`)) : {item:false,previewRendered:false};
   check('SCREEN_CONTENT_VISIBLE_IN_STANDARD_UI_OK', state.normalUi, JSON.stringify(state));
+  check('RUNDOWN_SCENE_ON_GO_USER_FLOW_OK', state.rundownSceneFlow, JSON.stringify(state));
   check('SCREEN_CONTENT_SELECT_PREVIEW_ONLY_OK', state.selectedSafe && state.timerSafe, JSON.stringify(state));
   check('SCREEN_CONTENT_SCENE_CARD_RENDERS_PREVIEW_OK', state.previewRendered && reloadReady && reloadState.previewRendered, JSON.stringify({state,reloadReady,reloadState}));
   check('SCREEN_CONTENT_DIRECT_PROGRAM_SCENE_SELECT_OK', state.directWorked, JSON.stringify(state));
@@ -191,7 +210,7 @@ app.whenReady().then(async () => {
 
   const disk = await repository.loadCurrent();
   check('SCREEN_CONTENT_FILE_ROUNDTRIP_OK', disk.ok && disk.document.show.screenContent.items.length === 3 && disk.document.show.rundown[0].autoTakeContentOnGo === true && disk.document.show.rundown[0].contentItemId === state.ids.deck);
-  console.log('SCREEN_CONTENT_RENDERER_TESTS_OK ' + checks + '/11');
+  console.log('SCREEN_CONTENT_RENDERER_TESTS_OK ' + checks + '/12');
   win.destroy();
   fs.rmSync(profile, { recursive: true, force: true });
   app.quit();

@@ -2072,6 +2072,22 @@
   .shell-layout .card-rundown .cue-titleline .ltmark{
     opacity:1 !important;
   }
+  .shell-layout .card-rundown .cue-scene-link{
+    display:block;
+    min-width:0;
+    margin-top:4px;
+    overflow:hidden;
+    color:#8fa6bd;
+    font-size:8.5px;
+    font-weight:800;
+    letter-spacing:.55px;
+    line-height:1.25;
+    text-overflow:ellipsis;
+    text-transform:uppercase;
+    white-space:nowrap;
+  }
+  .shell-layout .card-rundown .cue-scene-link.auto{color:#9fc1ad;}
+  .shell-layout .card-rundown .cue-scene-link.missing{color:#d0928d;}
   .shell-layout .card-rundown .cue-actions{
     grid-column:2 !important;
     grid-row:3 !important;
@@ -2119,6 +2135,7 @@
     text-transform:uppercase !important;
   }
   .shell-layout .cue-editor-head .grow{flex:1 1 auto !important;}
+  .shell-layout .cue-editor-head button{white-space:nowrap !important;}
   .shell-layout .cue-editor .cueadd{display:flex !important;}
   .shell-layout .cue-editor .cueadd.lower-cue{display:grid !important; grid-template-columns:1fr 1fr !important;}
   .shell-layout .cue-editor > *,
@@ -3249,9 +3266,14 @@
   .slide-actions{display:grid; grid-template-columns:1fr 1fr 34px; gap:6px; margin-top:7px;}
   .slide-actions button{min-width:0; min-height:36px; padding:6px 8px;}
   .slide-actions .slide-delete{padding:0; color:#d0928d;}
-  .cue-content-link{margin:7px 0 9px; padding:8px; display:grid; gap:7px; border:1px solid rgba(255,255,255,.08); border-radius:7px; background:rgba(255,255,255,.022);}
+  .cue-content-link{margin:7px 0 9px; padding:9px; display:grid; gap:8px; border:1px solid rgba(103,135,162,.24); border-radius:7px; background:rgba(82,111,137,.075);}
+  .cue-content-link-head{display:grid; gap:3px;}
+  .cue-content-link-head strong{color:#cbd7e2; font-size:10px; font-weight:850; letter-spacing:1px;}
+  .cue-content-link-head span{color:var(--text-muted); font-size:9.5px; line-height:1.35;}
   .cue-content-link .field-label{min-width:0;}
   .cue-content-link select{width:100%; min-width:0;}
+  .cue-content-link-actions{display:grid; grid-template-columns:minmax(0,1fr) auto; gap:7px; align-items:end;}
+  .cue-content-link-actions button{min-height:34px; white-space:nowrap;}
   @media (max-width:1100px){
     .slide-row{grid-template-columns:54px minmax(0,1fr);}
     .slide-thumb{width:54px;}
@@ -3263,6 +3285,7 @@
   body.conference-live-mode .app-header{box-shadow:inset 0 -2px 0 #547760,0 8px 24px rgba(0,0,0,.22);}
   body.conference-live-mode .golane{border-color:#4f765b!important; box-shadow:inset 0 0 0 1px rgba(92,137,105,.2);}
   body.conference-live-mode .cue-editor-toggle,
+  body.conference-live-mode #btnCueNew,
   body.conference-live-mode #btnCueImport,
   body.conference-live-mode #btnCueAdd,
   body.conference-live-mode #btnCueSave{opacity:.45;}
@@ -3321,6 +3344,7 @@
     <div class="card cuewrap card-rundown" style="flex:1">
       <div class="cuehead">
         <h3 data-i18n="rundown" style="margin:0">RUNDOWN</h3>
+        <button id="btnCueNew" class="mini primary cue-new-button" data-i18n="cueNew" data-i18n-title="cueNewTitle" title="Create a new rundown item">New item</button>
         <button id="btnCueImport" class="mini ghost" data-i18n="cueImport" data-i18n-title="cueImportTitle" title="Uvezi CSV / nalepi iz Excel-a ili Sheets-a (naziv, trajanje, beleška)">Uvoz</button>
         <button id="btnCueExport" class="mini ghost" data-i18n="cueExport" data-i18n-title="cueExportTitle" title="Izvezi rundown kao CSV">CSV</button>
         <button id="btnReport" class="mini ghost" data-i18n="report" data-i18n-title="reportTitle" title="Izveštaj: planirano vs. stvarno po tački">Izveštaj</button>
@@ -3333,11 +3357,10 @@
       </div>
       <div class="cuelist" id="cueList" data-testid="rundown-panel"></div>
       <div class="cue-editor" id="cueEditor">
-        <div class="cue-editor-head"><span data-i18n="cueEditor">Cue editor</span><span class="grow"></span><button id="btnCueSave" class="mini ghost" data-i18n="cueSaveSelected">Save selected</button></div>
+        <div class="cue-editor-head"><span id="cueEditorHeading" data-i18n="cueEditor">Cue editor</span><span class="grow"></span><button id="btnCueAdd" class="mini primary" data-i18n="cueAdd">Add to rundown</button><button id="btnCueSave" class="mini ghost" data-i18n="cueSaveSelected">Save selected</button></div>
         <div class="cueadd">
           <input type="text" id="cueName" placeholder="Naziv" data-i18n-ph="namePh" style="flex:1; min-width:40px">
           <input type="text" id="cueDur" class="short" placeholder="10:00">
-          <button id="btnCueAdd" title="Dodaj">+</button>
         </div>
         <div class="cueadd">
           <input type="text" id="cueNote" placeholder="Beleška (opciono)…" data-i18n-ph="notePh" style="flex:1; min-width:60px">
@@ -3371,7 +3394,8 @@
           </div>
         </details>
         <div class="cue-content-link">
-          <label class="field-label"><span data-i18n="cueContent">Linked screen content</span><select id="cueContentItem"></select></label>
+          <div class="cue-content-link-head"><strong data-i18n="cueSceneOnGo">SCENE ON GO</strong><span data-i18n="cueSceneOnGoHint">Link a scene to this item, check it in Preview, then send it to Program with GO.</span></div>
+          <div class="cue-content-link-actions"><label class="field-label"><span data-i18n="cueContent">Linked scene</span><select id="cueContentItem"></select></label><button id="btnCuePreviewScene" class="ghost" type="button" data-i18n="cuePreviewScene">Load Preview</button></div>
           <label class="chk"><input type="checkbox" id="cueContentAuto"> <span data-i18n="cueContentAuto">Auto TAKE content on GO</span></label>
         </div>
         <label class="chk" style="margin-bottom:7px"><input type="checkbox" id="chkAuto"> <span data-i18n="autoNext">Auto-prelaz na sledeći</span></label>
@@ -4207,11 +4231,12 @@ const I18N = {
     thresholds:'Pragovi', yellowAt:'Žuto na', redAt:'Crveno na', flashZero:'Blic na nuli',
     sound:'Zvuk', overtime:'Minus posle nule', progress:'Traka napretka',
     message:'Poruka', messagePh:'Poruka govorniku… (M za fokus, Enter šalje)', flash:'Treperi', send:'Pošalji',
-    cueList:'CUE LISTA', cueEmpty:'Nema tačaka. Dodaj naziv + trajanje ↓', namePh:'Naziv',
+    cueList:'CUE LISTA', cueEmpty:'Raspored je prazan. Izaberi NOVA STAVKA.', namePh:'Naziv',
     autoNext:'Auto-prelaz na sledeći', goNext:'GO SLEDEĆI &nbsp;(N)', noName:'(bez naziva)',
     rundown:'RUNDOWN', showStart:'Start', notePh:'Beleška (opciono)…', nowNextOut:'NOW/NEXT na ekranu',
     cueImport:'Uvoz', cueExport:'CSV', cueImportTitle:'Uvezi CSV / nalepi iz Excel-a ili Sheets-a (naziv, trajanje, beleška)', cueExportTitle:'Izvezi rundown kao CSV', cueImportNone:'Nijedan red nije prepoznat. Format: naziv, trajanje (10:00), beleška',
-    cueEditSelected:'UREDI IZABRANO', cueEditor:'Cue editor', cueEditorTitle:'Otvori editor izabrane tačke', cueSaveSelected:'Sačuvaj izabrano',
+    cueNew:'NOVA STAVKA', cueNewTitle:'Napravi novu stavku rasporeda', cueAdd:'DODAJ U RASPORED', cueNewEditor:'Nova stavka rasporeda',
+    cueEditSelected:'UREDI IZABRANO', cueEditor:'Editor stavke', cueEditorTitle:'Otvori editor izabrane tačke', cueSaveSelected:'Sačuvaj izabrano',
     cueLtAutomation:'Automatizacija potpisa', cueLtCompanyPh:'Kompanija', cueLtSessionPh:'Naziv sesije', cueLtSegmentPh:'Naziv segmenta', cueLtCustomPh:'Dodatni tekst',
     cueLtTemplate:'Template', cueLtUseActive:'Aktivni template', cueLtMissingTemplate:'Nedostupan template', cueLtDelay:'Kašnjenje (ms)', cueLtDuration:'Trajanje (ms)', cueLtAuto:'Auto TAKE na GO', cueLtHideBefore:'Skloni pre sledećeg GO', cueLtNoRepeat:'Ne ponavljaj istog govornika/template',
     recoveryEyebrow:'OPORAVAK SHOW-A', recoveryTitle:'Pronađen je show posle neočekivanog prekida', recoveryBody:'Izaberi bezbednu verziju za nastavak. Tajmer će biti pauziran, a izlazi, poruka i potpis neće biti automatski pušteni.',
@@ -4232,7 +4257,7 @@ const I18N = {
     preflightSummary:'{ok} prolazi · {warn} upozorenja · {block} blokira',
     preflightCheck_showSaved:'Show je sačuvan', preflightCheck_autosaveWritable:'Autosave je upisiv', preflightCheck_rundownValid:'Rundown je ispravan', preflightCheck_missingAssets:'Svi asseti postoje', preflightCheck_liveInputSources:'Live video izvori', preflightCheck_liveInputAudio:'Live audio ruta', preflightCheck_speakerScreen:'Ekran govornika', preflightCheck_programBrowser:'Program / browser output', preflightCheck_backstage:'Backstage', preflightCheck_phoneRemote:'Telefon daljinski', preflightCheck_apiCompanion:'API / Companion', preflightCheck_soundChime:'Zvuk / chime', preflightCheck_lowerThirdTemplate:'Lower-third template', preflightCheck_displayAssignment:'Dodela ekrana', preflightCheck_outputResolution:'Rezolucija izlaza', preflightCheck_outputAspect:'Odnos stranica Canvas / izlaz', preflightCheck_recoveryStatus:'Recovery stanje', preflightCheck_conferenceMode:'Conference Desk režim', preflightCheck_conferenceAudienceRoute:'Audience izlaz', preflightCheck_conferenceRouteAssignments:'Uloge i dodela ekrana', preflightCheck_conferenceCueActions:'GO akcije po tački', preflightCheck_conferenceMediaMapping:'Povezani mediji', preflightCheck_conferenceOutputDelivery:'Potvrda prikaza izlaza',
     slides:'SCENE', sceneLibrary:'SCENE', slideMedia:'Medija', slideHolding:'Holding', slideLogo:'Logo', slideTimer:'Tajmer', slideBlank:'Prazno', slideSelected:'PREVIEW', slideTake:'TAKE', slideClear:'CUT', slideEmpty:'Nema scena.', slideNamePrompt:'Naziv sadržaja:', slideHoldingPrompt:'Holding tekst:', slideLogoMissing:'Prvo dodajte logo u brendingu.', slideCount:'{n} scena', slidePage:'Strana {n}', sceneLayerOne:'1 lejer', sceneLayerCount:'{n} lejera', scenePreviewBadge:'PREVIEW', sceneLiveBadge:'LIVE', sceneSelectPreview:'Pošalji scenu {name} u Preview', sceneDelete:'Obriši scenu', sceneDeleteLive:'Aktivna scena ne može da se obriše',
-    cueContent:'Vezana scena', cueContentAuto:'Auto TAKE scene na GO', cueContentNone:'Bez vezane scene',
+    cueContent:'Povezana scena', cueContentAuto:'Pošalji scenu u Program na GO', cueContentNone:'Nema povezane scene', cueSceneOnGo:'SCENA NA GO', cueSceneOnGoHint:'Poveži scenu sa ovom stavkom, proveri je u Preview-u, pa je pošalji u Program pritiskom na GO.', cuePreviewScene:'UČITAJ PREVIEW', cueSceneOnGoRow:'GO → {name}', cueSceneLinkedRow:'SCENA · {name}', cueSceneMissingRow:'SCENA NIJE DOSTUPNA',
     backstageLabel:'Backstage (raspored / crew)', signalLabel:'Signal svetlo (govornica)', onTime:'NA VREME', late:'kasni', early:'ispred',
     apiLabel:'API (Stream Deck / Companion)', apiTitle:'Autorizovani URL za Companion / Stream Deck. Podržava GO, tajmer, poruke, potpise i sadržaj ekrana.',
     nowLabel:'SADA', nextLabel:'SLEDI', endLabel:'Kraj', plannedLabel:'Planirano', projectedLabel:'Procena',
@@ -4306,11 +4331,12 @@ const I18N = {
     thresholds:'Warnings', yellowAt:'Yellow at', redAt:'Red at', flashZero:'Flash at zero',
     sound:'Sound', overtime:'Count past zero', progress:'Progress bar',
     message:'Message', messagePh:'Message to speaker… (M to focus, Enter sends)', flash:'Flash', send:'Send',
-    cueList:'CUE LIST', cueEmpty:'No items. Add name + duration ↓', namePh:'Name',
+    cueList:'CUE LIST', cueEmpty:'The rundown is empty. Choose NEW ITEM.', namePh:'Name',
     autoNext:'Auto-advance to next', goNext:'GO NEXT &nbsp;(N)', noName:'(no name)',
     rundown:'RUNDOWN', showStart:'Start', notePh:'Note (optional)…', nowNextOut:'NOW/NEXT on screen',
     cueImport:'Import', cueExport:'CSV', cueImportTitle:'Import CSV / paste from Excel or Sheets (name, duration, note)', cueExportTitle:'Export rundown as CSV', cueImportNone:'No rows recognized. Format: name, duration (10:00), note',
-    cueEditSelected:'EDIT SELECTED', cueEditor:'Cue editor', cueEditorTitle:'Open editor for the selected item', cueSaveSelected:'Save selected',
+    cueNew:'NEW ITEM', cueNewTitle:'Create a new rundown item', cueAdd:'ADD TO RUNDOWN', cueNewEditor:'New rundown item',
+    cueEditSelected:'EDIT SELECTED', cueEditor:'Item editor', cueEditorTitle:'Open editor for the selected item', cueSaveSelected:'Save selected',
     cueLtAutomation:'Lower third automation', cueLtCompanyPh:'Company', cueLtSessionPh:'Session title', cueLtSegmentPh:'Segment title', cueLtCustomPh:'Custom text',
     cueLtTemplate:'Template', cueLtUseActive:'Active template', cueLtMissingTemplate:'Unavailable template', cueLtDelay:'Delay (ms)', cueLtDuration:'Duration (ms)', cueLtAuto:'Auto TAKE on GO', cueLtHideBefore:'Hide before next GO', cueLtNoRepeat:'Skip repeated speaker/template',
     recoveryEyebrow:'SHOW RECOVERY', recoveryTitle:'A show was found after an unexpected shutdown', recoveryBody:'Choose the safe version to continue. The timer will be paused, and outputs, messages and lower thirds will not go live automatically.',
@@ -4331,7 +4357,7 @@ const I18N = {
     preflightSummary:'{ok} pass · {warn} warnings · {block} blocking',
     preflightCheck_showSaved:'Show saved', preflightCheck_autosaveWritable:'Autosave writable', preflightCheck_rundownValid:'Rundown valid', preflightCheck_missingAssets:'Assets available', preflightCheck_liveInputSources:'Live video sources', preflightCheck_liveInputAudio:'Live audio route', preflightCheck_speakerScreen:'Speaker screen', preflightCheck_programBrowser:'Program / browser output', preflightCheck_backstage:'Backstage', preflightCheck_phoneRemote:'Phone remote', preflightCheck_apiCompanion:'API / Companion', preflightCheck_soundChime:'Sound / chime', preflightCheck_lowerThirdTemplate:'Lower-third template', preflightCheck_displayAssignment:'Display assignment', preflightCheck_outputResolution:'Output resolution', preflightCheck_outputAspect:'Canvas / output aspect ratio', preflightCheck_recoveryStatus:'Recovery status', preflightCheck_conferenceMode:'Conference Desk mode', preflightCheck_conferenceAudienceRoute:'Audience output', preflightCheck_conferenceRouteAssignments:'Role and display assignments', preflightCheck_conferenceCueActions:'Cue GO actions', preflightCheck_conferenceMediaMapping:'Media mapping', preflightCheck_conferenceOutputDelivery:'Output render confirmation',
     slides:'SCENES', sceneLibrary:'SCENES', slideMedia:'Media', slideHolding:'Holding', slideLogo:'Logo', slideTimer:'Timer', slideBlank:'Blank', slideSelected:'PREVIEW', slideTake:'TAKE', slideClear:'CUT', slideEmpty:'No scenes.', slideNamePrompt:'Content name:', slideHoldingPrompt:'Holding text:', slideLogoMissing:'Add a branding logo first.', slideCount:'{n} scenes', slidePage:'Page {n}', sceneLayerOne:'1 layer', sceneLayerCount:'{n} layers', scenePreviewBadge:'PREVIEW', sceneLiveBadge:'LIVE', sceneSelectPreview:'Send scene {name} to Preview', sceneDelete:'Delete scene', sceneDeleteLive:'The live scene cannot be deleted',
-    cueContent:'Linked scene', cueContentAuto:'Auto TAKE scene on GO', cueContentNone:'No linked scene',
+    cueContent:'Linked scene', cueContentAuto:'Take scene to Program on GO', cueContentNone:'No linked scene', cueSceneOnGo:'SCENE ON GO', cueSceneOnGoHint:'Link a scene to this item, check it in Preview, then send it to Program with GO.', cuePreviewScene:'LOAD PREVIEW', cueSceneOnGoRow:'GO → {name}', cueSceneLinkedRow:'SCENE · {name}', cueSceneMissingRow:'SCENE UNAVAILABLE',
     backstageLabel:'Backstage (schedule / crew)', signalLabel:'Signal light (podium)', onTime:'ON TIME', late:'behind', early:'ahead',
     apiLabel:'API (Stream Deck / Companion)', apiTitle:'Authenticated Companion / Stream Deck URL for GO, timer, message, lower-third and screen-content actions.',
     nowLabel:'NOW', nextLabel:'NEXT', endLabel:'End', plannedLabel:'Planned', projectedLabel:'Projected',
@@ -5050,6 +5076,7 @@ function renderCues(){
     b.style.cssText='margin:10px auto 0; display:block;';
     b.addEventListener('click',seedDemoShow);
     el.appendChild(b);
+    updateCueEditorMode();
     return;
   }
   const sch=schedule(Date.now());
@@ -5069,14 +5096,24 @@ function renderCues(){
     const times = pr.plannedStart!=null
       ? `${clock(pr.plannedStart)}–${clock(pr.plannedEnd)}<div class="du">${fmtMs(c.durationMs)}</div>`
       : `<div class="du">${fmtMs(c.durationMs)}</div>`;
-    const markers=`${(cueSpeakerName(c)||c.speakerTitle||c.ltTitle)?'<span class="ltmark">LT</span>':''}`+
-      `${c.contentItemId?'<span class="ltmark">SL</span>':''}`;
+    const markers=(cueSpeakerName(c)||c.speakerTitle||c.ltTitle)?'<span class="ltmark">LT</span>':'';
+    const linkedScene=contentItemById(c.contentItemId);
+    const sceneLink=c.contentItemId?'<div class="cue-scene-link"></div>':'';
     row.innerHTML=`${c.color?`<span class="stripe" style="background:${c.color}"></span>`:''}<span class="n">${i+1}</span>`+
-      `<div class="body"><div class="cue-titleline"><div class="nm"></div>${markers}</div>${c.note?'<div class="note"></div>':''}</div>`+
+      `<div class="body"><div class="cue-titleline"><div class="nm"></div>${markers}</div>${c.note?'<div class="note"></div>':''}${sceneLink}</div>`+
       `<div class="cue-meta">${badge}<span class="times">${times}</span></div>`+
       `<div class="cue-actions"><button class="mini up">▲</button><button class="mini dn">▼</button><button class="mini skip" title="Preskoči">⏭</button><button class="mini del">✕</button></div>`;
     const nmEl=row.querySelector('.nm'); nmEl.textContent=c.name||t('noName'); nmEl.title=c.name||t('noName');
     if(c.note) row.querySelector('.note').textContent=c.note;
+    const sceneLinkEl=row.querySelector('.cue-scene-link');
+    if(sceneLinkEl){
+      sceneLinkEl.classList.toggle('auto',!!c.autoTakeContentOnGo&&!!linkedScene);
+      sceneLinkEl.classList.toggle('missing',!linkedScene);
+      sceneLinkEl.textContent=linkedScene
+        ? textVars(t(c.autoTakeContentOnGo?'cueSceneOnGoRow':'cueSceneLinkedRow'),{name:linkedScene.name})
+        : t('cueSceneMissingRow');
+      sceneLinkEl.title=sceneLinkEl.textContent;
+    }
     row.addEventListener('click',e=>{ if(e.target.tagName!=='BUTTON') selectCue(i); });
     row.addEventListener('dblclick',e=>{ if(e.target.tagName!=='BUTTON') selectCue(i); });   // dblclick NIKAD ne šalje LIVE
     row.querySelector('.up').addEventListener('click',()=>moveCue(i,-1));
@@ -5093,13 +5130,15 @@ function renderCues(){
       saveCues(); send(); renderCues(); updateGoLabel(); });
     el.appendChild(row);
   });
+  updateCueEditorMode();
 }
 // SELECTED ≠ LIVE: klik na red SAMO selektuje — ne dira tajmer ni izlaze.
 let cueEditorOpen=false;
+let cueEditorMode='edit';
 function selectCue(i){
   selectedCue = (i>=0 && i<cues.length && i!==selectedCue) ? i : (i===selectedCue ? -1 : -1);
   renderCues(); updateGoLabel(); updateLiveInfo();
-  if(cueEditorOpen) fillCueEditorFromSelection();
+  if(cueEditorOpen && getCueEditorIndex()>=0){ cueEditorMode='edit'; fillCueEditorFromSelection(); updateCueEditorMode(); }
   scheduleShowAutosave('selected-cue');
   publishControlStatus();
 }
@@ -6042,13 +6081,13 @@ function contentWorkflowDirty(){
   monitorSceneKeys.pv=''; stageKeys.pv=''; lastKey='';
   renderContentItems(); renderScenesUI(); saveSettings();
 }
-function selectContentItem(id){
+function selectContentItem(id,{previewOnly=false}={}){
   normalizeContentWorkflow();
   const item=contentItemById(id); if(!item) return false;
   selectedContentItemId=item.id;
   S.activeSceneId=item.sceneId;
   monitorSceneKeys.pv=''; stageKeys.pv=''; lastKey='';
-  if(S.studioDirect){ liveContentItemId=item.id; send(true,{takeContent:true}); }
+  if(S.studioDirect&&!previewOnly){ liveContentItemId=item.id; send(true,{takeContent:true}); }
   else saveSettings();
   renderContentItems(); renderScenesUI();
   publishControlStatus();
@@ -9008,6 +9047,20 @@ function fillCueContentOptions(selectedId){
     const missing=document.createElement('option'); missing.value=requested; missing.textContent='Unavailable — '+requested; select.appendChild(missing);
   }
   select.value=requested;
+  updateCueSceneControls();
+}
+function updateCueSceneControls(){
+  const select=$('cueContentItem'), auto=$('cueContentAuto'), preview=$('btnCuePreviewScene');
+  if(!select||!auto||!preview) return;
+  const available=!!contentItemById(select.value);
+  auto.disabled=!available;
+  preview.disabled=!available;
+  if(!available) auto.checked=false;
+}
+function previewCueLinkedScene(){
+  const item=contentItemById($('cueContentItem').value);
+  if(!item) return false;
+  return selectContentItem(item.id,{previewOnly:true});
 }
 function readCueLowerThirdEditorFields(){
   const speakerName=$('cueLtName').value.trim();
@@ -9029,7 +9082,7 @@ function readCueLowerThirdEditorFields(){
     lowerThirdHideBeforeNextGo:!!$('cueLtHideBefore').checked,
     lowerThirdNoRepeat:!!$('cueLtNoRepeat').checked,
     contentItemId:$('cueContentItem').value||'',
-    autoTakeContentOnGo:!!$('cueContentAuto').checked
+    autoTakeContentOnGo:!!$('cueContentItem').value&&!!$('cueContentAuto').checked
   };
 }
 function clearCueEditorFields(){
@@ -9050,19 +9103,37 @@ function clearCueEditorFields(){
   $('cueLtNoRepeat').checked=false;
   fillCueContentOptions('');
   $('cueContentAuto').checked=false;
+  updateCueSceneControls();
   setCueColorSel('');
 }
-function setCueEditorOpen(open){
+function updateCueEditorMode(){
+  const creating=cueEditorMode==='new';
+  $('cueEditorHeading').textContent=t(creating?'cueNewEditor':'cueEditor');
+  $('btnCueAdd').hidden=!creating;
+  $('btnCueSave').hidden=creating;
+  $('btnCueEdit').disabled=getCueEditorIndex()<0;
+}
+function setCueEditorOpen(open,{mode}={}){
   cueEditorOpen=!!open;
+  if(mode) cueEditorMode=mode;
   const card=document.querySelector('.card-rundown');
   if(card) card.classList.toggle('edit-open', cueEditorOpen);
   const btn=$('btnCueEdit');
   if(btn) btn.setAttribute('aria-expanded', cueEditorOpen?'true':'false');
   if(cueEditorOpen){
     const i=getCueEditorIndex();
-    if(i>=0) fillCueEditorFromSelection();
-    else clearCueEditorFields();
+    if(cueEditorMode==='new') clearCueEditorFields();
+    else if(i>=0) fillCueEditorFromSelection();
+    else { cueEditorMode='new'; clearCueEditorFields(); }
   }
+  updateCueEditorMode();
+}
+function openNewCueEditor(){
+  if(document.body.classList.contains('conference-live-mode')) return;
+  selectedCue=-1;
+  renderCues(); updateGoLabel(); updateLiveInfo();
+  setCueEditorOpen(true,{mode:'new'});
+  setTimeout(()=>$('cueName').focus(),20);
 }
 function saveSelectedCueFromEditor(){
   const i=getCueEditorIndex();
@@ -9074,7 +9145,7 @@ function saveSelectedCueFromEditor(){
   c.note=$('cueNote').value.trim();
   c.color=cueColorSel;
   Object.assign(c,readCueLowerThirdEditorFields());
-  saveCues(); send(); renderCues(); updateGoLabel(); updateLiveInfo();
+  saveCues(); send(); renderCues(); updateButtons(); updateGoLabel(); updateLiveInfo();
 }
 
 function addCue(){
@@ -9084,13 +9155,21 @@ function addCue(){
     note:$('cueNote').value.trim(), color:cueColorSel,
     ...readCueLowerThirdEditorFields()};
   cues.push(migrateCues([cue])[0]);
-  clearCueEditorFields();
-  saveCues(); send(); renderCues();
-  if(cueEditorOpen) setCueColorSel('');
+  selectedCue=cues.length-1;
+  cueEditorMode='edit';
+  saveCues(); send(); renderCues(); updateButtons(); updateGoLabel(); updateLiveInfo();
+  if(cueEditorOpen){ fillCueEditorFromSelection(); updateCueEditorMode(); }
 }
+$('btnCueNew').addEventListener('click',openNewCueEditor);
 $('btnCueAdd').addEventListener('click',addCue);
-$('btnCueEdit').addEventListener('click',()=>setCueEditorOpen(!cueEditorOpen));
+$('btnCueEdit').addEventListener('click',()=>setCueEditorOpen(!cueEditorOpen,{mode:'edit'}));
 $('btnCueSave').addEventListener('click',saveSelectedCueFromEditor);
+$('btnCuePreviewScene').addEventListener('click',previewCueLinkedScene);
+$('cueContentItem').addEventListener('change',()=>{
+  const available=!!contentItemById($('cueContentItem').value);
+  $('cueContentAuto').checked=available;
+  updateCueSceneControls();
+});
 
 // ---------- CSV UVOZ / IZVOZ RUNDOWN-a ----------
 // Prihvata CSV (,/;) i TSV (nalepljen iz Excel/Sheets): naziv, trajanje[, beleška[, boja[, potpis ime[, potpis titula]]]]
@@ -9241,11 +9320,12 @@ document.addEventListener('keydown',event=>{
   if(event.key==='Escape'&&$('reportOverlay').classList.contains('open')){ event.preventDefault(); event.stopImmediatePropagation(); closePostShowReport(); }
 });
 
-$('cueDur').addEventListener('keydown',e=>{ if(e.key==='Enter') addCue(); });
-$('cueName').addEventListener('keydown',e=>{ if(e.key==='Enter') addCue(); });
-$('cueNote').addEventListener('keydown',e=>{ if(e.key==='Enter') addCue(); });
-$('cueLtName').addEventListener('keydown',e=>{ if(e.key==='Enter') addCue(); });
-$('cueLtTitle').addEventListener('keydown',e=>{ if(e.key==='Enter') addCue(); });
+function commitCueEditor(){ cueEditorMode==='new'?addCue():saveSelectedCueFromEditor(); }
+$('cueDur').addEventListener('keydown',e=>{ if(e.key==='Enter') commitCueEditor(); });
+$('cueName').addEventListener('keydown',e=>{ if(e.key==='Enter') commitCueEditor(); });
+$('cueNote').addEventListener('keydown',e=>{ if(e.key==='Enter') commitCueEditor(); });
+$('cueLtName').addEventListener('keydown',e=>{ if(e.key==='Enter') commitCueEditor(); });
+$('cueLtTitle').addEventListener('keydown',e=>{ if(e.key==='Enter') commitCueEditor(); });
 $('btnGo').addEventListener('click',go);
 $('btnGoNext').addEventListener('click',goNext);
 $('btnIdentify').addEventListener('click',()=>api.identifyDisplays&&api.identifyDisplays());
@@ -9261,7 +9341,7 @@ function setConferenceLiveMode(enabled){
     button.title=conferenceLiveMode?(lang==='sr'?'Izađi iz Live režima':'Exit Live Mode'):(lang==='sr'?'Uđi u Live režim':'Enter Live Mode');
     button.setAttribute('aria-label',button.title);
   }
-  ['btnNewShow','btnImportShowFolder','btnShowImport','btnCueImport','btnCueAdd','btnCueEdit','btnCueSave'].forEach(id=>{
+  ['btnNewShow','btnImportShowFolder','btnShowImport','btnCueNew','btnCueImport','btnCueAdd','btnCueEdit','btnCueSave'].forEach(id=>{
     const element=$(id); if(element) element.disabled=conferenceLiveMode;
   });
   if(conferenceLiveMode&&cueEditorOpen) setCueEditorOpen(false);
