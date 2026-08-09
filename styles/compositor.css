@@ -5,13 +5,13 @@ body.compositor-open #setupWrap{display:none!important}
 body.compositor-open .operator-main{grid-template-rows:minmax(230px,1.05fr) auto minmax(230px,.82fr)!important}
 body.compositor-open #panelSources{grid-row:3!important;min-height:0!important}
 .panel-sources{padding:0!important;overflow:hidden;box-shadow:0 20px 50px rgba(0,0,0,.28)!important}
-.compositor-head{display:grid;grid-template-columns:minmax(300px,1fr) auto auto;align-items:center;gap:14px;padding:12px 14px;border-bottom:1px solid var(--border);background:#191a1e}
-.compositor-head-actions{display:flex;align-items:center;gap:7px}
-.compositor-title{min-width:0;display:flex;align-items:center;gap:10px}
-.compositor-title-copy{min-width:0;display:flex;align-items:center}
-.compositor-title-copy span{color:#aeb7c4;font-size:10px;text-transform:uppercase;font-weight:760;letter-spacing:1.1px}
+.compositor-head{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:10px 12px;padding:12px 14px;border-bottom:1px solid var(--border);background:#191a1e}
+.compositor-head-actions{grid-column:2;grid-row:1;display:flex;align-items:center;gap:7px}
+.compositor-title{grid-column:1;grid-row:1;min-width:0;display:flex;align-items:center;gap:10px}
+.compositor-title-copy{flex:0 0 auto;display:flex;align-items:center}
+.compositor-title-copy span{color:#aeb7c4;font-size:10px;text-transform:uppercase;font-weight:760;letter-spacing:1.1px;white-space:nowrap}
 .compositor-scene-select{position:relative;display:block;min-width:130px;max-width:220px;flex:1}.compositor-scene-select>span{position:absolute;left:8px;top:-7px;z-index:1;padding:0 4px;background:#191a1e;color:var(--dim2);font-size:8px;font-weight:800;letter-spacing:.8px;text-transform:uppercase}.compositor-scene-select select{width:100%;height:32px}.compositor-scene-actions{display:flex;gap:5px}.compositor-scene-actions button{width:32px;height:32px;padding:0;font-size:14px}
-.canvas-controls{display:grid;grid-template-columns:130px 74px 12px 74px 70px;align-items:center;gap:6px}
+.canvas-controls{grid-column:1/-1;grid-row:2;display:grid;grid-template-columns:minmax(130px,1fr) 74px 12px 74px 70px;align-items:center;gap:6px}
 .canvas-controls select,.canvas-controls input{width:100%;min-width:0;height:32px;padding:5px 8px}
 .canvas-controls .canvas-times{text-align:center;color:var(--dim2)}
 .canvas-controls label{position:relative}

@@ -172,9 +172,14 @@ app.whenReady().then(async () => {
     open:document.body.classList.contains('compositor-open'),
     advanced:document.body.classList.contains('adv'),
     panel:__visible(document.getElementById('panelSources')),
-    settingsHidden:!__visible(document.getElementById('setupWrap'))
+    settingsHidden:!__visible(document.getElementById('setupWrap')),
+    headInside:__inside(document.querySelector('.compositor-head')),
+    titleFits:__fits(document.querySelector('.compositor-title-copy span')),
+    addSourceInside:__inside(document.getElementById('btnAddSource')),
+    canvasControlsInside:__insideX(document.querySelector('.canvas-controls')),
+    panelOverflowX:document.getElementById('panelSources').scrollWidth-document.getElementById('panelSources').clientWidth
   }))()`);
-  check('BETA_LIVE_COMPOSITOR_IDENTITY_OK', compositorIdentity.title==='ShowSlate — Live Compositor' && compositorIdentity.descriptor==='LIVE COMPOSITOR' && compositorIdentity.button && compositorIdentity.open && compositorIdentity.advanced && compositorIdentity.panel && compositorIdentity.settingsHidden, JSON.stringify(compositorIdentity));
+  check('BETA_LIVE_COMPOSITOR_IDENTITY_OK', compositorIdentity.title==='ShowSlate — Live Compositor' && compositorIdentity.descriptor==='LIVE COMPOSITOR' && compositorIdentity.button && compositorIdentity.open && compositorIdentity.advanced && compositorIdentity.panel && compositorIdentity.settingsHidden && compositorIdentity.headInside && compositorIdentity.titleFits && compositorIdentity.addSourceInside && compositorIdentity.canvasControlsInside && compositorIdentity.panelOverflowX<=1, JSON.stringify(compositorIdentity));
   await capture(win, '1440x900-composer-default');
   await win.webContents.executeJavaScript(`setCompositorOpen(false,{persist:false})`);
 
