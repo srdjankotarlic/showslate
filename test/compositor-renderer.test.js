@@ -111,9 +111,10 @@ app.whenReady().then(async () => {
     const visible=button.getClientRects().length>0;
     const defaultOpen=document.body.classList.contains('compositor-open');
     if(!defaultOpen) button.click();
-    return {visible,defaultOpen,open:document.body.classList.contains('compositor-open'),advanced:document.body.classList.contains('adv'),previewVisible:document.getElementById('preview').getClientRects().length>0,panelVisible:document.getElementById('panelSources').getClientRects().length>0,defaultTimerHidden:getComputedStyle(document.getElementById('pvStage')).display==='none'};
+    return {visible,defaultOpen,open:document.body.classList.contains('compositor-open'),advanced:document.body.classList.contains('adv'),previewVisible:document.getElementById('preview').getClientRects().length>0,panelVisible:document.getElementById('panelSources').getClientRects().length>0,defaultTimerHidden:getComputedStyle(document.getElementById('pvStage')).display==='none',directProgram:document.getElementById('chkDirectProgram').checked,layerTakeVisible:document.getElementById('btnTakeLayer').getClientRects().length>0,layerHideVisible:document.getElementById('btnHideLayer').getClientRects().length>0};
   })())`));
   check('COMPOSITOR_VISIBLE_FROM_NORMAL_UI_OK', opened.visible && opened.open && opened.advanced && opened.previewVisible && opened.panelVisible && opened.defaultTimerHidden, JSON.stringify(opened));
+  check('COMPOSITOR_SAFE_PREVIEW_DEFAULT_AND_LAYER_CONTROLS_OK', opened.directProgram === false && opened.layerTakeVisible && opened.layerHideVisible, JSON.stringify(opened));
   const sceneControls = JSON.parse(await win.webContents.executeJavaScript(`JSON.stringify((()=>{const ids=['canvasSceneSelect','btnCanvasSceneAdd','btnCanvasSceneDuplicate','btnCanvasSceneDelete'];return {visible:ids.every(id=>document.getElementById(id).getClientRects().length>0),options:document.getElementById('canvasSceneSelect').options.length,duplicateTitle:document.getElementById('btnCanvasSceneDuplicate').title};})())`));
   check('COMPOSITOR_SCENE_CONTROLS_VISIBLE_OK', sceneControls.visible && sceneControls.options >= 1 && sceneControls.duplicateTitle.length > 0, JSON.stringify(sceneControls));
 
@@ -262,6 +263,49 @@ app.whenReady().then(async () => {
   })())`));
   check('COMPOSITOR_PREVIEW_TAKE_ISOLATION_OK', isolation.previewOnly && isolation.taken && isolation.direct === false && isolation.deleteStayedInPreview && isolation.programDefinitionRetained && isolation.restored, JSON.stringify(isolation));
 
+  const layerTake = JSON.parse(await win.webContents.executeJavaScript(`JSON.stringify((()=>{
+    const layer=selectedLayer(); const layerId=layer.id;
+    const programScene=activeScene(programState);
+    const beforeProgramLayer=findProgramLayer(layer);
+    const beforeOther=JSON.stringify(programScene.layers.filter(row=>row.id!==beforeProgramLayer.id));
+    document.getElementById('inspX').value='44'; document.getElementById('inspX').dispatchEvent(new Event('change',{bubbles:true}));
+    const previewAfterEdit=selectedLayer();
+    const previewIsolated=findProgramLayer(previewAfterEdit).x!==previewAfterEdit.x;
+    const changedStatus=document.getElementById('layerProgramStatus').textContent;
+    document.getElementById('btnTakeLayer').click();
+    const taken=findProgramLayer(layer);
+    const afterOther=JSON.stringify(activeScene(programState).layers.filter(row=>row.id!==taken.id));
+    const liveStatus=document.getElementById('layerProgramStatus').textContent;
+    document.getElementById('btnHideLayer').click();
+    const hidden=findProgramLayer(layer);
+    const hiddenStatus=document.getElementById('layerProgramStatus').textContent;
+    document.getElementById('btnTakeLayer').click();
+    const restored=findProgramLayer(layer);
+    const previewAfterTake=(currentScene().layers||[]).find(row=>row.id===layerId);
+    return {previewIsolated,changedStatus,takenX:taken.x,previewX:previewAfterTake.x,otherLayersUnchanged:beforeOther===afterOther,liveStatus,hidden: hidden.visible===false,previewVisible:previewAfterTake.visible!==false,hiddenStatus,restoredVisible:restored.visible!==false,finalStatus:document.getElementById('layerProgramStatus').textContent};
+  })())`));
+  check('COMPOSITOR_LAYER_TAKE_HIDE_WORKFLOW_OK', layerTake.previewIsolated && layerTake.changedStatus === 'CHANGED' && layerTake.takenX === layerTake.previewX && layerTake.otherLayersUnchanged && layerTake.liveStatus === 'LIVE' && layerTake.hidden && layerTake.previewVisible && layerTake.hiddenStatus === 'HIDDEN' && layerTake.restoredVisible && layerTake.finalStatus === 'LIVE', JSON.stringify(layerTake));
+
+  const crossSceneLayer = JSON.parse(await win.webContents.executeJavaScript(`JSON.stringify((()=>{
+    const programSceneBefore=activeScene(programState);
+    const programSceneId=programSceneBefore.id;
+    const existingIds=programSceneBefore.layers.map(row=>row.id);
+    const source=currentScene().layers.find(row=>row.type==='image') || currentScene().layers[0];
+    const previewLayer={...cloneState(source),id:makeId('layer'),name:'Cross-scene overlay',x:12,y:14,w:38,h:28,visible:true};
+    const previewScene={id:makeId('scene'),name:'Overlay preview',layers:[previewLayer]};
+    S.scenes.push(previewScene); S.activeSceneId=previewScene.id; selectedLayerId=previewLayer.id;
+    renderScenesUI(); send();
+    const programUnchangedBeforeTake=activeScene(programState).id===programSceneId && existingIds.every(id=>activeScene(programState).layers.some(row=>row.id===id));
+    document.getElementById('btnTakeLayer').click();
+    const live=findProgramLayer(previewLayer), programSceneAfter=activeScene(programState);
+    const preservedProgramScene=programSceneAfter.id===programSceneId && existingIds.every(id=>programSceneAfter.layers.some(row=>row.id===id));
+    const insertedAsOverlay=!!live && live.programSourceLayerId===previewLayer.id && live.programSourceSceneId===previewScene.id && live.visible!==false;
+    document.getElementById('btnHideLayer').click();
+    const hidden=findProgramLayer(previewLayer);
+    return {programUnchangedBeforeTake,preservedProgramScene,insertedAsOverlay,hidden:!!hidden&&hidden.visible===false,previewVisible:previewLayer.visible!==false,status:document.getElementById('layerProgramStatus').textContent};
+  })())`));
+  check('COMPOSITOR_CROSS_SCENE_LAYER_TAKE_PRESERVES_PROGRAM_OK', crossSceneLayer.programUnchangedBeforeTake && crossSceneLayer.preservedProgramScene && crossSceneLayer.insertedAsOverlay && crossSceneLayer.hidden && crossSceneLayer.previewVisible && crossSceneLayer.status === 'HIDDEN', JSON.stringify(crossSceneLayer));
+
   const audioGuard = JSON.parse(await win.webContents.executeJavaScript(`JSON.stringify((()=>{
     outputConfigs=[normalizeOutputConfigUI({id:'audio-route',name:'Recorder',enabled:true,liveAudio:true,displayId:lastDisplays[0].id},0)];
     const primary=document.getElementById('chkPrimaryLiveAudio'); primary.checked=true; primary.dispatchEvent(new Event('change',{bubbles:true}));
@@ -294,7 +338,15 @@ app.whenReady().then(async () => {
   await new Promise(resolve => setTimeout(resolve, 120));
   fs.writeFileSync(path.join(artifactDirectory, 'compositor-900x600.png'), (await win.webContents.capturePage()).toPNG());
 
-  console.log(`COMPOSITOR_RENDERER_TESTS_OK ${checks}/16`);
+  const demoBaseline = JSON.parse(await win.webContents.executeJavaScript(`JSON.stringify((()=>{
+    const demo=document.getElementById('btnDemoShow');
+    const visible=!!(demo&&demo.getClientRects().length); if(demo) demo.click();
+    const statuses=[...document.querySelectorAll('#layerList .layer-program-chip')].map(chip=>chip.textContent);
+    return {visible,direct:S.studioDirect,selectedStatus:document.getElementById('layerProgramStatus').textContent,statuses,preview:activeScene(S)?.name,program:activeScene(programState)?.name};
+  })())`));
+  check('COMPOSITOR_DEMO_STARTS_PREVIEW_PROGRAM_IN_SYNC_OK', demoBaseline.visible && demoBaseline.direct === false && demoBaseline.selectedStatus === 'LIVE' && demoBaseline.statuses.length > 0 && demoBaseline.statuses.every(status=>status === 'LIVE') && demoBaseline.preview === demoBaseline.program, JSON.stringify(demoBaseline));
+
+  console.log(`COMPOSITOR_RENDERER_TESTS_OK ${checks}/20`);
   win.destroy();
   fs.rmSync(profile, { recursive: true, force: true });
   app.quit();

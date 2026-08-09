@@ -3499,7 +3499,21 @@
         <input type="file" id="sceneMediaFile" accept="image/*,video/*,application/pdf,.pdf" multiple hidden>
       </div>
       <div class="compositor-workspace">
-        <section class="compositor-layers"><div class="compositor-pane-head"><strong data-i18n="layers">Layers</strong><span data-i18n="layersTopHint">Top layer is in front</span></div><div class="layer-list" id="layerList"></div></section>
+        <section class="compositor-layers">
+          <div class="compositor-pane-head"><strong data-i18n="layers">Layers</strong><span data-i18n="layersTopHint">Top layer is in front</span></div>
+          <div class="layer-program-bar" id="layerProgramBar" aria-live="polite">
+            <div class="layer-program-copy">
+              <span data-i18n="programLayer">PROGRAM LAYER</span>
+              <strong id="layerProgramName" data-i18n="layerNoneSelected">Select a layer</strong>
+              <small id="layerProgramStatus" class="layer-program-status preview" data-i18n="layerPreviewOnly">PREVIEW ONLY</small>
+            </div>
+            <div class="layer-program-actions">
+              <button id="btnTakeLayer" class="primary" type="button" data-i18n="takeLayer" disabled>TAKE LAYER</button>
+              <button id="btnHideLayer" type="button" data-i18n="hideLayer" disabled>HIDE</button>
+            </div>
+          </div>
+          <div class="layer-list" id="layerList"></div>
+        </section>
         <div class="inspector compositor-inspector" id="inspector">
           <span class="glabel" data-i18n="inspTitle">Source inspector</span>
           <label class="insp-f insp-name"><span data-i18n="sourceName">Source name</span><input type="text" id="inspName" maxlength="160"></label>
@@ -4168,6 +4182,9 @@ const I18N = {
     advanced:'Preview / Program', advancedTitle:'Preview/Program režija (Cut/Transition). Isključeno: sve ide direktno na Program.',
     rundownBtn:'Rundown', sidebarToggle:'Prikaži ili sakrij navigaciju', utilityToggle:'Prikaži ili sakrij poruke, status i izlaze', msgOutBtn:'Poruke', settingsBtn:'Podešavanja', compactMode:'Kompaktan režim', compactTitle:'Fokusirani operater: Program, GO i poruka; kontrole tajmera su u Podešavanjima.', fsMenu:'⛶ Pun ekran', closeMenu:'✕ Zatvori izlaz',
     inspTitle:'Izvor', inspOpacity:'Prozirnost', inspFitTitle:'Kako medij popunjava kutiju',
+    programLayer:'PROGRAM LEJER', layerNoneSelected:'Izaberite lejer', takeLayer:'PUSTI LEJER', hideLayer:'SKLONI',
+    layerPreviewOnly:'SAMO PREVIEW', layerLive:'U PROGRAMU', layerChanged:'IZMENJEN', layerHidden:'SKLONJEN', layerDirect:'DIREKTNO', layerLivePreviewHidden:'U PROGRAMU · PREVIEW SKRIVEN',
+    layerVisibility:'Prikaži {name} u Preview-u',
     fitCover:'Popuni', fitContain:'Uklopi', fitFill:'Razvuci', inspCenter:'Centriraj', inspFull:'Ceo ekran',
     inspFontTitle:'Veličina teksta (% visine)', layerNamePrompt:'Naziv izvora:', textLayerPrompt:'Tekst izvora:',
     ltPresetPrompt:'Naziv preseta:', cancel:'Otkaži', ok:'U redu',
@@ -4264,6 +4281,9 @@ const I18N = {
     advanced:'Preview / Program', advancedTitle:'Preview/Program workflow (Cut/Transition). Off: everything goes straight to Program.',
     rundownBtn:'Rundown', sidebarToggle:'Show or hide navigation', utilityToggle:'Show or hide messages, status and outputs', msgOutBtn:'Message', settingsBtn:'Settings', compactMode:'Compact mode', compactTitle:'Focused operator: Program, GO and message; timer controls are in Settings.', fsMenu:'⛶ Fullscreen', closeMenu:'✕ Close output',
     inspTitle:'Source', inspOpacity:'Opacity', inspFitTitle:'How media fills the box',
+    programLayer:'PROGRAM LAYER', layerNoneSelected:'Select a layer', takeLayer:'TAKE LAYER', hideLayer:'HIDE',
+    layerPreviewOnly:'PREVIEW ONLY', layerLive:'LIVE', layerChanged:'CHANGED', layerHidden:'HIDDEN', layerDirect:'DIRECT', layerLivePreviewHidden:'LIVE · PREVIEW HIDDEN',
+    layerVisibility:'Show {name} in Preview',
     fitCover:'Cover', fitContain:'Fit', fitFill:'Stretch', inspCenter:'Center', inspFull:'Full screen',
     inspFontTitle:'Text size (% of height)', layerNamePrompt:'Source name:', textLayerPrompt:'Source text:',
     ltPresetPrompt:'Preset name:', cancel:'Cancel', ok:'OK',
@@ -4410,7 +4430,7 @@ let S = {
   font:'mono', clock12:false, goAutoStart:true,
   canvasAspect:'16:9', canvas:{schemaVersion:1,width:1920,height:1080,fps:30,background:'#000000',transparent:false}, sceneFadeMs:300,
   liveInputs:[], primaryLiveAudio:false,
-  studioDirect:true,
+  studioDirect:false,
   scenes:[{id:'scene-default', name:'Scene 1', layers:[]}],
   activeSceneId:'scene-default',
   goTransaction:null,
@@ -4530,6 +4550,7 @@ function ensureProgramState(){
 function pushProgramState(st=outputSnapshot(S)){
   programState=cloneState(st);
   api.sendState(programState);
+  refreshLayerProgramIndicators();
 }
 function send(forceProgram=false,options={}){
   S.cues=cues;
@@ -4555,6 +4576,106 @@ function takePreview(kind='transition'){
   send(true,{takeContent:true});
   renderContentItems();
 }
+function comparableProgramLayer(layer){
+  if(!layer) return '';
+  const copy=cloneState(layer);
+  delete copy.programSourceLayerId;
+  delete copy.programSourceSceneId;
+  return JSON.stringify(copy);
+}
+function findProgramLayer(layer, state=ensureProgramState()){
+  if(!layer) return null;
+  const scene=activeScene(state);
+  if(!scene || !Array.isArray(scene.layers)) return null;
+  return scene.layers.find(row=>row && (row.id===layer.id || row.programSourceLayerId===layer.id)) || null;
+}
+function layerProgramInfo(layer){
+  if(!layer) return {key:'none',label:t('layerPreviewOnly'),programLayer:null};
+  if(S.studioDirect) return {key:'direct',label:t('layerDirect'),programLayer:findProgramLayer(layer)};
+  const live=findProgramLayer(layer);
+  if(!live) return {key:'preview',label:t('layerPreviewOnly'),programLayer:null};
+  if(live.visible===false) return {key:'hidden',label:t('layerHidden'),programLayer:live};
+  if(layer.visible===false) return {key:'live-preview-hidden',label:t('layerLivePreviewHidden'),programLayer:live};
+  const same=comparableProgramLayer(live)===comparableProgramLayer(layer);
+  return {key:same?'live':'changed',label:t(same?'layerLive':'layerChanged'),programLayer:live};
+}
+function insertProgramLayer(programScene, previewScene, layer){
+  const previewLayers=Array.isArray(previewScene&&previewScene.layers)?previewScene.layers:[];
+  const programLayers=Array.isArray(programScene.layers)?programScene.layers:(programScene.layers=[]);
+  const previewIndex=previewLayers.findIndex(row=>row.id===layer.id);
+  for(let i=previewIndex+1;i<previewLayers.length;i++){
+    const nextIndex=programLayers.findIndex(row=>row.id===previewLayers[i].id);
+    if(nextIndex>=0){ programLayers.splice(nextIndex,0,layer); return; }
+  }
+  for(let i=previewIndex-1;i>=0;i--){
+    const previousIndex=programLayers.findIndex(row=>row.id===previewLayers[i].id);
+    if(previousIndex>=0){ programLayers.splice(previousIndex+1,0,layer); return; }
+  }
+  programLayers.push(layer);
+}
+function takeSelectedLayer(){
+  const layer=selectedLayer();
+  if(!layer || S.studioDirect) return false;
+  const previewScene=currentScene();
+  const next=cloneState(ensureProgramState());
+  const programScene=activeScene(next);
+  if(!programScene) return false;
+  const copy=cloneState(layer);
+  copy.visible=true;
+  if(programScene.id!==previewScene.id){
+    copy.programSourceLayerId=layer.id;
+    copy.programSourceSceneId=previewScene.id;
+  }else{
+    delete copy.programSourceLayerId;
+    delete copy.programSourceSceneId;
+  }
+  const index=(programScene.layers||[]).findIndex(row=>row && (row.id===layer.id || row.programSourceLayerId===layer.id));
+  if(index>=0) programScene.layers.splice(index,1,copy);
+  else if(programScene.id===previewScene.id) insertProgramLayer(programScene,previewScene,copy);
+  else programScene.layers.push(copy);
+  if(layer.inputId){
+    const definition=(S.liveInputs||[]).find(row=>row.id===layer.inputId);
+    if(definition){
+      next.liveInputs=PTCOMP.normalizeLiveInputs(next.liveInputs||[]).filter(row=>row.id!==definition.id);
+      next.liveInputs.push(cloneState(definition));
+    }
+  }
+  pushProgramState(next);
+  updateStudioButtons();
+  publishControlStatus();
+  return true;
+}
+function hideSelectedLayer(){
+  const layer=selectedLayer();
+  if(!layer || S.studioDirect) return false;
+  const next=cloneState(ensureProgramState());
+  const live=findProgramLayer(layer,next);
+  if(!live || live.visible===false) return false;
+  live.visible=false;
+  pushProgramState(next);
+  updateStudioButtons();
+  publishControlStatus();
+  return true;
+}
+function updateLayerProgramControls(){
+  const layer=selectedLayer();
+  const info=layerProgramInfo(layer);
+  const name=$('layerProgramName'), status=$('layerProgramStatus');
+  if(name) name.textContent=layer?(layer.name||layer.sourceName||layer.type):t('layerNoneSelected');
+  if(status){ status.textContent=info.label; status.className='layer-program-status '+info.key; }
+  const take=$('btnTakeLayer'), hide=$('btnHideLayer');
+  if(take) take.disabled=!layer||S.studioDirect;
+  if(hide) hide.disabled=!layer||S.studioDirect||!info.programLayer||info.programLayer.visible===false;
+}
+function refreshLayerProgramIndicators(){
+  document.querySelectorAll('#layerList .layer-row[data-layer-id]').forEach(row=>{
+    const layer=(currentScene().layers||[]).find(item=>item.id===row.dataset.layerId);
+    const info=layerProgramInfo(layer);
+    const chip=row.querySelector('.layer-program-chip');
+    if(chip){ chip.textContent=info.label; chip.className='layer-program-chip '+info.key; }
+  });
+  updateLayerProgramControls();
+}
 function setProgramBlackout(flag){
   const cur=cloneState(ensureProgramState());
   cur.blackout=!!flag;
@@ -4569,6 +4690,7 @@ function updateStudioButtons(){
   const p=ensureProgramState();
   if($('bdgPreview')) $('bdgPreview').textContent=S.studioDirect?t('directProgram'):t('previewReady');
   if($('btnFadeBlack')) $('btnFadeBlack').classList.toggle('on',!!p.blackout);
+  updateLayerProgramControls();
 }
 
 // ---------- RASPORED / OVER-UNDER ----------
@@ -4903,6 +5025,7 @@ function seedDemoShow(){
   outputConfigs=[{id:makeId('out'),name:'Audience',role:'audience',enabled:true,displayId:Number($('displaySel')?.value)||null,mode:'fullscreen',width:1920,height:1080,gridSize:3,gridCell:4,liveAudio:false}];
   try{ api.setOutputConfigs([]); api.closeOutput(); }catch(e){}
   outputOpen=false;
+  ensureScenes();
   programState=outputSnapshot(S);
   saveCues(); saveOutputConfigsLocal(); saveSettings();
   renderCues(); renderContentItems(); renderScenesUI(); updateGoLabel(); updateLiveInfo(); updateButtons(); publishControlStatus();
@@ -5809,6 +5932,11 @@ function load(){
     S.remMs=S.durationMs; autoNext=!!st.autoNext;
     cues=migrateCues(JSON.parse(localStorage.getItem('pt_cues')||'[]'));
   }catch(e){}
+  const previewSafetyKey='showslate_preview_program_safety_v1';
+  if(localStorage.getItem(previewSafetyKey)!=='1'){
+    S.studioDirect=false;
+    localStorage.setItem(previewSafetyKey,'1');
+  }
   $('showStartInput').value=S.showStart||''; $('chkNowNext').checked=S.showNowNext;
   $('yellowInput').value=fmtSecs(S.yellowSec,false);
   $('redInput').value=fmtSecs(S.redSec,false);
@@ -6085,17 +6213,20 @@ function renderScenesUI(){
   layerBox.innerHTML='';
   if(!sc.layers.some(layer=>layer.id===selectedLayerId)) selectedLayerId=(sc.layers[sc.layers.length-1]||{}).id||null;
   if(!sc.layers.length){
-    const d=document.createElement('div'); d.className='empty'; d.textContent=t('emptyScene'); layerBox.appendChild(d); renderInspector(); return;
+    const d=document.createElement('div'); d.className='empty'; d.textContent=t('emptyScene'); layerBox.appendChild(d); renderInspector(); updateLayerProgramControls(); return;
   }
   [...sc.layers].reverse().forEach((layer,revIndex)=>{
     const i=sc.layers.length-1-revIndex;
     const row=document.createElement('div');
     row.className='layer-row'+(layer.id===selectedLayerId?' sel':'');
+    row.dataset.layerId=layer.id;
     row.addEventListener('click',e=>{ if(e.target.closest('button,input')) return; selectLayer(layer.id); });
     const thumb = (layer.thumbnail || (layer.type==='image'?layer.src:'')) ? '<img class="source-preview" alt="">' : '<span class="layer-kind"></span>';
-    row.innerHTML=`<input type="checkbox" class="vis">${thumb}<div class="layer-copy"><div class="layer-name"></div><div class="layer-meta"></div></div><button class="mini up" aria-label="Move layer up">↑</button><button class="mini dn" aria-label="Move layer down">↓</button><button class="mini del" aria-label="Delete layer">✕</button>`;
-    row.querySelector('.vis').checked=layer.visible!==false;
-    row.querySelector('.vis').addEventListener('change',e=>{ layer.visible=e.target.checked; sceneDirty(); });
+    row.innerHTML=`<input type="checkbox" class="vis">${thumb}<div class="layer-copy"><div class="layer-name"></div><div class="layer-meta"></div><span class="layer-program-chip"></span></div><button class="mini up" aria-label="Move layer up">↑</button><button class="mini dn" aria-label="Move layer down">↓</button><button class="mini del" aria-label="Delete layer">✕</button>`;
+    const visibility=row.querySelector('.vis');
+    visibility.checked=layer.visible!==false;
+    visibility.setAttribute('aria-label',uiText('layerVisibility',{name:layer.name||layer.sourceName||layer.type}));
+    visibility.addEventListener('change',e=>{ layer.visible=e.target.checked; sceneDirty(); });
     const img=row.querySelector('img.source-preview');
     if(img) img.src=layer.thumbnail || layer.src;
     const kind=row.querySelector('.layer-kind');
@@ -6114,12 +6245,17 @@ function renderScenesUI(){
       const label=document.createElement('span'); label.textContent=`${input?input.name:t('sourceMissing')} · ${liveInputStatusText(status)}`;
       meta.append(dot,label);
     } else meta.textContent=(layer.locked?t('sourceLocked')+' · ':'')+String(layer.type||'layer').toUpperCase();
+    const programChip=row.querySelector('.layer-program-chip');
+    const programInfo=layerProgramInfo(layer);
+    programChip.textContent=programInfo.label;
+    programChip.className='layer-program-chip '+programInfo.key;
     row.querySelector('.up').addEventListener('click',()=>{ if(i<sc.layers.length-1){ [sc.layers[i],sc.layers[i+1]]=[sc.layers[i+1],sc.layers[i]]; sceneDirty(); } });
     row.querySelector('.dn').addEventListener('click',()=>{ if(i>0){ [sc.layers[i],sc.layers[i-1]]=[sc.layers[i-1],sc.layers[i]]; sceneDirty(); } });
     row.querySelector('.del').addEventListener('click',()=>{ sc.layers.splice(i,1); if(selectedLayerId===layer.id) selectedLayerId=null; sceneDirty(); renderInspector(); });
     layerBox.appendChild(row);
   });
   renderInspector();
+  updateLayerProgramControls();
 }
 async function addScene(){
   ensureScenes();
@@ -8701,6 +8837,8 @@ $('gridSizeSel').addEventListener('change',e=>setGridSize(+e.target.value));
 
 $('btnCut').addEventListener('click',()=>takePreview('cut'));
 $('btnTake').addEventListener('click',()=>takePreview('transition'));
+$('btnTakeLayer').addEventListener('click',takeSelectedLayer);
+$('btnHideLayer').addEventListener('click',hideSelectedLayer);
 $('btnFadeBlack').addEventListener('click',()=>setProgramBlackout(!ensureProgramState().blackout));
 $('bdgBk').addEventListener('click',()=>setProgramBlackout(!ensureProgramState().blackout));
 $('chkDirectProgram').addEventListener('change',e=>{

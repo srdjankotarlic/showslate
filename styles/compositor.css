@@ -23,6 +23,16 @@ body.compositor-open #panelSources{grid-row:3!important;min-height:0!important}
 .compositor-pane-head{display:flex;align-items:center;gap:8px;margin-bottom:10px}
 .compositor-pane-head strong{font-size:11px;text-transform:uppercase;letter-spacing:1.1px;color:#d5d7dc}
 .compositor-pane-head span{font-size:10px;color:var(--dim2)}
+.layer-program-bar{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:10px;margin-bottom:10px;padding:9px 10px;border:1px solid rgba(255,255,255,.1);border-radius:7px;background:#121317}
+.layer-program-copy{min-width:0;display:grid;grid-template-columns:minmax(0,1fr) auto;gap:2px 8px;align-items:center}
+.layer-program-copy>span{grid-column:1/-1;color:var(--dim2);font-size:8px;font-weight:800;letter-spacing:.9px}
+.layer-program-copy strong{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:11px;font-weight:680}
+.layer-program-actions{display:flex;align-items:center;gap:6px}.layer-program-actions button{height:31px;padding:5px 9px;font-size:9px;white-space:nowrap}
+.layer-program-status,.layer-program-chip{display:inline-flex;align-items:center;width:max-content;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;border:1px solid rgba(255,255,255,.1);border-radius:999px;padding:3px 6px;color:#9298a2;background:#1b1c21;font-size:7.5px;font-weight:820;letter-spacing:.65px;line-height:1}
+.layer-program-status.live,.layer-program-chip.live,.layer-program-status.direct,.layer-program-chip.direct{color:#9ed4b0;border-color:rgba(89,165,116,.36);background:rgba(59,126,83,.14)}
+.layer-program-status.changed,.layer-program-chip.changed{color:#d9bc80;border-color:rgba(184,141,64,.36);background:rgba(150,108,38,.13)}
+.layer-program-status.hidden,.layer-program-chip.hidden{color:#c5a0a0;border-color:rgba(161,88,88,.32);background:rgba(130,60,60,.12)}
+.layer-program-status.live-preview-hidden,.layer-program-chip.live-preview-hidden{color:#b6bdc8;border-color:rgba(150,160,175,.28);background:rgba(105,115,130,.12)}
 .panel-sources .layer-list{max-height:260px!important;overflow:auto!important;width:100%;gap:6px!important;padding-right:3px}
 .panel-sources .layer-row{min-height:52px!important;grid-template-columns:auto 46px minmax(0,1fr) auto auto auto!important;border-radius:7px!important;padding:7px!important;background:#222328!important}
 .panel-sources .layer-row:hover{background:#292a30!important}
@@ -32,6 +42,7 @@ body.compositor-open #panelSources{grid-row:3!important;min-height:0!important}
 .layer-copy{min-width:0;display:flex;flex-direction:column;gap:2px}
 .layer-name{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:650}
 .layer-meta{display:flex;align-items:center;gap:6px;min-width:0;color:var(--dim2);font-size:9.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.layer-program-chip{margin-top:2px}
 .input-state{width:6px;height:6px;border-radius:50%;background:#737780;box-shadow:0 0 0 2px rgba(115,119,128,.1)}
 .input-state.live{background:#55c983;box-shadow:0 0 0 2px rgba(85,201,131,.14)}
 .input-state.error,.input-state.ended{background:#f06b63;box-shadow:0 0 0 2px rgba(240,107,99,.14)}
@@ -87,4 +98,4 @@ body.compositor-open #panelSources{grid-row:3!important;min-height:0!important}
   .compositor-layers{border-right:0;border-bottom:1px solid var(--border)}
   .source-kind-grid{grid-template-columns:repeat(2,minmax(140px,1fr))}
 }
-@media(max-width:640px){.source-kind-grid,.source-form{grid-template-columns:1fr}.source-form label.wide,.source-form .form-actions{grid-column:1}.canvas-controls{grid-template-columns:1fr 70px 10px 70px}.canvas-controls label:last-child{grid-column:1/-1}.compositor-inspector.inspector{grid-template-columns:repeat(2,minmax(70px,1fr))}.compositor-inspector .insp-op,.compositor-inspector .insp-fit{grid-column:span 1}}
+@media(max-width:640px){.source-kind-grid,.source-form{grid-template-columns:1fr}.source-form label.wide,.source-form .form-actions{grid-column:1}.canvas-controls{grid-template-columns:1fr 70px 10px 70px}.canvas-controls label:last-child{grid-column:1/-1}.compositor-inspector.inspector{grid-template-columns:repeat(2,minmax(70px,1fr))}.compositor-inspector .insp-op,.compositor-inspector .insp-fit{grid-column:span 1}.layer-program-bar{grid-template-columns:1fr}.layer-program-actions button{flex:1}}
