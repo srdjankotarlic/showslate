@@ -8921,6 +8921,7 @@ $('chkDirectProgram').addEventListener('change',e=>{
   if(S.studioDirect) takePreview('cut');
   else saveSettings();
   updateStudioButtons();
+  refreshLayerProgramIndicators();
 });
 
 $('btnMsgSend').addEventListener('click',()=>{ S.message={text:$('msgInput').value.trim(),flash:$('chkMsgFlash').checked}; send(); });

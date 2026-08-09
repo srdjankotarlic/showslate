@@ -284,7 +284,10 @@ app.whenReady().then(async () => {
   check('COMPOSITOR_POINTER_RESIZE_PERSISTS_OK', resized.w > handle.w && resized.h > handle.h && resized.inspectorW === resized.w && resized.inspectorH === resized.h, JSON.stringify({ before: handle, after: resized }));
 
   const isolation = JSON.parse(await win.webContents.executeJavaScript(`JSON.stringify((()=>{
-    const direct=document.getElementById('chkDirectProgram'); direct.checked=false; direct.dispatchEvent(new Event('change',{bubbles:true}));
+    const direct=document.getElementById('chkDirectProgram');
+    direct.checked=true; direct.dispatchEvent(new Event('change',{bubbles:true}));
+    direct.checked=false; direct.dispatchEvent(new Event('change',{bubbles:true}));
+    const directReset=document.getElementById('layerProgramStatus').textContent!=='DIRECT' && [...document.querySelectorAll('#layerList .layer-program-chip')].every(chip=>chip.textContent!=='DIRECT');
     const before=JSON.stringify(programState.scenes);
     document.getElementById('inspX').value='48'; document.getElementById('inspX').dispatchEvent(new Event('change',{bubbles:true}));
     const previewOnly=before===JSON.stringify(programState.scenes);
@@ -295,9 +298,9 @@ app.whenReady().then(async () => {
     const deleteStayedInPreview=!currentScene().layers.some(row=>row.id===layer.id)&&activeScene(programState).layers.some(row=>row.id===layer.id);
     const programDefinitionRetained=S.liveInputs.some(input=>input.id===inputId)&&programState.liveInputs.some(input=>input.id===inputId);
     currentScene().layers.splice(index,0,layer); selectedLayerId=layer.id; sceneDirty();
-    return {previewOnly,taken,direct:S.studioDirect,deleteStayedInPreview,programDefinitionRetained,restored:currentScene().layers.some(row=>row.id===layer.id)};
+    return {previewOnly,taken,direct:S.studioDirect,directReset,deleteStayedInPreview,programDefinitionRetained,restored:currentScene().layers.some(row=>row.id===layer.id)};
   })())`));
-  check('COMPOSITOR_PREVIEW_TAKE_ISOLATION_OK', isolation.previewOnly && isolation.taken && isolation.direct === false && isolation.deleteStayedInPreview && isolation.programDefinitionRetained && isolation.restored, JSON.stringify(isolation));
+  check('COMPOSITOR_PREVIEW_TAKE_ISOLATION_OK', isolation.previewOnly && isolation.taken && isolation.direct === false && isolation.directReset && isolation.deleteStayedInPreview && isolation.programDefinitionRetained && isolation.restored, JSON.stringify(isolation));
 
   const layerTake = JSON.parse(await win.webContents.executeJavaScript(`JSON.stringify((()=>{
     const layer=selectedLayer(); const layerId=layer.id;
