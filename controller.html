@@ -3285,7 +3285,7 @@
   </button>
   <div class="workspace-nav" role="group" aria-label="Workspace">
     <button id="btnCompositor" class="ghost tb-drawerbtn compositor-button" type="button" aria-controls="panelSources" aria-expanded="false" data-i18n="compositorButton">Composer</button>
-    <button id="btnSettingsDrawer" class="ghost tb-drawerbtn" aria-label="Podešavanja" data-i18n="settingsBtn" title="Podešavanja">Podešavanja</button>
+    <button id="btnSettingsDrawer" class="ghost tb-drawerbtn" aria-label="Settings" data-i18n="settingsBtn" data-i18n-aria="settingsBtn" data-i18n-title="settingsBtn" title="Settings">Settings</button>
   </div>
   <div class="legacy-output-picker" aria-hidden="true">
     <span class="lbl tb-outlabel" data-i18n="outLabel">Izlaz na</span>
@@ -4397,6 +4397,7 @@ function applyLang(){
   document.documentElement.dir = meta.dir || 'ltr';
   document.querySelectorAll('[data-i18n]').forEach(el => el.textContent = t(el.dataset.i18n));
   document.querySelectorAll('[data-i18n-ph]').forEach(el => el.placeholder = t(el.dataset.i18nPh));
+  document.querySelectorAll('[data-i18n-aria]').forEach(el => el.setAttribute('aria-label', t(el.dataset.i18nAria)));
   document.querySelectorAll('[data-i18n-title]').forEach(el => el.title = t(el.dataset.i18nTitle));
   document.querySelectorAll('[data-i18n-html]').forEach(el => el.innerHTML = t(el.dataset.i18nHtml));
   buildLanguageSelect();
