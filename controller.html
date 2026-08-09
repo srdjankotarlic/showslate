@@ -4770,15 +4770,14 @@ function renderStage(prefix, st, now){
     const lys=(scn && Array.isArray(scn.layers)) ? scn.layers.filter(l=>l && l.visible!==false) : [];
     const tl=lys.find(l=>l.type==='timer');
     previewTimerLayer=tl||null;
-    if(!(st.gridOn && st.gridSize)){
-      if(tl){ const b=layerBounds(tl);
+    if(tl){
+      if(!(st.gridOn && st.gridSize)){ const b=layerBounds(tl);
         ps.style.zIndex=String(lys.indexOf(tl)+1);
         ps.style.display='flex'; ps.style.inset='auto';
         ps.style.left=b.x+'%'; ps.style.top=b.y+'%'; ps.style.width=b.w+'%'; ps.style.height=b.h+'%';
         ps.style.opacity=String(Math.max(0,Math.min(1,Number(tl.opacity??1))));
-      } else if(lys.length){ ps.style.display='none'; ps.style.zIndex=''; }
-      else { ps.style.display='flex'; ps.style.zIndex='1'; ps.style.inset='0'; ps.style.left=ps.style.top=ps.style.width=ps.style.height=''; ps.style.opacity=''; }
-    } else ps.style.display='flex';
+      } else ps.style.display='flex';
+    } else { ps.style.display='none'; ps.style.zIndex=''; }
   }
   // Grid positions the timer itself; letting that full-size stage consume pointer input
   // would make image/text scene layers underneath impossible to select or drag.

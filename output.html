@@ -465,8 +465,8 @@ function renderScene(){
 }
 
 // Tajmer kao LEJER scene: prvi vidljivi 'timer' lejer određuje kutiju #stage;
-// scena sa lejerima ali BEZ tajmera = čista media scena (bez tajmera na ekranu);
-// prazna scena (legacy) = tajmer preko celog ekrana. Grid mod pozicionira sam PROZOR pa lejer važi unutar njega.
+// bez vidljivog timer lejera scena ostaje bez tajmera. Legacy Timer scene dobijaju
+// eksplicitan timer lejer tokom migracije u kontroleru.
 let lastStageKey = '';
 function applyTimerLayerStage(){
   const stage = $('stage');
@@ -484,13 +484,9 @@ function applyTimerLayerStage(){
       stage.style.left = x + '%'; stage.style.top = y + '%';
       stage.style.width = w + '%'; stage.style.height = h + '%';
       stage.style.opacity = String(Math.max(0, Math.min(1, Number(tl.opacity ?? 1)))); };
-  } else if (layers.length){
+  } else {
     key = 'none';
     css = () => { stage.style.display = 'none'; stage.style.zIndex = ''; };
-  } else {
-    key = 'full';
-    css = () => { stage.style.display = 'flex'; stage.style.zIndex = '1'; stage.style.inset = '0';
-      stage.style.left = stage.style.top = stage.style.width = stage.style.height = ''; stage.style.opacity = ''; };
   }
   if (key !== lastStageKey){ lastStageKey = key; css(); lastKey=''; }
 }

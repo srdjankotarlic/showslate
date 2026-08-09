@@ -108,9 +108,9 @@ app.whenReady().then(async () => {
     const visible=button.getClientRects().length>0;
     const defaultOpen=document.body.classList.contains('compositor-open');
     if(!defaultOpen) button.click();
-    return {visible,defaultOpen,open:document.body.classList.contains('compositor-open'),advanced:document.body.classList.contains('adv'),previewVisible:document.getElementById('preview').getClientRects().length>0,panelVisible:document.getElementById('panelSources').getClientRects().length>0};
+    return {visible,defaultOpen,open:document.body.classList.contains('compositor-open'),advanced:document.body.classList.contains('adv'),previewVisible:document.getElementById('preview').getClientRects().length>0,panelVisible:document.getElementById('panelSources').getClientRects().length>0,defaultTimerHidden:getComputedStyle(document.getElementById('pvStage')).display==='none'};
   })())`));
-  check('COMPOSITOR_VISIBLE_FROM_NORMAL_UI_OK', opened.visible && opened.open && opened.advanced && opened.previewVisible && opened.panelVisible, JSON.stringify(opened));
+  check('COMPOSITOR_VISIBLE_FROM_NORMAL_UI_OK', opened.visible && opened.open && opened.advanced && opened.previewVisible && opened.panelVisible && opened.defaultTimerHidden, JSON.stringify(opened));
   const sceneControls = JSON.parse(await win.webContents.executeJavaScript(`JSON.stringify((()=>{const ids=['canvasSceneSelect','btnCanvasSceneAdd','btnCanvasSceneDuplicate','btnCanvasSceneDelete'];return {visible:ids.every(id=>document.getElementById(id).getClientRects().length>0),options:document.getElementById('canvasSceneSelect').options.length,duplicateTitle:document.getElementById('btnCanvasSceneDuplicate').title};})())`));
   check('COMPOSITOR_SCENE_CONTROLS_VISIBLE_OK', sceneControls.visible && sceneControls.options >= 1 && sceneControls.duplicateTitle.length > 0, JSON.stringify(sceneControls));
 

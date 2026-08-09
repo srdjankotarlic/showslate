@@ -2622,6 +2622,11 @@ app.whenReady().then(async () => {
         // kompaktan prozor: u PROZORU (ne fullscreen) → prozor se skupi na visinu tajmera
         await controlWin.webContents.executeJavaScript(`(function(){
           S.fitWindow=false; S.gridOn=false; S.transparent=false;
+          S.scenes=[{id:'smoke-fit-scene',name:'Fit timer',layers:[Object.assign(makeTimerLayer(),{
+            id:'smoke-fit-timer',x:0,y:0,w:100,h:45
+          })]}];
+          S.activeSceneId='smoke-fit-scene';
+          renderScenesUI();
           document.getElementById('chkFit').checked=false;
           document.getElementById('chkGrid').checked=false;
           document.getElementById('chkTransparent').checked=false;
@@ -2724,6 +2729,7 @@ app.whenReady().then(async () => {
         let logoOK = false, logoStr = '?';
         try {
           await controlWin.webContents.executeJavaScript(`(function(){
+            if(document.body.classList.contains('compositor-open')) document.getElementById('btnSettingsDrawer').click();
             var tb=document.querySelector('#setupTabs button[data-pane="look"]'); if(tb) tb.click();
             S.logo='data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+/p9sAAAAASUVORK5CYII=';
             S.logoPos='br';
@@ -2964,19 +2970,19 @@ app.whenReady().then(async () => {
             S.scenes=[]; ensureScenes(); renderScenesUI(); send(true);
           })()`);
           await new Promise(r => setTimeout(r, 400));
-          const fullBack = await outputWin.webContents.executeJavaScript(`(function(){
+          const blank = await outputWin.webContents.executeJavaScript(`(function(){
             const st=document.getElementById('stage'); const r=st.getBoundingClientRect();
             return JSON.stringify({d:getComputedStyle(st).display, w:Math.round(r.width/innerWidth*100)});
           })()`);
-          const b = JSON.parse(boxed), fb = JSON.parse(fullBack);
+          const b = JSON.parse(boxed), fb = JSON.parse(blank);
           tlOK = b.d === 'flex' && Math.abs(b.x - 25) <= 2 && Math.abs(b.y - 25) <= 2
             && Math.abs(b.w - 50) <= 2 && Math.abs(b.h - 50) <= 2
-            && hidden === 'none' && fb.d === 'flex' && fb.w >= 98;
-          tlStr = `boxed=${boxed} noTimer=${hidden} default=${fullBack}`;
+            && hidden === 'none' && fb.d === 'none';
+          tlStr = `boxed=${boxed} noTimer=${hidden} default=${blank}`;
         } catch (e) { tlStr = 'ERR ' + e; }
         smokeCheck('TIMER_LAYER_OK', tlOK, tlStr);
-        // SHOW RASPORED (Faza 2): rundown LEVO uvek vidljiv, GO lane u centru, poruka+status DESNO;
-        // izvori/scene su Advanced-only (gasimo Napredno na tren da proverimo gating, pa vraćamo)
+        // SHOW RASPORED: rundown levo, komande i Program u centru, status desno;
+        // Composer se proverava kroz ista vidljiva dugmad koja koristi operater.
         let layoutOK = false, layoutStr = '?';
         try {
           layoutStr = await controlWin.webContents.executeJavaScript(`(function(){
@@ -2991,9 +2997,11 @@ app.whenReady().then(async () => {
             const leftOfStudio = cueL && studio && cueL.getBoundingClientRect().left < studio.getBoundingClientRect().left;
             const srcP=document.getElementById('panelSources');
             const advChk=document.getElementById('chkAdvanced');
+            if(document.body.classList.contains('compositor-open')) document.getElementById('btnCompositor').click();
             advChk.checked=false; advChk.dispatchEvent(new Event('change'));
             const srcHiddenSimple = !srcP || srcP.offsetParent===null;
             advChk.checked=true; advChk.dispatchEvent(new Event('change'));
+            document.getElementById('btnCompositor').click();
             const srcShownAdv = !!srcP && srcP.offsetParent!==null;
             return JSON.stringify({cue:!!cueL && cueL.getBoundingClientRect().height>40, leftOfStudio,
               go:!!goBtn, goNext:!!goNextBtn, msg:!!msg, status:!!status, noRdTab:!rdTab,
@@ -3002,6 +3010,9 @@ app.whenReady().then(async () => {
           const L = JSON.parse(layoutStr);
           layoutOK = L.cue && L.leftOfStudio && L.go && L.goNext && L.msg && L.status && L.noRdTab
             && L.srcHiddenSimple && L.srcShownAdv;
+          await controlWin.webContents.executeJavaScript(`(function(){
+            if(document.body.classList.contains('compositor-open')) setCompositorOpen(false,{scroll:false,persist:false});
+          })()`);
         } catch (e) { layoutStr = 'ERR ' + e; }
         smokeCheck('SHOW_LAYOUT_OK', layoutOK, layoutStr);
         // CANVAS aspekt: 9:16 menja odnos monitora; FADE: sceneFadeMs stiže do izlaza
@@ -4270,6 +4281,12 @@ app.whenReady().then(async () => {
             }
             return full;
           };
+          await setStudioProofSize(1440, 900);
+          await ltJparse(`(function(){
+            if(document.body.classList.contains('compositor-open')) setCompositorOpen(false,{scroll:false,persist:false});
+            closeDrawers();
+            return JSON.stringify({ok:true});
+          })()`);
           await ltJparse(`(function(){
             window.__ltStudioSmokeSnap = {
               S: JSON.stringify(S), cues: JSON.stringify(cues), currentCue, selectedCue,
@@ -5204,6 +5221,7 @@ app.whenReady().then(async () => {
             function setchk(id,v){var c=document.getElementById(id); if(c && c.checked!==v){c.checked=v; c.dispatchEvent(new Event('change'));}}
             // zatvori sve drawer-e pre merenja osnovnog operator ekrana
             ['dr-right','dr-run','dr-setup','tb-open'].forEach(function(cl){document.body.classList.remove(cl);});
+            if(document.body.classList.contains('compositor-open')) setCompositorOpen(false,{scroll:false,persist:false});
             setchk('chkCompact', ${!!opts.compact});
             setchk('chkAdvanced', ${!!opts.advanced});
           })()`);
@@ -5270,7 +5288,7 @@ app.whenReady().then(async () => {
 
         const s900 = await measureAt(900, 600, { advanced:false });
         smokeCheck('FULL_VERTICAL_VISIBILITY_HELPER_OK', s900.probeFalse === true, 'probeFalse=' + s900.probeFalse);
-        smokeCheck('TIMER_FULLY_VISIBLE_900x600_OK', s900.timer.full, JSON.stringify(s900.timer));
+        smokeCheck('PROGRAM_MONITOR_FULLY_VISIBLE_900x600_OK', s900.program.full, JSON.stringify(s900.program));
         smokeCheck('START_FULLY_VISIBLE_900x600_OK', s900.start.full, JSON.stringify(s900.start));
         smokeCheck('GO_FULLY_VISIBLE_900x600_OK', s900.go.full, JSON.stringify(s900.go));
         smokeCheck('LIVE_CUE_VISIBLE_900x600_OK', s900.live.full, JSON.stringify(s900.live));
@@ -5280,11 +5298,11 @@ app.whenReady().then(async () => {
           s900.go.b <= s900.footerTop + 1 && s900.start.b <= s900.footerTop + 1, 'goB=' + s900.go.b + ' footerTop=' + s900.footerTop);
         smokeCheck('BODY_NO_HORIZONTAL_SCROLL_900x600_OK', s900.overflowX <= 2 && s900.bodyScrollX <= 2, 'ovX=' + s900.overflowX + ' bodyX=' + s900.bodyScrollX);
         smokeCheck('BODY_NO_OPERATOR_VERTICAL_SCROLL_900x600_OK', s900.mainScrollY <= 420 && s900.start.full && s900.go.full, 'mainScrollY=' + s900.mainScrollY);
-        smokeCheck('STANDARD_900x600_OK', s900.timer.full && s900.start.full && s900.go.full && s900.overflowX <= 2, 'ovX=' + s900.overflowX);
+        smokeCheck('STANDARD_900x600_OK', s900.program.full && s900.start.full && s900.go.full && s900.overflowX <= 2, 'ovX=' + s900.overflowX);
         try { fs.writeFileSync('/tmp/pts_standard_900x600.png', (await controlWin.webContents.capturePage()).toPNG()); } catch(e){}
 
         const s1024 = await measureAt(1024, 700, { advanced:false });
-        smokeCheck('STANDARD_1024x700_OK', s1024.timer.full && s1024.start.full && s1024.go.found && s1024.overflowX <= 2, 'ovX=' + s1024.overflowX + ' go=' + JSON.stringify(s1024.go));
+        smokeCheck('STANDARD_1024x700_OK', s1024.program.full && s1024.start.full && s1024.go.found && s1024.overflowX <= 2, 'ovX=' + s1024.overflowX + ' go=' + JSON.stringify(s1024.go));
 
         const s1280 = await measureAt(1280, 720, { advanced:true });
         smokeCheck('ADVANCED_1280x720_OK', (s1280.timer.full || s1280.program.full) && s1280.start.full && s1280.go.found && s1280.overflowX <= 2, 'ovX=' + s1280.overflowX);
@@ -5918,7 +5936,7 @@ app.whenReady().then(async () => {
             'vw=' + lv.vw + 'x' + lv.vh + ' outer=' + JSON.stringify(durLV.b) + ' unchanged=' + boundsUnchanged);
           smokeCheck('SMOKE_LARGE_VIEWPORT_NO_FOCUS_OK', durLV.foc === preLV.foc, 'focBefore=' + preLV.foc + ' focDuring=' + durLV.foc);
           smokeCheck('STANDARD_LAYOUT_1920x1080_OK',
-            lv.timer.full && lv.start.full && lv.go.full && lv.overflowX <= 2,
+            lv.program.full && lv.start.full && lv.go.full && lv.overflowX <= 2,
             'ovX=' + lv.overflowX + ' go=' + JSON.stringify(lv.go));
           await measureAt(1280, 800, { advanced:false });   // isključi emulaciju, vrati normalan viewport
         }
