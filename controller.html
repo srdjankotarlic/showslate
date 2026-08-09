@@ -3187,8 +3187,8 @@
   .card-slides{min-height:0; height:100%; display:grid; grid-template-rows:auto auto minmax(0,1fr) auto; padding:0 !important; overflow:hidden !important;}
   .slides-head{display:flex; align-items:center; gap:6px; min-height:46px; padding:10px 11px; border-bottom:1px solid rgba(255,255,255,.08);}
   .slides-head h3{margin:0; font-size:11px; letter-spacing:1px;}
-  .slides-tools{display:grid; grid-template-columns:repeat(5,minmax(0,1fr)); gap:4px; padding:8px; border-bottom:1px solid rgba(255,255,255,.07);}
-  .slides-tools button{min-width:0; min-height:30px; padding:5px 4px; overflow:hidden; text-overflow:ellipsis; font-size:9.5px;}
+  .slides-tools{display:grid; grid-template-columns:1.1fr 1fr 1fr; gap:5px; padding:8px; border-bottom:1px solid rgba(255,255,255,.07);}
+  .slides-tools button{min-width:0; min-height:32px; padding:5px 7px; overflow:hidden; text-overflow:ellipsis; font-size:9.5px; white-space:nowrap;}
   .slides-list{min-height:0; overflow:auto; padding:8px; display:flex; flex-direction:column; gap:6px; scrollbar-gutter:stable;}
   .slide-empty{padding:28px 12px; color:#7f8590; font-size:11.5px; line-height:1.5; text-align:center;}
   .slide-row{
@@ -3203,6 +3203,10 @@
     border-radius:7px;
     background:rgba(255,255,255,.025);
     cursor:pointer;
+    width:100%;
+    color:inherit;
+    font:inherit;
+    text-align:left;
   }
   .slide-row:hover{background:rgba(255,255,255,.05);}
   .slide-row.selected{border-color:#71899e; box-shadow:inset 0 0 0 1px rgba(113,137,158,.18);}
@@ -3211,7 +3215,8 @@
     grid-row:1 / span 2;
     width:70px;
     aspect-ratio:16/9;
-    display:flex;
+    position:relative;
+    display:block;
     align-items:center;
     justify-content:center;
     overflow:hidden;
@@ -3223,7 +3228,11 @@
     font-weight:850;
     letter-spacing:.7px;
   }
-  .slide-thumb img,.slide-thumb video{width:100%; height:100%; object-fit:cover; display:block;}
+  .slide-thumb-checker{position:absolute; inset:0; background-color:#14161a; background-image:linear-gradient(45deg,#202329 25%,transparent 25%),linear-gradient(-45deg,#202329 25%,transparent 25%),linear-gradient(45deg,transparent 75%,#202329 75%),linear-gradient(-45deg,transparent 75%,#202329 75%); background-size:10px 10px; background-position:0 0,0 5px,5px -5px,-5px 0;}
+  .scene-thumb-layer{position:absolute; display:flex; align-items:center; justify-content:center; min-width:1px; min-height:1px; overflow:hidden; transform-origin:50% 50%; color:#dce1e8; font-size:7px; font-weight:800; line-height:1; text-align:center; word-break:break-word;}
+  .scene-thumb-layer img{width:100%; height:100%; display:block;}
+  .scene-thumb-layer.placeholder{border:1px solid rgba(255,255,255,.12); background:#11141a; color:#8f98a5; letter-spacing:.45px;}
+  .scene-thumb-empty{position:absolute; inset:0; display:grid; place-items:center; color:#747c87; font-size:8px; font-weight:850; letter-spacing:.7px;}
   .slide-name{min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-size:12px; font-weight:720;}
   .slide-meta{min-width:0; color:#777e89; font-size:9.5px; text-transform:uppercase; letter-spacing:.55px;}
   .slide-badges{grid-column:3; grid-row:1 / span 2; display:flex; flex-direction:column; gap:4px; align-items:flex-end;}
@@ -3374,18 +3383,15 @@
       <div class="card card-slides" data-testid="slides-panel">
         <div class="slides-head"><h3 data-i18n="slides">SLIDES</h3><span class="grow"></span><span class="slide-meta" id="slidesCount">0</span></div>
         <div class="slides-tools">
-          <button id="btnSlideMedia" class="primary" data-i18n="slideMedia">Media</button>
-          <button id="btnSlideText" data-i18n="slideHolding">Holding</button>
-          <button id="btnSlideLogo" data-i18n="slideLogo">Logo</button>
-          <button id="btnSlideTimer" data-i18n="slideTimer">Timer</button>
-          <button id="btnSlideBlank" data-i18n="slideBlank">Blank</button>
-          <input id="slideMediaFile" type="file" accept="image/*,video/*,application/pdf,.pdf" multiple hidden>
+          <button id="btnSceneLibraryNew" class="primary" data-i18n="newScene">New scene</button>
+          <button id="btnSceneLibraryDuplicate" data-i18n="duplicate">Duplicate</button>
+          <button id="btnSceneLibraryRename" data-i18n="rename">Rename</button>
         </div>
         <div class="slides-list" id="slidesList"></div>
         <div class="slides-foot">
           <div class="slides-selection"><span data-i18n="slideSelected">Selected</span><strong id="slideSelectedName">—</strong></div>
           <div class="slide-deck-nav" id="slideDeckNav"><button id="btnSlidePrev" aria-label="Previous page">‹</button><span class="slide-page" id="slidePage">1</span><button id="btnSlideNext" aria-label="Next page">›</button></div>
-          <div class="slide-actions"><button id="btnSlideTake" class="primary" data-i18n="slideTake">TAKE</button><button id="btnSlideClear" data-i18n="slideClear">CLEAR</button><button id="btnSlideDelete" class="ghost slide-delete" aria-label="Delete">✕</button></div>
+          <div class="slide-actions"><button id="btnSlideTake" class="primary" data-i18n="slideTake">TAKE</button><button id="btnSlideClear" data-i18n="slideClear">CUT</button><button id="btnSlideDelete" class="ghost slide-delete" data-i18n-aria="sceneDelete" aria-label="Delete scene">✕</button></div>
         </div>
       </div>
     </div>
@@ -4171,7 +4177,7 @@ const I18N = {
     outputName:'Naziv', outputDisplay:'Ekran', outputRole:'Uloga', outputRole_audience:'Publika', outputRole_confidence:'Govornik / confidence', outputRole_timer:'Samo tajmer', outputRole_stream:'Stream grafika', outputRole_door:'Agenda na vratima', outputMode:'Režim', outputPlacement:'Pozicija', outputResolution:'Rezolucija', outputCoordinates:'Koordinate', outputGrid:'Grid', outputCell:'Polje', outputEnabled:'Aktivan', outputLiveState:'PRIKAZ POTVRĐEN', outputSyncingState:'SINHRONIZACIJA', outputOffState:'ISKLJUČENO', outputPendingState:'ČEKA PRIMENU', outputUnavailableState:'EKRAN NIJE DOSTUPAN', outputAmbiguousState:'EKRAN NIJE JEDINSTVEN', outputUnavailableDisplay:'Nedostupan ekran', outputNoDestinations:'Nema podešenih izlaza. Dodajte destinaciju za publiku, govornika, stream ili agendu na vratima.', outputRouteApplied:'Usmeravanje je primenjeno.', outputAllStopped:'Svi izlazi su zaustavljeni.', outputRemove:'Ukloni izlaz',
     outputFullscreen:'Ceo ekran', outputWindow:'Prozor', outputCustom:'Tačna veličina', outputGridMode:'Grid polje', outputCenter:'Centar', outputTopLeft:'Gore levo', outputTopRight:'Gore desno', outputBottomLeft:'Dole levo', outputBottomRight:'Dole desno', outputCustomPosition:'X / Y',
     fsTitle:'Pun ekran (F)', closeTitle:'Zatvori izlazni prozor', onTop:'Na vrhu',
-    sources:'Izvori', tabRundown:'Rundown', sceneNamePrompt:'Naziv scene:',
+    sources:'Izvori', tabRundown:'Rundown', sceneNamePrompt:'Naziv scene:', rename:'Preimenuj',
     canvasTitle:'Canvas — odnos stranica platna (i vertikalni ekrani)', fadeTitle:'Trajanje prelaza scene na izlazu', fadeCut:'Cut',
     lockLive:'Zaključaj program', lockTitle:'Štiti živ program: GO, RESET i preskakanje traže otključavanje; poruke i ±vreme rade', enterLiveMode:'Live režim', exitLiveMode:'Izađi iz Live',
     demoShow:'Učitaj konferencijski demo', identify:'Prepoznaj ekrane', identifyTitle:'Na svakom fizičkom ekranu prikaži veliki broj (3s)',
@@ -4225,8 +4231,8 @@ const I18N = {
     preflightEyebrow:'OPERATOR PREFLIGHT', preflightTitle:'Spremnost show-a', preflightRefresh:'Osveži', preflightTestOutputs:'Testiraj izlaze', preflightTestingOutputs:'Čekam potvrde…', preflightContinue:'Nastavi u radni prostor', preflightReady:'Spremno', preflightWarning:'Upozorenje', preflightBlocking:'Blokirano', preflightChecking:'Proveravam',
     preflightSummary:'{ok} prolazi · {warn} upozorenja · {block} blokira',
     preflightCheck_showSaved:'Show je sačuvan', preflightCheck_autosaveWritable:'Autosave je upisiv', preflightCheck_rundownValid:'Rundown je ispravan', preflightCheck_missingAssets:'Svi asseti postoje', preflightCheck_liveInputSources:'Live video izvori', preflightCheck_liveInputAudio:'Live audio ruta', preflightCheck_speakerScreen:'Ekran govornika', preflightCheck_programBrowser:'Program / browser output', preflightCheck_backstage:'Backstage', preflightCheck_phoneRemote:'Telefon daljinski', preflightCheck_apiCompanion:'API / Companion', preflightCheck_soundChime:'Zvuk / chime', preflightCheck_lowerThirdTemplate:'Lower-third template', preflightCheck_displayAssignment:'Dodela ekrana', preflightCheck_outputResolution:'Rezolucija izlaza', preflightCheck_outputAspect:'Odnos stranica Canvas / izlaz', preflightCheck_recoveryStatus:'Recovery stanje', preflightCheck_conferenceMode:'Conference Desk režim', preflightCheck_conferenceAudienceRoute:'Audience izlaz', preflightCheck_conferenceRouteAssignments:'Uloge i dodela ekrana', preflightCheck_conferenceCueActions:'GO akcije po tački', preflightCheck_conferenceMediaMapping:'Povezani mediji', preflightCheck_conferenceOutputDelivery:'Potvrda prikaza izlaza',
-    slides:'SADRŽAJ', slideMedia:'Medija', slideHolding:'Holding', slideLogo:'Logo', slideTimer:'Tajmer', slideBlank:'Prazno', slideSelected:'Izabrano', slideTake:'TAKE', slideClear:'CLEAR', slideEmpty:'Dodajte sliku, video, PDF, holding tekst, logo ili tajmer.', slideNamePrompt:'Naziv sadržaja:', slideHoldingPrompt:'Holding tekst:', slideLogoMissing:'Prvo dodajte logo u brendingu.', slideCount:'{n} stavki', slidePage:'Strana {n}',
-    cueContent:'Vezani sadržaj ekrana', cueContentAuto:'Auto TAKE sadržaja na GO', cueContentNone:'Bez vezanog sadržaja',
+    slides:'SCENE', slideMedia:'Medija', slideHolding:'Holding', slideLogo:'Logo', slideTimer:'Tajmer', slideBlank:'Prazno', slideSelected:'PREVIEW', slideTake:'TAKE', slideClear:'CUT', slideEmpty:'Nema scena.', slideNamePrompt:'Naziv sadržaja:', slideHoldingPrompt:'Holding tekst:', slideLogoMissing:'Prvo dodajte logo u brendingu.', slideCount:'{n} scena', slidePage:'Strana {n}', sceneLayerOne:'1 lejer', sceneLayerCount:'{n} lejera', scenePreviewBadge:'PREVIEW', sceneLiveBadge:'LIVE', sceneSelectPreview:'Pošalji scenu {name} u Preview', sceneDelete:'Obriši scenu', sceneDeleteLive:'Aktivna scena ne može da se obriše',
+    cueContent:'Vezana scena', cueContentAuto:'Auto TAKE scene na GO', cueContentNone:'Bez vezane scene',
     backstageLabel:'Backstage (raspored / crew)', signalLabel:'Signal svetlo (govornica)', onTime:'NA VREME', late:'kasni', early:'ispred',
     apiLabel:'API (Stream Deck / Companion)', apiTitle:'Autorizovani URL za Companion / Stream Deck. Podržava GO, tajmer, poruke, potpise i sadržaj ekrana.',
     nowLabel:'SADA', nextLabel:'SLEDI', endLabel:'Kraj', plannedLabel:'Planirano', projectedLabel:'Procena',
@@ -4270,7 +4276,7 @@ const I18N = {
     outputName:'Name', outputDisplay:'Display', outputRole:'Role', outputRole_audience:'Audience', outputRole_confidence:'Confidence', outputRole_timer:'Timer only', outputRole_stream:'Stream graphics', outputRole_door:'Door agenda', outputMode:'Mode', outputPlacement:'Placement', outputResolution:'Resolution', outputCoordinates:'Coordinates', outputGrid:'Grid', outputCell:'Cell', outputEnabled:'Enabled', outputLiveState:'RENDER CONFIRMED', outputSyncingState:'SYNCING', outputOffState:'OFF', outputPendingState:'PENDING APPLY', outputUnavailableState:'DISPLAY UNAVAILABLE', outputAmbiguousState:'DISPLAY NOT UNIQUE', outputUnavailableDisplay:'Unavailable display', outputNoDestinations:'No outputs configured. Add a destination for the audience, confidence, stream or door agenda.', outputRouteApplied:'Routing applied.', outputAllStopped:'All outputs stopped.', outputRemove:'Remove output',
     outputFullscreen:'Fullscreen', outputWindow:'Window', outputCustom:'Custom size', outputGridMode:'Grid cell', outputCenter:'Center', outputTopLeft:'Top left', outputTopRight:'Top right', outputBottomLeft:'Bottom left', outputBottomRight:'Bottom right', outputCustomPosition:'X / Y',
     fsTitle:'Fullscreen (F)', closeTitle:'Close output window', onTop:'On top',
-    sources:'Sources', tabRundown:'Rundown', sceneNamePrompt:'Scene name:',
+    sources:'Sources', tabRundown:'Rundown', sceneNamePrompt:'Scene name:', rename:'Rename',
     canvasTitle:'Canvas — output aspect ratio (incl. vertical screens)', fadeTitle:'Scene transition duration on outputs', fadeCut:'Cut',
     lockLive:'Lock Live', lockTitle:'Protects the live show: GO, RESET and skip require unlocking; messages and ±time still work', enterLiveMode:'Live Mode', exitLiveMode:'Exit Live',
     demoShow:'Load conference demo', identify:'Identify displays', identifyTitle:'Show a big number on every physical display (3s)',
@@ -4324,8 +4330,8 @@ const I18N = {
     preflightEyebrow:'OPERATOR PREFLIGHT', preflightTitle:'Show readiness', preflightRefresh:'Refresh', preflightTestOutputs:'Test outputs', preflightTestingOutputs:'Waiting for confirmation…', preflightContinue:'Continue to workspace', preflightReady:'Ready', preflightWarning:'Warning', preflightBlocking:'Blocking', preflightChecking:'Checking',
     preflightSummary:'{ok} pass · {warn} warnings · {block} blocking',
     preflightCheck_showSaved:'Show saved', preflightCheck_autosaveWritable:'Autosave writable', preflightCheck_rundownValid:'Rundown valid', preflightCheck_missingAssets:'Assets available', preflightCheck_liveInputSources:'Live video sources', preflightCheck_liveInputAudio:'Live audio route', preflightCheck_speakerScreen:'Speaker screen', preflightCheck_programBrowser:'Program / browser output', preflightCheck_backstage:'Backstage', preflightCheck_phoneRemote:'Phone remote', preflightCheck_apiCompanion:'API / Companion', preflightCheck_soundChime:'Sound / chime', preflightCheck_lowerThirdTemplate:'Lower-third template', preflightCheck_displayAssignment:'Display assignment', preflightCheck_outputResolution:'Output resolution', preflightCheck_outputAspect:'Canvas / output aspect ratio', preflightCheck_recoveryStatus:'Recovery status', preflightCheck_conferenceMode:'Conference Desk mode', preflightCheck_conferenceAudienceRoute:'Audience output', preflightCheck_conferenceRouteAssignments:'Role and display assignments', preflightCheck_conferenceCueActions:'Cue GO actions', preflightCheck_conferenceMediaMapping:'Media mapping', preflightCheck_conferenceOutputDelivery:'Output render confirmation',
-    slides:'CONTENT', slideMedia:'Media', slideHolding:'Holding', slideLogo:'Logo', slideTimer:'Timer', slideBlank:'Blank', slideSelected:'Selected', slideTake:'TAKE', slideClear:'CLEAR', slideEmpty:'Add an image, video, PDF, holding text, logo or timer.', slideNamePrompt:'Content name:', slideHoldingPrompt:'Holding text:', slideLogoMissing:'Add a branding logo first.', slideCount:'{n} items', slidePage:'Page {n}',
-    cueContent:'Linked screen content', cueContentAuto:'Auto TAKE content on GO', cueContentNone:'No linked content',
+    slides:'SCENES', slideMedia:'Media', slideHolding:'Holding', slideLogo:'Logo', slideTimer:'Timer', slideBlank:'Blank', slideSelected:'PREVIEW', slideTake:'TAKE', slideClear:'CUT', slideEmpty:'No scenes.', slideNamePrompt:'Content name:', slideHoldingPrompt:'Holding text:', slideLogoMissing:'Add a branding logo first.', slideCount:'{n} scenes', slidePage:'Page {n}', sceneLayerOne:'1 layer', sceneLayerCount:'{n} layers', scenePreviewBadge:'PREVIEW', sceneLiveBadge:'LIVE', sceneSelectPreview:'Send scene {name} to Preview', sceneDelete:'Delete scene', sceneDeleteLive:'The live scene cannot be deleted',
+    cueContent:'Linked scene', cueContentAuto:'Auto TAKE scene on GO', cueContentNone:'No linked scene',
     backstageLabel:'Backstage (schedule / crew)', signalLabel:'Signal light (podium)', onTime:'ON TIME', late:'behind', early:'ahead',
     apiLabel:'API (Stream Deck / Companion)', apiTitle:'Authenticated Companion / Stream Deck URL for GO, timer, message, lower-third and screen-content actions.',
     nowLabel:'NOW', nextLabel:'NEXT', endLabel:'End', plannedLabel:'Planned', projectedLabel:'Projected',
@@ -6015,12 +6021,17 @@ function normalizeContentWorkflow(raw={}){
     selectedContentItemId:raw.selectedContentItemId??selectedContentItemId,
     liveContentItemId:raw.liveContentItemId??liveContentItemId
   },S.scenes,S.activeSceneId);
-  contentItems=model.items;
-  selectedContentItemId=model.selectedContentItemId;
-  liveContentItemId=model.liveContentItemId;
-  const selected=contentItems.find(item=>item.id===selectedContentItemId);
-  if(selected&&S.scenes.some(scene=>scene.id===selected.sceneId)) S.activeSceneId=selected.sceneId;
-  return model;
+  contentItems=model.items.map(item=>{
+    const scene=S.scenes.find(row=>row.id===item.sceneId);
+    return scene ? {...item,name:scene.name,type:PTSC.sceneType(scene)} : item;
+  });
+  const previewItem=contentItems.find(item=>item.sceneId===S.activeSceneId);
+  selectedContentItemId=previewItem?previewItem.id:model.selectedContentItemId;
+  if(programState){
+    const programItem=contentItems.find(item=>item.sceneId===programState.activeSceneId);
+    liveContentItemId=programItem?programItem.id:'';
+  } else liveContentItemId=model.liveContentItemId;
+  return {items:contentItems,selectedContentItemId,liveContentItemId};
 }
 function contentItemById(id){ return contentItems.find(item=>item.id===String(id||''))||null; }
 function selectedContentItem(){ return contentItemById(selectedContentItemId); }
@@ -6036,20 +6047,16 @@ function selectContentItem(id){
   selectedContentItemId=item.id;
   S.activeSceneId=item.sceneId;
   monitorSceneKeys.pv=''; stageKeys.pv=''; lastKey='';
-  renderContentItems(); renderScenesUI(); saveSettings();
+  if(S.studioDirect){ liveContentItemId=item.id; send(true,{takeContent:true}); }
+  else saveSettings();
+  renderContentItems(); renderScenesUI();
   publishControlStatus();
   return true;
 }
 function takeSelectedContent(kind='transition'){
   const item=selectedContentItem(); if(!item) return false;
   S.activeSceneId=item.sceneId;
-  liveContentItemId=item.id;
-  if(kind==='transition'){
-    $('studio')?.classList.add('taking');
-    setTimeout(()=>$('studio')?.classList.remove('taking'),320);
-  }
-  send(true,{takeContent:true});
-  renderContentItems();
+  takePreview(kind);
   return true;
 }
 function ensureContentClearScene(){
@@ -6120,10 +6127,25 @@ function deleteSelectedContent(){
 }
 function contentThumbnail(row,item){
   const scene=sceneForContent(item);
-  const layer=scene&&(scene.layers||[]).find(value=>['image','video','pdf'].includes(value.type));
-  if(layer&&layer.type==='image'&&layer.src){ const image=document.createElement('img'); image.src=mediaSrc(layer.src); image.alt=''; row.appendChild(image); return; }
-  if(layer&&layer.type==='video'&&layer.src){ const video=document.createElement('video'); video.src=mediaSrc(layer.src); video.muted=true; video.preload='metadata'; row.appendChild(video); return; }
-  row.textContent=String(item.type||'slide').toUpperCase();
+  const checker=document.createElement('span'); checker.className='slide-thumb-checker'; row.appendChild(checker);
+  const layers=(scene&&Array.isArray(scene.layers)?scene.layers:[]).filter(layer=>layer&&layer.visible!==false);
+  if(!layers.length){ const empty=document.createElement('span'); empty.className='scene-thumb-empty'; empty.textContent='EMPTY'; row.appendChild(empty); return; }
+  layers.forEach((layer,index)=>{
+    const node=document.createElement('span');
+    node.className='scene-thumb-layer type-'+layer.type;
+    node.style.left=Number(layer.x||0)+'%'; node.style.top=Number(layer.y||0)+'%';
+    node.style.width=Number(layer.w??100)+'%'; node.style.height=Number(layer.h??100)+'%';
+    node.style.opacity=String(Number(layer.opacity??1)); node.style.zIndex=String(index+1);
+    node.style.transform=`rotate(${Number(layer.rotation||0)}deg)`;
+    if(layer.type==='color') node.style.background=layer.color||layer.bg||'#20242c';
+    else if(layer.type==='image'&&layer.src){
+      const image=document.createElement('img'); image.src=mediaSrc(layer.src); image.alt=''; image.style.objectFit=layer.fit==='contain'?'contain':layer.fit==='fill'?'fill':'cover'; node.appendChild(image);
+    } else if(layer.type==='text'){
+      node.textContent=String(layer.text||'TEXT').slice(0,80); node.style.color=layer.color||'#ffffff'; node.style.fontSize=Math.max(4,Math.min(11,Number(layer.fontSize||7)*.75))+'px';
+    } else if(layer.type==='timer'){ node.textContent='10:00'; node.style.fontSize='11px'; }
+    else { node.classList.add('placeholder'); node.textContent=String(layer.type||'source').toUpperCase(); }
+    row.appendChild(node);
+  });
 }
 function renderContentItems(){
   if(!$('slidesList')) return;
@@ -6131,15 +6153,22 @@ function renderContentItems(){
   const root=$('slidesList'); root.innerHTML='';
   if(!contentItems.length){ const empty=document.createElement('div'); empty.className='slide-empty'; empty.textContent=t('slideEmpty'); root.appendChild(empty); }
   contentItems.forEach(item=>{
-    const row=document.createElement('div');
-    row.className='slide-row'+(item.id===selectedContentItemId?' selected':'')+(item.id===liveContentItemId?' live':'');
+    const scene=sceneForContent(item); if(!scene) return;
+    const preview=scene.id===S.activeSceneId;
+    const live=!!programState&&scene.id===programState.activeSceneId;
+    const row=document.createElement('button'); row.type='button';
+    row.className='slide-row'+(preview?' selected':'')+(live?' live':'');
     row.dataset.contentId=item.id;
+    row.dataset.sceneId=scene.id;
+    row.setAttribute('aria-label',uiText('sceneSelectPreview',{name:scene.name}));
+    row.setAttribute('aria-pressed',preview?'true':'false');
     const thumb=document.createElement('div'); thumb.className='slide-thumb'; contentThumbnail(thumb,item);
-    const name=document.createElement('div'); name.className='slide-name'; name.textContent=item.name;
-    const meta=document.createElement('div'); meta.className='slide-meta'; meta.textContent=item.type+(item.type==='pdf'?' · '+textVars(t('slidePage'),{n:item.page||1}):'');
+    const name=document.createElement('div'); name.className='slide-name'; name.textContent=scene.name;
+    const layerCount=(scene.layers||[]).length;
+    const meta=document.createElement('div'); meta.className='slide-meta'; meta.textContent=layerCount===1?t('sceneLayerOne'):textVars(t('sceneLayerCount'),{n:layerCount});
     const badges=document.createElement('div'); badges.className='slide-badges';
-    if(item.id===liveContentItemId){ const badge=document.createElement('span'); badge.className='slide-badge live'; badge.textContent='LIVE'; badges.appendChild(badge); }
-    if(item.id===selectedContentItemId){ const badge=document.createElement('span'); badge.className='slide-badge selected'; badge.textContent='SELECTED'; badges.appendChild(badge); }
+    if(live){ const badge=document.createElement('span'); badge.className='slide-badge live'; badge.textContent=t('sceneLiveBadge'); badges.appendChild(badge); }
+    if(preview){ const badge=document.createElement('span'); badge.className='slide-badge selected'; badge.textContent=t('scenePreviewBadge'); badges.appendChild(badge); }
     row.append(thumb,name,meta,badges);
     row.addEventListener('click',()=>selectContentItem(item.id));
     root.appendChild(row);
@@ -6150,7 +6179,12 @@ function renderContentItems(){
   $('slideDeckNav').classList.toggle('open',!!selected&&selected.type==='pdf');
   $('slidePage').textContent=selected?textVars(t('slidePage'),{n:selected.page||1}):'—';
   $('btnSlideTake').disabled=!selected;
-  $('btnSlideDelete').disabled=!selected;
+  $('btnSlideClear').disabled=!selected;
+  const selectedIsLive=!!selected&&!!programState&&selected.sceneId===programState.activeSceneId;
+  $('btnSlideDelete').disabled=!selected||selectedIsLive||S.scenes.filter(scene=>!scene.internal).length<=1;
+  $('btnSlideDelete').title=selectedIsLive?t('sceneDeleteLive'):t('sceneDelete');
+  $('btnSceneLibraryDuplicate').disabled=!selected;
+  $('btnSceneLibraryRename').disabled=!selected;
   fillCueContentOptions();
 }
 function setSidebarView(view){
@@ -6164,14 +6198,15 @@ function setSidebarView(view){
 }
 $('btnSidebarRundown')?.addEventListener('click',()=>setSidebarView('rundown'));
 $('btnSidebarSlides')?.addEventListener('click',()=>setSidebarView('slides'));
-$('btnSlideMedia')?.addEventListener('click',()=>$('slideMediaFile').click());
-$('slideMediaFile')?.addEventListener('change',event=>{ addSlideMedia(event.target.files).finally(()=>{event.target.value='';}); });
-$('btnSlideText')?.addEventListener('click',addHoldingContent);
-$('btnSlideLogo')?.addEventListener('click',addLogoContent);
-$('btnSlideTimer')?.addEventListener('click',addTimerContent);
-$('btnSlideBlank')?.addEventListener('click',addBlankContent);
+$('btnSceneLibraryNew')?.addEventListener('click',addScene);
+$('btnSceneLibraryDuplicate')?.addEventListener('click',duplicateScene);
+$('btnSceneLibraryRename')?.addEventListener('click',async()=>{
+  const scene=currentScene(); if(!scene) return;
+  const value=await askText(t('sceneNamePrompt'),scene.name);
+  if(value!==null){ scene.name=value.trim()||scene.name; sceneDirty(); }
+});
 $('btnSlideTake')?.addEventListener('click',()=>takeSelectedContent('transition'));
-$('btnSlideClear')?.addEventListener('click',clearLiveContent);
+$('btnSlideClear')?.addEventListener('click',()=>takeSelectedContent('cut'));
 $('btnSlideDelete')?.addEventListener('click',deleteSelectedContent);
 $('btnSlidePrev')?.addEventListener('click',()=>changeSelectedPdfPage(-1));
 $('btnSlideNext')?.addEventListener('click',()=>changeSelectedPdfPage(1));
@@ -6187,6 +6222,7 @@ function sceneDirty(){
   lastKey='';
   liveInputConfigKey='';
   renderScenesUI();
+  renderContentItems();
   send();
 }
 function moveSceneLayer(layerId,delta){

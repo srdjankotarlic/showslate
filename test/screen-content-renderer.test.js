@@ -82,7 +82,18 @@ app.whenReady().then(async () => {
     const slidesTabVisible=!!slidesTab && slidesTab.getClientRects().length>0;
     if(slidesTabVisible) slidesTab.click();
     renderContentItems();
-    const normalUi=slidesTabVisible && document.getElementById('sidebarSlidesPane').classList.contains('active');
+    const sceneRows=[...document.querySelectorAll('#slidesList .slide-row')];
+    const sceneUi={
+      tab:slidesTab.textContent.trim(),
+      rows:sceneRows.length,
+      thumbnails:sceneRows.filter(row=>row.querySelector('.slide-thumb .scene-thumb-layer')).length,
+      newScene:!!document.getElementById('btnSceneLibraryNew')?.getClientRects().length,
+      duplicate:!!document.getElementById('btnSceneLibraryDuplicate')?.getClientRects().length,
+      rename:!!document.getElementById('btnSceneLibraryRename')?.getClientRects().length,
+      take:document.getElementById('btnSlideTake')?.textContent.trim(),
+      cut:document.getElementById('btnSlideClear')?.textContent.trim()
+    };
+    const normalUi=slidesTabVisible && document.getElementById('sidebarSlidesPane').classList.contains('active') && sceneUi.tab==='SCENES' && sceneUi.rows===3 && sceneUi.thumbnails===3 && sceneUi.newScene && sceneUi.duplicate && sceneUi.rename && sceneUi.take==='TAKE' && sceneUi.cut==='CUT';
     selectContentItem(holding.id);
     const selectedSafe=programState.activeSceneId===timer.sceneId && S.activeSceneId===holding.sceneId && liveContentItemId===timer.id;
     startPause(); startPause();
@@ -94,6 +105,9 @@ app.whenReady().then(async () => {
     const deckLayer=sceneForContent(canonicalDeck).layers.find(layer=>layer.type==='pdf');
     const deckFrame=document.querySelector('#pvScene iframe');
     const pageWorked=canonicalDeck.page===2 && deckLayer.page===2 && !!deckFrame && deckFrame.src.endsWith('#page=2');
+    S.studioDirect=true; selectContentItem(timer.id);
+    const directWorked=programState.activeSceneId===timer.sceneId && liveContentItemId===timer.id;
+    S.studioDirect=false; selectContentItem(deck.id);
     cues=migrateCues([{id:'content-cue',name:'Sponsor segment',durationMs:60000,contentItemId:deck.id,autoTakeContentOnGo:true}]);
     currentCue=-1; selectedCue=0; saveCues(); renderCues();
     goLiveWithCue(0,{autostart:false});
@@ -102,10 +116,11 @@ app.whenReady().then(async () => {
     renderStage('pg',programState,Date.now());
     const clearWorked=liveContentItemId==='' && programState.activeSceneId==='scene-content-clear' && document.getElementById('pgScene').textContent.trim()==='';
     const saved=await flushShowAutosave({reason:'screen-content-test',force:true});
-    return JSON.stringify({normalUi,selectedSafe,timerSafe,takeWorked,pageWorked,goWorked,clearWorked,saved,ids:{timer:timer.id,holding:holding.id,deck:deck.id}});
+    return JSON.stringify({normalUi,sceneUi,selectedSafe,timerSafe,takeWorked,directWorked,pageWorked,goWorked,clearWorked,saved,ids:{timer:timer.id,holding:holding.id,deck:deck.id}});
   })()`));
   check('SCREEN_CONTENT_VISIBLE_IN_STANDARD_UI_OK', state.normalUi, JSON.stringify(state));
   check('SCREEN_CONTENT_SELECT_PREVIEW_ONLY_OK', state.selectedSafe && state.timerSafe, JSON.stringify(state));
+  check('SCREEN_CONTENT_DIRECT_PROGRAM_SCENE_SELECT_OK', state.directWorked, JSON.stringify(state));
   check('SCREEN_CONTENT_TAKE_AND_CLEAR_OK', state.takeWorked && state.clearWorked, JSON.stringify(state));
   check('SCREEN_CONTENT_PDF_DECK_NAV_OK', state.pageWorked, JSON.stringify(state));
   check('SCREEN_CONTENT_CUE_AUTO_TAKE_ON_GO_OK', state.goWorked, JSON.stringify(state));
@@ -113,7 +128,7 @@ app.whenReady().then(async () => {
 
   await new Promise(resolve => setTimeout(resolve, 160));
   fs.mkdirSync(artifactDirectory, { recursive: true });
-  fs.writeFileSync(path.join(artifactDirectory, 'slides-1280x800.png'), (await win.webContents.capturePage()).toPNG());
+  fs.writeFileSync(path.join(artifactDirectory, 'scenes-1280x800.png'), (await win.webContents.capturePage()).toPNG());
   win.setBounds(smokeDisplay.clampToWorkArea({ width: 900, height: 600 }, target.workArea));
   if (!await waitFor(() => win.webContents.executeJavaScript('innerWidth===900 && innerHeight>=560'))) {
     throw new Error('900x600 viewport did not settle');
@@ -123,11 +138,18 @@ app.whenReady().then(async () => {
     const nav=document.getElementById('btnRundownDrawer');
     const slides=document.getElementById('btnSidebarSlides');
     const navAvailable=visible(nav);
-    if(navAvailable && !visible(document.getElementById('primarySidebar'))) nav.click();
+    const sidebar=document.getElementById('primarySidebar');
+    const initialSidebar=sidebar.getBoundingClientRect();
+    const initialStyle=getComputedStyle(sidebar);
+    const initial={left:initialSidebar.left,right:initialSidebar.right,opacity:initialStyle.opacity,pointerEvents:initialStyle.pointerEvents,transform:initialStyle.transform};
+    let navClicked=false;
+    if(navAvailable && (initialSidebar.left<0 || initialSidebar.right>innerWidth || initialStyle.pointerEvents==='none')){ nav.click(); navClicked=true; }
+    const afterNavClass=document.body.className;
     const started=Date.now();
     while(Date.now()-started<1600 && !visible(slides)) await new Promise(resolve=>setTimeout(resolve,25));
     const slidesAvailable=visible(slides);
     if(slidesAvailable) slides.click();
+    const afterSlidesClass=document.body.className;
     const panelElement=document.getElementById('sidebarSlidesPane');
     const settledStarted=Date.now();
     while(Date.now()-settledStarted<1600){
@@ -138,14 +160,21 @@ app.whenReady().then(async () => {
     const panel=panelElement.getBoundingClientRect();
     const foot=document.querySelector('.slides-foot').getBoundingClientRect();
     const tabs=document.querySelector('.sidebar-view-tabs').getBoundingClientRect();
-    return JSON.stringify({navAvailable,slidesAvailable,active:document.getElementById('sidebarSlidesPane').classList.contains('active'),vw:innerWidth,vh:innerHeight,panel:{x:panel.x,y:panel.y,right:panel.right,bottom:panel.bottom},foot:{top:foot.top,bottom:foot.bottom},tabs:{top:tabs.top,bottom:tabs.bottom}});
+    const probeX=Math.max(1,Math.min(innerWidth-1,panel.left+Math.min(20,panel.width/2)));
+    const probeY=Math.max(1,Math.min(innerHeight-1,panel.top+Math.min(80,panel.height/2)));
+    const hit=document.elementFromPoint(probeX,probeY);
+    const exposed=!!hit&&sidebar.contains(hit);
+    const scrimStyle=getComputedStyle(document.getElementById('drawerScrim'));
+    const scrimVisible=scrimStyle.display!=='none'&&scrimStyle.visibility!=='hidden';
+    return JSON.stringify({navAvailable,navClicked,initial,afterNavClass,slidesAvailable,afterSlidesClass,active:document.getElementById('sidebarSlidesPane').classList.contains('active'),exposed,scrimVisible,hit:hit?.id||hit?.className||hit?.tagName||'',bodyClass:document.body.className,sidebarTransform:getComputedStyle(sidebar).transform,vw:innerWidth,vh:innerHeight,panel:{x:panel.x,y:panel.y,right:panel.right,bottom:panel.bottom},foot:{top:foot.top,bottom:foot.bottom},tabs:{top:tabs.top,bottom:tabs.bottom}});
   })()`));
-  check('SCREEN_CONTENT_900X600_REACHABLE_OK', layout.navAvailable && layout.slidesAvailable && layout.active && layout.panel.x >= 0 && layout.panel.right <= layout.vw + 1 && layout.tabs.top >= 0 && layout.foot.bottom <= layout.vh + 1, JSON.stringify(layout));
-  fs.writeFileSync(path.join(artifactDirectory, 'slides-900x600.png'), (await win.webContents.capturePage()).toPNG());
+  check('SCREEN_CONTENT_900X600_REACHABLE_OK', layout.navAvailable && layout.slidesAvailable && layout.active && layout.exposed && layout.scrimVisible && layout.panel.x >= 0 && layout.panel.right <= layout.vw + 1 && layout.tabs.top >= 0 && layout.foot.bottom <= layout.vh + 1, JSON.stringify(layout));
+  await new Promise(resolve => setTimeout(resolve, 220));
+  fs.writeFileSync(path.join(artifactDirectory, 'scenes-900x600.png'), (await win.webContents.capturePage()).toPNG());
 
   const disk = await repository.loadCurrent();
   check('SCREEN_CONTENT_FILE_ROUNDTRIP_OK', disk.ok && disk.document.show.screenContent.items.length === 3 && disk.document.show.rundown[0].autoTakeContentOnGo === true && disk.document.show.rundown[0].contentItemId === state.ids.deck);
-  console.log('SCREEN_CONTENT_RENDERER_TESTS_OK ' + checks + '/9');
+  console.log('SCREEN_CONTENT_RENDERER_TESTS_OK ' + checks + '/10');
   win.destroy();
   fs.rmSync(profile, { recursive: true, force: true });
   app.quit();

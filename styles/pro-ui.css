@@ -1927,6 +1927,12 @@ kbd {
     pointer-events: auto !important;
     transform: none !important;
   }
+
+  body:not(.compact).dr-run .shell-layout .drawer-scrim {
+    display: block !important;
+    top: 64px !important;
+    bottom: 32px !important;
+  }
 }
 
 @media (max-width: 980px) {
