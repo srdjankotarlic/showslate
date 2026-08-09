@@ -96,6 +96,9 @@ app.whenReady().then(async () => {
     const normalUi=slidesTabVisible && document.getElementById('sidebarSlidesPane').classList.contains('active') && sceneUi.tab==='SCENES' && sceneUi.rows===3 && sceneUi.thumbnails===3 && sceneUi.newScene && sceneUi.duplicate && sceneUi.rename && sceneUi.take==='TAKE' && sceneUi.cut==='CUT';
     selectContentItem(holding.id);
     const selectedSafe=programState.activeSceneId===timer.sceneId && S.activeSceneId===holding.sceneId && liveContentItemId===timer.id;
+    await new Promise(resolve=>setTimeout(resolve,120));
+    const previewText=document.querySelector('#pvScene .pv-scene-text');
+    const previewRendered=!!previewText && previewText.textContent==='WELCOME' && getComputedStyle(previewText).display!=='none' && getComputedStyle(document.getElementById('pvStage')).display==='none';
     startPause(); startPause();
     const timerSafe=programState.activeSceneId===timer.sceneId && liveContentItemId===timer.id;
     takeSelectedContent('cut');
@@ -116,10 +119,24 @@ app.whenReady().then(async () => {
     renderStage('pg',programState,Date.now());
     const clearWorked=liveContentItemId==='' && programState.activeSceneId==='scene-content-clear' && document.getElementById('pgScene').textContent.trim()==='';
     const saved=await flushShowAutosave({reason:'screen-content-test',force:true});
-    return JSON.stringify({normalUi,sceneUi,selectedSafe,timerSafe,takeWorked,directWorked,pageWorked,goWorked,clearWorked,saved,ids:{timer:timer.id,holding:holding.id,deck:deck.id}});
+    return JSON.stringify({normalUi,sceneUi,selectedSafe,previewRendered,timerSafe,takeWorked,directWorked,pageWorked,goWorked,clearWorked,saved,ids:{timer:timer.id,holding:holding.id,deck:deck.id}});
   })()`));
+  win.webContents.reload();
+  const reloadReady = await waitFor(() => win.webContents.executeJavaScript('showAutosaveReady===true && lastDisplays.length>0'));
+  const reloadState = reloadReady ? JSON.parse(await win.webContents.executeJavaScript(`(async()=>{
+    const item=contentItemById(${JSON.stringify(state.ids.holding)});
+    if(!item) return JSON.stringify({item:false,previewRendered:false});
+    selectContentItem(item.id);
+    await new Promise(resolve=>setTimeout(resolve,120));
+    const previewText=document.querySelector('#pvScene .pv-scene-text');
+    return JSON.stringify({
+      item:true,
+      previewRendered:!!previewText && previewText.textContent==='WELCOME' && getComputedStyle(previewText).display!=='none' && getComputedStyle(document.getElementById('pvStage')).display==='none'
+    });
+  })()`)) : {item:false,previewRendered:false};
   check('SCREEN_CONTENT_VISIBLE_IN_STANDARD_UI_OK', state.normalUi, JSON.stringify(state));
   check('SCREEN_CONTENT_SELECT_PREVIEW_ONLY_OK', state.selectedSafe && state.timerSafe, JSON.stringify(state));
+  check('SCREEN_CONTENT_SCENE_CARD_RENDERS_PREVIEW_OK', state.previewRendered && reloadReady && reloadState.previewRendered, JSON.stringify({state,reloadReady,reloadState}));
   check('SCREEN_CONTENT_DIRECT_PROGRAM_SCENE_SELECT_OK', state.directWorked, JSON.stringify(state));
   check('SCREEN_CONTENT_TAKE_AND_CLEAR_OK', state.takeWorked && state.clearWorked, JSON.stringify(state));
   check('SCREEN_CONTENT_PDF_DECK_NAV_OK', state.pageWorked, JSON.stringify(state));
@@ -174,7 +191,7 @@ app.whenReady().then(async () => {
 
   const disk = await repository.loadCurrent();
   check('SCREEN_CONTENT_FILE_ROUNDTRIP_OK', disk.ok && disk.document.show.screenContent.items.length === 3 && disk.document.show.rundown[0].autoTakeContentOnGo === true && disk.document.show.rundown[0].contentItemId === state.ids.deck);
-  console.log('SCREEN_CONTENT_RENDERER_TESTS_OK ' + checks + '/10');
+  console.log('SCREEN_CONTENT_RENDERER_TESTS_OK ' + checks + '/11');
   win.destroy();
   fs.rmSync(profile, { recursive: true, force: true });
   app.quit();

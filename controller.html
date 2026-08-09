@@ -4783,6 +4783,7 @@ function calc(now, st=S){
 }
 let lastKey='', lastSchedFire=0, lastPreviewGridKey='', stageKeys={pv:'',pg:''}, monitorSceneKeys={pv:'',pg:''};
 let selectedLayerId=null;   // izabrani izvor (OBS-stil manipulacija u Preview-u)
+let inspBinding=false;
 let liveInputConfigKey=JSON.stringify([]), liveInputConfigurePending=false;
 function liveInputDefinition(id){ return (S.liveInputs||[]).find(row=>row.id===String(id||''))||null; }
 function liveInputStatus(id){ return liveInputStatuses.get(String(id||''))||{inputId:String(id||''),state:'idle'}; }
@@ -9531,7 +9532,6 @@ function selectedLayer(){
   const sc=currentScene();
   return (sc.layers||[]).find(l=>l.id===selectedLayerId) || null;
 }
-let inspBinding=false;
 function renderInspector(){
   const box=$('inspector'); if(!box) return;
   const L=selectedLayer();
