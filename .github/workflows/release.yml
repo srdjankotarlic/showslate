@@ -1,4 +1,4 @@
-name: Build Conference Desk beta packages
+name: Build ShowSlate beta packages
 
 on:
   workflow_dispatch:
@@ -124,11 +124,13 @@ jobs:
           windows_setup="$(find release-assets -maxdepth 1 -name 'ShowSlate-Setup-*.exe' -print -quit)"
           windows_portable="$(find release-assets -maxdepth 1 -name 'ShowSlate-*-portable.exe' -print -quit)"
           checksums="release-assets/SHA256SUMS.txt"
+          notes_file="docs/RELEASE-NOTES-${GITHUB_REF_NAME#v}.md"
 
           test -n "$mac_asset"
           test -n "$windows_setup"
           test -n "$windows_portable"
           test -f "$checksums"
+          test -f "$notes_file"
 
           gh release create "${GITHUB_REF_NAME}" \
             "${mac_asset}#macOS Apple Silicon installer (recommended)" \
@@ -138,5 +140,5 @@ jobs:
             --repo "${GITHUB_REPOSITORY}" \
             --prerelease \
             --verify-tag \
-            --title "ShowSlate Conference Desk ${GITHUB_REF_NAME}" \
-            --generate-notes
+            --title "ShowSlate ${GITHUB_REF_NAME}" \
+            --notes-file "$notes_file"

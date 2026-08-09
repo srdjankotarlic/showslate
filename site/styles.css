@@ -32,7 +32,7 @@ button,a,summary{outline-offset:4px}
 .site-header nav a:hover,.footer-layout nav a:hover{color:var(--text)}
 .nav-download{padding:8px 14px;border-radius:6px;background:var(--green);color:#07110a!important;font-weight:750}
 
-.hero{position:relative;min-height:min(680px,calc(100svh - 112px));display:flex;align-items:flex-end;background:url("assets/conference-desk-workspace.png") center 24%/cover no-repeat;border-bottom:1px solid var(--line);isolation:isolate}
+.hero{position:relative;min-height:min(680px,calc(100svh - 112px));display:flex;align-items:flex-end;background:url("assets/live-compositor-workspace.png") center 24%/cover no-repeat;border-bottom:1px solid var(--line);isolation:isolate}
 .hero-shade{position:absolute;inset:0;z-index:-1;background:rgba(3,6,9,.55)}
 .hero-content{width:min(var(--max),calc(100% - 36px));margin:0 auto;padding:110px 0 62px}
 .eyebrow{margin:0 0 12px;color:#91cfa2;font-size:12px;font-weight:800;text-transform:uppercase}

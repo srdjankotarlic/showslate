@@ -22,6 +22,7 @@ for (const name of ['.showslate-smoke-display.json', '.protimer-smoke-display.js
 
 const smokeArgs = ['--smoke'];
 if (argv.includes('--output-routing-only')) smokeArgs.push('--output-routing-only');
+if (argv.includes('--live-input-only')) smokeArgs.push('--live-input-only');
 const smokeProfileDir = fs.mkdtempSync(path.join(os.tmpdir(), 'showslate-smoke-'));
 const artifactDir = path.join(root, 'artifacts', 'generated', packaged ? 'packaged' : 'source');
 fs.mkdirSync(artifactDir, { recursive: true });

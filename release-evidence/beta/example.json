@@ -1,0 +1,142 @@
+{
+  "schemaVersion": 1,
+  "releaseTag": "v0.11.0-beta.1",
+  "testedCommit": "REPLACE_WITH_FULL_40_CHARACTER_TESTED_COMMIT",
+  "candidateRunId": 0,
+  "verifiedAt": "REPLACE_WITH_UTC_TIMESTAMP",
+  "candidateArtifacts": {
+    "ShowSlate-0.11.0-beta.1-arm64.dmg": "REPLACE_WITH_SHA256",
+    "ShowSlate-Setup-0.11.0-beta.1.exe": "REPLACE_WITH_SHA256",
+    "ShowSlate-0.11.0-beta.1-portable.exe": "REPLACE_WITH_SHA256"
+  },
+  "gates": {
+    "sourceDisplaySmoke": {
+      "passed": false,
+      "completedAt": "REPLACE_WITH_UTC_TIMESTAMP",
+      "display": "REPLACE_WITH_EXACT_TEST_DISPLAY",
+      "evidence": "REPLACE_WITH_EVIDENCE_PATH_OR_URL"
+    },
+    "packagedDisplaySmoke": {
+      "passed": false,
+      "completedAt": "REPLACE_WITH_UTC_TIMESTAMP",
+      "display": "REPLACE_WITH_EXACT_TEST_DISPLAY",
+      "evidence": "REPLACE_WITH_EVIDENCE_PATH_OR_URL"
+    },
+    "macCleanInstall": {
+      "passed": false,
+      "completedAt": "REPLACE_WITH_UTC_TIMESTAMP",
+      "evidence": "REPLACE_WITH_EVIDENCE_PATH_OR_URL",
+      "os": "REPLACE_WITH_MACOS_VERSION",
+      "hardware": "REPLACE_WITH_MAC_AND_DISPLAY_SETUP",
+      "artifact": "ShowSlate-0.11.0-beta.1-arm64.dmg",
+      "checks": { "install": false, "launch": false, "permissions": false, "multiDisplay": false, "quit": false }
+    },
+    "windowsCleanInstall": {
+      "passed": false,
+      "completedAt": "REPLACE_WITH_UTC_TIMESTAMP",
+      "evidence": "REPLACE_WITH_EVIDENCE_PATH_OR_URL",
+      "os": "REPLACE_WITH_WINDOWS_VERSION",
+      "hardware": "REPLACE_WITH_PC_AND_DISPLAY_SETUP",
+      "artifacts": [
+        "ShowSlate-Setup-0.11.0-beta.1.exe",
+        "ShowSlate-0.11.0-beta.1-portable.exe"
+      ],
+      "checks": { "installer": false, "portable": false, "launch": false, "permissions": false, "multiDisplay": false, "uninstall": false }
+    },
+    "imageColorVideoCanvas": {
+      "passed": false,
+      "completedAt": "REPLACE_WITH_UTC_TIMESTAMP",
+      "evidence": "REPLACE_WITH_EVIDENCE_PATH_OR_URL",
+      "assets": "REPLACE_WITH_TESTED_IMAGE_VIDEO_AND_AUDIO_FIXTURES",
+      "checks": { "image": false, "color": false, "video": false, "videoAudio": false, "layering": false }
+    },
+    "windowCapture": {
+      "passed": false,
+      "completedAt": "REPLACE_WITH_UTC_TIMESTAMP",
+      "evidence": "REPLACE_WITH_EVIDENCE_PATH_OR_URL",
+      "platform": "REPLACE_WITH_OS_AND_APP_VERSION",
+      "source": "REPLACE_WITH_CAPTURED_WINDOW",
+      "checks": { "preview": false, "take": false, "program": false, "reconnect": false }
+    },
+    "displayCapture": {
+      "passed": false,
+      "completedAt": "REPLACE_WITH_UTC_TIMESTAMP",
+      "evidence": "REPLACE_WITH_EVIDENCE_PATH_OR_URL",
+      "platform": "REPLACE_WITH_OS_AND_APP_VERSION",
+      "source": "REPLACE_WITH_CAPTURED_DISPLAY",
+      "checks": { "preview": false, "take": false, "program": false, "reconnect": false }
+    },
+    "cameraCapture": {
+      "passed": false,
+      "completedAt": "REPLACE_WITH_UTC_TIMESTAMP",
+      "evidence": "REPLACE_WITH_EVIDENCE_PATH_OR_URL",
+      "device": "REPLACE_WITH_CAMERA_MODEL",
+      "format": "REPLACE_WITH_TESTED_RESOLUTION_AND_FPS",
+      "checks": { "preview": false, "take": false, "program": false, "reconnect": false }
+    },
+    "captureCardVideo": {
+      "passed": false,
+      "completedAt": "REPLACE_WITH_UTC_TIMESTAMP",
+      "evidence": "REPLACE_WITH_EVIDENCE_PATH_OR_URL",
+      "device": "REPLACE_WITH_CAPTURE_CARD_AND_SOURCE",
+      "format": "REPLACE_WITH_TESTED_RESOLUTION_AND_FPS",
+      "checks": { "preview": false, "take": false, "program": false, "resolution": false, "reconnect": false }
+    },
+    "captureCardAudio": {
+      "passed": false,
+      "completedAt": "REPLACE_WITH_UTC_TIMESTAMP",
+      "evidence": "REPLACE_WITH_EVIDENCE_PATH_OR_URL",
+      "device": "REPLACE_WITH_CAPTURE_CARD_AND_SOURCE",
+      "audioDevice": "REPLACE_WITH_SELECTED_AUDIO_INPUT",
+      "checks": { "programAudible": false, "previewMuted": false, "stopCleanup": false }
+    },
+    "previewMuted": {
+      "passed": false,
+      "completedAt": "REPLACE_WITH_UTC_TIMESTAMP",
+      "evidence": "REPLACE_WITH_EVIDENCE_PATH_OR_URL",
+      "scenario": "REPLACE_WITH_MONITORED_AUDIO_ROUTE_AND_METHOD",
+      "checks": { "videoFile": false, "window": false, "display": false, "camera": false, "captureCard": false }
+    },
+    "oneProgramAudioRoute": {
+      "passed": false,
+      "completedAt": "REPLACE_WITH_UTC_TIMESTAMP",
+      "evidence": "REPLACE_WITH_EVIDENCE_PATH_OR_URL",
+      "scenario": "REPLACE_WITH_TWO_OUTPUT_AUDIO_ROUTE_TEST",
+      "checks": { "singleRouteAudible": false, "secondRouteBlocked": false, "cleanup": false }
+    },
+    "previewTakeIsolation": {
+      "passed": false,
+      "completedAt": "REPLACE_WITH_UTC_TIMESTAMP",
+      "evidence": "REPLACE_WITH_EVIDENCE_PATH_OR_URL",
+      "scenario": "REPLACE_WITH_PREVIEW_TAKE_HIDE_SEQUENCE",
+      "checks": { "previewOnlyNoLiveChange": false, "takeMatchesPreview": false, "hideStopsMedia": false }
+    },
+    "resizeAndPersistence": {
+      "passed": false,
+      "completedAt": "REPLACE_WITH_UTC_TIMESTAMP",
+      "evidence": "REPLACE_WITH_EVIDENCE_PATH_OR_URL",
+      "viewports": "REPLACE_WITH_TESTED_WINDOW_SIZES",
+      "checks": { "resize": false, "dragResize": false, "saveReopen": false }
+    },
+    "outputRouting": {
+      "passed": false,
+      "completedAt": "REPLACE_WITH_UTC_TIMESTAMP",
+      "evidence": "REPLACE_WITH_EVIDENCE_PATH_OR_URL",
+      "displays": "REPLACE_WITH_EXACT_TESTED_DISPLAY_CHAIN",
+      "checks": { "fullscreen": false, "window": false, "custom": false, "multiOutput": false, "missingDisplaySafe": false }
+    },
+    "releaseDocsReview": {
+      "passed": false,
+      "completedAt": "REPLACE_WITH_UTC_TIMESTAMP",
+      "evidence": "REPLACE_WITH_EVIDENCE_PATH_OR_URL",
+      "files": [
+        "README.md",
+        "docs/KNOWN-LIMITATIONS.md",
+        "docs/SYSTEM-REQUIREMENTS.md",
+        "docs/PRIVACY.md",
+        "docs/PUBLIC-BETA-VERIFICATION.md",
+        "docs/BETA-ADOPTION.md"
+      ]
+    }
+  }
+}

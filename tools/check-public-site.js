@@ -8,11 +8,11 @@ const siteDir = path.join(root, 'site');
 const indexPath = path.join(siteDir, 'index.html');
 const html = fs.readFileSync(indexPath, 'utf8');
 const readme = fs.readFileSync(path.join(root, 'README.md'), 'utf8');
-const releaseNotes = fs.readFileSync(path.join(root, 'docs', 'RELEASE-NOTES-0.10.0-beta.1.md'), 'utf8');
+const releaseNotes = fs.readFileSync(path.join(root, 'docs', 'RELEASE-NOTES-0.11.0-beta.1.md'), 'utf8');
 const failures = [];
 
-const macInstallerUrl = 'https://github.com/srdjankotarlic/showslate/releases/download/v0.10.0-beta.1/ShowSlate-0.10.0-beta.1-arm64.dmg';
-const windowsInstallerUrl = 'https://github.com/srdjankotarlic/showslate/releases/download/v0.10.0-beta.1/ShowSlate-Setup-0.10.0-beta.1.exe';
+const macInstallerUrl = 'https://github.com/srdjankotarlic/showslate/releases/download/v0.11.0-beta.1/ShowSlate-0.11.0-beta.1-arm64.dmg';
+const windowsInstallerUrl = 'https://github.com/srdjankotarlic/showslate/releases/download/v0.11.0-beta.1/ShowSlate-Setup-0.11.0-beta.1.exe';
 
 const requiredSnippets = [
   '<meta name="google-site-verification"',
@@ -21,14 +21,17 @@ const requiredSnippets = [
   '<meta name="twitter:card" content="summary_large_image">',
   '"@type": "SoftwareApplication"',
   '"@type": "FAQPage"',
-  'https://github.com/srdjankotarlic/showslate/releases/tag/v0.10.0-beta.1',
+  'https://github.com/srdjankotarlic/showslate/releases/tag/v0.11.0-beta.1',
   'https://github.com/srdjankotarlic/showslate/discussions',
   macInstallerUrl,
   windowsInstallerUrl,
   'https://srdjankotarlic.github.io/protimer/',
-  'ShowSlate Conference Desk',
+  'ShowSlate Live Compositor',
   'Stream Graphics',
   'Door Agenda',
+  'Custom Canvas',
+  'Window capture',
+  'Capture devices',
   "GitHub's automatic <code>Source code</code>",
 ];
 

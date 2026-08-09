@@ -1,6 +1,6 @@
 # Support
 
-ShowSlate Conference Desk is a community-supported public beta.
+ShowSlate is a community-supported public beta.
 
 - Use the bug-report form for reproducible software defects.
 - Use Discussions for show-folder setup, output-role questions and conference workflow feedback.

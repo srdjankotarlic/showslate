@@ -104,6 +104,9 @@ function collectWarnings(document) {
       warnings.add('Fonts are referenced by name and must be installed on the destination computer.');
     }
   }));
+  const liveInputs = document.show && document.show.screenContent && Array.isArray(document.show.screenContent.liveInputs)
+    ? document.show.screenContent.liveInputs : [];
+  if (liveInputs.length) warnings.add('Live windows and capture devices are linked to this computer and may need to be selected again after import.');
   return [...warnings];
 }
 

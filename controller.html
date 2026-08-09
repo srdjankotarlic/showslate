@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' http://127.0.0.1:* data: blob:; media-src 'self' http://127.0.0.1:* data: blob:; frame-src 'self' http://127.0.0.1:* data: blob:">
-<title>ShowSlate Conference Desk — Control</title>
+<title>ShowSlate — Live Compositor</title>
 <link rel="stylesheet" href="styles/operator-shell.css">
 <style>
   :root{
@@ -845,7 +845,7 @@
   .pv-scene-layer.fit-contain img,.pv-scene-layer.fit-contain video,.pv-scene-layer.fit-contain iframe{object-fit:contain;}
   .pv-scene-layer.fit-fill img,.pv-scene-layer.fit-fill video{object-fit:fill;}
   .pv-scene-text{width:100%; height:100%; display:flex; align-items:center; justify-content:center; text-align:center;
-    padding:14px; color:#fff; font-weight:800; line-height:1.05; white-space:pre-wrap; word-break:break-word;}
+    padding:6px; color:#fff; font-weight:800; line-height:1.05; white-space:pre-wrap; word-break:break-word;}
   .pv-stage,.pv-lower-third,.pv-msg,.pv-prog,.pv-blackout{z-index:2;}
   .pv-blackout{position:absolute;}
 
@@ -3260,12 +3260,13 @@
   @media (max-width:1080px){.conference-live-button{min-width:84px; max-width:96px; overflow:hidden; white-space:nowrap;}}
 </style>
 <link rel="stylesheet" href="styles/pro-ui.css">
+<link rel="stylesheet" href="styles/compositor.css">
 </head>
 <body>
 <div id="app-shell" class="mode-standard shell-layout">
 
 <div class="topbar app-header">
-  <div class="brand"><img class="brand-mark" src="build/icon.png" alt=""><span>ShowSlate</span><span class="probadge">CONFERENCE DESK</span></div>
+  <div class="brand"><img class="brand-mark" src="build/icon.png" alt=""><span>ShowSlate</span><span class="probadge">LIVE COMPOSITOR</span></div>
   <button id="btnRundownDrawer" class="ghost tb-drawerbtn sidebar-toggle" type="button"
     aria-label="Toggle navigation sidebar" aria-controls="primarySidebar" aria-expanded="true"
     data-i18n-title="sidebarToggle" title="Show or hide navigation">
@@ -3282,7 +3283,10 @@
     </svg>
     <span class="tb-badge" id="msgBadge"></span>
   </button>
-  <button id="btnSettingsDrawer" class="ghost tb-drawerbtn" aria-label="Podešavanja" data-i18n="settingsBtn" title="Podešavanja">Podešavanja</button>
+  <div class="workspace-nav" role="group" aria-label="Workspace">
+    <button id="btnCompositor" class="ghost tb-drawerbtn compositor-button" type="button" aria-controls="panelSources" aria-expanded="false" data-i18n="compositorButton">Composer</button>
+    <button id="btnSettingsDrawer" class="ghost tb-drawerbtn" aria-label="Podešavanja" data-i18n="settingsBtn" title="Podešavanja">Podešavanja</button>
+  </div>
   <div class="legacy-output-picker" aria-hidden="true">
     <span class="lbl tb-outlabel" data-i18n="outLabel">Izlaz na</span>
     <span data-i18n="sendScreen">Pošalji na ekran</span>
@@ -3427,7 +3431,7 @@
         <div class="monitor-head">
           <span class="monitor-title" data-i18n="studioProgram">Program</span>
           <span class="monitor-chip on" id="bdgOut">EKRAN</span>
-          <span class="monitor-chip" id="bdgBk">BLACKOUT</span>
+          <button type="button" class="monitor-chip monitor-blackout" id="bdgBk" data-testid="program-blackout-button" data-i18n-title="programBlackoutTitle" title="Toggle Program blackout">BLACKOUT</button>
         </div>
         <div class="preview monitor-screen program-screen" id="program" data-testid="program-monitor">
           <div class="pv-checker" id="pgChecker"></div>
@@ -3452,31 +3456,19 @@
       </div>
     </div>
 
-    <div class="transport">
-      <button id="btnStart" class="primary" data-testid="start-pause-button">START</button>
-      <button id="btnReset">RESET</button>
-      <div class="adjust">
-        <button data-adj="-300">−5m</button>
-        <button data-adj="-60">−1m</button>
-        <button data-adj="-10">−10s</button>
-        <button data-adj="10">+10s</button>
-        <button data-adj="60">+1m</button>
-        <button data-adj="300">+5m</button>
+    <div class="show-command-strip" data-testid="show-command-strip">
+      <div class="golane">
+        <div class="liveinfo" id="liveInfo">
+          <span class="li-chip li-live" data-i18n="liveLabel">U PROGRAMU</span>
+          <span class="li-name" id="liName" data-testid="live-cue">—</span>
+          <span class="li-sep">·</span>
+          <span class="li-chip li-next" data-i18n="badgeNext">SLEDI</span>
+          <span class="li-name li-dim" id="liNext" data-testid="next-cue">—</span>
+        </div>
+        <button id="btnGo" class="primary" style="font-weight:800" data-testid="go-next-button" data-i18n-html="goNext">GO SLEDEĆI &nbsp;(N)</button>
+        <button id="btnGoNext" class="secondary-next-row" data-i18n="goNextOnly" data-i18n-title="goNextOnlyTitle" title="Ide na sledeći red u rundown-u, bez obzira na izabrani red.">SLEDEĆI RED</button>
+        <label class="chk locklive" data-testid="lock-live" data-i18n-title="lockTitle" title="Štiti živ program: GO, RESET i preskakanje traže otključavanje; poruke i ±vreme rade"><input type="checkbox" id="chkLock"> <span data-i18n="lockLive">Zaključaj program</span></label>
       </div>
-      <button id="btnBlackout">BLACKOUT</button>
-    </div>
-
-    <div class="golane">
-      <div class="liveinfo" id="liveInfo">
-        <span class="li-chip li-live" data-i18n="liveLabel">U PROGRAMU</span>
-        <span class="li-name" id="liName" data-testid="live-cue">—</span>
-        <span class="li-sep">·</span>
-        <span class="li-chip li-next" data-i18n="badgeNext">SLEDI</span>
-        <span class="li-name li-dim" id="liNext" data-testid="next-cue">—</span>
-      </div>
-      <button id="btnGo" class="primary" style="font-weight:800" data-testid="go-next-button" data-i18n-html="goNext">GO SLEDEĆI &nbsp;(N)</button>
-      <button id="btnGoNext" class="secondary-next-row" data-i18n="goNextOnly" data-i18n-title="goNextOnlyTitle" title="Ide na sledeći red u rundown-u, bez obzira na izabrani red.">SLEDEĆI RED</button>
-      <label class="chk locklive" data-testid="lock-live" data-i18n-title="lockTitle" title="Štiti živ program: GO, RESET i preskakanje traže otključavanje; poruke i ±vreme rade"><input type="checkbox" id="chkLock"> <span data-i18n="lockLive">Zaključaj program</span></label>
     </div>
 
     <!-- compact operater: poruka govorniku inline (samo u compact modu) -->
@@ -3486,49 +3478,77 @@
       <span class="cstat" id="compactStat" data-i18n-title="stStage" title="Ekran govornika"><span class="dot" id="stStageC"></span></span>
     </div>
 
-    <div class="panel panel-sources" id="panelSources">
-      <div class="field field-tight">
-        <span class="glabel" data-i18n="sources">Izvori</span>
-        <span class="src-scene-name" id="srcSceneName">—</span>
-        <div class="grow"></div>
-        <button id="btnLayerMedia" class="primary" data-i18n="addMedia">Add media</button>
-        <input type="file" id="sceneMediaFile" accept="image/*,video/*,application/pdf,.pdf" multiple style="display:none">
-        <button id="btnLayerText" data-i18n="addText">Text</button>
-        <button id="btnLayerTimer" data-i18n="addTimer">Tajmer</button>
+    <div class="panel panel-sources" id="panelSources" data-testid="compositor-panel">
+      <div class="compositor-head">
+        <div class="compositor-title">
+          <div class="compositor-title-copy"><span data-i18n="compositorEyebrow">Scene compositor</span></div>
+          <label class="compositor-scene-select"><span data-i18n="canvasScene">Scene</span><select id="canvasSceneSelect" aria-label="Scene"></select></label>
+          <div class="compositor-scene-actions">
+            <button id="btnCanvasSceneAdd" class="ghost mini" type="button" data-i18n-title="newScene" title="New scene" aria-label="New scene">+</button>
+            <button id="btnCanvasSceneDuplicate" class="ghost mini" type="button" data-i18n-title="duplicate" title="Duplicate" aria-label="Duplicate scene">⧉</button>
+            <button id="btnCanvasSceneDelete" class="ghost mini danger" type="button" data-i18n-title="delete" title="Delete" aria-label="Delete scene">✕</button>
+          </div>
+        </div>
+        <div class="canvas-controls" aria-label="Canvas settings">
+          <label><span data-i18n="canvasPreset">Preset</span><select id="canvasPresetSel"><option value="1080p">HD 1080p</option><option value="720p">HD 720p</option><option value="vertical">Vertical 1080</option><option value="square">Square 1080</option><option value="uhd">UHD 4K</option><option value="custom" data-i18n="canvasCustom">Custom</option></select></label>
+          <label><span>Width</span><input id="canvasWidth" type="number" min="320" max="8192" step="1" value="1920"></label><span class="canvas-times">×</span>
+          <label><span>Height</span><input id="canvasHeight" type="number" min="180" max="8192" step="1" value="1080"></label>
+          <label><span>FPS</span><input id="canvasFps" type="number" min="1" max="60" step="1" value="30"></label>
+        </div>
+        <div class="compositor-head-actions"><button id="btnAddSource" class="primary" data-i18n="addSource">Add source</button><button id="btnCompositorClose" class="ghost mini" type="button" aria-label="Close canvas" title="Close canvas">✕</button></div>
+        <input type="file" id="sceneMediaFile" accept="image/*,video/*,application/pdf,.pdf" multiple hidden>
       </div>
-      <div class="layer-list" id="layerList"></div>
-      <div class="inspector" id="inspector">
-        <span class="glabel" data-i18n="inspTitle">Izvor</span>
-        <label class="insp-f"><span>X %</span><input type="number" id="inspX" min="0" max="100" step="0.5"></label>
-        <label class="insp-f"><span>Y %</span><input type="number" id="inspY" min="0" max="100" step="0.5"></label>
-        <label class="insp-f"><span>W %</span><input type="number" id="inspW" min="4" max="100" step="0.5"></label>
-        <label class="insp-f"><span>H %</span><input type="number" id="inspH" min="4" max="100" step="0.5"></label>
-        <label class="insp-f insp-op"><span data-i18n="inspOpacity">Prozirnost</span><input type="range" id="inspOpacity" min="0" max="100" step="5"></label>
-        <select id="inspFit" data-i18n-title="inspFitTitle" title="Kako medij popunjava kutiju">
-          <option value="cover" data-i18n="fitCover">Popuni</option>
-          <option value="contain" data-i18n="fitContain">Uklopi</option>
-          <option value="fill" data-i18n="fitFill">Razvuci</option>
-        </select>
-        <button id="inspCenter" class="mini" data-i18n="inspCenter">Centriraj</button>
-        <button id="inspFull" class="mini" data-i18n="inspFull">Ceo ekran</button>
-        <span class="insp-text-only" id="inspTextWrap">
-          <input type="text" id="inspText" placeholder="Tekst…" style="min-width:130px">
-          <input type="color" id="inspColor" value="#ffffff">
-          <input type="number" id="inspFontSize" min="2" max="40" step="1" class="short" data-i18n-title="inspFontTitle" title="Veličina teksta (% visine)">
-        </span>
+      <div class="compositor-workspace">
+        <section class="compositor-layers"><div class="compositor-pane-head"><strong data-i18n="layers">Layers</strong><span data-i18n="layersTopHint">Top layer is in front</span></div><div class="layer-list" id="layerList"></div></section>
+        <div class="inspector compositor-inspector" id="inspector">
+          <span class="glabel" data-i18n="inspTitle">Source inspector</span>
+          <label class="insp-f insp-name"><span data-i18n="sourceName">Source name</span><input type="text" id="inspName" maxlength="160"></label>
+          <label class="insp-f"><span>X %</span><input type="number" id="inspX" min="-100" max="200" step="0.5"></label>
+          <label class="insp-f"><span>Y %</span><input type="number" id="inspY" min="-100" max="200" step="0.5"></label>
+          <label class="insp-f"><span>W %</span><input type="number" id="inspW" min="1" max="300" step="0.5"></label>
+          <label class="insp-f"><span>H %</span><input type="number" id="inspH" min="1" max="300" step="0.5"></label>
+          <label class="insp-f insp-op"><span data-i18n="inspOpacity">Opacity</span><input type="range" id="inspOpacity" min="0" max="100" step="1"></label>
+          <label class="insp-f insp-fit"><span data-i18n="fit">Fit</span><select id="inspFit" data-i18n-title="inspFitTitle" title="How media fills its box"><option value="cover" data-i18n="fitCover">Cover</option><option value="contain" data-i18n="fitContain">Contain</option><option value="fill" data-i18n="fitFill">Stretch</option></select></label>
+          <label class="insp-f"><span data-i18n="rotation">Rotation</span><input type="number" id="inspRotation" min="-360" max="360" step="1"></label>
+          <label class="insp-f"><span data-i18n="sourceLock">Lock</span><input type="checkbox" id="inspLocked"></label>
+          <div class="insp-actions"><button id="inspCenter" class="mini" data-i18n="inspCenter">Center</button><button id="inspFull" class="mini" data-i18n="inspFull">Fill canvas</button><button id="inspDuplicate" class="mini" data-i18n="duplicate">Duplicate</button><button id="inspDelete" class="mini danger" data-i18n="delete">Delete</button></div>
+          <div class="insp-status" id="inspLiveStatus"><span class="input-state" id="inspLiveDot"></span><span id="inspLiveStatusText">—</span><span class="grow"></span><button id="inspLiveChange" class="mini" data-i18n="changeSource">Change source</button><button id="inspLiveRestart" class="mini" data-i18n="restart">Restart</button></div>
+          <span class="insp-text-only" id="inspTextWrap"><input type="text" id="inspText" placeholder="Text…"><input type="color" id="inspColor" value="#ffffff"><input type="number" id="inspFontSize" min="2" max="40" step="1" data-i18n-title="inspFontTitle" title="Text size"></span>
+          <div class="insp-type-controls" id="inspColorWrap"><label class="half"><span data-i18n="sourceColor">Color</span><input type="color" id="inspSourceColor" value="#20242c"></label></div>
+          <div class="insp-type-controls" id="inspLiveWrap"><label class="check half"><input type="checkbox" id="inspLiveAudio"> <span data-i18n="sourceAudio">Audio in Program</span></label><label class="half"><span data-i18n="volume">Volume</span><input type="range" id="inspLiveVolume" min="0" max="100" step="1" value="100"></label></div>
+          <div class="insp-type-controls" id="inspVideoWrap"><label class="check half"><input type="checkbox" id="inspVideoLoop"> <span data-i18n="loop">Loop</span></label><label class="check half"><input type="checkbox" id="inspVideoMuted"> <span data-i18n="muted">Muted</span></label><label class="wide"><span data-i18n="volume">Volume</span><input type="range" id="inspVideoVolume" min="0" max="100" step="1" value="100"></label></div>
+        </div>
       </div>
     </div>
 
     <div class="setupwrap" id="setupWrap">
     <div class="setupwrap-head"><span data-i18n="settingsBtn">Podešavanja</span><button id="btnSetupClose" class="ghost mini" aria-label="Zatvori">✕</button></div>
     <div class="tabbar" id="setupTabs">
-      <button data-pane="timer" class="active" data-i18n="tabTimer">Tajmer</button>
+      <button data-pane="timer" class="active" data-i18n="tabTimer">Timing</button>
       <button data-pane="look" data-i18n="tabLook">Izgled</button>
       <button data-pane="lt" data-i18n="tabLt">Potpis</button>
       <button data-pane="net" data-i18n="tabNet">Mreža &amp; Izlazi</button>
     </div>
 
     <div class="tabpane active" id="pane-timer">
+    <div class="panel panel-timer-transport" data-testid="timer-transport-panel">
+      <div class="timer-transport-head">
+        <span class="glabel" data-i18n="timerControls">Kontrola tajmera</span>
+        <span class="timer-transport-hint" data-i18n="timerControlsHint">Sekundarna kontrola za scene koje koriste tajmer.</span>
+      </div>
+      <div class="transport timer-transport" data-testid="timer-transport">
+        <button id="btnStart" class="primary" data-testid="start-pause-button">START</button>
+        <button id="btnReset">RESET</button>
+        <div class="adjust">
+          <button data-adj="-300">−5m</button>
+          <button data-adj="-60">−1m</button>
+          <button data-adj="-10">−10s</button>
+          <button data-adj="10">+10s</button>
+          <button data-adj="60">+1m</button>
+          <button data-adj="300">+5m</button>
+        </div>
+      </div>
+    </div>
     <div class="panel panel-mode">
       <div class="field">
         <span class="glabel" data-i18n="mode">Režim</span>
@@ -3799,6 +3819,7 @@
           <option value="700">0.7s</option>
           <option value="1200">1.2s</option>
         </select>
+        <label class="route-check" data-i18n-title="outputAudioHint" title="Play scene and capture audio on the legacy screen output"><input type="checkbox" id="chkPrimaryLiveAudio"> <span data-i18n="outputLiveAudio">Live audio</span></label>
         <div class="grow"></div>
         <button id="btnAddOutput" class="mini ghost" data-i18n="outputAddDestination">Dodaj</button>
         <button id="btnApplyOutputs" class="mini primary" data-i18n="outputManage">Upravljaj</button>
@@ -3827,6 +3848,25 @@
 
 </div><!-- /#app-shell -->
 <div id="overlay-root">
+  <div class="flow-overlay" id="sourceOverlay" role="dialog" aria-modal="true" aria-labelledby="sourceDialogTitle" aria-hidden="true">
+    <section class="source-dialog">
+      <header class="source-dialog-head"><div class="source-dialog-head-copy"><h2 id="sourceDialogTitle" data-i18n="addSourceTitle">Add source</h2><p data-i18n="addSourceBody">Choose what this layer should show on the canvas.</p></div><span class="grow"></span><button id="btnSourceCloseX" class="ghost" aria-label="Close">✕</button></header>
+      <main class="source-dialog-body">
+        <div class="source-kind-grid" id="sourceKindGrid">
+          <button class="source-kind" data-source-kind="media"><span class="source-kind-icon">IMG</span><span class="source-kind-copy"><strong data-i18n="sourceMedia">Picture / video / PDF</strong><span data-i18n="sourceMediaBody">Import a local media file.</span></span></button>
+          <button class="source-kind" data-source-kind="color"><span class="source-kind-icon">#</span><span class="source-kind-copy"><strong data-i18n="sourceColor">Color</strong><span data-i18n="sourceColorBody">Create a solid background or design block.</span></span></button>
+          <button class="source-kind" data-source-kind="window"><span class="source-kind-icon">WIN</span><span class="source-kind-copy"><strong data-i18n="sourceWindow">Window capture</strong><span data-i18n="sourceWindowBody">Show an application window or desktop.</span></span></button>
+          <button class="source-kind" data-source-kind="device"><span class="source-kind-icon">IN</span><span class="source-kind-copy"><strong data-i18n="sourceDevice">Video capture device</strong><span data-i18n="sourceDeviceBody">Camera or UVC capture card, with optional audio.</span></span></button>
+          <button class="source-kind" data-source-kind="text"><span class="source-kind-icon">T</span><span class="source-kind-copy"><strong data-i18n="sourceText">Text</strong><span data-i18n="sourceTextBody">Add a title or information layer.</span></span></button>
+          <button class="source-kind" data-source-kind="timer"><span class="source-kind-icon">00</span><span class="source-kind-copy"><strong data-i18n="sourceTimer">Timer</strong><span data-i18n="sourceTimerBody">Place the ShowSlate timer in this scene.</span></span></button>
+        </div>
+        <section class="source-picker" id="sourceWindowPicker"><div class="source-picker-head"><button class="ghost mini source-back">‹</button><div><h3 data-i18n="sourceWindow">Window capture</h3><p data-i18n="sourceWindowChoose">Choose the exact window or display.</p></div><span class="grow"></span><button id="btnDesktopRefresh" class="ghost mini" data-i18n="refresh">Refresh</button></div><div class="desktop-source-grid" id="desktopSourceGrid"></div></section>
+        <section class="source-picker" id="sourceDevicePicker"><div class="source-picker-head"><button class="ghost mini source-back">‹</button><div><h3 data-i18n="sourceDevice">Video capture device</h3><p data-i18n="sourceDeviceChoose">Choose video, audio and requested format.</p></div></div><div class="source-form"><div class="source-permission-note wide" id="sourceDeviceStatus" hidden><span id="sourceDeviceStatusText"></span><div class="source-permission-actions"><button id="btnCameraPermission" class="ghost mini" type="button" data-i18n="sourceAllowCamera">Allow camera</button><button id="btnMicrophonePermission" class="ghost mini" type="button" data-i18n="sourceAllowMicrophone">Allow audio</button><button id="btnCameraSettings" class="ghost mini" type="button" data-i18n="sourceOpenCameraSettings">Open Camera settings</button><button id="btnMicrophoneSettings" class="ghost mini" type="button" data-i18n="sourceOpenMicrophoneSettings">Open Audio settings</button></div></div><label class="wide"><span data-i18n="sourceName">Source name</span><input id="sourceDeviceName" type="text" value="Video input"></label><label class="wide"><span data-i18n="sourceVideoDevice">Video device</span><select id="sourceVideoDevice"></select></label><label class="wide"><span data-i18n="sourceAudioDevice">Audio device</span><select id="sourceAudioDevice"><option value="" data-i18n="sourceNoAudio">No audio</option></select></label><label><span data-i18n="resolution">Resolution</span><select id="sourceDeviceResolution"><option value="1920x1080">1920 × 1080</option><option value="1280x720">1280 × 720</option><option value="720x576">720 × 576</option><option value="720x480">720 × 480</option></select></label><label><span>FPS</span><select id="sourceDeviceFps"><option>60</option><option selected>30</option><option>25</option><option>24</option></select></label><div class="form-actions"><button class="ghost source-back" data-i18n="cancel">Cancel</button><button id="btnDeviceAdd" class="primary" data-i18n="add">Add</button></div></div></section>
+        <section class="source-picker" id="sourceColorPicker"><div class="source-picker-head"><button class="ghost mini source-back">‹</button><div><h3 data-i18n="sourceColor">Color</h3><p data-i18n="sourceColorChoose">Choose a color for the new layer.</p></div></div><div class="source-form"><label class="wide"><span data-i18n="sourceName">Source name</span><input id="sourceColorName" type="text" value="Background"></label><label class="wide"><span data-i18n="sourceColor">Color</span><input id="sourceColorValue" type="color" value="#20242c"></label><div class="form-actions"><button class="ghost source-back" data-i18n="cancel">Cancel</button><button id="btnColorAdd" class="primary" data-i18n="add">Add</button></div></div></section>
+      </main>
+      <footer class="source-dialog-foot"><span id="sourceDialogStatus" data-i18n="sourceLocalNote">Live inputs stay local to this ShowSlate computer and its desktop output windows.</span><span class="grow"></span><button id="btnSourceClose" class="ghost" data-i18n="close">Close</button></footer>
+    </section>
+  </div>
   <div class="recovery-overlay" id="showRecoveryOverlay" role="dialog" aria-modal="true" aria-labelledby="showRecoveryTitle" aria-hidden="true">
     <div class="recovery-box">
       <div class="recovery-eyebrow" data-i18n="recoveryEyebrow">SHOW RECOVERY</div>
@@ -4064,6 +4104,8 @@
 <script src="src/lower-third/migrate.js"></script>
 <script src="src/lower-third/resolve.js"></script>
 <script src="src/screen-content/model.js"></script>
+<script src="src/compositor/model.js"></script>
+<script src="src/live-input/consumer.js"></script>
 <script src="src/conference-desk/model.js"></script>
 <script src="src/report/model.js"></script>
 <script src="i18n.js?v=20260703-i18n2"></script>
@@ -4081,13 +4123,30 @@ const api = window.pt || {
   getNetworkInfo:async()=>({}), onDisplays(){}, onOutputState(){}, onOutputConfigState(){}, onNetworkInfo(){},
   onRemoteCmd(){}, sendToDisplay(){}, identifyDisplays:async()=>0,
   qr:async()=>null, shareStart:async()=>({error:'preview'}), shareStop:async()=>true,
-  shareInfo:async()=>({}), onShareInfo(){}, buildInfo:async()=>({})
+  shareInfo:async()=>({}), onShareInfo(){}, buildInfo:async()=>({}),
+  liveInputDesktopSources:async()=>[],liveInputDevices:async()=>[],liveInputPermissions:async()=>({}),openPrivacySettings:async()=>({ok:false,error:'preview'}),
+  liveInputConfigure:async()=>({ok:false}),liveInputRestart:async()=>({ok:false}),liveInputStatuses:async()=>[],
+  liveInputSubscribe:async()=>({ok:false}),liveInputUnsubscribe(){},liveInputSignalToHub:async()=>({ok:false}),
+  onLiveInputSignal(){},onLiveInputStatus(){}
 };
 const PTCD = window.SHOWSLATE_CONFERENCE || {
   parseSchedule:()=>({cues:[],errors:[],warnings:[]}), matchScheduleAssets:(cues,assets)=>({cues,assets,matches:[],unmatchedCues:[],unmatchedAssets:assets||[]}),
   normalizeOutputRole:()=> 'audience', outputRoleDefinition:()=>({label:'Audience',description:''}),
   buildGoTransaction:(cue,options)=>({version:1,id:options.id||'',cueId:String(cue&&cue.id||''),createdAt:options.now||Date.now()})
 };
+const PTCOMP = window.ShowSlateCompositor;
+const liveInputStatuses = new Map();
+const liveInputConsumer = window.ShowSlateLiveInput ? new window.ShowSlateLiveInput.LiveInputConsumer(api,{
+  label:'controller',
+  onStatus(rows){
+    rows.forEach(row=>liveInputStatuses.set(String(row.inputId||''),row));
+    if(typeof renderScenesUI==='function') renderScenesUI();
+    if(typeof renderInspector==='function') renderInspector();
+  }
+}) : null;
+Promise.resolve(api.liveInputStatuses&&api.liveInputStatuses()).then(rows=>{
+  (rows||[]).forEach(row=>liveInputStatuses.set(String(row.inputId||''),row));
+}).catch(()=>{});
 
 // ---------- JEZIK / LANGUAGE ----------
 const I18N = {
@@ -4106,14 +4165,14 @@ const I18N = {
     stStage:'Ekran govornika', stServer:'Mrežni prikazi (OBS · Backstage · Signal)', stRemote:'Telefon daljinski', stApi:'API / Companion',
     badgeLive:'U PROGRAMU', badgeSelected:'IZABRANO', badgeNext:'SLEDI', badgeSkipped:'PRESKOČENO',
     goSelectedBtn:'KRENI ▶ {name}', goAutoStart:'Auto-start na GO', goAutoTitle:'GO odmah pokreće tajmer novog reda',
-    advanced:'Napredno', advancedTitle:'Preview/Program režija (Cut/Transition). Isključeno: sve ide direktno na Program.',
-    rundownBtn:'Rundown', sidebarToggle:'Prikaži ili sakrij navigaciju', utilityToggle:'Prikaži ili sakrij poruke, status i izlaze', msgOutBtn:'Poruke', settingsBtn:'Podešavanja', compactMode:'Kompaktan režim', compactTitle:'Kompaktan operater: samo tajmer, START, GO, ±, poruka; rundown u draweru.', fsMenu:'⛶ Pun ekran', closeMenu:'✕ Zatvori izlaz',
+    advanced:'Preview / Program', advancedTitle:'Preview/Program režija (Cut/Transition). Isključeno: sve ide direktno na Program.',
+    rundownBtn:'Rundown', sidebarToggle:'Prikaži ili sakrij navigaciju', utilityToggle:'Prikaži ili sakrij poruke, status i izlaze', msgOutBtn:'Poruke', settingsBtn:'Podešavanja', compactMode:'Kompaktan režim', compactTitle:'Fokusirani operater: Program, GO i poruka; kontrole tajmera su u Podešavanjima.', fsMenu:'⛶ Pun ekran', closeMenu:'✕ Zatvori izlaz',
     inspTitle:'Izvor', inspOpacity:'Prozirnost', inspFitTitle:'Kako medij popunjava kutiju',
     fitCover:'Popuni', fitContain:'Uklopi', fitFill:'Razvuci', inspCenter:'Centriraj', inspFull:'Ceo ekran',
     inspFontTitle:'Veličina teksta (% visine)', layerNamePrompt:'Naziv izvora:', textLayerPrompt:'Tekst izvora:',
     ltPresetPrompt:'Naziv preseta:', cancel:'Otkaži', ok:'U redu',
-    addTimer:'+ Tajmer', timerLayerOne:'Ova scena već ima tajmer lejer.',
-    tabTimer:'Tajmer', tabLook:'Izgled', tabScenes:'Scene', tabLt:'Potpis', tabNet:'Mreža & Izlazi',
+    addTimer:'+ Tajmer', timerLayerOne:'Ova scena već ima tajmer lejer.', timerControls:'Kontrola tajmera', timerControlsHint:'Sekundarna kontrola za scene koje koriste tajmer.', programBlackoutTitle:'Uključi ili isključi crni Program izlaz',
+    tabTimer:'Tajming', tabLook:'Dizajn', tabScenes:'Scene', tabLt:'Potpis', tabNet:'Mreža & Izlazi',
     mode:'Režim', modeCountdown:'Odbrojavanje', modeCountup:'Štoperica', modeClock:'Sat',
     set:'Postavi', endAt:'Kraj u', startTarget:'Start', targetTitle:'Odbrojavanje do tačnog vremena',
     durTitle:'10 = minuti · 10:00 = MM:SS · 1:00:00 = HH:MM:SS', quick:'Brzo',
@@ -4148,8 +4207,8 @@ const I18N = {
     wizardNameRequired:'Unesite naziv show-a.', wizardRundownRequired:'Uvezite bar jedan ispravan rundown red.', wizardDisplayRequired:'Izaberite ekran.', wizardInvalidTimer:'Unesite ispravno početno vreme tajmera.', wizardCueCount:'{n} ispravnih cue-ova', wizardConnectionGood:'Lokalni output servisi su dostupni.', wizardConnectionBad:'Neki lokalni output servisi nisu dostupni.',
     preflightEyebrow:'OPERATOR PREFLIGHT', preflightTitle:'Spremnost show-a', preflightRefresh:'Osveži', preflightTestOutputs:'Testiraj izlaze', preflightTestingOutputs:'Čekam potvrde…', preflightContinue:'Nastavi u radni prostor', preflightReady:'Spremno', preflightWarning:'Upozorenje', preflightBlocking:'Blokirano', preflightChecking:'Proveravam',
     preflightSummary:'{ok} prolazi · {warn} upozorenja · {block} blokira',
-    preflightCheck_showSaved:'Show je sačuvan', preflightCheck_autosaveWritable:'Autosave je upisiv', preflightCheck_rundownValid:'Rundown je ispravan', preflightCheck_missingAssets:'Svi asseti postoje', preflightCheck_speakerScreen:'Ekran govornika', preflightCheck_programBrowser:'Program / browser output', preflightCheck_backstage:'Backstage', preflightCheck_phoneRemote:'Telefon daljinski', preflightCheck_apiCompanion:'API / Companion', preflightCheck_soundChime:'Zvuk / chime', preflightCheck_lowerThirdTemplate:'Lower-third template', preflightCheck_displayAssignment:'Dodela ekrana', preflightCheck_outputResolution:'Rezolucija izlaza', preflightCheck_recoveryStatus:'Recovery stanje', preflightCheck_conferenceMode:'Conference Desk režim', preflightCheck_conferenceAudienceRoute:'Audience izlaz', preflightCheck_conferenceRouteAssignments:'Uloge i dodela ekrana', preflightCheck_conferenceCueActions:'GO akcije po tački', preflightCheck_conferenceMediaMapping:'Povezani mediji', preflightCheck_conferenceOutputDelivery:'Potvrda prikaza izlaza',
-    slides:'SLIDES', slideMedia:'Medija', slideHolding:'Holding', slideLogo:'Logo', slideTimer:'Tajmer', slideBlank:'Prazno', slideSelected:'Izabrano', slideTake:'TAKE', slideClear:'CLEAR', slideEmpty:'Dodajte sliku, video, PDF, holding tekst, logo ili tajmer.', slideNamePrompt:'Naziv sadržaja:', slideHoldingPrompt:'Holding tekst:', slideLogoMissing:'Prvo dodajte logo u brendingu.', slideCount:'{n} stavki', slidePage:'Strana {n}',
+    preflightCheck_showSaved:'Show je sačuvan', preflightCheck_autosaveWritable:'Autosave je upisiv', preflightCheck_rundownValid:'Rundown je ispravan', preflightCheck_missingAssets:'Svi asseti postoje', preflightCheck_liveInputSources:'Live video izvori', preflightCheck_liveInputAudio:'Live audio ruta', preflightCheck_speakerScreen:'Ekran govornika', preflightCheck_programBrowser:'Program / browser output', preflightCheck_backstage:'Backstage', preflightCheck_phoneRemote:'Telefon daljinski', preflightCheck_apiCompanion:'API / Companion', preflightCheck_soundChime:'Zvuk / chime', preflightCheck_lowerThirdTemplate:'Lower-third template', preflightCheck_displayAssignment:'Dodela ekrana', preflightCheck_outputResolution:'Rezolucija izlaza', preflightCheck_outputAspect:'Odnos stranica Canvas / izlaz', preflightCheck_recoveryStatus:'Recovery stanje', preflightCheck_conferenceMode:'Conference Desk režim', preflightCheck_conferenceAudienceRoute:'Audience izlaz', preflightCheck_conferenceRouteAssignments:'Uloge i dodela ekrana', preflightCheck_conferenceCueActions:'GO akcije po tački', preflightCheck_conferenceMediaMapping:'Povezani mediji', preflightCheck_conferenceOutputDelivery:'Potvrda prikaza izlaza',
+    slides:'SADRŽAJ', slideMedia:'Medija', slideHolding:'Holding', slideLogo:'Logo', slideTimer:'Tajmer', slideBlank:'Prazno', slideSelected:'Izabrano', slideTake:'TAKE', slideClear:'CLEAR', slideEmpty:'Dodajte sliku, video, PDF, holding tekst, logo ili tajmer.', slideNamePrompt:'Naziv sadržaja:', slideHoldingPrompt:'Holding tekst:', slideLogoMissing:'Prvo dodajte logo u brendingu.', slideCount:'{n} stavki', slidePage:'Strana {n}',
     cueContent:'Vezani sadržaj ekrana', cueContentAuto:'Auto TAKE sadržaja na GO', cueContentNone:'Bez vezanog sadržaja',
     backstageLabel:'Backstage (raspored / crew)', signalLabel:'Signal svetlo (govornica)', onTime:'NA VREME', late:'kasni', early:'ispred',
     apiLabel:'API (Stream Deck / Companion)', apiTitle:'Autorizovani URL za Companion / Stream Deck. Podržava GO, tajmer, poruke, potpise i sadržaj ekrana.',
@@ -4202,14 +4261,14 @@ const I18N = {
     stStage:'Speaker screen', stServer:'Network views (OBS · Backstage · Signal)', stRemote:'Phone remote', stApi:'API / Companion',
     badgeLive:'LIVE', badgeSelected:'SELECTED', badgeNext:'NEXT', badgeSkipped:'SKIPPED',
     goSelectedBtn:'GO ▶ {name}', goAutoStart:'Auto-start on GO', goAutoTitle:'GO immediately starts the new item timer',
-    advanced:'Advanced', advancedTitle:'Preview/Program workflow (Cut/Transition). Off: everything goes straight to Program.',
-    rundownBtn:'Rundown', sidebarToggle:'Show or hide navigation', utilityToggle:'Show or hide messages, status and outputs', msgOutBtn:'Message', settingsBtn:'Settings', compactMode:'Compact mode', compactTitle:'Compact operator: only timer, START, GO, ±, message; rundown in a drawer.', fsMenu:'⛶ Fullscreen', closeMenu:'✕ Close output',
+    advanced:'Preview / Program', advancedTitle:'Preview/Program workflow (Cut/Transition). Off: everything goes straight to Program.',
+    rundownBtn:'Rundown', sidebarToggle:'Show or hide navigation', utilityToggle:'Show or hide messages, status and outputs', msgOutBtn:'Message', settingsBtn:'Settings', compactMode:'Compact mode', compactTitle:'Focused operator: Program, GO and message; timer controls are in Settings.', fsMenu:'⛶ Fullscreen', closeMenu:'✕ Close output',
     inspTitle:'Source', inspOpacity:'Opacity', inspFitTitle:'How media fills the box',
     fitCover:'Cover', fitContain:'Fit', fitFill:'Stretch', inspCenter:'Center', inspFull:'Full screen',
     inspFontTitle:'Text size (% of height)', layerNamePrompt:'Source name:', textLayerPrompt:'Source text:',
     ltPresetPrompt:'Preset name:', cancel:'Cancel', ok:'OK',
-    addTimer:'+ Timer', timerLayerOne:'This scene already has a timer layer.',
-    tabTimer:'Timer', tabLook:'Look', tabScenes:'Scenes', tabLt:'Lower third', tabNet:'Network & Outputs',
+    addTimer:'+ Timer', timerLayerOne:'This scene already has a timer layer.', timerControls:'Timer controls', timerControlsHint:'Secondary controls for scenes that use a timer source.', programBlackoutTitle:'Toggle black on the Program output',
+    tabTimer:'Timing', tabLook:'Design', tabScenes:'Scenes', tabLt:'Lower third', tabNet:'Network & Outputs',
     mode:'Mode', modeCountdown:'Countdown', modeCountup:'Stopwatch', modeClock:'Clock',
     set:'Set', endAt:'End at', startTarget:'Start', targetTitle:'Countdown to exact time',
     durTitle:'10 = minutes · 10:00 = MM:SS · 1:00:00 = HH:MM:SS', quick:'Quick',
@@ -4244,8 +4303,8 @@ const I18N = {
     wizardNameRequired:'Enter a show name.', wizardRundownRequired:'Import at least one valid rundown row.', wizardDisplayRequired:'Choose a display.', wizardInvalidTimer:'Enter a valid opening timer.', wizardCueCount:'{n} valid cues', wizardConnectionGood:'Local output services are reachable.', wizardConnectionBad:'Some local output services are unavailable.',
     preflightEyebrow:'OPERATOR PREFLIGHT', preflightTitle:'Show readiness', preflightRefresh:'Refresh', preflightTestOutputs:'Test outputs', preflightTestingOutputs:'Waiting for confirmation…', preflightContinue:'Continue to workspace', preflightReady:'Ready', preflightWarning:'Warning', preflightBlocking:'Blocking', preflightChecking:'Checking',
     preflightSummary:'{ok} pass · {warn} warnings · {block} blocking',
-    preflightCheck_showSaved:'Show saved', preflightCheck_autosaveWritable:'Autosave writable', preflightCheck_rundownValid:'Rundown valid', preflightCheck_missingAssets:'Assets available', preflightCheck_speakerScreen:'Speaker screen', preflightCheck_programBrowser:'Program / browser output', preflightCheck_backstage:'Backstage', preflightCheck_phoneRemote:'Phone remote', preflightCheck_apiCompanion:'API / Companion', preflightCheck_soundChime:'Sound / chime', preflightCheck_lowerThirdTemplate:'Lower-third template', preflightCheck_displayAssignment:'Display assignment', preflightCheck_outputResolution:'Output resolution', preflightCheck_recoveryStatus:'Recovery status', preflightCheck_conferenceMode:'Conference Desk mode', preflightCheck_conferenceAudienceRoute:'Audience output', preflightCheck_conferenceRouteAssignments:'Role and display assignments', preflightCheck_conferenceCueActions:'Cue GO actions', preflightCheck_conferenceMediaMapping:'Media mapping', preflightCheck_conferenceOutputDelivery:'Output render confirmation',
-    slides:'SLIDES', slideMedia:'Media', slideHolding:'Holding', slideLogo:'Logo', slideTimer:'Timer', slideBlank:'Blank', slideSelected:'Selected', slideTake:'TAKE', slideClear:'CLEAR', slideEmpty:'Add an image, video, PDF, holding text, logo or timer.', slideNamePrompt:'Content name:', slideHoldingPrompt:'Holding text:', slideLogoMissing:'Add a branding logo first.', slideCount:'{n} items', slidePage:'Page {n}',
+    preflightCheck_showSaved:'Show saved', preflightCheck_autosaveWritable:'Autosave writable', preflightCheck_rundownValid:'Rundown valid', preflightCheck_missingAssets:'Assets available', preflightCheck_liveInputSources:'Live video sources', preflightCheck_liveInputAudio:'Live audio route', preflightCheck_speakerScreen:'Speaker screen', preflightCheck_programBrowser:'Program / browser output', preflightCheck_backstage:'Backstage', preflightCheck_phoneRemote:'Phone remote', preflightCheck_apiCompanion:'API / Companion', preflightCheck_soundChime:'Sound / chime', preflightCheck_lowerThirdTemplate:'Lower-third template', preflightCheck_displayAssignment:'Display assignment', preflightCheck_outputResolution:'Output resolution', preflightCheck_outputAspect:'Canvas / output aspect ratio', preflightCheck_recoveryStatus:'Recovery status', preflightCheck_conferenceMode:'Conference Desk mode', preflightCheck_conferenceAudienceRoute:'Audience output', preflightCheck_conferenceRouteAssignments:'Role and display assignments', preflightCheck_conferenceCueActions:'Cue GO actions', preflightCheck_conferenceMediaMapping:'Media mapping', preflightCheck_conferenceOutputDelivery:'Output render confirmation',
+    slides:'CONTENT', slideMedia:'Media', slideHolding:'Holding', slideLogo:'Logo', slideTimer:'Timer', slideBlank:'Blank', slideSelected:'Selected', slideTake:'TAKE', slideClear:'CLEAR', slideEmpty:'Add an image, video, PDF, holding text, logo or timer.', slideNamePrompt:'Content name:', slideHoldingPrompt:'Holding text:', slideLogoMissing:'Add a branding logo first.', slideCount:'{n} items', slidePage:'Page {n}',
     cueContent:'Linked screen content', cueContentAuto:'Auto TAKE content on GO', cueContentNone:'No linked content',
     backstageLabel:'Backstage (schedule / crew)', signalLabel:'Signal light (podium)', onTime:'ON TIME', late:'behind', early:'ahead',
     apiLabel:'API (Stream Deck / Companion)', apiTitle:'Authenticated Companion / Stream Deck URL for GO, timer, message, lower-third and screen-content actions.',
@@ -4349,9 +4408,10 @@ let S = {
   lowerThird:{visible:false,name:'',title:'',meta:'',style:'clean',pos:'bl',durationSec:8,graphic:'',until:0,size:'m',accent:'#30d158'},
   lowerThirdAutoCue:false,
   font:'mono', clock12:false, goAutoStart:true,
-  canvasAspect:'16:9', sceneFadeMs:300,
+  canvasAspect:'16:9', canvas:{schemaVersion:1,width:1920,height:1080,fps:30,background:'#000000',transparent:false}, sceneFadeMs:300,
+  liveInputs:[], primaryLiveAudio:false,
   studioDirect:true,
-  scenes:[{id:'scene-default', name:'Timer', layers:[]}],
+  scenes:[{id:'scene-default', name:'Scene 1', layers:[]}],
   activeSceneId:'scene-default',
   goTransaction:null,
   // rundown / raspored
@@ -4418,8 +4478,8 @@ const FONT_MAP={mono:'"SF Mono",ui-monospace,Menlo,monospace',grotesk:'-apple-sy
 const $ = id => document.getElementById(id);
 const GRID_SIZES = Array.from({length:12}, (_,i)=>i+1);
 function arrangeOperatorLayout(){
-  // Raspored je sada statičan u HTML-u: LIVE zona (studio → transport → poruka)
-  // + setup tabovi (Tajmer/Izgled/Scene/Potpis/Mreža), desno čist RUNDOWN.
+  // Raspored je statičan: LIVE zona sadrži studio i GO, dok su timer kontrole
+  // sekundarne i nalaze se u Podešavanja → Timing.
   // Namerno ne premešta ništa — premeštanje je pravilo haos od rasporeda.
 }
 function pad(n){ return String(n).padStart(2,'0'); }
@@ -4591,6 +4651,32 @@ function calc(now, st=S){
 }
 let lastKey='', lastSchedFire=0, lastPreviewGridKey='', stageKeys={pv:'',pg:''}, monitorSceneKeys={pv:'',pg:''};
 let selectedLayerId=null;   // izabrani izvor (OBS-stil manipulacija u Preview-u)
+let liveInputConfigKey=JSON.stringify([]), liveInputConfigurePending=false;
+function liveInputDefinition(id){ return (S.liveInputs||[]).find(row=>row.id===String(id||''))||null; }
+function liveInputStatus(id){ return liveInputStatuses.get(String(id||''))||{inputId:String(id||''),state:'idle'}; }
+function liveInputStatusText(status){
+  const row=status||{};
+  const parts=[t('sourceState_'+String(row.state||'idle'))];
+  if(row.width&&row.height) parts.push(`${Math.round(row.width)}×${Math.round(row.height)}`);
+  if(row.frameRate) parts.push(`${Math.round(row.frameRate*10)/10} fps`);
+  if(row.hasAudio) parts.push(t('sound'));
+  if(row.error) parts.push(String(row.error));
+  return parts.join(' · ');
+}
+function syncLiveInputService(){
+  if(!PTCOMP||!liveInputConsumer) return;
+  const previewScene=activeScene(S), program=ensureProgramState(), programScene=activeScene(program);
+  const scenes=[previewScene,programScene].filter(Boolean);
+  const wanted=PTCOMP.activeLiveInputIds(scenes);
+  const wantedSet=new Set(wanted);
+  const definitions=PTCOMP.normalizeLiveInputs([...(program.liveInputs||[]),...(S.liveInputs||[])]).map(row=>({...row,active:wantedSet.has(row.id)}));
+  const key=JSON.stringify(definitions);
+  if(key!==liveInputConfigKey&&!liveInputConfigurePending&&api.liveInputConfigure){
+    liveInputConfigurePending=true;
+    Promise.resolve(api.liveInputConfigure(definitions)).then(result=>{ if(result&&result.ok) liveInputConfigKey=key; }).catch(()=>{}).finally(()=>{liveInputConfigurePending=false;});
+  }
+  liveInputConsumer.sync(wanted);
+}
 function maybeScheduledStart(now){
   if(!(S.schedOn && S.schedAt && !S.running && S.mode==='countdown')) return false;
   const d=new Date(now); const cur=`${pad(d.getHours())}:${pad(d.getMinutes())}`;
@@ -4626,13 +4712,14 @@ function renderMonitorScene(prefix, st){
   const layers=(scene && Array.isArray(scene.layers)) ? scene.layers.filter(l=>l && l.visible!==false) : [];
   const key=JSON.stringify(layers.map(l=>({
     id:l.id,type:l.type,name:l.name,src:l.src,thumbnail:l.thumbnail,text:l.text,sourceName:l.sourceName,page:l.page,
-    x:l.x,y:l.y,w:l.w,h:l.h,opacity:l.opacity,fit:l.fit,color:l.color,bg:l.bg,
+    inputId:l.inputId,x:l.x,y:l.y,w:l.w,h:l.h,rotation:l.rotation,opacity:l.opacity,fit:l.fit,color:l.color,bg:l.bg,
+    audioEnabled:l.audioEnabled,volume:l.volume,loop:l.loop,muted:l.muted,
     sel:(prefix==='pv' && l.id===selectedLayerId)
   })));
   if(key===monitorSceneKeys[prefix]) return;
   monitorSceneKeys[prefix]=key;
   root.innerHTML='';
-  layers.forEach(layer=>{
+  layers.forEach((layer,layerIndex)=>{
     if(layer.type==='timer') return;   // tajmer renderuje pv/pg stage
     const d=document.createElement('div');
     const b=layerBounds(layer);
@@ -4640,15 +4727,27 @@ function renderMonitorScene(prefix, st){
     d.dataset.layerId=layer.id;
     d.style.left=b.x+'%'; d.style.top=b.y+'%'; d.style.width=b.w+'%'; d.style.height=b.h+'%';
     d.style.setProperty('--layerOpacity', Math.max(0, Math.min(1, Number(layer.opacity ?? 1))));
+    d.style.transform=`rotate(${Number(layer.rotation)||0}deg)`;
+    d.style.zIndex=String(layerIndex+1);
     if(layer.bg) d.style.background=layer.bg;
-    if(layer.type==='image' && layer.src){
+    if(layer.type==='color'){
+      d.style.background=layer.color||layer.bg||'#20242c';
+    } else if(layer.type==='image' && layer.src){
       const img=document.createElement('img'); img.src=mediaSrc(layer.src); d.appendChild(img);
     } else if(layer.type==='video' && layer.src){
-      const v=document.createElement('video'); v.src=mediaSrc(layer.src); v.muted=true; v.autoplay=true; v.loop=true; v.playsInline=true; d.appendChild(v);
+      const v=document.createElement('video'); v.src=mediaSrc(layer.src); v.muted=true; v.autoplay=true; v.loop=layer.loop!==false; v.playsInline=true; d.appendChild(v);
     } else if(layer.type==='pdf' && layer.src){
       const f=document.createElement('iframe'); f.src=mediaSrc(layer.src)+'#page='+Math.max(1,Number(layer.page)||1); d.appendChild(f);
+    } else if((layer.type==='window'||layer.type==='capture')&&layer.inputId){
+      const v=document.createElement('video'); v.className='live-input-video';
+      const placeholder=document.createElement('div'); placeholder.className='live-input-placeholder'; placeholder.textContent=(liveInputDefinition(layer.inputId)?.name||t('sourceConnecting'));
+      v.addEventListener('playing',()=>placeholder.remove(),{once:true}); d.append(v,placeholder);
+      liveInputConsumer.attach(v,layer.inputId,{muted:true,volume:0});
     } else if(layer.type==='text'){
       const tx=document.createElement('div'); tx.className='pv-scene-text'; tx.textContent=Object.prototype.hasOwnProperty.call(layer,'text')?String(layer.text||''):(layer.name||''); tx.style.color=layer.color||'#fff'; tx.style.background=layer.bg||'transparent'; tx.style.fontSize=Math.max(11,(root.clientHeight||240)*(Number(layer.fontSize)||8)/100)+'px'; d.appendChild(tx);
+    }
+    if(prefix==='pv'&&layer.id===selectedLayerId){
+      ['nw','ne','sw','se'].forEach(handle=>{const marker=document.createElement('span');marker.className='transform-handle handle-'+handle;marker.dataset.handle=handle;marker.setAttribute('aria-hidden','true');d.appendChild(marker);});
     }
     root.appendChild(d);
   });
@@ -4675,14 +4774,14 @@ function renderStage(prefix, st, now){
     const lys=(scn && Array.isArray(scn.layers)) ? scn.layers.filter(l=>l && l.visible!==false) : [];
     const tl=lys.find(l=>l.type==='timer');
     previewTimerLayer=tl||null;
-    if(!(st.gridOn && st.gridSize)){
-      if(tl){ const b=layerBounds(tl);
+    if(tl){
+      if(!(st.gridOn && st.gridSize)){ const b=layerBounds(tl);
+        ps.style.zIndex=String(lys.indexOf(tl)+1);
         ps.style.display='flex'; ps.style.inset='auto';
         ps.style.left=b.x+'%'; ps.style.top=b.y+'%'; ps.style.width=b.w+'%'; ps.style.height=b.h+'%';
         ps.style.opacity=String(Math.max(0,Math.min(1,Number(tl.opacity??1))));
-      } else if(lys.length){ ps.style.display='none'; }
-      else { ps.style.display='flex'; ps.style.inset='0'; ps.style.left=ps.style.top=ps.style.width=ps.style.height=''; ps.style.opacity=''; }
-    } else ps.style.display='flex';
+      } else ps.style.display='flex';
+    } else { ps.style.display='none'; ps.style.zIndex=''; }
   }
   // Grid positions the timer itself; letting that full-size stage consume pointer input
   // would make image/text scene layers underneath impossible to select or drag.
@@ -4728,6 +4827,7 @@ function render(){
   const r=renderStage('pv', S, now);
   const pg=ensureProgramState();
   renderStage('pg', pg, now);
+  syncLiveInputService();
 
   $('bdgBk').classList.toggle('bk',!!pg.blackout);
   $('bdgOut').classList.toggle('on',outputOpen);
@@ -4754,7 +4854,6 @@ function render(){
 }
 function updateButtons(){
   const b=$('btnStart');
-  if($('btnBlackout')) $('btnBlackout').classList.toggle('on',!!ensureProgramState().blackout);
   if(S.mode==='clock'){ b.textContent=t('clockBtn'); b.classList.remove('running'); return; }
   if(S.running){ b.textContent=t('pause'); b.classList.add('running'); }
   else { b.textContent=t('start'); b.classList.remove('running'); }
@@ -4800,8 +4899,8 @@ function seedDemoShow(){
   showMeta={id:'show-demo-conference',name:'Conference Desk Demo',details:{client:'Example Events',venue:'Main Room',productMode:'conference-desk',showFolder:'Built-in demo',importedAssets:4,matchedAssets:4}};
   currentCue=-1; selectedCue=-1; showLog=[];
   S.mode='countdown'; S.durationMs=cues[0].durationMs; S.remMs=S.durationMs; S.running=false; S.endAt=0; S.startAt=0;
-  S.text=''; S.textOnly=false; S.blackout=false; S.transparent=false; S.gridOn=false; S.goTransaction=null; S.canvasAspect='16:9';
-  outputConfigs=[{id:makeId('out'),name:'Audience',role:'audience',enabled:true,displayId:Number($('displaySel')?.value)||null,mode:'fullscreen',width:1920,height:1080,gridSize:3,gridCell:4}];
+  S.text=''; S.textOnly=false; S.blackout=false; S.transparent=false; S.gridOn=false; S.goTransaction=null; S.canvasAspect='16:9'; S.canvas=PTCOMP.normalizeCanvas({width:1920,height:1080,fps:30}); S.liveInputs=[]; S.primaryLiveAudio=false;
+  outputConfigs=[{id:makeId('out'),name:'Audience',role:'audience',enabled:true,displayId:Number($('displaySel')?.value)||null,mode:'fullscreen',width:1920,height:1080,gridSize:3,gridCell:4,liveAudio:false}];
   try{ api.setOutputConfigs([]); api.closeOutput(); }catch(e){}
   outputOpen=false;
   programState=outputSnapshot(S);
@@ -5087,7 +5186,7 @@ function collectShowDocument(){
   const runtime=S.lowerThird&&S.lowerThird.runtime;
   return {
     schemaVersion:1,
-    app:{productName:'ShowSlate Conference Desk'},
+    app:{productName:'ShowSlate',productDescriptor:'Live Compositor'},
     show:{
       id:String(showMeta.id||'show-current'),
       name:String(showMeta.name||'Untitled show'),
@@ -5109,6 +5208,8 @@ function collectShowDocument(){
       screenContent:{
         scenes:jsonCopy(compactScenesForSave(),[]),
         activeSceneId:String(S.activeSceneId||''),
+        canvas:jsonCopy(PTCOMP.normalizeCanvas(S.canvas),{}),
+        liveInputs:jsonCopy(PTCOMP.normalizeLiveInputs(S.liveInputs),[]),
         items:jsonCopy(contentItems,[]),
         selectedContentItemId:String(selectedContentItemId||''),
         liveContentItemId:String(liveContentItemId||''),
@@ -5121,7 +5222,7 @@ function collectShowDocument(){
         logo:S.logo||'',logoPos:S.logoPos,logoSize:S.logoSize,font:S.font
       },
       outputs:{
-        configs:jsonCopy(outputConfigs,[]),canvasAspect:S.canvasAspect,sceneFadeMs:S.sceneFadeMs,
+        configs:jsonCopy(outputConfigs,[]),canvasAspect:S.canvasAspect,sceneFadeMs:S.sceneFadeMs,primaryLiveAudio:!!S.primaryLiveAudio,
         primaryDisplayId:Number($('displaySel')&&$('displaySel').value)||null,
         gridOn:!!S.gridOn,gridSize:S.gridSize,gridCell:S.gridCell,fitWindow:!!S.fitWindow
       },
@@ -5399,9 +5500,9 @@ async function finishNewShowWizard(){
     timer:{mode:'countdown',durationMs:duration,remainingMs:duration,elapsedMs:0,wasRunning:false,capturedAt:Date.now(),yellowSec:S.yellowSec,redSec:S.redSec,overtime:true},
     actualTimes:[],message:{text:'',flash:false},
     lowerThird:{library,activeTemplateId:chosenTemplateId,state:{...snapshotLowerThirdForSave(S.lowerThird),visible:false,runtime:null,runtimeVersion:null},autoCue:false,wasVisible:false,runtimeRef:null},
-    screenContent:{scenes:importedContent.scenes,activeSceneId:importedContent.activeSceneId,items:importedContent.items,selectedContentItemId:'',liveContentItemId:'',text:'',textOnly:false,transparent:false},
+    screenContent:{scenes:importedContent.scenes,activeSceneId:importedContent.activeSceneId,canvas:PTCOMP.normalizeCanvas(canvasFromLegacyAspect($('wizardCanvas').value)),liveInputs:[],items:importedContent.items,selectedContentItemId:'',liveContentItemId:'',text:'',textOnly:false,transparent:false},
     branding:{...document.show.branding,bgColor:$('wizardBg').value,fgColor:$('wizardFg').value,logo:wizardLogo||'',logoPos:'tr',logoSize:16},
-    outputs:{configs:[{id:makeId('out'),name:'Audience',role:'audience',enabled:true,displayId,mode,width,height,gridSize:3,gridCell:4}],primaryDisplayId:displayId,canvasAspect:$('wizardCanvas').value,sceneFadeMs:300,gridOn:false,gridSize:3,gridCell:4,fitWindow:false},
+    outputs:{configs:[{id:makeId('out'),name:'Audience',role:'audience',enabled:true,displayId,mode,width,height,gridSize:3,gridCell:4,liveAudio:false}],primaryDisplayId:displayId,canvasAspect:$('wizardCanvas').value,sceneFadeMs:300,primaryLiveAudio:false,gridOn:false,gridSize:3,gridCell:4,fitWindow:false},
     preferences:{...document.show.preferences,showStart:$('wizardStartTime').value||'',showNowNext:false,autoNext:false}
   };
   if(!applyShowDocument(document,{source:'new-show',announce:false})) return {ok:false,error:'apply-failed'};
@@ -5415,7 +5516,7 @@ async function finishNewShowWizard(){
 function preflightDetail(check){
   const detail=String(check&&check.detail||'');
   if(check.id==='missingAssets'&&detail!=='all-found') return detail;
-  if(['rundownValid','lowerThirdTemplate','displayAssignment','outputResolution','conferenceAudienceRoute','conferenceRouteAssignments','conferenceCueActions','conferenceMediaMapping','conferenceOutputDelivery'].includes(check.id)
+  if(['rundownValid','lowerThirdTemplate','displayAssignment','outputResolution','outputAspect','conferenceAudienceRoute','conferenceRouteAssignments','conferenceCueActions','conferenceMediaMapping','conferenceOutputDelivery'].includes(check.id)
       && !['invalid-or-empty','none-selected','not-assigned','invalid'].includes(detail)) return detail;
   return check.status==='ok'?t('preflightReady'):check.status==='warn'?t('preflightWarning'):t('preflightBlocking');
 }
@@ -5529,7 +5630,9 @@ function applyShowDocument(document,{source='current',announce=true}={}){
       logoPos:branding.logoPos||S.logoPos,logoSize:Number(branding.logoSize)||S.logoSize,font:branding.font||S.font,
       text:String(content.text||''),textOnly:!!content.textOnly,transparent:!!content.transparent,
       scenes:Array.isArray(content.scenes)&&content.scenes.length?jsonCopy(content.scenes,[]):S.scenes,activeSceneId:content.activeSceneId||S.activeSceneId,
-      canvasAspect:outputs.canvasAspect||S.canvasAspect,sceneFadeMs:Number.isFinite(Number(outputs.sceneFadeMs))?Number(outputs.sceneFadeMs):S.sceneFadeMs,
+      canvas:PTCOMP.normalizeCanvas(content.canvas||canvasFromLegacyAspect(outputs.canvasAspect||S.canvasAspect)),
+      liveInputs:PTCOMP.normalizeLiveInputs(content.liveInputs||[]),
+      canvasAspect:outputs.canvasAspect||S.canvasAspect,sceneFadeMs:Number.isFinite(Number(outputs.sceneFadeMs))?Number(outputs.sceneFadeMs):S.sceneFadeMs,primaryLiveAudio:!!outputs.primaryLiveAudio,
       gridOn:!!outputs.gridOn,gridSize:Number(outputs.gridSize)||S.gridSize,gridCell:Number(outputs.gridCell)||0,fitWindow:!!outputs.fitWindow,
       showStart:String(preferences.showStart||''),showNowNext:!!preferences.showNowNext,flashZero:preferences.flashZero??S.flashZero,
       soundZero:preferences.soundZero??S.soundZero,showProgress:preferences.showProgress??S.showProgress,chimes:preferences.chimes??S.chimes,
@@ -5655,7 +5758,8 @@ function saveSettings(){
     gridOn:S.gridOn,gridSize:S.gridSize,gridCell:S.gridCell,fitWindow:S.fitWindow,
     chimes:S.chimes,schedOn:S.schedOn,schedAt:S.schedAt,logo:S.logo,logoPos:S.logoPos,logoSize:S.logoSize,
     lowerThird:snapshotLowerThirdForSave(S.lowerThird),lowerThirdAutoCue:S.lowerThirdAutoCue,
-    font:S.font,clock12:S.clock12,goAutoStart:S.goAutoStart,studioDirect:S.studioDirect,canvasAspect:S.canvasAspect,sceneFadeMs:S.sceneFadeMs,
+    font:S.font,clock12:S.clock12,goAutoStart:S.goAutoStart,studioDirect:S.studioDirect,canvasAspect:S.canvasAspect,canvas:PTCOMP.normalizeCanvas(S.canvas),sceneFadeMs:S.sceneFadeMs,
+    liveInputs:PTCOMP.normalizeLiveInputs(S.liveInputs),primaryLiveAudio:!!S.primaryLiveAudio,
     scenes:compactScenesForSave(),activeSceneId:S.activeSceneId,
     screenContentModel:{items:jsonCopy(contentItems,[]),selectedContentItemId,liveContentItemId}
   };
@@ -5695,7 +5799,8 @@ function load(){
       lowerThird:{...S.lowerThird, ...(st.lowerThird||{}), visible:false, until:0},
       lowerThirdAutoCue:st.lowerThirdAutoCue??S.lowerThirdAutoCue,
       font:st.font??S.font, clock12:st.clock12??S.clock12, goAutoStart:st.goAutoStart??S.goAutoStart,
-      canvasAspect:st.canvasAspect??S.canvasAspect, sceneFadeMs:st.sceneFadeMs??S.sceneFadeMs,
+      canvasAspect:st.canvasAspect??S.canvasAspect, canvas:PTCOMP.normalizeCanvas(st.canvas||canvasFromLegacyAspect(st.canvasAspect||S.canvasAspect)), sceneFadeMs:st.sceneFadeMs??S.sceneFadeMs,
+      liveInputs:PTCOMP.normalizeLiveInputs(st.liveInputs||S.liveInputs),primaryLiveAudio:st.primaryLiveAudio??S.primaryLiveAudio,
       studioDirect:st.studioDirect??S.studioDirect,
       scenes:Array.isArray(st.scenes)&&st.scenes.length?st.scenes:S.scenes,
       activeSceneId:st.activeSceneId??S.activeSceneId
@@ -5719,7 +5824,8 @@ function load(){
   fillLowerThirdControls();
   $('fontSel').value=S.font; $('chk12h').checked=S.clock12;
   $('chkGoAuto').checked=S.goAutoStart!==false;
-  $('canvasAspectSel').value=S.canvasAspect||'16:9'; $('sceneFadeSel').value=String(S.sceneFadeMs??300); applyCanvasAspect();
+  $('canvasAspectSel').value=['16:9','9:16','4:3','1:1'].includes(S.canvasAspect)?S.canvasAspect:'16:9'; $('sceneFadeSel').value=String(S.sceneFadeMs??300); applyCanvasAspect();
+  if($('chkPrimaryLiveAudio')) $('chkPrimaryLiveAudio').checked=!!S.primaryLiveAudio;
   if($('chkDirectProgram')) $('chkDirectProgram').checked=!!S.studioDirect;
   updateLogoPreview();
   buildLowerThirdPresets();
@@ -5727,7 +5833,8 @@ function load(){
   initLtStudio();
   buildPresets();
   updateLiveInfo(); updateGoLabel(); updateStatusCard();
-  const adv=localStorage.getItem('pt_advanced')==='1';
+  const storedAdvanced=localStorage.getItem('pt_advanced');
+  const adv=storedAdvanced===null ? true : storedAdvanced==='1';
   $('chkAdvanced').checked=adv;
   applyAdvancedMode(adv);
   const cmp=localStorage.getItem('pt_compact')==='1';
@@ -5747,28 +5854,26 @@ function makeId(prefix='id'){ return prefix+'-'+Date.now().toString(36)+'-'+Math
 function makeTimerLayer(){
   return {id:makeId('layer'), type:'timer', name:'Timer', visible:true, fit:'contain', x:0, y:0, w:100, h:100, opacity:1};
 }
+function canvasFromLegacyAspect(aspect){
+  const presets={'16:9':{width:1920,height:1080},'9:16':{width:1080,height:1920},'4:3':{width:1440,height:1080},'1:1':{width:1080,height:1080}};
+  return {schemaVersion:1,...(presets[String(aspect||'')]||presets['16:9']),fps:30,background:S.bgColor||'#000000',transparent:!!S.transparent};
+}
+function legacyAspectForCanvas(canvas){
+  const c=PTCOMP.normalizeCanvas(canvas); const ratio=c.width/c.height;
+  if(Math.abs(ratio-16/9)<.015) return '16:9';
+  if(Math.abs(ratio-9/16)<.015) return '9:16';
+  if(Math.abs(ratio-4/3)<.015) return '4:3';
+  if(Math.abs(ratio-1)<.015) return '1:1';
+  return `${c.width}:${c.height}`;
+}
 function ensureScenes(){
-  if(!Array.isArray(S.scenes) || !S.scenes.length) S.scenes=[{id:'scene-default', name:'Timer', layers:[makeTimerLayer()]}];
-  // migracija: legacy podrazumevana scena bez ijednog lejera dobija fullscreen tajmer
-  S.scenes.forEach(sc=>{ if(Array.isArray(sc.layers) && !sc.layers.length && sc.id==='scene-default') sc.layers.push(makeTimerLayer()); });
-  // window capture je uklonjen iz proizvoda — očisti zaostale capture lejere
-  S.scenes.forEach(sc=>{ if(Array.isArray(sc.layers)) sc.layers=sc.layers.filter(l=>l && l.type!=='capture'); });
-  S.scenes.forEach((sc,i)=>{
-    sc.id=sc.id||makeId('scene');
-    sc.name=sc.name||`Scene ${i+1}`;
-    if(!Array.isArray(sc.layers)) sc.layers=[];
-    sc.layers.forEach((l,j)=>{
-      l.id=l.id||makeId('layer');
-      l.name=l.name||`Layer ${j+1}`;
-      l.visible=l.visible!==false;
-      l.fit=l.fit||'cover';
-      l.x=Number.isFinite(Number(l.x))?Number(l.x):0;
-      l.y=Number.isFinite(Number(l.y))?Number(l.y):0;
-      l.w=Number.isFinite(Number(l.w))?Number(l.w):100;
-      l.h=Number.isFinite(Number(l.h))?Number(l.h):100;
-      l.opacity=Number.isFinite(Number(l.opacity))?Number(l.opacity):1;
-    });
-  });
+  S.canvas=PTCOMP.normalizeCanvas(S.canvas||canvasFromLegacyAspect(S.canvasAspect));
+  S.canvasAspect=legacyAspectForCanvas(S.canvas);
+  S.liveInputs=PTCOMP.normalizeLiveInputs(S.liveInputs);
+  if(!Array.isArray(S.scenes) || !S.scenes.length) S.scenes=[{id:'scene-default', name:'Scene 1', layers:[]}];
+  // Legacy ShowSlate projects used an empty scene named Timer as the timer canvas.
+  S.scenes.forEach(sc=>{ if(Array.isArray(sc.layers) && !sc.layers.length && sc.id==='scene-default' && sc.name==='Timer') sc.layers.push(makeTimerLayer()); });
+  S.scenes=S.scenes.map((scene,index)=>PTCOMP.normalizeScene(scene,index));
   if(!S.scenes.find(sc=>sc.id===S.activeSceneId)) S.activeSceneId=S.scenes[0].id;
 }
 function normalizeContentWorkflow(raw={}){
@@ -5943,8 +6048,12 @@ function currentScene(){
   return S.scenes.find(sc=>sc.id===S.activeSceneId) || S.scenes[0];
 }
 function sceneDirty(){
+  const programScenes=!S.studioDirect&&programState&&Array.isArray(programState.scenes)?programState.scenes:[];
+  const referenced=new Set(PTCOMP.referencedLiveInputIds([...(S.scenes||[]),...programScenes]));
+  S.liveInputs=PTCOMP.normalizeLiveInputs(S.liveInputs).filter(input=>referenced.has(input.id));
   monitorSceneKeys={pv:'',pg:''};
   lastKey='';
+  liveInputConfigKey='';
   renderScenesUI();
   send();
 }
@@ -5967,10 +6076,16 @@ function renderScenesUI(){
     sceneBox.appendChild(row);
   });
   const sc=currentScene();
-  const snEl=$('srcSceneName'); if(snEl) snEl.textContent=sc.name;
+  const canvasSceneSelect=$('canvasSceneSelect');
+  if(canvasSceneSelect){
+    canvasSceneSelect.innerHTML='';
+    S.scenes.forEach(scene=>{const option=document.createElement('option');option.value=scene.id;option.textContent=scene.name;canvasSceneSelect.appendChild(option);});
+    canvasSceneSelect.value=sc.id;
+  }
   layerBox.innerHTML='';
+  if(!sc.layers.some(layer=>layer.id===selectedLayerId)) selectedLayerId=(sc.layers[sc.layers.length-1]||{}).id||null;
   if(!sc.layers.length){
-    const d=document.createElement('div'); d.className='empty'; d.textContent='No layers in this scene yet.'; layerBox.appendChild(d); return;
+    const d=document.createElement('div'); d.className='empty'; d.textContent=t('emptyScene'); layerBox.appendChild(d); renderInspector(); return;
   }
   [...sc.layers].reverse().forEach((layer,revIndex)=>{
     const i=sc.layers.length-1-revIndex;
@@ -5978,13 +6093,13 @@ function renderScenesUI(){
     row.className='layer-row'+(layer.id===selectedLayerId?' sel':'');
     row.addEventListener('click',e=>{ if(e.target.closest('button,input')) return; selectLayer(layer.id); });
     const thumb = (layer.thumbnail || (layer.type==='image'?layer.src:'')) ? '<img class="source-preview" alt="">' : '<span class="layer-kind"></span>';
-    row.innerHTML=`<input type="checkbox" class="vis">${thumb}<div class="layer-name"></div><button class="mini up">↑</button><button class="mini dn">↓</button><button class="mini del">✕</button>`;
+    row.innerHTML=`<input type="checkbox" class="vis">${thumb}<div class="layer-copy"><div class="layer-name"></div><div class="layer-meta"></div></div><button class="mini up" aria-label="Move layer up">↑</button><button class="mini dn" aria-label="Move layer down">↓</button><button class="mini del" aria-label="Delete layer">✕</button>`;
     row.querySelector('.vis').checked=layer.visible!==false;
     row.querySelector('.vis').addEventListener('change',e=>{ layer.visible=e.target.checked; sceneDirty(); });
     const img=row.querySelector('img.source-preview');
     if(img) img.src=layer.thumbnail || layer.src;
     const kind=row.querySelector('.layer-kind');
-    if(kind) kind.textContent=(layer.type||'layer').slice(0,10);
+    if(kind){ kind.textContent=(layer.type||'layer').slice(0,10); if(layer.type==='color') kind.style.background=layer.color||layer.bg||'#20242c'; }
     const name=row.querySelector('.layer-name');
     name.textContent=layer.name || layer.sourceName || layer.type;
     name.title='Double-click to rename';
@@ -5992,11 +6107,19 @@ function renderScenesUI(){
       const v=await askText(t('layerNamePrompt'), layer.name||'Layer');
       if(v!==null){ layer.name=v.trim()||layer.name; sceneDirty(); }
     });
+    const meta=row.querySelector('.layer-meta');
+    if(layer.type==='window'||layer.type==='capture'){
+      const input=liveInputDefinition(layer.inputId), status=liveInputStatus(layer.inputId);
+      const dot=document.createElement('span'); dot.className='input-state '+String(status.state||'idle');
+      const label=document.createElement('span'); label.textContent=`${input?input.name:t('sourceMissing')} · ${liveInputStatusText(status)}`;
+      meta.append(dot,label);
+    } else meta.textContent=(layer.locked?t('sourceLocked')+' · ':'')+String(layer.type||'layer').toUpperCase();
     row.querySelector('.up').addEventListener('click',()=>{ if(i<sc.layers.length-1){ [sc.layers[i],sc.layers[i+1]]=[sc.layers[i+1],sc.layers[i]]; sceneDirty(); } });
     row.querySelector('.dn').addEventListener('click',()=>{ if(i>0){ [sc.layers[i],sc.layers[i-1]]=[sc.layers[i-1],sc.layers[i]]; sceneDirty(); } });
-    row.querySelector('.del').addEventListener('click',()=>{ sc.layers.splice(i,1); sceneDirty(); });
+    row.querySelector('.del').addEventListener('click',()=>{ sc.layers.splice(i,1); if(selectedLayerId===layer.id) selectedLayerId=null; sceneDirty(); renderInspector(); });
     layerBox.appendChild(row);
   });
+  renderInspector();
 }
 async function addScene(){
   ensureScenes();
@@ -6040,9 +6163,9 @@ function readFileAsDataURL(file){
 async function addMediaLayers(files){
   const list=Array.from(files||[]);
   if(!list.length) return;
-  const sc=currentScene();
+  const targetSceneId=currentScene().id;
   for(const file of list){
-    if(file.size>50000000){ alert(`${file.name} is too large for this build (max 50 MB).`); continue; }
+    if(file.size>200*1024*1024){ alert(`${file.name}: ${t('compositorMediaTooLarge')}`); continue; }
     const type=fileLayerType(file);
     const dataURL=await readFileAsDataURL(file);
     // snimi u media biblioteku (disk) → mali media:// link umesto MB dataURL-a u state/SSE
@@ -6051,34 +6174,216 @@ async function addMediaLayers(files){
       if(saved && saved.ok) src=saved.src;
       else if(saved && saved.error && file.size>2000000){ alert(file.name+': '+saved.error); continue; }
     }catch(e){}
-    sc.layers.push({
+    ensureScenes();
+    const sc=S.scenes.find(scene=>scene.id===targetSceneId);
+    if(!sc) continue;
+    const layer={
       id:makeId('layer'), type, name:file.name, src, mime:file.type||'',
       visible:true, fit:type==='pdf'?'contain':'cover', x:0, y:0, w:100, h:100, opacity:1
-    });
+    };
+    sc.layers.push(layer);
+    selectedLayerId=layer.id;
   }
   sceneDirty();
 }
 async function addTextLayer(){
   const text=await askText(t('textLayerPrompt'), 'TITLE / NAME');
   if(text===null) return;
-  currentScene().layers.push({
+  const layer={
     id:makeId('layer'), type:'text', name:text.slice(0,28)||'Text',
     text, color:'#ffffff', bg:'rgba(0,0,0,.25)', fontSize:8,
     visible:true, fit:'contain', x:0, y:0, w:100, h:100, opacity:1
-  });
+  };
+  currentScene().layers.push(layer);
+  selectedLayerId=layer.id;
   sceneDirty();
 }
 $('btnSceneAdd').addEventListener('click',addScene);
 $('btnSceneDuplicate').addEventListener('click',duplicateScene);
 $('btnSceneDelete').addEventListener('click',deleteScene);
-$('btnLayerMedia').addEventListener('click',e=>{ e.preventDefault(); $('sceneMediaFile').click(); });
+$('btnCanvasSceneAdd')?.addEventListener('click',addScene);
+$('btnCanvasSceneDuplicate')?.addEventListener('click',duplicateScene);
+$('btnCanvasSceneDelete')?.addEventListener('click',deleteScene);
+$('canvasSceneSelect')?.addEventListener('change',event=>{
+  if(!S.scenes.some(scene=>scene.id===event.target.value)) return;
+  S.activeSceneId=event.target.value; selectedLayerId=null; sceneDirty(); renderInspector();
+});
 $('sceneMediaFile').addEventListener('change',e=>{ addMediaLayers(e.target.files).finally(()=>{ e.target.value=''; }); });
-$('btnLayerText').addEventListener('click',addTextLayer);
-$('btnLayerTimer').addEventListener('click',()=>{
+function addTimerLayer(){
   const sc=currentScene();
   if(sc.layers.some(l=>l.type==='timer')){ alert(t('timerLayerOne')); return; }
-  sc.layers.push(makeTimerLayer());
+  const layer=makeTimerLayer();
+  sc.layers.push(layer);
+  selectedLayerId=layer.id;
   sceneDirty();
+}
+
+function setCompositorOpen(flag,options={}){
+  const open=!!flag;
+  if(open&&!document.body.classList.contains('adv')){
+    localStorage.setItem('pt_advanced','1');
+    if($('chkAdvanced')) $('chkAdvanced').checked=true;
+    applyAdvancedMode(true);
+  }
+  document.body.classList.toggle('compositor-open',open);
+  $('btnCompositor')?.classList.toggle('active',open);
+  $('btnCompositor')?.setAttribute('aria-expanded',open?'true':'false');
+  if(options.persist!==false) localStorage.setItem('pt_compositor_open',open?'1':'0');
+  if(open) closeDrawers();
+  if(open&&options.scroll!==false) requestAnimationFrame(()=>$('panelSources')?.scrollIntoView({behavior:'smooth',block:'start'}));
+}
+$('btnCompositor')?.addEventListener('click',()=>setCompositorOpen(!document.body.classList.contains('compositor-open')));
+$('btnCompositorClose')?.addEventListener('click',()=>setCompositorOpen(false));
+
+let sourceReplaceLayerId='';
+function setSourcePicker(kind=''){
+  $('sourceKindGrid').style.display=kind?'none':'grid';
+  ['Window','Device','Color'].forEach(name=>$('source'+name+'Picker')?.classList.toggle('open',kind===name.toLowerCase()));
+}
+function openSourceDialog(replaceLayerId=''){
+  sourceReplaceLayerId=String(replaceLayerId||'');
+  setSourcePicker('');
+  const overlay=$('sourceOverlay'); overlay.classList.add('open'); overlay.setAttribute('aria-hidden','false');
+  const layer=sourceReplaceLayerId ? currentScene().layers.find(row=>row.id===sourceReplaceLayerId) : null;
+  const definition=layer&&liveInputDefinition(layer.inputId);
+  if(layer&&definition){
+    setSourcePicker(definition.type==='window'?'window':'device');
+    if(definition.type==='window') renderDesktopSources(); else renderDeviceSources();
+  }
+  requestAnimationFrame(()=>(layer?$('sourceOverlay')?.querySelector('.source-picker.open button, .source-picker.open select'):$('sourceKindGrid')?.querySelector('button'))?.focus());
+}
+function closeSourceDialog(){
+  const overlay=$('sourceOverlay'); overlay.classList.remove('open'); overlay.setAttribute('aria-hidden','true'); setSourcePicker(''); sourceReplaceLayerId='';
+  $('btnAddSource')?.focus();
+}
+$('btnAddSource')?.addEventListener('click',openSourceDialog);
+$('btnSourceClose')?.addEventListener('click',closeSourceDialog); $('btnSourceCloseX')?.addEventListener('click',closeSourceDialog);
+$('sourceOverlay')?.addEventListener('pointerdown',event=>{if(event.target===$('sourceOverlay'))closeSourceDialog();});
+document.querySelectorAll('.source-back').forEach(button=>button.addEventListener('click',event=>{event.preventDefault();setSourcePicker('');}));
+
+function addLiveInputLayer(definition,type){
+  const clean=PTCOMP.normalizeLiveInput({...definition,id:definition.id||makeId('input')},S.liveInputs.length);
+  const index=S.liveInputs.findIndex(row=>row.id===clean.id);
+  if(index>=0) S.liveInputs[index]=clean; else S.liveInputs.push(clean);
+  const existing=sourceReplaceLayerId ? currentScene().layers.find(row=>row.id===sourceReplaceLayerId) : null;
+  const layer=PTCOMP.normalizeLayer({
+    ...(existing||{}),id:existing?existing.id:makeId('layer'),type:type||clean.type,inputId:clean.id,name:clean.name,visible:true,fit:existing&&existing.fit||'cover',
+    x:(existing&&existing.x)??0,y:(existing&&existing.y)??0,w:(existing&&existing.w)??100,h:(existing&&existing.h)??100,
+    opacity:(existing&&existing.opacity)??1,rotation:(existing&&existing.rotation)??0,audioEnabled:clean.withAudio,volume:(existing&&existing.volume)??1
+  });
+  if(existing) Object.assign(existing,layer); else currentScene().layers.push(layer);
+  selectedLayerId=layer.id; liveInputConfigKey=''; sceneDirty(); renderInspector(); closeSourceDialog();
+}
+
+async function renderDesktopSources(){
+  const grid=$('desktopSourceGrid'); grid.innerHTML=`<div class="source-empty">${t('sourceScanning')}</div>`;
+  let sources=[],permissions={};
+  try{[sources,permissions]=await Promise.all([api.liveInputDesktopSources(),api.liveInputPermissions()]);}catch(error){sources=[];}
+  grid.innerHTML='';
+  if(!sources.length){
+    const blocked=['denied','restricted'].includes(permissions&&permissions.screen);
+    const empty=document.createElement('div');empty.className=`source-empty${blocked?' permission-blocked':''}`;
+    const message=document.createElement('span');message.textContent=t(blocked?'sourceScreenPermission':'sourceWindowEmpty');empty.appendChild(message);
+    if(blocked){
+      const button=document.createElement('button');button.type='button';button.className='ghost mini';button.textContent=t('sourceOpenScreenSettings');
+      button.addEventListener('click',()=>openPrivacySettings('screen'));empty.appendChild(button);
+    }
+    grid.appendChild(empty);return;
+  }
+  sources.forEach(source=>{
+    const button=document.createElement('button'); button.type='button'; button.className='desktop-source-card';
+    const image=document.createElement('img'); image.alt=''; image.src=source.thumbnail||source.appIcon||'';
+    const name=document.createElement('span'); name.textContent=source.name; name.title=source.name;
+    const replacing=sourceReplaceLayerId ? currentScene().layers.find(row=>row.id===sourceReplaceLayerId) : null;
+    const current=replacing&&liveInputDefinition(replacing.inputId);
+    if(current&&current.desktopSourceId===source.id) button.classList.add('selected');
+    button.append(image,name);
+    button.addEventListener('click',()=>addLiveInputLayer({
+      id:makeId('input'),type:'window',name:source.name,desktopSourceId:source.id,desktopSourceName:source.name,width:S.canvas.width,height:S.canvas.height,fps:S.canvas.fps,autoReconnect:true
+    },'window'));
+    grid.appendChild(button);
+  });
+}
+$('btnDesktopRefresh')?.addEventListener('click',renderDesktopSources);
+
+async function openPrivacySettings(section){
+  try{
+    const result=await api.openPrivacySettings(section);
+    if(result&&result.ok)return;
+  }catch(error){}
+  $('sourceDialogStatus').textContent=t('sourceSettingsUnavailable');
+}
+
+async function renderDeviceSources(requestPermission=''){
+  const video=$('sourceVideoDevice'),audio=$('sourceAudioDevice'),status=$('sourceDeviceStatus'),statusText=$('sourceDeviceStatusText');
+  const cameraPermission=$('btnCameraPermission'),microphonePermission=$('btnMicrophonePermission');
+  const cameraSettings=$('btnCameraSettings'),microphoneSettings=$('btnMicrophoneSettings');
+  video.innerHTML=`<option value="">${t('sourceScanning')}</option>`; audio.innerHTML=`<option value="">${t('sourceNoAudio')}</option>`;
+  status.hidden=true;statusText.textContent='';cameraPermission.hidden=true;microphonePermission.hidden=true;cameraSettings.hidden=true;microphoneSettings.hidden=true;
+  let devices=[],permissions={},error='';
+  try{
+    const response=await api.liveInputDevices(requestPermission);
+    if(Array.isArray(response)) devices=response;
+    else {devices=Array.isArray(response&&response.devices)?response.devices:[];permissions=response&&response.permissions||{};error=response&&response.error||'';}
+  }catch(reason){devices=[];error='enumeration-failed';}
+  const videos=devices.filter(row=>row.kind==='videoinput'), audios=devices.filter(row=>row.kind==='audioinput');
+  video.innerHTML='';
+  const cameraBlocked=['denied','restricted'].includes(permissions.camera);
+  if(!videos.length){const option=document.createElement('option');option.value='';option.textContent=t(cameraBlocked?'sourceCameraPermission':error==='timeout'?'sourceDeviceTimeout':'sourceDeviceEmpty');video.appendChild(option);}
+  videos.forEach((device,index)=>{const option=document.createElement('option');option.value=device.deviceId;option.textContent=device.label||`${t('sourceDevice')} ${index+1}`;video.appendChild(option);});
+  audios.forEach((device,index)=>{const option=document.createElement('option');option.value=device.deviceId;option.textContent=device.label||`${t('sourceAudioDevice')} ${index+1}`;audio.appendChild(option);});
+  const notices=[];
+  if(cameraBlocked) notices.push(t('sourceCameraPermission'));
+  if(permissions.camera==='not-determined') notices.push(t('sourceCameraPermissionNeeded'));
+  if(['denied','restricted'].includes(permissions.microphone)) notices.push(t('sourceMicrophonePermission'));
+  if(permissions.microphone==='not-determined') notices.push(t('sourceMicrophonePermissionNeeded'));
+  if(error==='timeout') notices.push(t('sourceDeviceTimeout'));
+  cameraPermission.hidden=permissions.camera!=='not-determined';
+  microphonePermission.hidden=permissions.microphone!=='not-determined';
+  cameraSettings.hidden=permissions.camera!=='denied';
+  microphoneSettings.hidden=permissions.microphone!=='denied';
+  if(notices.length){statusText.textContent=notices.join(' ');status.hidden=false;}
+  if(videos[0]) $('sourceDeviceName').value=videos[0].label||t('sourceDevice');
+  const replacing=sourceReplaceLayerId ? currentScene().layers.find(row=>row.id===sourceReplaceLayerId) : null;
+  const current=replacing&&liveInputDefinition(replacing.inputId);
+  if(current&&current.type==='device'){
+    if(videos.some(device=>device.deviceId===current.videoDeviceId)) video.value=current.videoDeviceId;
+    if(audios.some(device=>device.deviceId===current.audioDeviceId)) audio.value=current.audioDeviceId;
+    $('sourceDeviceName').value=current.name||$('sourceDeviceName').value;
+    const size=`${current.width}x${current.height}`; if([...$('sourceDeviceResolution').options].some(option=>option.value===size)) $('sourceDeviceResolution').value=size;
+    $('sourceDeviceFps').value=String(current.fps||30);
+  }
+  $('btnDeviceAdd').disabled=!videos.length;
+}
+$('btnCameraPermission')?.addEventListener('click',()=>renderDeviceSources('camera'));
+$('btnMicrophonePermission')?.addEventListener('click',()=>renderDeviceSources('microphone'));
+$('btnCameraSettings')?.addEventListener('click',()=>openPrivacySettings('camera'));
+$('btnMicrophoneSettings')?.addEventListener('click',()=>openPrivacySettings('microphone'));
+$('sourceVideoDevice')?.addEventListener('change',event=>{const label=event.target.selectedOptions[0]?.textContent||'';if(label)$('sourceDeviceName').value=label;});
+
+$('sourceKindGrid')?.addEventListener('click',event=>{
+  const button=event.target.closest('[data-source-kind]'); if(!button)return;
+  const kind=button.dataset.sourceKind;
+  if(kind==='media'){closeSourceDialog();$('sceneMediaFile').click();}
+  if(kind==='color')setSourcePicker('color');
+  if(kind==='window'){setSourcePicker('window');renderDesktopSources();}
+  if(kind==='device'){setSourcePicker('device');renderDeviceSources();}
+  if(kind==='text'){closeSourceDialog();addTextLayer();}
+  if(kind==='timer'){closeSourceDialog();addTimerLayer();}
+});
+$('btnColorAdd')?.addEventListener('click',()=>{
+  const color=$('sourceColorValue').value||'#20242c';
+  const layer=PTCOMP.normalizeLayer({id:makeId('layer'),type:'color',name:$('sourceColorName').value.trim()||t('sourceColor'),color,bg:color,visible:true,x:0,y:0,w:100,h:100,opacity:1});
+  currentScene().layers.unshift(layer); selectedLayerId=layer.id; sceneDirty();renderInspector();closeSourceDialog();
+});
+$('btnDeviceAdd')?.addEventListener('click',()=>{
+  const video=$('sourceVideoDevice'),audio=$('sourceAudioDevice'); if(!video.value)return;
+  const [width,height]=$('sourceDeviceResolution').value.split('x').map(Number);
+  addLiveInputLayer({
+    id:makeId('input'),type:'device',name:$('sourceDeviceName').value.trim()||video.selectedOptions[0]?.textContent||t('sourceDevice'),
+    videoDeviceId:video.value,videoDeviceLabel:video.selectedOptions[0]?.textContent||'',audioDeviceId:audio.value,audioDeviceLabel:audio.selectedOptions[0]?.textContent||'',
+    withAudio:!!audio.value,width,height,fps:+$('sourceDeviceFps').value||30,autoReconnect:true
+  },'capture');
 });
 
 // ---------- MONITORI ----------
@@ -6109,6 +6414,7 @@ function normalizeOutputConfigUI(cfg={}, i=0){
     name:String(cfg.name||`Output ${i+1}`),
     role:PTCD.normalizeOutputRole(cfg.role),
     enabled:cfg.enabled!==false,
+    liveAudio:cfg.liveAudio===true,
     displayId:Number(cfg.displayId || outputFallbackDisplay()),
     displayLabel:String(cfg.displayLabel||''),
     displayWidth:Math.max(0,parseInt(cfg.displayWidth,10)||0),
@@ -6236,6 +6542,7 @@ function renderOutputRouterRows(){
         <label class="route-field route-display"><span>${t('outputDisplay')}</span><select class="out-display"></select></label>
         <label class="route-field route-role"><span>${t('outputRole')}</span><select class="out-role"></select></label>
         <label class="route-field route-mode"><span>${t('outputMode')}</span><select class="out-mode"></select></label>
+        <label class="route-field route-audio"><span>${t('outputLiveAudio')}</span><span class="route-check"><input class="out-audio" type="checkbox"> ${t('outputAudioOn')}</span></label>
         <label class="route-field route-placement"><span>${t('outputPlacement')}</span><select class="out-placement"></select></label>
         <div class="route-field-group route-size"><span>${t('outputResolution')}</span><div><input class="out-w" type="number" min="160" max="8192" aria-label="Width"><span>×</span><input class="out-h" type="number" min="120" max="8192" aria-label="Height"></div></div>
         <div class="route-field-group route-coordinates"><span>${t('outputCoordinates')}</span><div><input class="out-x" type="number" min="0" max="8192" aria-label="X"><span>×</span><input class="out-y" type="number" min="0" max="8192" aria-label="Y"></div></div>
@@ -6243,6 +6550,7 @@ function renderOutputRouterRows(){
       </div>
       <div class="output-route-runtime">${outputDisplayName(cfg.displayId,cfg)} · ${outputRuntimeDescription(cfg)}</div>`;
     const enabled=row.querySelector('.out-enabled'); enabled.checked=cfg.enabled;
+    const liveAudio=row.querySelector('.out-audio'); liveAudio.checked=cfg.liveAudio;
     const name=row.querySelector('.out-name'); name.value=cfg.name;
     const displaySel=row.querySelector('.out-display');
     if(!lastDisplays.some(d=>Number(d.id)===Number(cfg.displayId))){
@@ -6271,6 +6579,7 @@ function renderOutputRouterRows(){
     row.querySelector('.out-grid').value=cfg.gridSize; row.querySelector('.out-cell').value=cfg.gridCell;
     const sync=()=>{
       cfg.enabled=enabled.checked;
+      cfg.liveAudio=liveAudio.checked;
       cfg.name=name.value.trim()||`Output ${i+1}`;
       cfg.role=PTCD.normalizeOutputRole(role.value);
       cfg.displayId=Number(displaySel.value);
@@ -6318,20 +6627,28 @@ async function loadOutputConfigs(){
   renderOutputRows();
 }
 function addOutputConfig(options={}){
+  const canvas=PTCOMP.normalizeCanvas(S.canvas||canvasFromLegacyAspect(S.canvasAspect));
   outputConfigs.push(normalizeOutputConfigUI({
     id:makeId('out'), name:`Output ${outputConfigs.length+1}`,
-    role:'audience', displayId:outputFallbackDisplay(), mode:'fullscreen', width:960, height:540, placement:'center', x:0, y:0, gridSize:S.gridSize||3, gridCell:S.gridCell||0
+    role:'audience', displayId:outputFallbackDisplay(), mode:'fullscreen', width:canvas.width, height:canvas.height, placement:'center', x:0, y:0, gridSize:S.gridSize||3, gridCell:S.gridCell||0, liveAudio:false
   }, outputConfigs.length));
   saveOutputConfigsLocal(); markOutputRoutingDirty(); renderOutputRows();
   if(options.open!==false) openOutputRouter();
 }
 function applyOutputConfigs(){
   outputConfigs=outputConfigs.map(normalizeOutputConfigUI);
+  const audioRoutes=outputConfigs.filter(config=>config.enabled!==false&&config.liveAudio);
+  if(audioRoutes.length+(S.primaryLiveAudio?1:0)>1){
+    outputRoutingDirty=true;
+    const status=$('outputRouterStatus'); if(status) status.textContent=t('outputAudioConflict');
+    renderOutputRows(); return false;
+  }
   saveOutputConfigsLocal();
   api.setOutputConfigs(outputConfigs);
   outputRoutingDirty=false;
   const status=$('outputRouterStatus'); if(status) status.textContent=t('outputRouteApplied');
   renderOutputRows();
+  return true;
 }
 function openOutputRouter(){
   closeTopbarMenu(); closeDrawers(); renderOutputRows();
@@ -6349,15 +6666,63 @@ function stopAllOutputs(){
   const status=$('outputRouterStatus'); if(status) status.textContent=t('outputAllStopped');
   renderOutputRows();
 }
-function applyCanvasAspect(){
-  const [aw,ah]=(S.canvasAspect||'16:9').split(':').map(Number);
-  ['preview','program'].forEach(id=>{ const el=$(id); if(!el) return;
-    el.style.aspectRatio=aw+' / '+ah;
-    el.style.maxWidth=(aw/ah<1)?'calc(34vh * '+(aw/ah)+')':'';
-  });
+function fitMonitorCanvas(element){
+  if(!element||!element.getClientRects().length)return;
+  const monitor=element.closest('.studio-monitor'); if(!monitor)return;
+  const head=monitor.querySelector('.monitor-head');
+  const availableWidth=Math.max(1,monitor.clientWidth);
+  const availableHeight=Math.max(1,monitor.clientHeight-(head?head.offsetHeight:0));
+  const canvas=PTCOMP.normalizeCanvas(S.canvas||canvasFromLegacyAspect(S.canvasAspect));
+  const ratio=canvas.width/canvas.height;
+  const width=Math.max(1,Math.min(availableWidth,availableHeight*ratio));
+  const height=Math.max(1,width/ratio);
+  element.style.setProperty('width',width+'px','important');
+  element.style.setProperty('height',height+'px','important');
+  element.style.setProperty('flex','0 0 auto','important');
+  element.style.setProperty('align-self','center','important');
+  element.style.setProperty('margin','auto','important');
 }
-$('canvasAspectSel').addEventListener('change',e=>{ S.canvasAspect=e.target.value; applyCanvasAspect(); lastKey=''; stageKeys={pv:'',pg:''}; send(); });
+function fitMonitorCanvases(){requestAnimationFrame(()=>{fitMonitorCanvas($('preview'));fitMonitorCanvas($('program'));});}
+if(typeof ResizeObserver!=='undefined'){
+  const monitorFitObserver=new ResizeObserver(fitMonitorCanvases);
+  document.querySelectorAll('.studio-monitor').forEach(element=>monitorFitObserver.observe(element));
+}
+window.addEventListener('resize',fitMonitorCanvases);
+function applyCanvasAspect(){
+  S.canvas=PTCOMP.normalizeCanvas({...S.canvas,...(!S.canvas?canvasFromLegacyAspect(S.canvasAspect):{}),background:S.bgColor,transparent:!!S.transparent});
+  const aw=S.canvas.width, ah=S.canvas.height;
+  S.canvasAspect=legacyAspectForCanvas(S.canvas);
+  document.documentElement.style.setProperty('--canvas-ar',aw+' / '+ah);
+  ['preview','program'].forEach(id=>{ const el=$(id); if(!el) return;
+    el.style.setProperty('aspect-ratio',aw+' / '+ah,'important');
+  });
+  fitMonitorCanvases();
+  if($('canvasWidth')) $('canvasWidth').value=String(aw);
+  if($('canvasHeight')) $('canvasHeight').value=String(ah);
+  if($('canvasFps')) $('canvasFps').value=String(S.canvas.fps);
+  if($('canvasPresetSel')) $('canvasPresetSel').value=PTCOMP.canvasPreset(S.canvas);
+  if($('canvasAspectSel')&&[...$('canvasAspectSel').options].some(option=>option.value===S.canvasAspect)) $('canvasAspectSel').value=S.canvasAspect;
+}
+$('canvasAspectSel').addEventListener('change',e=>{ S.canvasAspect=e.target.value; S.canvas=PTCOMP.normalizeCanvas(canvasFromLegacyAspect(e.target.value)); applyCanvasAspect(); lastKey=''; stageKeys={pv:'',pg:''}; send(); });
+$('canvasPresetSel')?.addEventListener('change',event=>{
+  const preset=PTCOMP.CANVAS_PRESETS.find(row=>row.id===event.target.value);
+  if(preset) S.canvas=PTCOMP.normalizeCanvas({...S.canvas,width:preset.width,height:preset.height});
+  applyCanvasAspect(); monitorSceneKeys={pv:'',pg:''}; stageKeys={pv:'',pg:''}; send();
+});
+function applyCustomCanvas(){
+  S.canvas=PTCOMP.normalizeCanvas({...S.canvas,width:+$('canvasWidth').value,height:+$('canvasHeight').value,fps:+$('canvasFps').value});
+  applyCanvasAspect(); monitorSceneKeys={pv:'',pg:''}; stageKeys={pv:'',pg:''}; send();
+}
+$('canvasWidth')?.addEventListener('change',applyCustomCanvas); $('canvasHeight')?.addEventListener('change',applyCustomCanvas); $('canvasFps')?.addEventListener('change',applyCustomCanvas);
 $('sceneFadeSel').addEventListener('change',e=>{ S.sceneFadeMs=+e.target.value||0; send(); });
+$('chkPrimaryLiveAudio')?.addEventListener('change',event=>{
+  if(event.target.checked&&outputConfigs.some(config=>config.enabled!==false&&config.liveAudio)){
+    event.target.checked=false; S.primaryLiveAudio=false; openOutputRouter();
+    const status=$('outputRouterStatus'); if(status) status.textContent=t('outputAudioConflict');
+    return;
+  }
+  S.primaryLiveAudio=event.target.checked; send();
+});
 $('btnAddOutput').addEventListener('click',()=>addOutputConfig());
 $('btnApplyOutputs').addEventListener('click',openOutputRouter);
 $('btnOutputRouterAdd').addEventListener('click',()=>addOutputConfig({open:false}));
@@ -8334,10 +8699,10 @@ function buildGrid(){
 $('chkGrid').addEventListener('change',e=>{ S.gridOn=e.target.checked; lastKey=''; buildGrid(); send(true); });
 $('gridSizeSel').addEventListener('change',e=>setGridSize(+e.target.value));
 
-$('btnBlackout').addEventListener('click',()=>setProgramBlackout(!ensureProgramState().blackout));
 $('btnCut').addEventListener('click',()=>takePreview('cut'));
 $('btnTake').addEventListener('click',()=>takePreview('transition'));
 $('btnFadeBlack').addEventListener('click',()=>setProgramBlackout(!ensureProgramState().blackout));
+$('bdgBk').addEventListener('click',()=>setProgramBlackout(!ensureProgramState().blackout));
 $('chkDirectProgram').addEventListener('change',e=>{
   S.studioDirect=!!e.target.checked;
   if(S.studioDirect) takePreview('cut');
@@ -8768,7 +9133,10 @@ function toggleUtilitySidebar(){
 }
 $('btnRundownDrawer').addEventListener('click',toggleNavigationSidebar);
 $('btnMsgDrawer').addEventListener('click',toggleUtilitySidebar);
-$('btnSettingsDrawer').addEventListener('click',()=>toggleDrawer('dr-setup'));
+$('btnSettingsDrawer').addEventListener('click',()=>{
+  if(document.body.classList.contains('compositor-open')) setCompositorOpen(false);
+  toggleDrawer('dr-setup');
+});
 if($('btnSetupClose')) $('btnSetupClose').addEventListener('click',closeDrawers);
 $('drawerScrim').addEventListener('click',closeDrawers);
 window.addEventListener('resize',()=>{ updateSidebarToggle(); updateUtilityToggle(); });
@@ -8806,6 +9174,7 @@ document.addEventListener('click',e=>{
 window.addEventListener('resize',()=>{ if(document.body.classList.contains('tb-open')) positionTopbarMenu(); });
 document.addEventListener('keydown',e=>{
   if(e.key!=='Escape') return;
+  if($('sourceOverlay')?.classList.contains('open')){ e.preventDefault(); closeSourceDialog(); return; }
   if($('outputRouterOverlay')?.classList.contains('open')){ e.preventDefault(); closeOutputRouter(); return; }
   if($('newShowOverlay')?.classList.contains('open')){ e.preventDefault(); closeNewShowWizard(); return; }
   if($('preflightOverlay')?.classList.contains('open')){ e.preventDefault(); closePreflight(); return; }
@@ -8816,7 +9185,7 @@ $('btnAbout')?.addEventListener('click',async()=>{
   let info={};
   try{ info=await api.buildInfo(); }catch(e){ info={error:String(e&&e.message||e)}; }
   const lines=[
-    'ShowSlate Conference Desk',
+    'ShowSlate — Live Compositor',
     'Version: '+(info.version || '1.0.0'),
     'Commit: '+(info.commit || 'unknown'),
     'Source state: '+(info.dirty ? 'modified (non-release build)' : 'clean'),
@@ -8871,7 +9240,7 @@ document.addEventListener('keydown',e=>{
   switch(e.key){
     case ' ': e.preventDefault(); startPause(); break;
     case 'r': case 'R': reset(); break;
-    case 'b': case 'B': $('btnBlackout').click(); break;
+    case 'b': case 'B': setProgramBlackout(!ensureProgramState().blackout); break;
     case 'f': case 'F': api.toggleFullscreen(); break;
     case 'm': case 'M': e.preventDefault(); $('msgInput').focus(); break;
     case 'c': case 'C': $('btnMsgClear').click(); break;
@@ -8893,7 +9262,16 @@ $('langSel').addEventListener('change',e=>{
 });
 
 // ---------- START ----------
-buildLanguageSelect(); buildGridSizeControl(); arrangeOperatorLayout(); load(); refreshDisplays(); loadOutputConfigs(); send(true); updateButtons(); applyLang(); requestAnimationFrame(render); initShowPersistence();
+buildLanguageSelect(); buildGridSizeControl(); arrangeOperatorLayout(); load();
+{
+  const identityKey='showslate_live_compositor_identity_v1';
+  const firstIdentityLaunch=localStorage.getItem(identityKey)!=='1';
+  const storedComposer=localStorage.getItem('pt_compositor_open');
+  const openComposer=firstIdentityLaunch || storedComposer===null ? true : storedComposer==='1';
+  setCompositorOpen(openComposer,{scroll:false,persist:firstIdentityLaunch});
+  if(firstIdentityLaunch) localStorage.setItem(identityKey,'1');
+}
+refreshDisplays(); loadOutputConfigs(); send(true); updateButtons(); applyLang(); requestAnimationFrame(render); initShowPersistence();
 
 // ---------- MODAL: askText (Electron NE podržava window.prompt!) ----------
 let modalResolve=null;
@@ -8937,37 +9315,64 @@ function renderInspector(){
   box.classList.toggle('open', !!L);
   if(!L) return;
   inspBinding=true;
+  $('inspName').value=String(L.name||L.sourceName||L.type||'');
   $('inspX').value=Number(L.x??0).toFixed(1).replace(/\.0$/,'');
   $('inspY').value=Number(L.y??0).toFixed(1).replace(/\.0$/,'');
   $('inspW').value=Number(L.w??100).toFixed(1).replace(/\.0$/,'');
   $('inspH').value=Number(L.h??100).toFixed(1).replace(/\.0$/,'');
   $('inspOpacity').value=Math.round(Number(L.opacity??1)*100);
   $('inspFit').value=L.fit||'cover';
+  $('inspRotation').value=Number(L.rotation||0).toFixed(1).replace(/\.0$/,'');
+  $('inspLocked').checked=!!L.locked;
   const isText=L.type==='text';
   $('inspTextWrap').classList.toggle('open', isText);
   if(isText){ $('inspText').value=L.text||''; $('inspColor').value=L.color||'#ffffff'; $('inspFontSize').value=Number(L.fontSize)||8; }
+  const isColor=L.type==='color'; $('inspColorWrap').classList.toggle('open',isColor); if(isColor)$('inspSourceColor').value=L.color||L.bg||'#20242c';
+  const isLive=L.type==='window'||L.type==='capture';
+  $('inspLiveWrap').classList.toggle('open',isLive); $('inspLiveStatus').classList.toggle('open',isLive);
+  if(isLive){
+    $('inspLiveAudio').checked=L.audioEnabled!==false; $('inspLiveVolume').value=Math.round(Number(L.volume??1)*100);
+    const status=liveInputStatus(L.inputId), definition=liveInputDefinition(L.inputId);
+    $('inspLiveDot').className='input-state '+String(status.state||'idle');
+    $('inspLiveStatusText').textContent=`${definition?definition.name:t('sourceMissing')} · ${liveInputStatusText(status)}`;
+  }
+  const isVideo=L.type==='video'; $('inspVideoWrap').classList.toggle('open',isVideo);
+  if(isVideo){$('inspVideoLoop').checked=L.loop!==false;$('inspVideoMuted').checked=L.muted!==false;$('inspVideoVolume').value=Math.round(Number(L.volume??1)*100);}
   inspBinding=false;
 }
 function inspApply(mut){
   if(inspBinding) return;
   const L=selectedLayer(); if(!L) return;
   mut(L);
-  L.x=Math.max(0,Math.min(100,Number(L.x)||0)); L.y=Math.max(0,Math.min(100,Number(L.y)||0));
-  L.w=Math.max(4,Math.min(100,Number(L.w)||100)); L.h=Math.max(4,Math.min(100,Number(L.h)||100));
+  L.x=Math.max(-100,Math.min(200,Number(L.x)||0)); L.y=Math.max(-100,Math.min(200,Number(L.y)||0));
+  L.w=Math.max(1,Math.min(300,Number(L.w)||100)); L.h=Math.max(1,Math.min(300,Number(L.h)||100));
   sceneDirty();
   renderInspector();
 }
+$('inspName').addEventListener('change',e=>inspApply(L=>L.name=e.target.value.trim().slice(0,160)||L.name||L.type));
 $('inspX').addEventListener('change',e=>inspApply(L=>L.x=+e.target.value));
 $('inspY').addEventListener('change',e=>inspApply(L=>L.y=+e.target.value));
 $('inspW').addEventListener('change',e=>inspApply(L=>L.w=+e.target.value));
 $('inspH').addEventListener('change',e=>inspApply(L=>L.h=+e.target.value));
 $('inspOpacity').addEventListener('input',e=>inspApply(L=>L.opacity=(+e.target.value)/100));
 $('inspFit').addEventListener('change',e=>inspApply(L=>L.fit=e.target.value));
+$('inspRotation').addEventListener('change',e=>inspApply(L=>L.rotation=+e.target.value||0));
+$('inspLocked').addEventListener('change',e=>inspApply(L=>L.locked=e.target.checked));
 $('inspCenter').addEventListener('click',()=>inspApply(L=>{ L.x=(100-L.w)/2; L.y=(100-L.h)/2; }));
 $('inspFull').addEventListener('click',()=>inspApply(L=>{ L.x=0; L.y=0; L.w=100; L.h=100; }));
+$('inspDuplicate').addEventListener('click',()=>{const L=selectedLayer();if(!L)return;const copy={...cloneState(L),id:makeId('layer'),name:(L.name||L.type||'Source')+' copy',x:Math.min(96,Number(L.x||0)+2),y:Math.min(96,Number(L.y||0)+2)};currentScene().layers.push(copy);selectedLayerId=copy.id;sceneDirty();renderInspector();});
+$('inspDelete').addEventListener('click',()=>{const sc=currentScene(),index=sc.layers.findIndex(layer=>layer.id===selectedLayerId);if(index<0)return;sc.layers.splice(index,1);selectedLayerId=null;sceneDirty();renderInspector();});
 $('inspText').addEventListener('input',e=>inspApply(L=>{ if(L.type==='text') L.text=e.target.value; }));
 $('inspColor').addEventListener('input',e=>inspApply(L=>{ if(L.type==='text') L.color=e.target.value; }));
 $('inspFontSize').addEventListener('change',e=>inspApply(L=>{ if(L.type==='text') L.fontSize=+e.target.value||8; }));
+$('inspSourceColor').addEventListener('input',e=>inspApply(L=>{if(L.type==='color'){L.color=e.target.value;L.bg=e.target.value;}}));
+$('inspLiveAudio').addEventListener('change',e=>inspApply(L=>{if(L.type==='window'||L.type==='capture')L.audioEnabled=e.target.checked;}));
+$('inspLiveVolume').addEventListener('input',e=>inspApply(L=>{if(L.type==='window'||L.type==='capture')L.volume=(+e.target.value)/100;}));
+$('inspVideoLoop').addEventListener('change',e=>inspApply(L=>{if(L.type==='video')L.loop=e.target.checked;}));
+$('inspVideoMuted').addEventListener('change',e=>inspApply(L=>{if(L.type==='video')L.muted=e.target.checked;}));
+$('inspVideoVolume').addEventListener('input',e=>inspApply(L=>{if(L.type==='video')L.volume=(+e.target.value)/100;}));
+$('inspLiveChange').addEventListener('click',()=>{const L=selectedLayer();if(L&&(L.type==='window'||L.type==='capture'))openSourceDialog(L.id);});
+$('inspLiveRestart').addEventListener('click',()=>{const L=selectedLayer();if(L&&(L.type==='window'||L.type==='capture'))api.liveInputRestart(L.inputId);});
 (function(){
   const box=$('preview'); if(!box) return;
   let drag=null;
@@ -8975,6 +9380,13 @@ $('inspFontSize').addEventListener('change',e=>inspApply(L=>{ if(L.type==='text'
     return { x:(e.clientX-r.left)/r.width*100, y:(e.clientY-r.top)/r.height*100, rect:r }; };
   const timerLayerOfScene=()=>{ const sc=currentScene(); return (sc.layers||[]).find(l=>l.type==='timer' && l.visible!==false) || null; };
   const layerById=(id)=>{ const sc=currentScene(); return (sc.layers||[]).find(l=>l.id===id) || null; };
+  const syncTransformInspector=layer=>{
+    if(!layer||layer.id!==selectedLayerId) return;
+    $('inspX').value=Number(layer.x).toFixed(1).replace(/\.0$/,'');
+    $('inspY').value=Number(layer.y).toFixed(1).replace(/\.0$/,'');
+    $('inspW').value=Number(layer.w).toFixed(1).replace(/\.0$/,'');
+    $('inspH').value=Number(layer.h).toFixed(1).replace(/\.0$/,'');
+  };
 
   box.addEventListener('pointerdown',e=>{
     if(e.button!==0) return;
@@ -8986,13 +9398,16 @@ $('inspFontSize').addEventListener('change',e=>inspApply(L=>{ if(L.type==='text'
     if(!id){ if(selectedLayerId){ selectLayer(null); } return; }
     const layer=layerById(id); if(!layer) return;
     if(selectedLayerId!==id) selectLayer(id);
+    if(layer.locked) return;
     const p=pctPoint(e,pointerRect);
     const b=layerBounds(layer);
     // resize ako je hvatanje blizu donjeg-desnog ugla kutije (u px)
     const cornerX=(b.x+b.w)/100*p.rect.width, cornerY=(b.y+b.h)/100*p.rect.height;
     const px=(e.clientX-p.rect.left), py=(e.clientY-p.rect.top);
-    const mode=(Math.abs(px-cornerX)<18 && Math.abs(py-cornerY)<18)?'resize':'move';
-    drag={ id, mode, startX:p.x, startY:p.y, ox:b.x, oy:b.y, ow:b.w, oh:b.h,
+    const handleEl=e.target.closest('.transform-handle');
+    const handle=handleEl&&handleEl.dataset.handle;
+    const mode=handle?'resize':((Math.abs(px-cornerX)<18 && Math.abs(py-cornerY)<18)?'resize':'move');
+    drag={ id, mode, handle:handle||'se', startX:p.x, startY:p.y, ox:b.x, oy:b.y, ow:b.w, oh:b.h,
       rect:{left:p.rect.left,top:p.rect.top,width:p.rect.width,height:p.rect.height} };
     box.setPointerCapture(e.pointerId);
     e.preventDefault();
@@ -9006,11 +9421,14 @@ $('inspFontSize').addEventListener('change',e=>inspApply(L=>{ if(L.type==='text'
       layer.x=Math.max(0, Math.min(100-drag.ow, drag.ox+dx));
       layer.y=Math.max(0, Math.min(100-drag.oh, drag.oy+dy));
     } else {
-      layer.w=Math.max(4, Math.min(100-drag.ox, drag.ow+dx));
-      layer.h=Math.max(4, Math.min(100-drag.oy, drag.oh+dy));
+      if(drag.handle.includes('e')) layer.w=Math.max(4,Math.min(100-drag.ox,drag.ow+dx));
+      if(drag.handle.includes('s')) layer.h=Math.max(4,Math.min(100-drag.oy,drag.oh+dy));
+      if(drag.handle.includes('w')){const right=drag.ox+drag.ow;layer.x=Math.max(0,Math.min(right-4,drag.ox+dx));layer.w=right-layer.x;}
+      if(drag.handle.includes('n')){const bottom=drag.oy+drag.oh;layer.y=Math.max(0,Math.min(bottom-4,drag.oy+dy));layer.h=bottom-layer.y;}
     }
     layer.x=Math.round(layer.x*2)/2; layer.y=Math.round(layer.y*2)/2;
     layer.w=Math.round(layer.w*2)/2; layer.h=Math.round(layer.h*2)/2;
+    syncTransformInspector(layer);
     // živo osvežavanje samo Preview-a (bez slanja): pomeri div/stage direktno
     if(layer.type==='timer'){ stageKeys.pv=''; }
     else {
@@ -9021,6 +9439,9 @@ $('inspFontSize').addEventListener('change',e=>inspApply(L=>{ if(L.type==='text'
   const finish=e=>{ if(!drag) return; drag=null; sceneDirty(); renderInspector(); };
   box.addEventListener('pointerup',finish);
   box.addEventListener('pointercancel',finish);
+  box.addEventListener('lostpointercapture',finish);
+  window.addEventListener('pointerup',finish,true);
+  window.addEventListener('pointercancel',finish,true);
 })();
 document.addEventListener('keydown',e=>{
   if(e.key==='Escape' && selectedLayerId && !e.target.closest('input,textarea,select')) selectLayer(null);

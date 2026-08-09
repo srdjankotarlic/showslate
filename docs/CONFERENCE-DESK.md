@@ -1,10 +1,10 @@
 # Conference Desk Workflow
 
-ShowSlate Conference Desk coordinates one conference room from one local operator workspace. The normal path is:
+The ShowSlate **Conference Desk** workflow coordinates one conference room from one local operator workspace. The normal path is:
 
 `show folder -> setup wizard -> output roles -> preflight -> Live Mode -> GO`
 
-The app does not switch cameras or mix audio. Its job is to keep the room rundown, timer, linked content, speaker lower third and destination screens on the same cue state.
+The built-in Canvas can compose selected windows, media, cameras and UVC capture devices for room displays. It is not an advanced camera switcher, audio mixer or streaming encoder. Its primary job is to keep the room rundown, timer, linked content, speaker lower third and destination screens on the same cue and Program state.
 
 ## Try it without files
 

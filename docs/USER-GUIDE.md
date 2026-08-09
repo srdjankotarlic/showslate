@@ -1,6 +1,6 @@
-# ShowSlate Conference Desk User Guide
+# ShowSlate Live Compositor User Guide
 
-ShowSlate Conference Desk is an offline-first control application for a single conference room. It keeps the rundown, speaker timer, linked content, lower thirds and role-based outputs on the same LIVE cue.
+ShowSlate is a local-first live compositor and show-control application. Its Composer builds layered scenes for Preview and Program; the included Conference Desk workflow keeps a rundown, speaker timing, linked content, lower thirds and role-based outputs on the same LIVE cue.
 
 ## Quick start
 
@@ -44,7 +44,8 @@ Select **Outputs** from the header.
 3. Choose its role and exact physical display.
 4. Choose **Fullscreen**, **Window**, **Custom size** or **Grid cell**.
 5. For Custom size, enter width, height and coordinates.
-6. Enable the route and select **Apply routing**.
+6. Enable **Program audio** on no more than one local desktop route when a scene really needs source audio.
+7. Enable the route and select **Apply routing**.
 
 Available roles:
 
@@ -75,9 +76,28 @@ Warnings do not always block entry to the workspace, but the operator must under
 
 The Live strip always shows LIVE and NEXT together. **NEXT ROW** advances strictly in rundown order; the main GO control can also take an explicitly selected row.
 
+## Canvas and scene composition
+
+Select **Composer** in the visible header to open the scene compositor. This workspace stays available at narrow window sizes and keeps the scene selector, scene actions, Add Source, layer list and inspector reachable by scrolling.
+
+1. Open **Composer**, then select an existing scene or create, duplicate or delete one from its header.
+2. Choose a standard preset or enter a custom width, height and frame rate.
+3. Select **Add Source** and add a picture/video/PDF, solid color, text, timer, application window/display or video capture device.
+4. For a camera or UVC capture card, choose **Allow camera** when access is first needed. Choose **Allow audio** separately only when that source should carry sound, then select the devices, resolution and frame rate. If macOS access was denied earlier, use the visible settings shortcut, enable ShowSlate in the matching Privacy section and restart the app.
+5. Arrange the stack in **Layers**. The top row is visually in front.
+6. Select a layer, then drag it in Preview or use the inspector for exact position, size, opacity, rotation and fit.
+7. Use **Change source** to reconnect a window or device without losing that layer's transform.
+8. Keep **Direct Program** off while preparing. Select **TAKE** to send the complete Preview scene to Program.
+
+Preview capture is always muted. To hear audio from an enabled video/capture layer, enable **Program audio** on exactly one local desktop output. It is off by default to prevent feedback.
+
+Window, display and capture-device streams are local to the desktop app. They appear in ShowSlate desktop output windows, but not in the browser/OBS URL output. Device identifiers can change after moving a show to another computer, so use **Change source** and run Preflight again.
+
+If Preflight warns about a Canvas/output aspect mismatch, the scene can be stretched by that destination. Either match the Canvas to the destination or confirm that the non-matching format is intentional.
+
 ## Speaker timing and messages
 
-The timer supports countdown, stopwatch and clock modes, warning colors, overtime, progress, chimes and scheduled start.
+Open **Settings > Timing** when a scene needs countdown, stopwatch or clock controls. The timer remains available as a scene source and supports warning colors, overtime, progress, chimes and scheduled start without occupying the permanent live workspace.
 
 Use Message for urgent presenter communication. Confidence and Timer roles display the message prominently. Quick messages can be edited by double-clicking them.
 
@@ -131,10 +151,11 @@ English is the default. English and Serbian have full interface coverage. The ot
 ## Before doors open
 
 - Connect and power all displays before opening ShowSlate.
+- Grant Screen Recording only when using window/display capture. ShowSlate requests Camera and audio-input access separately from visible buttons in the capture-device picker; enable only what the show needs.
 - Disable sleep, notifications and automatic system updates.
 - Prefer wired Ethernet for browser devices.
 - Open the final show and verify every media asset.
 - Identify displays, apply routing and run Preflight.
 - Test GO, START, BLACKOUT, messages, lower thirds and every output role.
-- Confirm the exact stream-capture path separately when used.
+- Test every live window/device source, Program-audio route and stream-capture path separately when used.
 - Keep a fallback timer and a copy of the rundown available.

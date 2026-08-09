@@ -1,5 +1,7 @@
 # Stable release evidence
 
+This directory contains the stable-release gate. The [`beta/`](beta/README.md) directory provides an optional physical-QA record for experimental betas. Public beta publication does not imply physical certification; stable publication still requires complete retained evidence.
+
 Stable releases use two separate workflows:
 
 1. **Build signed stable candidate** creates signed/notarized artifacts and a private draft GitHub Release.

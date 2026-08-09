@@ -1,4 +1,4 @@
-# ShowSlate Conference Desk repository map
+# ShowSlate Live Compositor repository map
 
 Current public repository map. Line counts are approximate and should be checked with `wc -l` before line-sensitive work.
 
@@ -41,11 +41,11 @@ Current public repository map. Line counts are approximate and should be checked
 ## Tests
 
 - `tools/run-test-suite.js`: cross-platform aggregate module/renderer runner.
-- `npm test`: deterministic free-build/site/icon checks plus fifteen module scripts.
+- `npm test`: deterministic free-build/site/icon checks plus sixteen module scripts.
 - `test/*-renderer.test.js`: seven real Electron workflow suites pinned to an explicitly selected display.
 - `test/conference-desk-renderer.test.js`: visible folder-import, role-routing, atomic GO, render acknowledgement and Live Mode workflow.
 - `test/site-renderer.test.js`: desktop/mobile landing-page layout and real-image verification.
-- `test/beta-usability-matrix.test.js`: 55 responsive checks at four viewport sizes.
+- `test/beta-usability-matrix.test.js`: 56 responsive checks at four viewport sizes.
 - `main.js --smoke`: source/packaged integration and visual assertions.
 - `tools/run-lt-soak.js`: targeted condition-driven soak.
 - `test/fixtures/lower-third/`: deterministic image/video/codec fixtures included in packaged smoke.

@@ -50,7 +50,7 @@ app.whenReady().then(async () => {
   })())`));
   check('SITE_DESKTOP_NO_HORIZONTAL_OVERFLOW_OK', desktop.scrollWidth <= desktop.width, JSON.stringify(desktop));
   check('SITE_DESKTOP_HERO_AND_NEXT_SECTION_OK', desktop.scrollY === 0 && desktop.heroTop >= 0 && desktop.title.left >= 0 && desktop.title.right <= desktop.width && desktop.title.top >= 0 && desktop.title.bottom <= desktop.height && desktop.nextTop > 0 && desktop.nextTop < desktop.height, JSON.stringify(desktop));
-  check('SITE_DOWNLOADS_AND_REAL_IMAGES_OK', desktop.downloads.every(url=>url.includes('v0.10.0-beta.1')) && desktop.images.every(image=>image.ok), JSON.stringify(desktop.images));
+  check('SITE_DOWNLOADS_AND_REAL_IMAGES_OK', desktop.downloads.every(url=>url.includes('v0.11.0-beta.1')) && desktop.images.every(image=>image.ok), JSON.stringify(desktop.images));
   fs.writeFileSync(path.join(artifacts, 'desktop.png'), (await window.webContents.capturePage()).toPNG());
 
   window.setBounds(smokeDisplay.clampToWorkArea({ width: 390, height: 844 }, target.workArea));

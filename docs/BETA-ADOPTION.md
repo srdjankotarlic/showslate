@@ -1,4 +1,4 @@
-# Conference Desk public beta plan
+# ShowSlate Live Compositor public beta plan
 
 The immediate objective is not a large download number. It is to learn whether a real single-room operator can prepare, preflight and run a conference without manually synchronizing a spreadsheet, timer, media folder and speaker graphics.
 
@@ -18,15 +18,17 @@ At least three should complete the room workflow below. At least one independent
 ## Operator task
 
 1. Install the beta on a non-critical computer.
-2. Run **Load conference demo** and identify the attached displays.
-3. Assign Audience and Confidence roles, then run **Test outputs**.
-4. Select NEXT and complete three GO transitions.
-5. Confirm timer, linked media and speaker lower third stay on the same cue.
-6. Send and clear one presenter message.
-7. Disconnect and reconnect one output display, then confirm fail-safe behavior.
-8. Import a small real or anonymized CSV/media folder.
-9. Export and reopen a `.showslate-show` package.
-10. Report the first confusing step, any incorrect output and whether this would replace part of their current room workflow.
+2. Create a Canvas scene with a color layer, picture and video with audio; reorder and resize the layers, save, close and reopen the show.
+3. Add a real application window and a real display as separate sources. Confirm Preview does not change Program, then TAKE each source and reconnect it once.
+4. Add a camera, then a physical UVC capture card carrying video and embedded audio. Confirm the requested format, Preview mute, Program audio and media cleanup after HIDE/stop.
+5. Open two local Program destinations. Confirm only one carries audio and the second audio route is visibly blocked.
+6. Resize the operator window from 1440x900 down to 900x600 and confirm Composer, layers, source inspector, TAKE and Outputs remain reachable.
+7. Run **Load conference demo** and identify the attached displays.
+8. Assign Audience and Confidence roles, then run **Test outputs**.
+9. Select NEXT and complete three GO transitions. Confirm linked content, speaker timing and lower third stay on the same cue.
+10. Send and clear one presenter message, disconnect/reconnect one output display and confirm fail-safe behavior.
+11. Import a small real or anonymized CSV/media folder, then export and reopen a `.showslate-show` package.
+12. Report the first confusing step, any incorrect output and whether this would replace part of the current room workflow.
 
 Ask for app version, OS, CPU, display arrangement and exact reproduction steps. Never ask testers to publish client names, speaker data, private IP addresses, tokens or confidential media.
 
@@ -38,7 +40,7 @@ Ask for app version, OS, CPU, display arrangement and exact reproduction steps. 
 
 ### Suggested post
 
-I built ShowSlate Conference Desk for one-room conference setups that currently use a spreadsheet, speaker timer, media folder and separate speaker-name graphics.
+I built ShowSlate as a local live compositor for small productions that need layered media and live inputs, Preview/Program switching and controlled display outputs. It also includes a Conference Desk workflow for rundowns, speaker timing and cue-driven graphics.
 
 Import a CSV/TSV and its media, assign Audience/Confidence/Timer/Stream/Door outputs, run preflight, then use one GO to update the live cue, timer, linked content and lower third.
 
@@ -49,7 +51,7 @@ I am looking for room operators willing to try the built-in demo off-air and tel
 
 Use the current social preview with the post:
 
-![ShowSlate Conference Desk preview](../site/assets/social-preview.png)
+![ShowSlate Live Compositor preview](../site/assets/social-preview.png)
 
 ## Feedback and metrics
 
@@ -68,3 +70,9 @@ GitHub asset counters are aggregate downloads, not verified people, installation
 4. Publish a beta only after source, packaged and designated-display gates pass.
 5. Ask the original reporter to retry the exact failed step.
 6. Stop expanding scope if operators do not value the Conference Desk workflow after three complete pilots.
+
+## Optional physical QA record
+
+A native package rehearsal plus automated checks can publish an explicitly experimental beta. Use [`release-evidence/beta`](../release-evidence/beta/README.md) to retain physical QA when the required hardware and Windows system are available; it remains mandatory before making any physical-certification claim.
+
+Synthetic capture tests, a permission warning or a natively built Windows executable do not count as physical source or Windows GUI proof. Leave those gates failed until the real workflow is observed and retained, and state the gap in public beta notes.

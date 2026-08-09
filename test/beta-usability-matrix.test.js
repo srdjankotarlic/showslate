@@ -74,6 +74,7 @@ ipcMain.handle('lt-package-import', () => ({ ok: false, canceled: true }));
 ipcMain.handle('identify-displays', () => 1);
 ipcMain.handle('qr', () => '');
 ipcMain.handle('share-info', () => ({}));
+ipcMain.handle('live-input-statuses', () => []);
 
 async function setSize(win, size) {
   win.setBounds(smokeDisplay.clampToWorkArea({ width: size.width, height: size.height }, target.workArea));
@@ -122,9 +123,18 @@ app.whenReady().then(async () => {
     S.scenes=[]; contentItems=[]; selectedContentItemId=''; liveContentItemId='';
     const timer=addContentScene('Event Timer','timer',[makeTimerLayer()]);
     const holding=addContentScene('Welcome Holding','text',[{id:makeId('layer'),type:'text',name:'Welcome',text:'WELCOME TO BETA PRODUCTION',color:'#ffffff',bg:'transparent',fontSize:9,visible:true,fit:'contain',x:5,y:5,w:90,h:90,opacity:1}]);
+    const keynote=addContentScene('Keynote Layout','text',[
+      {id:makeId('layer'),type:'color',name:'Slate',color:'#101820',bg:'#101820',visible:true,x:0,y:0,w:100,h:100,opacity:1},
+      {id:makeId('layer'),type:'color',name:'Accent',color:'#2f79d0',bg:'#2f79d0',visible:true,x:0,y:0,w:1.4,h:100,opacity:1},
+      {id:makeId('layer'),type:'color',name:'Side panel',color:'#172431',bg:'#172431',visible:true,x:70,y:0,w:30,h:100,opacity:1},
+      {id:makeId('layer'),type:'text',name:'Session',text:'LIVE SESSION',color:'#8fbdf2',bg:'transparent',fontSize:3.8,visible:true,fit:'contain',x:7,y:11,w:54,h:10,opacity:1},
+      {id:makeId('layer'),type:'text',name:'Title',text:'DESIGNING RELIABLE\\nLIVE EXPERIENCES',color:'#ffffff',bg:'transparent',fontSize:6.8,visible:true,fit:'contain',x:7,y:27,w:57,h:37,opacity:1},
+      {id:makeId('layer'),type:'text',name:'Speaker',text:'DR MAYA CHEN  ·  NORTHSTAR LABS',color:'#d8e3ed',bg:'transparent',fontSize:3.2,visible:true,fit:'contain',x:7,y:76,w:57,h:10,opacity:1},
+      {id:makeId('layer'),type:'text',name:'Program mark',text:'SHOWSLATE\\nPROGRAM',color:'#ffffff',bg:'transparent',fontSize:3.2,visible:true,fit:'contain',x:70,y:37,w:30,h:26,opacity:1}
+    ]);
     const blank=addContentScene('Intermission Blank','blank',[{id:makeId('layer'),type:'text',name:'Blank',text:'',color:'#ffffff',bg:'transparent',fontSize:8,visible:true,fit:'contain',x:0,y:0,w:100,h:100,opacity:1}]);
-    selectedContentItemId=holding.id; liveContentItemId=timer.id; S.activeSceneId=holding.sceneId;
-    programState=outputSnapshot(S); programState.activeSceneId=timer.sceneId;
+    selectedContentItemId=holding.id; liveContentItemId=keynote.id; S.activeSceneId=holding.sceneId;
+    programState=outputSnapshot(S); programState.activeSceneId=keynote.sceneId;
     const template=ltDefaultTemplate('Starter Template');
     template.id='beta-starter-template';
     template.layers[0].id='beta-starter-plate';
@@ -149,11 +159,29 @@ app.whenReady().then(async () => {
     window.__rect=el=>{const r=el.getBoundingClientRect();return {x:r.x,y:r.y,w:r.width,h:r.height,right:r.right,bottom:r.bottom};};
     window.__waitVisual=async(fn,timeout=1600)=>{const started=Date.now();while(Date.now()-started<timeout){try{if(fn())return true;}catch(_){}await new Promise(resolve=>setTimeout(resolve,25));}return false;};
     window.__fits=el=>{if(!window.__visible(el))return true;const style=getComputedStyle(el),fits=el.scrollWidth<=el.clientWidth+2&&el.scrollHeight<=el.clientHeight+2;const deliberateEllipsis=style.overflow==='hidden'&&style.textOverflow==='ellipsis'&&!!String(el.title||el.getAttribute('aria-label')||'').trim();return fits||deliberateEllipsis;};
-    window.__baseProbe=selectors=>{const els=selectors.map(s=>document.querySelector(s));const footer=document.querySelector('.statusbar');return {vw:innerWidth,vh:innerHeight,inside:els.map(window.__inside),bodyX:document.documentElement.scrollWidth-innerWidth,footer:window.__inside(footer),footerTop:footer.getBoundingClientRect().top,uniqueStart:document.querySelectorAll('#btnStart').length,uniqueGo:document.querySelectorAll('#btnGo').length,textFits:[document.getElementById('btnStart'),document.getElementById('btnGo'),document.getElementById('btnGoNext')].map(window.__fits)};};
+    window.__baseProbe=selectors=>{const els=selectors.map(s=>document.querySelector(s));const footer=document.querySelector('.statusbar');return {vw:innerWidth,vh:innerHeight,inside:els.map(window.__inside),bodyX:document.documentElement.scrollWidth-innerWidth,footer:window.__inside(footer),footerTop:footer.getBoundingClientRect().top,uniqueStart:document.querySelectorAll('#btnStart').length,uniqueGo:document.querySelectorAll('#btnGo').length,textFits:[document.getElementById('btnGo'),document.getElementById('btnGoNext')].map(window.__fits)};};
     window.__overlayProbe=id=>{const root=document.getElementById(id),dialog=root&&root.querySelector('.flow-dialog'),head=dialog&&dialog.querySelector('.flow-head'),foot=dialog&&dialog.querySelector('.flow-foot');return {open:!!root&&root.classList.contains('open'),display:root?getComputedStyle(root).display:'',dialog:window.__inside(dialog),head:window.__inside(head),foot:window.__inside(foot),bodyX:document.documentElement.scrollWidth-innerWidth,buttons:foot?[...foot.querySelectorAll('button')].filter(window.__visible).map(window.__fits):[]};};
   })()`);
 
   const initialState = await json(win, '__betaState()');
+
+  const compositorIdentity = await json(win, `(()=>({
+    title:document.title,
+    descriptor:document.querySelector('.probadge')?.textContent.trim(),
+    button:__inside(document.getElementById('btnCompositor')),
+    open:document.body.classList.contains('compositor-open'),
+    advanced:document.body.classList.contains('adv'),
+    panel:__visible(document.getElementById('panelSources')),
+    settingsHidden:!__visible(document.getElementById('setupWrap')),
+    headInside:__inside(document.querySelector('.compositor-head')),
+    titleFits:__fits(document.querySelector('.compositor-title-copy span')),
+    addSourceInside:__inside(document.getElementById('btnAddSource')),
+    canvasControlsInside:__insideX(document.querySelector('.canvas-controls')),
+    panelOverflowX:document.getElementById('panelSources').scrollWidth-document.getElementById('panelSources').clientWidth
+  }))()`);
+  check('BETA_LIVE_COMPOSITOR_IDENTITY_OK', compositorIdentity.title==='ShowSlate — Live Compositor' && compositorIdentity.descriptor==='LIVE COMPOSITOR' && compositorIdentity.button && compositorIdentity.open && compositorIdentity.advanced && compositorIdentity.panel && compositorIdentity.settingsHidden && compositorIdentity.headInside && compositorIdentity.titleFits && compositorIdentity.addSourceInside && compositorIdentity.canvasControlsInside && compositorIdentity.panelOverflowX<=1, JSON.stringify(compositorIdentity));
+  await capture(win, '1440x900-composer-default');
+  await win.webContents.executeJavaScript(`setCompositorOpen(false,{persist:false})`);
 
   const sidebarToggle = await json(win, `(async()=>{
     applyCompactMode(false); applyAdvancedMode(false); closeDrawers(); setSidebarCollapsed(false,false);
@@ -174,45 +202,75 @@ app.whenReady().then(async () => {
     await setSize(win, size);
 
     const standard = await json(win, `(async()=>{
-      closeDrawers(); closeLtStudio({returnFocus:false}); closeNewShowWizard(); closePreflight(); closePostShowReport(); closeRecoveryDialog();
+      closeDrawers(); setCompositorOpen(false,{persist:false}); closeLtStudio({returnFocus:false}); closeNewShowWizard(); closePreflight(); closePostShowReport(); closeRecoveryDialog();
       applyCompactMode(false); applyAdvancedMode(false); setSidebarView('rundown'); setCueEditorOpen(false);
-      document.querySelector('#setupTabs button[data-pane="timer"]').click();
-      const p=__baseProbe(['#program','#btnStart','#btnGo']);
+      const p=__baseProbe(['#program','#btnGo']);
       let rundownAccess=__inside(document.getElementById('cueList'));
       const rundownButton=__inside(document.getElementById('btnRundownDrawer'));
       let rundownProbe={button:rundownButton,display:getComputedStyle(document.getElementById('btnRundownDrawer')).display,buttonRect:__rect(document.getElementById('btnRundownDrawer'))};
       if(!rundownAccess&&rundownButton){document.getElementById('btnRundownDrawer').click();await new Promise(resolve=>setTimeout(resolve,420));rundownAccess=document.body.classList.contains('dr-run')&&__inside(document.getElementById('cueList'));rundownProbe={...rundownProbe,drawer:document.body.classList.contains('dr-run'),cueRect:__rect(document.getElementById('cueList')),sideRect:__rect(document.querySelector('.primary-sidebar')),transform:getComputedStyle(document.querySelector('.primary-sidebar')).transform};closeDrawers();}
       const operatorRect=__rect(document.querySelector('.operator-main'));
+      const operatorStyle=getComputedStyle(document.querySelector('.operator-main'));
+      const studioRect=__rect(document.getElementById('studio'));
+      const studioStyle=getComputedStyle(document.getElementById('studio'));
+      const programRect=__rect(document.querySelector('.studio-program'));
+      const workspaceLayout={operator:{display:operatorStyle.display,rows:operatorStyle.gridTemplateRows,autoRows:operatorStyle.gridAutoRows,alignContent:operatorStyle.alignContent},studio:studioRect,studioDisplay:studioStyle.display,program:programRect,children:[...document.querySelector('.operator-main').children].map(node=>({id:node.id||'',className:node.className||'',display:getComputedStyle(node).display,position:getComputedStyle(node).position,rect:__rect(node)}))};
       const operatorUsesWidth=innerWidth>1100||operatorRect.w>=innerWidth-32;
-      return {...p,rundownAccess,rundownProbe,operatorRect,operatorUsesWidth,mode:document.getElementById('app-shell').classList.contains('mode-standard'),ghosts:[...document.querySelectorAll('.flow-overlay.open,.recovery-overlay.open')].length,studioGhost:document.getElementById('ltStudio').classList.contains('open')};
+      const commandStrip=__rect(document.querySelector('.show-command-strip'));
+      const commandStripCompact=commandStrip.h<=52;
+      const timerNotInMain=!document.querySelector('.show-command-strip .transport')&&!document.querySelector('.show-command-strip #btnStart');
+      const goLaneFull=__inside(document.querySelector('.show-command-strip .golane'))&&Math.abs(__rect(document.querySelector('.show-command-strip .golane')).w-commandStrip.w)<=2;
+      document.getElementById('btnSettingsDrawer').click();
+      const settingsOpened=await __waitVisual(()=>document.body.classList.contains('dr-setup')&&__inside(document.getElementById('setupWrap')));
+      document.querySelector('#setupTabs button[data-pane="timer"]').click();
+      const timerPanel=document.querySelector('[data-testid="timer-transport-panel"]'),timerTransport=document.querySelector('[data-testid="timer-transport"]');
+      timerPanel.scrollIntoView({block:'nearest'});
+      const timerSettled=await __waitVisual(()=>__inside(timerPanel)&&__inside(document.getElementById('btnStart'))&&__inside(document.getElementById('btnReset')));
+      const adjustButtons=[...timerTransport.querySelectorAll('.adjust button')];
+      const timerSettings={opened:settingsOpened,settled:timerSettled,inPane:document.getElementById('pane-timer').contains(timerTransport),panel:__inside(timerPanel),transport:__inside(timerTransport),start:__inside(document.getElementById('btnStart')),reset:__inside(document.getElementById('btnReset')),adjustments:adjustButtons.length===6&&adjustButtons.every(__inside),fits:[document.getElementById('btnStart'),document.getElementById('btnReset'),...adjustButtons].every(__fits),noDuplicateBlackout:!document.getElementById('btnBlackout'),programBlackout:__inside(document.getElementById('bdgBk'))&&__fits(document.getElementById('bdgBk'))};
+      closeDrawers();
+      const settingsClosed=await __waitVisual(()=>!document.body.classList.contains('dr-setup')&&!__visible(document.getElementById('setupWrap')));
+      return {...p,rundownAccess,rundownProbe,operatorRect,workspaceLayout,operatorUsesWidth,commandStrip,commandStripCompact,timerNotInMain,goLaneFull,timerSettings,settingsClosed,mode:document.getElementById('app-shell').classList.contains('mode-standard'),ghosts:[...document.querySelectorAll('.flow-overlay.open,.recovery-overlay.open')].length,studioGhost:document.getElementById('ltStudio').classList.contains('open')};
     })()`);
-    check('BETA_STANDARD_' + size.name + '_OK', standard.mode && standard.inside.every(Boolean) && standard.rundownAccess && standard.operatorUsesWidth && standard.bodyX <= 1 && standard.footer && standard.uniqueStart === 1 && standard.uniqueGo === 1 && standard.textFits.every(Boolean) && standard.ghosts === 0 && !standard.studioGhost, JSON.stringify(standard));
+    check('BETA_STANDARD_' + size.name + '_OK', standard.mode && standard.inside.every(Boolean) && standard.rundownAccess && standard.operatorUsesWidth && standard.commandStripCompact && standard.timerNotInMain && standard.goLaneFull && standard.timerSettings.opened && standard.timerSettings.settled && standard.timerSettings.inPane && standard.timerSettings.panel && standard.timerSettings.transport && standard.timerSettings.start && standard.timerSettings.reset && standard.timerSettings.adjustments && standard.timerSettings.fits && standard.timerSettings.noDuplicateBlackout && standard.timerSettings.programBlackout && standard.settingsClosed && standard.bodyX <= 1 && standard.footer && standard.uniqueStart === 1 && standard.uniqueGo === 1 && standard.textFits.every(Boolean) && standard.ghosts === 0 && !standard.studioGhost, JSON.stringify(standard));
     await capture(win, size.name + '-standard');
+    if (size.name === '1280x800' || size.name === '900x600') {
+      const timingArtifact = await json(win, `(async()=>{try{document.getElementById('btnSettingsDrawer').click();await __waitVisual(()=>document.body.classList.contains('dr-setup')&&__inside(document.getElementById('setupWrap')));document.querySelector('#setupTabs button[data-pane="timer"]').click();document.querySelector('[data-testid="timer-transport-panel"]').scrollIntoView({block:'start'});await __waitVisual(()=>__inside(document.querySelector('[data-testid="timer-transport-panel"]')));return {open:true};}catch(error){return {open:false,error:String(error),stack:error&&error.stack};}})()`);
+      if (!timingArtifact.open) throw new Error('Timing settings artifact failed: ' + JSON.stringify(timingArtifact));
+      await capture(win, size.name + '-timing-settings');
+      await json(win, `(()=>{closeDrawers();return true;})()`);
+    }
 
     const compact = await json(win, `(async()=>{
-      applyCompactMode(true); applyAdvancedMode(false); closeDrawers();
+      setCompositorOpen(false,{persist:false}); applyCompactMode(true); applyAdvancedMode(false); closeDrawers();
       await __waitVisual(()=>document.getElementById('app-shell').classList.contains('mode-compact')&&__rect(document.querySelector('.operator-main')).w<=642);
-      const closed=__baseProbe(['#program','#btnStart','#btnGo','#compactMsg','#btnRundownDrawer']);
+      const closed=__baseProbe(['#program','#btnGo','#compactMsg','#btnRundownDrawer','#btnSettingsDrawer']);
       document.getElementById('btnRundownDrawer').click();
       await __waitVisual(()=>document.body.classList.contains('dr-run')&&__inside(document.getElementById('cueList')));
       const drawer={open:document.body.classList.contains('dr-run'),cueList:__inside(document.getElementById('cueList'))};
       closeDrawers();
       await __waitVisual(()=>!document.body.classList.contains('dr-run')&&__rect(document.querySelector('.primary-sidebar')).right<=1);
+      document.getElementById('btnSettingsDrawer').click();
+      const settingsOpened=await __waitVisual(()=>document.body.classList.contains('dr-setup')&&__inside(document.getElementById('setupWrap')));
+      document.querySelector('#setupTabs button[data-pane="timer"]').click();
+      document.querySelector('[data-testid="timer-transport-panel"]').scrollIntoView({block:'nearest'});
+      const timerSettings={open:settingsOpened,start:await __waitVisual(()=>__inside(document.getElementById('btnStart'))),reset:__inside(document.getElementById('btnReset')),adjustments:[...document.querySelectorAll('[data-testid="timer-transport"] .adjust button')].every(__inside)};
+      closeDrawers();
       const operator=__rect(document.querySelector('.operator-main'));
       const sidebarStyle=getComputedStyle(document.querySelector('.primary-sidebar'));
       const utilityStyle=getComputedStyle(document.querySelector('.utility-column'));
-      return {closed,drawer,mode:document.getElementById('app-shell').classList.contains('mode-compact'),operator,drawersFixed:sidebarStyle.position==='fixed'&&utilityStyle.position==='fixed',rects:{rundown:__rect(document.getElementById('btnRundownDrawer')),start:__rect(document.getElementById('btnStart')),go:__rect(document.getElementById('btnGo'))},styles:{rundown:getComputedStyle(document.getElementById('btnRundownDrawer')).display,startOverflow:getComputedStyle(document.getElementById('btnStart')).overflow,startText:document.getElementById('btnStart').textContent}};
+      return {closed,drawer,timerSettings,mode:document.getElementById('app-shell').classList.contains('mode-compact'),operator,drawersFixed:sidebarStyle.position==='fixed'&&utilityStyle.position==='fixed',rects:{rundown:__rect(document.getElementById('btnRundownDrawer')),go:__rect(document.getElementById('btnGo'))},styles:{rundown:getComputedStyle(document.getElementById('btnRundownDrawer')).display}};
     })()`);
     if (size.name === '1024x700') await capture(win, size.name + '-compact-diagnostic');
-    check('BETA_COMPACT_' + size.name + '_OK', compact.mode && compact.closed.inside.every(Boolean) && compact.closed.bodyX <= 1 && compact.closed.footer && compact.drawer.open && compact.drawer.cueList && compact.drawersFixed && compact.operator.w <= 642 && compact.operator.w >= Math.min(600, size.width - 24), JSON.stringify(compact));
+    check('BETA_COMPACT_' + size.name + '_OK', compact.mode && compact.closed.inside.every(Boolean) && compact.closed.bodyX <= 1 && compact.closed.footer && compact.drawer.open && compact.drawer.cueList && compact.timerSettings.open && compact.timerSettings.start && compact.timerSettings.reset && compact.timerSettings.adjustments && compact.drawersFixed && compact.operator.w <= 642 && compact.operator.w >= Math.min(600, size.width - 24), JSON.stringify(compact));
     if (size.name === '1280x800') await capture(win, size.name + '-compact');
 
     const advanced = await json(win, `(async()=>{
-      applyCompactMode(false); applyAdvancedMode(true); closeDrawers();
+      setCompositorOpen(false,{persist:false}); applyCompactMode(false); applyAdvancedMode(true); closeDrawers();
       await __waitVisual(()=>document.getElementById('app-shell').classList.contains('mode-advanced')&&__inside(document.getElementById('program')));
       const monitors=[...document.querySelectorAll('.studio-monitor')].filter(__visible),rects=monitors.map(__rect);
       const overlap=rects.length===2&&!(rects[0].right<=rects[1].x||rects[1].right<=rects[0].x||rects[0].bottom<=rects[1].y||rects[1].bottom<=rects[0].y);
-      const p=__baseProbe(['#program','#btnStart','#btnGo']);
+      const p=__baseProbe(['#program','#btnGo']);
       return {...p,mode:document.getElementById('app-shell').classList.contains('mode-advanced'),monitorCount:monitors.length,overlap};
     })()`);
     check('BETA_ADVANCED_' + size.name + '_OK', advanced.mode && advanced.inside.every(Boolean) && advanced.bodyX <= 1 && advanced.footer && advanced.monitorCount >= 1 && advanced.monitorCount <= 2 && !advanced.overlap, JSON.stringify(advanced));
@@ -296,7 +354,7 @@ app.whenReady().then(async () => {
     await win.webContents.executeJavaScript(`closePreflight()`);
 
     const slides = await json(win, `(async()=>{closeDrawers();if(innerWidth<=1100){document.getElementById('btnRundownDrawer').click();await new Promise(resolve=>setTimeout(resolve,420));}setSidebarView('slides');renderContentItems();const panel=document.getElementById('sidebarSlidesPane'),foot=panel.querySelector('.slides-foot'),list=document.getElementById('slidesList');const result={panel:__inside(panel),foot:__inside(foot),items:list.querySelectorAll('.slide-row').length,scroll:getComputedStyle(list).overflowY,bodyX:document.documentElement.scrollWidth-innerWidth};closeDrawers();return result;})()`);
-    check('BETA_SLIDES_' + size.name + '_OK', slides.panel && slides.foot && slides.items === 3 && slides.bodyX <= 1, JSON.stringify(slides));
+    check('BETA_SLIDES_' + size.name + '_OK', slides.panel && slides.foot && slides.items === 4 && slides.bodyX <= 1, JSON.stringify(slides));
     if (size.name === '1024x700') await capture(win, size.name + '-slides');
 
     await win.webContents.executeJavaScript(`showRecoveryDialog({recoveryAvailable:true,crashedSessionStartedAt:new Date().toISOString(),hasLastSaved:true})`);
@@ -317,7 +375,7 @@ app.whenReady().then(async () => {
     check('BETA_STATE_' + size.name + '_OK', state.running && state.endAt === initialState.endAt && state.currentCue === initialState.currentCue && state.selectedCue === initialState.selectedCue && state.outputOpen === initialState.outputOpen && state.programScene === initialState.programScene && state.message === initialState.message, JSON.stringify({ initialState, state }));
   }
 
-  const expectedChecks = 2 + sizes.length * 13 + (sizes.some(size => size.name === '1280x800') ? 1 : 0);
+  const expectedChecks = 3 + sizes.length * 13 + (sizes.some(size => size.name === '1280x800') ? 1 : 0);
   console.log('BETA_USABILITY_MATRIX_OK ' + checks + '/' + expectedChecks + ' artifacts=' + artifactDirectory);
   win.destroy();
   fs.rmSync(profile, { recursive: true, force: true });

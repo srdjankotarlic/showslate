@@ -3,14 +3,18 @@
   if (typeof module === 'object' && module.exports) module.exports = api;
   if (root) root.PTSC = api;
 })(typeof window !== 'undefined' ? window : globalThis, function () {
-  const TYPES = ['image', 'video', 'pdf', 'text', 'blank', 'timer', 'logo'];
+  const TYPES = ['image', 'video', 'pdf', 'text', 'blank', 'timer', 'logo', 'color', 'window', 'capture', 'scene'];
 
   function sceneType(scene) {
     const layers = Array.isArray(scene && scene.layers) ? scene.layers : [];
-    if (layers.some(layer => layer && layer.type === 'timer')) return 'timer';
-    const media = layers.find(layer => layer && ['image', 'video', 'pdf'].includes(layer.type));
+    const visible = layers.filter(layer => layer && layer.visible !== false);
+    if (visible.length > 1) return 'scene';
+    if (visible.some(layer => layer && layer.type === 'timer')) return 'timer';
+    const media = visible.find(layer => layer && ['image', 'video', 'pdf', 'window', 'capture'].includes(layer.type));
     if (media) return media.type;
-    const text = layers.find(layer => layer && layer.type === 'text');
+    const color = visible.find(layer => layer && layer.type === 'color');
+    if (color) return 'color';
+    const text = visible.find(layer => layer && layer.type === 'text');
     if (text && String(text.text || '').trim()) return 'text';
     return 'blank';
   }

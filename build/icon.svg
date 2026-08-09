@@ -5,7 +5,7 @@
       <stop offset="0.58" stop-color="#1a1d21"/>
       <stop offset="1" stop-color="#101215"/>
     </linearGradient>
-    <linearGradient id="rim" x1="246" y1="154" x2="766" y2="850" gradientUnits="userSpaceOnUse">
+    <linearGradient id="rim" x1="260" y1="250" x2="790" y2="760" gradientUnits="userSpaceOnUse">
       <stop offset="0" stop-color="#f6f7f9"/>
       <stop offset="0.55" stop-color="#d8dde3"/>
       <stop offset="1" stop-color="#aeb6c0"/>
@@ -27,12 +27,10 @@
   <rect x="98" y="98" width="828" height="828" rx="182" fill="none" stroke="#ffffff" stroke-opacity=".13" stroke-width="7"/>
   <path d="M164 314 C202 203 294 132 410 112" fill="none" stroke="#ffffff" stroke-opacity=".055" stroke-width="8" stroke-linecap="round"/>
 
-  <!-- A single centered mark: stage/output frame inside a timing arc. -->
-  <path d="M373 271 A278 278 0 1 0 740 353" fill="none" stroke="url(#rim)" stroke-width="44" stroke-linecap="round"/>
-  <circle cx="740" cy="353" r="27" fill="url(#signal)" filter="url(#signalGlow)"/>
-
-  <path d="M466 382 H390 Q356 382 356 416 V616 Q356 650 390 650 H634 Q668 650 668 616 V416 Q668 382 634 382 H558"
-        fill="none" stroke="url(#rim)" stroke-width="34" stroke-linecap="round" stroke-linejoin="round"/>
-  <path d="M512 348 V548" fill="none" stroke="url(#rim)" stroke-width="22" stroke-linecap="round"/>
-  <circle cx="512" cy="568" r="22" fill="#171a1e" stroke="url(#rim)" stroke-width="11"/>
+  <!-- Three offset slates form one live composition; the green tally marks Program. -->
+  <rect x="242" y="284" width="500" height="334" rx="58" fill="#15181c" stroke="#8e97a3" stroke-opacity=".28" stroke-width="28"/>
+  <rect x="284" y="330" width="500" height="334" rx="58" fill="#121519" stroke="#b6bdc6" stroke-opacity=".5" stroke-width="30"/>
+  <rect x="330" y="378" width="464" height="306" rx="54" fill="#0d1013" stroke="url(#rim)" stroke-width="34"/>
+  <path d="M376 616 H748" fill="none" stroke="#ffffff" stroke-opacity=".14" stroke-width="18" stroke-linecap="round"/>
+  <circle cx="776" cy="382" r="28" fill="url(#signal)" filter="url(#signalGlow)"/>
 </svg>

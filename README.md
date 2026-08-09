@@ -1,11 +1,11 @@
 <p align="center">
-  <img src="build/icon.png" width="112" alt="ShowSlate Conference Desk icon">
+  <img src="build/icon.png" width="112" alt="ShowSlate Live Compositor icon">
 </p>
 
-<h1 align="center">ShowSlate Conference Desk</h1>
+<h1 align="center">ShowSlate</h1>
 
 <p align="center">
-  Offline conference room control for the rundown, speaker timer, linked media, lower thirds and every room display.
+  A local-first live compositor for layered scenes, Preview/Program switching, show control and multiple display outputs.
 </p>
 
 <p align="center">
@@ -26,13 +26,21 @@
   <a href="docs/USER-GUIDE.md"><strong>User guide</strong></a>
 </p>
 
-![ShowSlate Conference Desk operator workspace](docs/images/conference-desk-workspace.png)
+![ShowSlate Live Compositor operator workspace](docs/images/live-compositor-workspace.png)
 
-ShowSlate Conference Desk is built for a single conference room operated from one Mac or Windows PC. Import a schedule and its media, assign explicit output roles, run preflight, then use one **GO** action to update the LIVE cue, timer, linked content, automatic speaker lower third and every active destination from the same Program state.
+ShowSlate builds a visual Program from reusable layered scenes on one Mac or Windows PC. Combine pictures, video, PDF pages, colors, text, a timer, application windows, displays, cameras and UVC capture devices; prepare the result in **Preview**, use **TAKE** to send it to **Program**, then route Program to one or more local displays.
 
-It is useful for conferences, corporate events, education, community venues, houses of worship and small AV teams that currently synchronize a spreadsheet, timer, slide folder and speaker graphics by hand.
+The included **Conference Desk** workflow adds a rundown, LIVE/NEXT/GO, speaker timing, cue-driven lower thirds, show-folder import and role-based room displays. It is intended for conferences, corporate events, education, community venues, houses of worship and small AV teams that need more structure than a media player but less complexity than a broadcast switcher.
 
-> Need only a large countdown, OBS overlay, phone remote and simple rundown? Use the smaller **[ProTimer](https://github.com/srdjankotarlic/protimer)**. Choose ShowSlate Conference Desk when the room needs a cue-driven workflow and several purpose-built outputs.
+> Need only a large countdown, OBS overlay, phone remote and simple rundown? Use the smaller **[ProTimer](https://github.com/srdjankotarlic/protimer)**. Choose ShowSlate when you need layered scenes, Preview/Program switching, live inputs or several controlled outputs.
+
+## Live compositor workflow
+
+1. Open **Composer**, choose the Canvas resolution and create a scene.
+2. Add and arrange media, color, text, timing or a local live input as ordered layers.
+3. Prepare the scene in Preview, verify it, then use **TAKE** or **Cut** to send it to Program.
+4. Open **Outputs**, assign each destination to an explicit display and choose fullscreen, window, exact pixel size or grid placement.
+5. Enable Program audio on at most one local output when a video or capture source needs sound.
 
 ## The room workflow
 
@@ -56,16 +64,29 @@ Selecting a row prepares NEXT and never changes LIVE. GO creates one transaction
 
 Each role can be fullscreen, windowed, an exact pixel size or a grid region. ShowSlate does not silently move a route to another monitor when a display disappears.
 
+## Composer and live sources
+
+Open **Composer** to build the visual Program as an ordered stack of layers. A scene can combine:
+
+- pictures, local video, PDF pages and solid colors;
+- text and the live ShowSlate timer;
+- an application window or an entire display;
+- a camera or UVC capture card, with an optional audio input.
+
+Set a standard, square, vertical, UHD or custom Canvas resolution and frame rate. Drag and resize sources in Preview, edit exact position, size, opacity, rotation and fit in the inspector, then use **TAKE** to send the prepared scene to Program. Preview remains private until TAKE unless **Direct Program** is explicitly enabled.
+
+Live capture is local to the ShowSlate desktop app and its desktop output windows. Browser/OBS URLs do not carry local window, display or capture-card streams. Program audio is off by default and can be enabled on only one local output to prevent echo and feedback.
+
 ## Download one installer
 
 > **Choose one recommended installer for your computer.** GitHub's automatic `Source code` ZIP and TAR.GZ files are developer archives and will not install the app.
 
 | Your computer | Recommended download | Install |
 |---|---|---|
-| Apple Silicon Mac (M1 or newer) | **[ShowSlate-0.10.0-beta.1-arm64.dmg](https://github.com/srdjankotarlic/showslate/releases/download/v0.10.0-beta.1/ShowSlate-0.10.0-beta.1-arm64.dmg)** | Open the DMG and drag **ShowSlate** to Applications. |
-| Windows 10/11 x64 | **[ShowSlate-Setup-0.10.0-beta.1.exe](https://github.com/srdjankotarlic/showslate/releases/download/v0.10.0-beta.1/ShowSlate-Setup-0.10.0-beta.1.exe)** | Run Setup and follow the installer. |
+| Apple Silicon Mac (M1 or newer) | **[ShowSlate-0.11.0-beta.1-arm64.dmg](https://github.com/srdjankotarlic/showslate/releases/download/v0.11.0-beta.1/ShowSlate-0.11.0-beta.1-arm64.dmg)** | Open the DMG and drag **ShowSlate** to Applications. |
+| Windows 10/11 x64 | **[ShowSlate-Setup-0.11.0-beta.1.exe](https://github.com/srdjankotarlic/showslate/releases/download/v0.11.0-beta.1/ShowSlate-Setup-0.11.0-beta.1.exe)** | Run Setup and follow the installer. |
 
-The [portable Windows EXE](https://github.com/srdjankotarlic/showslate/releases/download/v0.10.0-beta.1/ShowSlate-0.10.0-beta.1-portable.exe) is an advanced no-install option.
+The [portable Windows EXE](https://github.com/srdjankotarlic/showslate/releases/download/v0.11.0-beta.1/ShowSlate-0.11.0-beta.1-portable.exe) is an advanced no-install option. The previous [`0.10.0-beta.1`](https://github.com/srdjankotarlic/showslate/releases/tag/v0.10.0-beta.1) release remains available for comparison and rollback.
 
 <details>
 <summary><strong>First-launch security warning</strong></summary>
@@ -74,7 +95,7 @@ The public beta is not yet Apple-notarized or Windows Authenticode-signed.
 
 - On macOS, confirm the app came from this repository, then use **System Settings > Privacy & Security > Open Anyway** if required.
 - On Windows, SmartScreen may show **Unknown publisher**. Continue only for the installer downloaded from this repository.
-- Optional integrity hashes are in [SHA256SUMS.txt](https://github.com/srdjankotarlic/showslate/releases/download/v0.10.0-beta.1/SHA256SUMS.txt).
+- Optional integrity hashes are in [SHA256SUMS.txt](https://github.com/srdjankotarlic/showslate/releases/download/v0.11.0-beta.1/SHA256SUMS.txt).
 
 </details>
 
@@ -98,6 +119,8 @@ Supported folder media includes PNG, JPEG, WebP, GIF, SVG, MP4, WebM, MOV, M4V a
 - Rundown with NEXT, LIVE, GO, planned times, actual timing and post-show CSV reports.
 - Countdown, stopwatch and clock with warning colors, overtime, chimes and speaker messages.
 - Screen content for images, video, PDF pages, text, logos, timer and blank states.
+- Custom-resolution Composer with reusable scenes, ordered layers, Preview/Program switching and drag/resize editing.
+- Window/display capture and camera/UVC capture-card layers with optional local Program audio.
 - Lower Third Studio with cue-driven dynamic fields, shapes, logos, images and muted video.
 - Explicit multi-display routing with render acknowledgements and unavailable-display blocking.
 - Autosave, crash recovery and portable `.showslate-show` and `.showslate-lt` packages.
@@ -106,7 +129,7 @@ Supported folder media includes PNG, JPEG, WebP, GIF, SVG, MP4, WebM, MOV, M4V a
 
 ## Deliberate scope
 
-ShowSlate Conference Desk is not a camera switcher, audio mixer, encoder, NDI router, PTZ controller or multi-room cloud platform. Keep OBS, vMix or dedicated production hardware for those jobs. The product is intentionally focused on making one conference room easier and safer to operate.
+ShowSlate can arrange live and media sources for local displays, but it is not a streaming encoder, multibus audio mixer, NDI router, PTZ controller or multi-room cloud platform. Keep OBS, vMix or dedicated production hardware where recording, streaming, broadcast audio or advanced switching is required. The product remains focused on dependable visual composition and show control for one operator and a small set of local destinations.
 
 External OBS/vMix alpha behavior is not certified in this beta. Test the exact show computer, displays, network, media and capture path off-air before every event. Show-critical productions still need an independent fallback timer and rundown.
 

@@ -1,7 +1,7 @@
 {
-  "name": "ShowSlate Conference Desk",
+  "name": "ShowSlate Live Compositor",
   "short_name": "ShowSlate",
-  "description": "Free offline conference room control for rundowns, speaker timing, linked media and role-based displays.",
+  "description": "Free local-first live compositor with layered scenes, Preview and Program, live inputs, show control and multi-display output.",
   "start_url": "/showslate/",
   "display": "standalone",
   "background_color": "#0b0e12",

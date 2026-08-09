@@ -13,6 +13,7 @@ const groups = {
     'test:conference-desk',
     'test:show-folder-import',
     'test:screen-content',
+    'test:compositor',
     'test:control-api',
     'test:report',
     'test:output-routing',
@@ -27,6 +28,7 @@ const groups = {
     'test:conference-desk-ui',
     'test:site-ui',
     'test:screen-content-ui',
+    'test:compositor-ui',
     'test:control-api-ui',
     'test:report-ui'
   ]
