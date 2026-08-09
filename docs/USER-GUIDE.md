@@ -78,12 +78,12 @@ The Live strip always shows LIVE and NEXT together. **NEXT ROW** advances strict
 
 ## Canvas and scene composition
 
-Select **Canvas** in the visible header to open the scene compositor. This workspace stays available at narrow window sizes and keeps the scene selector, scene actions, Add Source, layer list and inspector reachable by scrolling.
+Select **Composer** in the visible header to open the scene compositor. This workspace stays available at narrow window sizes and keeps the scene selector, scene actions, Add Source, layer list and inspector reachable by scrolling.
 
 1. Open **Composer**, then select an existing scene or create, duplicate or delete one from its header.
 2. Choose a standard preset or enter a custom width, height and frame rate.
 3. Select **Add Source** and add a picture/video/PDF, solid color, text, timer, application window/display or video capture device.
-4. For a camera or UVC capture card, choose **Allow camera** when access is first needed. Choose **Allow audio** separately only when that source should carry sound, then select the devices, resolution and frame rate.
+4. For a camera or UVC capture card, choose **Allow camera** when access is first needed. Choose **Allow audio** separately only when that source should carry sound, then select the devices, resolution and frame rate. If macOS access was denied earlier, use the visible settings shortcut, enable ShowSlate in the matching Privacy section and restart the app.
 5. Arrange the stack in **Layers**. The top row is visually in front.
 6. Select a layer, then drag it in Preview or use the inspector for exact position, size, opacity, rotation and fit.
 7. Use **Change source** to reconnect a window or device without losing that layer's transform.
@@ -97,7 +97,7 @@ If Preflight warns about a Canvas/output aspect mismatch, the scene can be stret
 
 ## Speaker timing and messages
 
-The timer supports countdown, stopwatch and clock modes, warning colors, overtime, progress, chimes and scheduled start.
+Open **Settings > Timing** when a scene needs countdown, stopwatch or clock controls. The timer remains available as a scene source and supports warning colors, overtime, progress, chimes and scheduled start without occupying the permanent live workspace.
 
 Use Message for urgent presenter communication. Confidence and Timer roles display the message prominently. Quick messages can be edited by double-clicking them.
 

@@ -1,4 +1,4 @@
-const { app, BrowserWindow, ipcMain, screen, dialog, desktopCapturer, session, systemPreferences, webContents } = require('electron');
+const { app, BrowserWindow, ipcMain, screen, dialog, desktopCapturer, session, shell, systemPreferences, webContents } = require('electron');
 const path = require('path');
 const fs = require('fs');
 const http = require('http');
@@ -1158,6 +1158,23 @@ ipcMain.handle('live-input-devices', async (event, requestPermission) => {
 });
 ipcMain.handle('live-input-permissions', async () => {
   return liveInputPermissionSnapshot();
+});
+ipcMain.handle('open-privacy-settings', async (event, section) => {
+  if (!controlWin || controlWin.isDestroyed() || event.sender.id !== controlWin.webContents.id) return { ok: false, error: 'unauthorized' };
+  if (process.platform !== 'darwin') return { ok: false, error: 'unsupported-platform' };
+  const panes = {
+    screen: 'Privacy_ScreenCapture',
+    camera: 'Privacy_Camera',
+    microphone: 'Privacy_Microphone'
+  };
+  const pane = panes[String(section || '')];
+  if (!pane) return { ok: false, error: 'invalid-section' };
+  try {
+    await shell.openExternal(`x-apple.systempreferences:com.apple.preference.security?${pane}`);
+    return { ok: true };
+  } catch (error) {
+    return { ok: false, error: String(error && error.message || error || 'open-failed') };
+  }
 });
 ipcMain.handle('live-input-configure', async (event, definitions) => {
   if (!controlWin || controlWin.isDestroyed() || event.sender.id !== controlWin.webContents.id) return { ok: false, error: 'unauthorized' };

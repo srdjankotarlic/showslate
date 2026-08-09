@@ -33,7 +33,7 @@ The live-input service also passed its targeted synthetic-stream test. A hidden 
 - `npm test`: all 16 module scripts passed, together with free-build, icon and public-site checks.
 - Visible Electron renderer suite: all eight workflow scripts passed.
 - Conference Desk renderer: `13/13` checks passed.
-- Canvas/compositor renderer: `15/15` checks passed, including 900x600 reachability, layer order, hidden-source retention, permission-failure recovery, transform persistence and Preview/TAKE isolation.
+- Canvas/compositor renderer: `16/16` checks passed, including 900x600 reachability, layer order, hidden-source retention, visible privacy-settings recovery actions, transform persistence and Preview/TAKE isolation.
 - Targeted live-input and multi-output checks passed, including simultaneous Program routes, fail-closed missing-display handling and the one-Program-audio-route guard.
 - Responsive beta usability matrix: `56/56` checks passed at 1440x900, 1280x800, 1024x700 and 900x600.
 - Public website renderer: `7/7` desktop/mobile checks passed with no horizontal overflow and all local product images loaded.
@@ -61,7 +61,7 @@ Release builds record the exact full commit and dirty state. Tagged GitHub build
 - Developer ID signing/notarization and Windows Authenticode signing.
 - Clean physical Windows install, firewall, multi-display, portable and uninstall workflows.
 - Intel Mac support.
-- A manual normal-UI run with a real application-window/display source; the Mac was locked during the final release-candidate pass, so no manual screenshot is claimed.
+- A manual normal-UI run reached the real window/display source picker on 2026-08-09, but macOS Screen Recording access was disabled. The blocked state and its direct System Settings action are verified; a real captured frame is still not claimed until access is enabled and the app is restarted.
 - Physical camera or UVC capture-card compatibility, including device audio, drivers, source formats and HDCP behavior.
 - External OBS/vMix video-alpha integration. Internal Electron alpha compositing is proven, but that does not certify another application's browser/media pipeline.
 - NDI, camera switching, streaming/encoding, multibus audio mixing or cloud collaboration.

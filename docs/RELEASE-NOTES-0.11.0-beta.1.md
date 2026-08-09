@@ -21,12 +21,12 @@ GitHub's automatic **Source code** ZIP and TAR.GZ files are developer archives a
 - Stack pictures, local video, PDF pages, colors, text and the ShowSlate timer as ordered layers.
 - Add an application window, entire display, camera or UVC capture card as a live layer.
 - Select an optional audio input for a capture device.
-- Camera and audio access are requested by separate operator actions; denied permissions produce a bounded, actionable state instead of leaving device discovery running.
+- Camera and audio access are requested by separate operator actions; denied permissions produce a bounded, actionable state with a direct shortcut to the matching macOS Privacy setting instead of leaving device discovery running.
 - Drag and resize layers in Preview or enter exact position, size, opacity, rotation and fit in the inspector.
 - Replace a window or device without losing its layer transform.
 - Prepare privately in Preview, then use TAKE to send the complete scene to Program.
 
-The application now uses a layered-canvas icon and a neutral compositor interface. Timing controls remain in a compact strip instead of defining the entire workspace.
+The application now uses a layered-canvas icon and a neutral compositor interface. Timing remains available as an optional scene source and under **Settings > Timing**, while the permanent live workspace is reserved for Preview, Program, transitions, GO and scene composition.
 
 ## Output and audio safety
 

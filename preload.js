@@ -44,6 +44,7 @@ contextBridge.exposeInMainWorld('pt', {
   liveInputDesktopSources: () => ipcRenderer.invoke('live-input-desktop-sources'),
   liveInputDevices: (requestPermission = false) => ipcRenderer.invoke('live-input-devices', ['camera', 'microphone'].includes(requestPermission) ? requestPermission : requestPermission === true),
   liveInputPermissions: () => ipcRenderer.invoke('live-input-permissions'),
+  openPrivacySettings: (section) => ipcRenderer.invoke('open-privacy-settings', ['screen', 'camera', 'microphone'].includes(section) ? section : ''),
   liveInputConfigure: (definitions) => ipcRenderer.invoke('live-input-configure', definitions),
   liveInputRestart: (inputId) => ipcRenderer.invoke('live-input-restart', inputId),
   liveInputStatuses: () => ipcRenderer.invoke('live-input-statuses'),

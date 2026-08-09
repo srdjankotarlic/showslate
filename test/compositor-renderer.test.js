@@ -17,6 +17,8 @@ let target;
 let checks = 0;
 let configuredInputs = [];
 let deviceDiscoveryMode = 'ready';
+let screenPermissionMode = 'granted';
+let privacySettingsRequests = [];
 
 function check(name, condition, detail = '') {
   console.log(`${name}=${!!condition}${detail ? ` ${detail}` : ''}`);
@@ -66,7 +68,7 @@ ipcMain.handle('lt-package-import', () => ({ ok: false, canceled: true }));
 ipcMain.handle('identify-displays', () => 1);
 ipcMain.handle('qr', () => '');
 ipcMain.handle('share-info', () => ({}));
-ipcMain.handle('live-input-desktop-sources', () => [{
+ipcMain.handle('live-input-desktop-sources', () => screenPermissionMode === 'denied' ? [] : [{
   id: 'window:compositor-test:1', name: 'Presentation Window', kind: 'window',
   thumbnail: 'data:image/svg+xml,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="320" height="180"><rect width="320" height="180" fill="#1b2430"/><rect x="36" y="34" width="248" height="112" rx="6" fill="#6a8eb5"/></svg>')
 }]);
@@ -81,7 +83,8 @@ ipcMain.handle('live-input-devices', () => {
     permissions: { camera: 'granted', microphone: 'granted', screen: 'granted' }, error: ''
   };
 });
-ipcMain.handle('live-input-permissions', () => ({ camera: 'granted', microphone: 'granted', screen: 'granted' }));
+ipcMain.handle('live-input-permissions', () => ({ camera: 'granted', microphone: 'granted', screen: screenPermissionMode }));
+ipcMain.handle('open-privacy-settings', (event, section) => { privacySettingsRequests.push(String(section || '')); return { ok: true }; });
 ipcMain.handle('live-input-configure', (event, definitions) => { configuredInputs = JSON.parse(JSON.stringify(definitions || [])); return { ok: true, count: configuredInputs.length }; });
 ipcMain.handle('live-input-restart', () => ({ ok: true }));
 ipcMain.handle('live-input-statuses', () => []);
@@ -194,11 +197,25 @@ app.whenReady().then(async () => {
     document.getElementById('btnAddSource').click();
     document.querySelector('[data-source-kind="device"]').click();
     const started=Date.now(); while(Date.now()-started<2000&&document.getElementById('sourceVideoDevice').options[0]?.textContent.includes('Scanning')) await new Promise(resolve=>setTimeout(resolve,25));
-    const result={option:document.getElementById('sourceVideoDevice').options[0]?.textContent||'',status:document.getElementById('sourceDeviceStatus').textContent,visible:!document.getElementById('sourceDeviceStatus').hidden,addDisabled:document.getElementById('btnDeviceAdd').disabled};
+    const result={option:document.getElementById('sourceVideoDevice').options[0]?.textContent||'',status:document.getElementById('sourceDeviceStatus').textContent,visible:!document.getElementById('sourceDeviceStatus').hidden,cameraSettings:!document.getElementById('btnCameraSettings').hidden,microphoneSettings:!document.getElementById('btnMicrophoneSettings').hidden,addDisabled:document.getElementById('btnDeviceAdd').disabled};
     closeSourceDialog(); return JSON.stringify(result);
   })()`));
   deviceDiscoveryMode = 'ready';
-  check('COMPOSITOR_PERMISSION_FAILURE_EXITS_SCANNING_OK', permissionPending.visible && permissionPending.cameraAction && permissionPending.microphoneAction && permissionPending.addDisabled && !permissionPending.option.includes('Scanning') && permissionFailure.visible && permissionFailure.addDisabled && !permissionFailure.option.includes('Scanning') && permissionFailure.status.includes('Camera') && permissionFailure.status.includes('Microphone'), JSON.stringify({ permissionPending, permissionFailure }));
+  check('COMPOSITOR_PERMISSION_FAILURE_EXITS_SCANNING_OK', permissionPending.visible && permissionPending.cameraAction && permissionPending.microphoneAction && permissionPending.addDisabled && !permissionPending.option.includes('Scanning') && permissionFailure.visible && permissionFailure.cameraSettings && permissionFailure.microphoneSettings && permissionFailure.addDisabled && !permissionFailure.option.includes('Scanning') && permissionFailure.status.includes('Camera') && permissionFailure.status.includes('Microphone'), JSON.stringify({ permissionPending, permissionFailure }));
+
+  screenPermissionMode = 'denied';
+  privacySettingsRequests = [];
+  const screenPermissionAction = JSON.parse(await win.webContents.executeJavaScript(`(async()=>{
+    document.getElementById('btnAddSource').click();
+    document.querySelector('[data-source-kind="window"]').click();
+    const started=Date.now(); while(Date.now()-started<2000&&!document.querySelector('#desktopSourceGrid .permission-blocked')) await new Promise(resolve=>setTimeout(resolve,25));
+    const empty=document.querySelector('#desktopSourceGrid .permission-blocked'); const action=empty&&empty.querySelector('button');
+    if(action)action.click(); await new Promise(resolve=>setTimeout(resolve,80));
+    const result={message:empty&&empty.textContent||'',actionVisible:!!(action&&action.getClientRects().length),actionText:action&&action.textContent||''};
+    closeSourceDialog(); return JSON.stringify(result);
+  })()`));
+  screenPermissionMode = 'granted';
+  check('COMPOSITOR_PRIVACY_SETTINGS_RECOVERY_VISIBLE_OK', screenPermissionAction.actionVisible && screenPermissionAction.message.includes('Screen Recording') && screenPermissionAction.actionText.includes('settings') && privacySettingsRequests.includes('screen'), JSON.stringify({ screenPermissionAction, privacySettingsRequests }));
 
   const hiddenSource = JSON.parse(await win.webContents.executeJavaScript(`JSON.stringify((()=>{
     const layer=selectedLayer(); const inputId=layer.inputId;
@@ -277,7 +294,7 @@ app.whenReady().then(async () => {
   await new Promise(resolve => setTimeout(resolve, 120));
   fs.writeFileSync(path.join(artifactDirectory, 'compositor-900x600.png'), (await win.webContents.capturePage()).toPNG());
 
-  console.log(`COMPOSITOR_RENDERER_TESTS_OK ${checks}/15`);
+  console.log(`COMPOSITOR_RENDERER_TESTS_OK ${checks}/16`);
   win.destroy();
   fs.rmSync(profile, { recursive: true, force: true });
   app.quit();
