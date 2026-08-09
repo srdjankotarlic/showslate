@@ -3431,7 +3431,7 @@
         <div class="monitor-head">
           <span class="monitor-title" data-i18n="studioProgram">Program</span>
           <span class="monitor-chip on" id="bdgOut">EKRAN</span>
-          <span class="monitor-chip" id="bdgBk">BLACKOUT</span>
+          <button type="button" class="monitor-chip monitor-blackout" id="bdgBk" data-testid="program-blackout-button" data-i18n-title="programBlackoutTitle" title="Toggle Program blackout">BLACKOUT</button>
         </div>
         <div class="preview monitor-screen program-screen" id="program" data-testid="program-monitor">
           <div class="pv-checker" id="pgChecker"></div>
@@ -3457,20 +3457,6 @@
     </div>
 
     <div class="show-command-strip" data-testid="show-command-strip">
-      <div class="transport">
-        <button id="btnStart" class="primary" data-testid="start-pause-button">START</button>
-        <button id="btnReset">RESET</button>
-        <div class="adjust">
-          <button data-adj="-300">−5m</button>
-          <button data-adj="-60">−1m</button>
-          <button data-adj="-10">−10s</button>
-          <button data-adj="10">+10s</button>
-          <button data-adj="60">+1m</button>
-          <button data-adj="300">+5m</button>
-        </div>
-        <button id="btnBlackout">BLACKOUT</button>
-      </div>
-
       <div class="golane">
         <div class="liveinfo" id="liveInfo">
           <span class="li-chip li-live" data-i18n="liveLabel">U PROGRAMU</span>
@@ -3545,6 +3531,24 @@
     </div>
 
     <div class="tabpane active" id="pane-timer">
+    <div class="panel panel-timer-transport" data-testid="timer-transport-panel">
+      <div class="timer-transport-head">
+        <span class="glabel" data-i18n="timerControls">Kontrola tajmera</span>
+        <span class="timer-transport-hint" data-i18n="timerControlsHint">Sekundarna kontrola za scene koje koriste tajmer.</span>
+      </div>
+      <div class="transport timer-transport" data-testid="timer-transport">
+        <button id="btnStart" class="primary" data-testid="start-pause-button">START</button>
+        <button id="btnReset">RESET</button>
+        <div class="adjust">
+          <button data-adj="-300">−5m</button>
+          <button data-adj="-60">−1m</button>
+          <button data-adj="-10">−10s</button>
+          <button data-adj="10">+10s</button>
+          <button data-adj="60">+1m</button>
+          <button data-adj="300">+5m</button>
+        </div>
+      </div>
+    </div>
     <div class="panel panel-mode">
       <div class="field">
         <span class="glabel" data-i18n="mode">Režim</span>
@@ -4162,12 +4166,12 @@ const I18N = {
     badgeLive:'U PROGRAMU', badgeSelected:'IZABRANO', badgeNext:'SLEDI', badgeSkipped:'PRESKOČENO',
     goSelectedBtn:'KRENI ▶ {name}', goAutoStart:'Auto-start na GO', goAutoTitle:'GO odmah pokreće tajmer novog reda',
     advanced:'Preview / Program', advancedTitle:'Preview/Program režija (Cut/Transition). Isključeno: sve ide direktno na Program.',
-    rundownBtn:'Rundown', sidebarToggle:'Prikaži ili sakrij navigaciju', utilityToggle:'Prikaži ili sakrij poruke, status i izlaze', msgOutBtn:'Poruke', settingsBtn:'Podešavanja', compactMode:'Kompaktan režim', compactTitle:'Kompaktan operater: samo tajmer, START, GO, ±, poruka; rundown u draweru.', fsMenu:'⛶ Pun ekran', closeMenu:'✕ Zatvori izlaz',
+    rundownBtn:'Rundown', sidebarToggle:'Prikaži ili sakrij navigaciju', utilityToggle:'Prikaži ili sakrij poruke, status i izlaze', msgOutBtn:'Poruke', settingsBtn:'Podešavanja', compactMode:'Kompaktan režim', compactTitle:'Fokusirani operater: Program, GO i poruka; kontrole tajmera su u Podešavanjima.', fsMenu:'⛶ Pun ekran', closeMenu:'✕ Zatvori izlaz',
     inspTitle:'Izvor', inspOpacity:'Prozirnost', inspFitTitle:'Kako medij popunjava kutiju',
     fitCover:'Popuni', fitContain:'Uklopi', fitFill:'Razvuci', inspCenter:'Centriraj', inspFull:'Ceo ekran',
     inspFontTitle:'Veličina teksta (% visine)', layerNamePrompt:'Naziv izvora:', textLayerPrompt:'Tekst izvora:',
     ltPresetPrompt:'Naziv preseta:', cancel:'Otkaži', ok:'U redu',
-    addTimer:'+ Tajmer', timerLayerOne:'Ova scena već ima tajmer lejer.',
+    addTimer:'+ Tajmer', timerLayerOne:'Ova scena već ima tajmer lejer.', timerControls:'Kontrola tajmera', timerControlsHint:'Sekundarna kontrola za scene koje koriste tajmer.', programBlackoutTitle:'Uključi ili isključi crni Program izlaz',
     tabTimer:'Tajming', tabLook:'Dizajn', tabScenes:'Scene', tabLt:'Potpis', tabNet:'Mreža & Izlazi',
     mode:'Režim', modeCountdown:'Odbrojavanje', modeCountup:'Štoperica', modeClock:'Sat',
     set:'Postavi', endAt:'Kraj u', startTarget:'Start', targetTitle:'Odbrojavanje do tačnog vremena',
@@ -4258,12 +4262,12 @@ const I18N = {
     badgeLive:'LIVE', badgeSelected:'SELECTED', badgeNext:'NEXT', badgeSkipped:'SKIPPED',
     goSelectedBtn:'GO ▶ {name}', goAutoStart:'Auto-start on GO', goAutoTitle:'GO immediately starts the new item timer',
     advanced:'Preview / Program', advancedTitle:'Preview/Program workflow (Cut/Transition). Off: everything goes straight to Program.',
-    rundownBtn:'Rundown', sidebarToggle:'Show or hide navigation', utilityToggle:'Show or hide messages, status and outputs', msgOutBtn:'Message', settingsBtn:'Settings', compactMode:'Compact mode', compactTitle:'Compact operator: only timer, START, GO, ±, message; rundown in a drawer.', fsMenu:'⛶ Fullscreen', closeMenu:'✕ Close output',
+    rundownBtn:'Rundown', sidebarToggle:'Show or hide navigation', utilityToggle:'Show or hide messages, status and outputs', msgOutBtn:'Message', settingsBtn:'Settings', compactMode:'Compact mode', compactTitle:'Focused operator: Program, GO and message; timer controls are in Settings.', fsMenu:'⛶ Fullscreen', closeMenu:'✕ Close output',
     inspTitle:'Source', inspOpacity:'Opacity', inspFitTitle:'How media fills the box',
     fitCover:'Cover', fitContain:'Fit', fitFill:'Stretch', inspCenter:'Center', inspFull:'Full screen',
     inspFontTitle:'Text size (% of height)', layerNamePrompt:'Source name:', textLayerPrompt:'Source text:',
     ltPresetPrompt:'Preset name:', cancel:'Cancel', ok:'OK',
-    addTimer:'+ Timer', timerLayerOne:'This scene already has a timer layer.',
+    addTimer:'+ Timer', timerLayerOne:'This scene already has a timer layer.', timerControls:'Timer controls', timerControlsHint:'Secondary controls for scenes that use a timer source.', programBlackoutTitle:'Toggle black on the Program output',
     tabTimer:'Timing', tabLook:'Design', tabScenes:'Scenes', tabLt:'Lower third', tabNet:'Network & Outputs',
     mode:'Mode', modeCountdown:'Countdown', modeCountup:'Stopwatch', modeClock:'Clock',
     set:'Set', endAt:'End at', startTarget:'Start', targetTitle:'Countdown to exact time',
@@ -4474,8 +4478,8 @@ const FONT_MAP={mono:'"SF Mono",ui-monospace,Menlo,monospace',grotesk:'-apple-sy
 const $ = id => document.getElementById(id);
 const GRID_SIZES = Array.from({length:12}, (_,i)=>i+1);
 function arrangeOperatorLayout(){
-  // Raspored je sada statičan u HTML-u: LIVE zona (studio → transport → poruka)
-  // + setup tabovi (Tajmer/Izgled/Scene/Potpis/Mreža), desno čist RUNDOWN.
+  // Raspored je statičan: LIVE zona sadrži studio i GO, dok su timer kontrole
+  // sekundarne i nalaze se u Podešavanja → Timing.
   // Namerno ne premešta ništa — premeštanje je pravilo haos od rasporeda.
 }
 function pad(n){ return String(n).padStart(2,'0'); }
@@ -4850,7 +4854,6 @@ function render(){
 }
 function updateButtons(){
   const b=$('btnStart');
-  if($('btnBlackout')) $('btnBlackout').classList.toggle('on',!!ensureProgramState().blackout);
   if(S.mode==='clock'){ b.textContent=t('clockBtn'); b.classList.remove('running'); return; }
   if(S.running){ b.textContent=t('pause'); b.classList.add('running'); }
   else { b.textContent=t('start'); b.classList.remove('running'); }
@@ -8677,10 +8680,10 @@ function buildGrid(){
 $('chkGrid').addEventListener('change',e=>{ S.gridOn=e.target.checked; lastKey=''; buildGrid(); send(true); });
 $('gridSizeSel').addEventListener('change',e=>setGridSize(+e.target.value));
 
-$('btnBlackout').addEventListener('click',()=>setProgramBlackout(!ensureProgramState().blackout));
 $('btnCut').addEventListener('click',()=>takePreview('cut'));
 $('btnTake').addEventListener('click',()=>takePreview('transition'));
 $('btnFadeBlack').addEventListener('click',()=>setProgramBlackout(!ensureProgramState().blackout));
+$('bdgBk').addEventListener('click',()=>setProgramBlackout(!ensureProgramState().blackout));
 $('chkDirectProgram').addEventListener('change',e=>{
   S.studioDirect=!!e.target.checked;
   if(S.studioDirect) takePreview('cut');
@@ -9113,7 +9116,7 @@ $('btnRundownDrawer').addEventListener('click',toggleNavigationSidebar);
 $('btnMsgDrawer').addEventListener('click',toggleUtilitySidebar);
 $('btnSettingsDrawer').addEventListener('click',()=>{
   if(document.body.classList.contains('compositor-open')) setCompositorOpen(false);
-  if(window.innerWidth<=1319) toggleDrawer('dr-setup');
+  toggleDrawer('dr-setup');
 });
 if($('btnSetupClose')) $('btnSetupClose').addEventListener('click',closeDrawers);
 $('drawerScrim').addEventListener('click',closeDrawers);
@@ -9218,7 +9221,7 @@ document.addEventListener('keydown',e=>{
   switch(e.key){
     case ' ': e.preventDefault(); startPause(); break;
     case 'r': case 'R': reset(); break;
-    case 'b': case 'B': $('btnBlackout').click(); break;
+    case 'b': case 'B': setProgramBlackout(!ensureProgramState().blackout); break;
     case 'f': case 'F': api.toggleFullscreen(); break;
     case 'm': case 'M': e.preventDefault(); $('msgInput').focus(); break;
     case 'c': case 'C': $('btnMsgClear').click(); break;

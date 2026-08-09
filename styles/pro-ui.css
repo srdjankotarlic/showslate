@@ -635,6 +635,32 @@ body.dr-setup .shell-layout #btnSettingsDrawer {
   color: #7ce6a2 !important;
 }
 
+.monitor-head .monitor-blackout {
+  min-width: auto !important;
+  min-height: 20px !important;
+  height: 20px !important;
+  padding: 3px 7px !important;
+  border-radius: 4px !important;
+  background: transparent !important;
+  color: var(--pro-text-3) !important;
+  font-size: 8px !important;
+  line-height: 1 !important;
+  cursor: pointer;
+  box-shadow: none !important;
+}
+
+.monitor-head .monitor-blackout:hover,
+.monitor-head .monitor-blackout:focus-visible {
+  border-color: #8e4844 !important;
+  color: #f0948e !important;
+}
+
+.monitor-head .monitor-blackout.bk {
+  border-color: #a64f49 !important;
+  background: var(--pro-danger) !important;
+  color: #fff !important;
+}
+
 .monitor-screen,
 .preview {
   border: 0 !important;
@@ -2058,81 +2084,39 @@ kbd {
   }
 }
 
-/* Timer and rundown actions remain immediately available without competing with Program. */
+/* The live compositor owns the main workspace. Timer transport is secondary and lives in Settings. */
 .shell-layout .operator-main {
-  grid-template-rows: minmax(250px, 1.08fr) auto minmax(0, clamp(188px, 31vh, 300px)) !important;
+  grid-template-rows: minmax(250px, 1fr) auto !important;
 }
 
 .shell-layout .show-command-strip {
   min-width: 0;
   min-height: 0;
-  display: grid;
-  grid-template-columns: minmax(0, .88fr) minmax(0, 1.12fr);
-  gap: 8px;
+  display: block;
 }
 
-.shell-layout .show-command-strip .transport,
 .shell-layout .show-command-strip .golane {
+  width: 100% !important;
   grid-column: auto !important;
   grid-row: auto !important;
+  grid-template-columns: minmax(120px, 1fr) minmax(150px, .55fr) minmax(96px, .34fr) auto !important;
   min-width: 0 !important;
   min-height: 46px !important;
   height: 46px !important;
   padding: 4px !important;
   gap: 4px !important;
+  border-color: #2c3d32 !important;
+  background: #141916 !important;
   box-shadow: none !important;
 }
 
-.shell-layout .show-command-strip .transport {
-  grid-template-columns: minmax(62px, .72fr) 52px minmax(142px, 1.72fr) 68px !important;
-}
-
-.shell-layout .show-command-strip #btnStart,
-.shell-layout .show-command-strip #btnReset,
-.shell-layout .show-command-strip #btnBlackout,
 .shell-layout .show-command-strip #btnGo,
 .shell-layout .show-command-strip #btnGoNext.secondary-next-row {
   min-height: 36px !important;
   height: 36px !important;
-  padding: 0 7px !important;
+  padding: 0 9px !important;
   font-size: 11px !important;
   letter-spacing: .02em !important;
-}
-
-.shell-layout .show-command-strip #btnStart {
-  background: #d7dce3 !important;
-  border-color: #e5e9ee !important;
-}
-
-.shell-layout .show-command-strip #btnStart.running {
-  background: #a8782b !important;
-  border-color: #bd8a38 !important;
-  color: #fff !important;
-}
-
-.shell-layout .show-command-strip .adjust {
-  min-width: 0 !important;
-  grid-column: auto !important;
-  grid-row: auto !important;
-  order: 0 !important;
-}
-
-.shell-layout .show-command-strip #btnBlackout {
-  order: 0 !important;
-}
-
-.shell-layout .show-command-strip .adjust button {
-  min-width: 0 !important;
-  min-height: 34px !important;
-  height: 34px !important;
-  padding: 0 2px !important;
-  font-size: 9.5px !important;
-}
-
-.shell-layout .show-command-strip .golane {
-  grid-template-columns: minmax(88px, 1fr) minmax(108px, .58fr) minmax(72px, .38fr) auto !important;
-  border-color: #2c3d32 !important;
-  background: #141916 !important;
 }
 
 .shell-layout .show-command-strip .liveinfo {
@@ -2159,26 +2143,166 @@ kbd {
   white-space: nowrap !important;
 }
 
+/* Settings is a real drawer at every window size, including Compact mode. */
+body:not(.compact) #setupWrap,
+body.compact #setupWrap {
+  position: fixed !important;
+  top: calc(var(--header-height, var(--header-h, 56px)) + 8px) !important;
+  right: 8px !important;
+  bottom: calc(var(--footer-height, var(--footer-h, 30px)) + 6px) !important;
+  left: auto !important;
+  z-index: 250 !important;
+  width: min(430px, calc(100vw - 24px)) !important;
+  height: auto !important;
+  display: grid !important;
+  grid-template-rows: auto auto minmax(0, 1fr) !important;
+  padding: 10px !important;
+  overflow: hidden !important;
+  border: 1px solid var(--pro-line-strong) !important;
+  border-radius: var(--pro-radius) !important;
+  background: var(--pro-surface-1) !important;
+  box-shadow: var(--pro-shadow-window) !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+  transform: translateX(calc(100% + 24px)) !important;
+  transition: transform .16s ease, opacity .16s ease, visibility .16s ease !important;
+}
+
+body.compact #setupWrap {
+  display: grid !important;
+}
+
+body.dr-setup #setupWrap {
+  visibility: visible !important;
+  opacity: 1 !important;
+  pointer-events: auto !important;
+  transform: none !important;
+}
+
+body #setupWrap .setupwrap-head {
+  display: flex !important;
+  min-height: 32px !important;
+  margin: 0 2px 6px !important;
+}
+
+body #setupWrap .tabpane.active {
+  min-height: 0 !important;
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
+  overscroll-behavior: contain;
+}
+
+#pane-timer .panel-timer-transport {
+  flex: 0 0 auto;
+  padding: 11px !important;
+  border: 1px solid var(--pro-line) !important;
+  border-radius: var(--pro-radius) !important;
+  background: #17191d !important;
+}
+
+.timer-transport-head {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  margin-bottom: 9px;
+}
+
+.timer-transport-head .glabel {
+  flex-basis: auto !important;
+  margin: 0 !important;
+  color: var(--pro-text-2) !important;
+}
+
+.timer-transport-hint {
+  color: var(--pro-text-3);
+  font-size: 10px;
+  line-height: 1.35;
+}
+
+#pane-timer .timer-transport {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) 86px !important;
+  gap: 7px !important;
+  min-width: 0 !important;
+  min-height: 0 !important;
+  padding: 0 !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+#pane-timer .timer-transport #btnStart,
+#pane-timer .timer-transport #btnReset {
+  min-width: 0 !important;
+  min-height: 38px !important;
+  height: 38px !important;
+  padding: 0 10px !important;
+  border-radius: 6px !important;
+  font-size: 11px !important;
+  letter-spacing: .03em !important;
+}
+
+#pane-timer .timer-transport #btnStart {
+  background: #d7dce3 !important;
+  border-color: #e5e9ee !important;
+  color: #11151b !important;
+  box-shadow: none !important;
+}
+
+#pane-timer .timer-transport #btnStart.running {
+  background: #a8782b !important;
+  border-color: #bd8a38 !important;
+  color: #fff !important;
+}
+
+#pane-timer .timer-transport .adjust {
+  grid-column: 1 / -1 !important;
+  display: grid !important;
+  grid-template-columns: repeat(6, minmax(0, 1fr)) !important;
+  gap: 2px !important;
+  min-width: 0 !important;
+  padding: 3px !important;
+  border: 1px solid var(--pro-line) !important;
+  border-radius: 7px !important;
+  background: #101216 !important;
+  order: 0 !important;
+}
+
+#pane-timer .timer-transport .adjust button {
+  min-width: 0 !important;
+  min-height: 32px !important;
+  height: 32px !important;
+  padding: 0 2px !important;
+  border: 0 !important;
+  border-radius: 5px !important;
+  background: transparent !important;
+  color: var(--pro-text-2) !important;
+  font-size: 9.5px !important;
+}
+
+#pane-timer .timer-transport .adjust button:hover {
+  background: var(--pro-surface-3) !important;
+  color: var(--pro-text) !important;
+}
+
 @media (max-width: 1319px) {
   .shell-layout .operator-main {
     grid-template-rows: minmax(180px, 1fr) auto !important;
   }
 }
 
-@media (max-width: 980px) {
-  .shell-layout .show-command-strip,
-  body.compact .shell-layout .show-command-strip {
-    grid-template-columns: minmax(0, 1fr) !important;
-    gap: 6px !important;
+@media (min-width: 1320px) {
+  body:not(.adv):not(.compositor-open) .shell-layout .show-command-strip {
+    flex: 0 0 46px !important;
   }
+}
 
-  .shell-layout .show-command-strip .transport,
+@media (max-width: 980px) {
   .shell-layout .show-command-strip .golane {
     min-height: 46px !important;
     height: 46px !important;
-  }
-
-  .shell-layout .show-command-strip .golane {
     grid-template-columns: minmax(0, 1fr) minmax(116px, .42fr) minmax(82px, .28fr) auto !important;
   }
 }

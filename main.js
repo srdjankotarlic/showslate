@@ -5289,23 +5289,46 @@ app.whenReady().then(async () => {
         const s900 = await measureAt(900, 600, { advanced:false });
         smokeCheck('FULL_VERTICAL_VISIBILITY_HELPER_OK', s900.probeFalse === true, 'probeFalse=' + s900.probeFalse);
         smokeCheck('PROGRAM_MONITOR_FULLY_VISIBLE_900x600_OK', s900.program.full, JSON.stringify(s900.program));
-        smokeCheck('START_FULLY_VISIBLE_900x600_OK', s900.start.full, JSON.stringify(s900.start));
         smokeCheck('GO_FULLY_VISIBLE_900x600_OK', s900.go.full, JSON.stringify(s900.go));
         smokeCheck('LIVE_CUE_VISIBLE_900x600_OK', s900.live.full, JSON.stringify(s900.live));
         smokeCheck('NEXT_CUE_VISIBLE_900x600_OK', s900.next.full, JSON.stringify(s900.next));
         smokeCheck('LOCK_LIVE_VISIBLE_900x600_OK', s900.lock.full, JSON.stringify(s900.lock));
         smokeCheck('FIXED_FOOTER_DOES_NOT_OVERLAP_OK',
-          s900.go.b <= s900.footerTop + 1 && s900.start.b <= s900.footerTop + 1, 'goB=' + s900.go.b + ' footerTop=' + s900.footerTop);
+          s900.go.b <= s900.footerTop + 1, 'goB=' + s900.go.b + ' footerTop=' + s900.footerTop);
         smokeCheck('BODY_NO_HORIZONTAL_SCROLL_900x600_OK', s900.overflowX <= 2 && s900.bodyScrollX <= 2, 'ovX=' + s900.overflowX + ' bodyX=' + s900.bodyScrollX);
-        smokeCheck('BODY_NO_OPERATOR_VERTICAL_SCROLL_900x600_OK', s900.mainScrollY <= 420 && s900.start.full && s900.go.full, 'mainScrollY=' + s900.mainScrollY);
-        smokeCheck('STANDARD_900x600_OK', s900.program.full && s900.start.full && s900.go.full && s900.overflowX <= 2, 'ovX=' + s900.overflowX);
+        smokeCheck('BODY_NO_OPERATOR_VERTICAL_SCROLL_900x600_OK', s900.mainScrollY <= 420 && s900.go.full, 'mainScrollY=' + s900.mainScrollY);
+        smokeCheck('STANDARD_900x600_OK', s900.program.full && s900.go.full && s900.overflowX <= 2, 'ovX=' + s900.overflowX);
         try { fs.writeFileSync('/tmp/pts_standard_900x600.png', (await controlWin.webContents.capturePage()).toPNG()); } catch(e){}
 
+        let timerSettings900 = {};
+        try {
+          timerSettings900 = JSON.parse(await controlWin.webContents.executeJavaScript(`(async function(){
+            function visible(el){if(!el)return false;var s=getComputedStyle(el),r=el.getBoundingClientRect();return s.display!=='none'&&s.visibility!=='hidden'&&parseFloat(s.opacity)!==0&&r.width>0&&r.height>0;}
+            function inside(el){if(!visible(el))return false;var r=el.getBoundingClientRect();return r.left>=-1&&r.top>=-1&&r.right<=innerWidth+1&&r.bottom<=innerHeight+1;}
+            function fits(el){return !!el&&(!visible(el)||(el.scrollWidth<=el.clientWidth+2&&el.scrollHeight<=el.clientHeight+2));}
+            closeDrawers();
+            document.getElementById('btnSettingsDrawer').click();
+            var deadline=Date.now()+1800;
+            while(Date.now()<deadline&&!(document.body.classList.contains('dr-setup')&&inside(document.getElementById('setupWrap')))) await new Promise(function(resolve){setTimeout(resolve,25);});
+            document.querySelector('#setupTabs button[data-pane="timer"]').click();
+            var panel=document.querySelector('[data-testid="timer-transport-panel"]'),transport=document.querySelector('[data-testid="timer-transport"]');
+            panel.scrollIntoView({block:'nearest'});
+            deadline=Date.now()+1800;
+            while(Date.now()<deadline&&!(inside(panel)&&inside(document.getElementById('btnStart'))&&inside(document.getElementById('btnReset')))) await new Promise(function(resolve){setTimeout(resolve,25);});
+            var adjust=[].slice.call(transport.querySelectorAll('.adjust button'));
+            var strip=document.querySelector('.show-command-strip'),lane=strip.querySelector('.golane'),sr=strip.getBoundingClientRect(),lr=lane.getBoundingClientRect();
+            return JSON.stringify({drawer:document.body.classList.contains('dr-setup')&&inside(document.getElementById('setupWrap')),inPane:document.getElementById('pane-timer').contains(transport),panel:inside(panel),start:inside(document.getElementById('btnStart')),reset:inside(document.getElementById('btnReset')),adjustCount:adjust.length,adjustInside:adjust.every(inside),fits:[document.getElementById('btnStart'),document.getElementById('btnReset')].concat(adjust).every(fits),timerInMain:!!strip.querySelector('.transport'),laneFull:Math.abs(sr.width-lr.width)<=2,legacyBlackout:!!document.getElementById('btnBlackout'),programBlackout:inside(document.getElementById('bdgBk'))&&fits(document.getElementById('bdgBk'))});
+          })()`));
+        } catch (e) { timerSettings900 = { error:String(e) }; }
+        smokeCheck('TIMER_CONTROLS_IN_SETTINGS_900x600_OK', timerSettings900.drawer && timerSettings900.inPane && timerSettings900.panel && timerSettings900.start && timerSettings900.reset && timerSettings900.adjustCount===6 && timerSettings900.adjustInside && timerSettings900.fits && !timerSettings900.timerInMain && timerSettings900.laneFull && !timerSettings900.legacyBlackout && timerSettings900.programBlackout, JSON.stringify(timerSettings900));
+        try { fs.writeFileSync('/tmp/pts_timer_settings_900x600.png', (await controlWin.webContents.capturePage()).toPNG()); } catch(e){}
+        try { await controlWin.webContents.executeJavaScript('closeDrawers()'); } catch(e){}
+
         const s1024 = await measureAt(1024, 700, { advanced:false });
-        smokeCheck('STANDARD_1024x700_OK', s1024.program.full && s1024.start.full && s1024.go.found && s1024.overflowX <= 2, 'ovX=' + s1024.overflowX + ' go=' + JSON.stringify(s1024.go));
+        smokeCheck('STANDARD_1024x700_OK', s1024.program.full && s1024.go.found && s1024.overflowX <= 2, 'ovX=' + s1024.overflowX + ' go=' + JSON.stringify(s1024.go));
 
         const s1280 = await measureAt(1280, 720, { advanced:true });
-        smokeCheck('ADVANCED_1280x720_OK', (s1280.timer.full || s1280.program.full) && s1280.start.full && s1280.go.found && s1280.overflowX <= 2, 'ovX=' + s1280.overflowX);
+        smokeCheck('ADVANCED_1280x720_OK', (s1280.timer.full || s1280.program.full) && s1280.go.found && s1280.overflowX <= 2, 'ovX=' + s1280.overflowX);
         try { fs.writeFileSync('/tmp/pts_advanced_1280x720.png', (await controlWin.webContents.capturePage()).toPNG()); } catch(e){}
 
         await measureAt(1280, 800, { advanced:false });
@@ -5402,9 +5425,28 @@ app.whenReady().then(async () => {
 
         // ===== COMPACT operater =====
         const c900 = await measureAt(900, 600, { compact:true });
+        let compactTimerSettings = {};
+        try {
+          compactTimerSettings = await jparse(`(async function(){
+            function inside(el){if(!el)return false;var s=getComputedStyle(el),r=el.getBoundingClientRect();return s.display!=='none'&&s.visibility!=='hidden'&&parseFloat(s.opacity)!==0&&r.width>0&&r.height>0&&r.left>=-1&&r.top>=-1&&r.right<=innerWidth+1&&r.bottom<=innerHeight+1;}
+            closeDrawers();
+            document.getElementById('btnSettingsDrawer').click();
+            var deadline=Date.now()+1800;
+            while(Date.now()<deadline&&!(document.body.classList.contains('dr-setup')&&inside(document.getElementById('setupWrap')))) await new Promise(function(resolve){setTimeout(resolve,25);});
+            document.querySelector('#setupTabs button[data-pane="timer"]').click();
+            var panel=document.querySelector('[data-testid="timer-transport-panel"]'),transport=document.querySelector('[data-testid="timer-transport"]');
+            panel.scrollIntoView({block:'nearest'});
+            deadline=Date.now()+1800;
+            while(Date.now()<deadline&&!(inside(document.getElementById('btnStart'))&&inside(document.getElementById('btnReset')))) await new Promise(function(resolve){setTimeout(resolve,25);});
+            var adjust=[].slice.call(transport.querySelectorAll('.adjust button'));
+            var result={drawer:document.body.classList.contains('dr-setup')&&inside(document.getElementById('setupWrap')),start:inside(document.getElementById('btnStart')),reset:inside(document.getElementById('btnReset')),adjustCount:adjust.length,adjustInside:adjust.every(inside)};
+            closeDrawers();
+            return JSON.stringify(result);
+          })()`);
+        } catch (e) { compactTimerSettings = { error:String(e) }; }
         smokeCheck('COMPACT_MODE_OK',
-          (c900.timer.full || c900.program.full) && c900.start.full && c900.go.full && c900.overflowX <= 2 && c900.mainScrollY <= 420,
-          'timer=' + c900.timer.full + ' start=' + c900.start.full + ' go=' + c900.go.full + ' ovX=' + c900.overflowX + ' scrollY=' + c900.mainScrollY);
+          c900.program.full && c900.go.full && !c900.start.full && compactTimerSettings.drawer && compactTimerSettings.start && compactTimerSettings.reset && compactTimerSettings.adjustCount===6 && compactTimerSettings.adjustInside && c900.overflowX <= 2 && c900.mainScrollY <= 420,
+          'program=' + c900.program.full + ' startInMain=' + c900.start.full + ' go=' + c900.go.full + ' settings=' + JSON.stringify(compactTimerSettings) + ' ovX=' + c900.overflowX + ' scrollY=' + c900.mainScrollY);
         try { fs.writeFileSync('/tmp/pts_compact_900x600.png', (await controlWin.webContents.capturePage()).toPNG()); } catch(e){}
         const drun = await jparse(`(function(){
           var el=document.querySelector('.col-run');
@@ -5936,8 +5978,8 @@ app.whenReady().then(async () => {
             'vw=' + lv.vw + 'x' + lv.vh + ' outer=' + JSON.stringify(durLV.b) + ' unchanged=' + boundsUnchanged);
           smokeCheck('SMOKE_LARGE_VIEWPORT_NO_FOCUS_OK', durLV.foc === preLV.foc, 'focBefore=' + preLV.foc + ' focDuring=' + durLV.foc);
           smokeCheck('STANDARD_LAYOUT_1920x1080_OK',
-            lv.program.full && lv.start.full && lv.go.full && lv.overflowX <= 2,
-            'ovX=' + lv.overflowX + ' go=' + JSON.stringify(lv.go));
+            lv.program.full && !lv.start.full && lv.go.full && lv.overflowX <= 2,
+            'ovX=' + lv.overflowX + ' startInMain=' + lv.start.full + ' go=' + JSON.stringify(lv.go));
           await measureAt(1280, 800, { advanced:false });   // isključi emulaciju, vrati normalan viewport
         }
 
