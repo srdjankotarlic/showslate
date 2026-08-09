@@ -1,6 +1,6 @@
 # Stable release evidence
 
-This directory contains the stable-release gate. Public compositor betas use the separate, earlier gate in [`beta/`](beta/README.md). A beta tag cannot publish until real live-source, audio, installation and output-routing evidence is committed in the required evidence-only commit.
+This directory contains the stable-release gate. The [`beta/`](beta/README.md) directory provides an optional physical-QA record for experimental betas. Public beta publication does not imply physical certification; stable publication still requires complete retained evidence.
 
 Stable releases use two separate workflows:
 

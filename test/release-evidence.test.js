@@ -278,18 +278,17 @@ const publishWorkflow = fs.readFileSync(path.join(workflowRoot, 'publish-stable.
 
 assert.match(betaWorkflow, /v\*\.\*\.\*-beta\.\*/);
 assert.doesNotMatch(betaWorkflow, /^\s*-\s+["']?v\*["']?\s*$/m);
-assert.match(betaWorkflow, /--generate-notes/);
+assert.match(betaWorkflow, /--notes-file/);
+assert.match(betaWorkflow, /RELEASE-NOTES-\$\{GITHUB_REF_NAME#v\}\.md/);
 assert.doesNotMatch(betaWorkflow, /RELEASE-NOTES-0\.9\.0-beta\.1/);
 assert.match(betaWorkflow, /commitFull/);
 assert.match(betaWorkflow, /buildInfo\.dirty/);
-assert.match(betaWorkflow, /verify-beta-release-evidence\.js/);
-assert.match(betaWorkflow, /candidate_run_id/);
-assert.match(betaWorkflow, /run\.event === 'workflow_dispatch'/);
-assert.match(betaWorkflow, /run\.head_sha === process\.env\.TESTED_COMMIT/);
+assert.match(betaWorkflow, /assert-release-tag\.js beta/);
+assert.match(betaWorkflow, /merge-base --is-ancestor HEAD origin\/main/);
+assert.doesNotMatch(betaWorkflow, /verify-beta-release-evidence\.js/);
+assert.doesNotMatch(betaWorkflow, /release-evidence\/beta/);
 assert.match(betaWorkflow, /macos-arm64/);
 assert.match(betaWorkflow, /windows-x64/);
-assert.match(betaWorkflow, /gh run download/);
-assert.match(betaWorkflow, /--candidate-dir candidate-assets/);
 console.log('RELEASE_POLICY_BETA_TAG_ISOLATED_OK=true');
 
 assert.match(candidateWorkflow, /confirmation must be BUILD/);

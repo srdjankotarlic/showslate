@@ -71,8 +71,8 @@ GitHub asset counters are aggregate downloads, not verified people, installation
 5. Ask the original reporter to retry the exact failed step.
 6. Stop expanding scope if operators do not value the Conference Desk workflow after three complete pilots.
 
-## Publication gate
+## Optional physical QA record
 
-A successful package rehearsal is necessary but does not publish a compositor beta. Before creating a beta tag, complete [`release-evidence/beta`](../release-evidence/beta/README.md) against the exact candidate commit. The tag commit may add only that completed evidence file. The release workflow also verifies that the recorded native Mac/Windows candidate run succeeded for the tested commit and that its artifacts are still retained.
+A native package rehearsal plus automated checks can publish an explicitly experimental beta. Use [`release-evidence/beta`](../release-evidence/beta/README.md) to retain physical QA when the required hardware and Windows system are available; it remains mandatory before making any physical-certification claim.
 
-Synthetic capture tests, a permission warning or a natively built Windows executable do not count as physical source or Windows GUI proof. Leave those gates failed until the real workflow is observed and retained.
+Synthetic capture tests, a permission warning or a natively built Windows executable do not count as physical source or Windows GUI proof. Leave those gates failed until the real workflow is observed and retained, and state the gap in public beta notes.

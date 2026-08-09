@@ -47,4 +47,6 @@ Preview is always muted. Program audio is off by default and can be enabled on o
 
 The Mac package is not Apple Developer ID signed or notarized, and the Windows package is not Authenticode signed. Operating systems can show an unknown-developer warning. Download only from this repository and verify `SHA256SUMS.txt` when needed.
 
+This build passed automated source and packaged checks plus native Mac and Windows package construction. Real window/display frames were not manually verified with macOS Screen Recording enabled, physical UVC capture-card video/audio was not tested, and the Windows GUI was not exercised on a physical Windows computer. These are evaluation features in this beta, not certified hardware workflows.
+
 This is an evaluation beta, not a production-certified release. Keep a fallback rundown/timer and test every live source and destination before doors open.
