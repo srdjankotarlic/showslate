@@ -4184,7 +4184,7 @@ const I18N = {
     inspTitle:'Izvor', inspOpacity:'Prozirnost', inspFitTitle:'Kako medij popunjava kutiju',
     programLayer:'PROGRAM LEJER', layerNoneSelected:'Izaberite lejer', takeLayer:'PUSTI LEJER', hideLayer:'SKLONI',
     layerPreviewOnly:'SAMO PREVIEW', layerLive:'U PROGRAMU', layerChanged:'IZMENJEN', layerHidden:'SKLONJEN', layerDirect:'DIREKTNO', layerLivePreviewHidden:'U PROGRAMU · PREVIEW SKRIVEN',
-    layerVisibility:'Prikaži {name} u Preview-u',
+    layerVisibility:'Prikaži {name} u Preview-u', layerSelect:'Izaberi lejer {name}',
     fitCover:'Popuni', fitContain:'Uklopi', fitFill:'Razvuci', inspCenter:'Centriraj', inspFull:'Ceo ekran',
     inspFontTitle:'Veličina teksta (% visine)', layerNamePrompt:'Naziv izvora:', textLayerPrompt:'Tekst izvora:',
     ltPresetPrompt:'Naziv preseta:', cancel:'Otkaži', ok:'U redu',
@@ -4283,7 +4283,7 @@ const I18N = {
     inspTitle:'Source', inspOpacity:'Opacity', inspFitTitle:'How media fills the box',
     programLayer:'PROGRAM LAYER', layerNoneSelected:'Select a layer', takeLayer:'TAKE LAYER', hideLayer:'HIDE',
     layerPreviewOnly:'PREVIEW ONLY', layerLive:'LIVE', layerChanged:'CHANGED', layerHidden:'HIDDEN', layerDirect:'DIRECT', layerLivePreviewHidden:'LIVE · PREVIEW HIDDEN',
-    layerVisibility:'Show {name} in Preview',
+    layerVisibility:'Show {name} in Preview', layerSelect:'Select layer {name}',
     fitCover:'Cover', fitContain:'Fit', fitFill:'Stretch', inspCenter:'Center', inspFull:'Full screen',
     inspFontTitle:'Text size (% of height)', layerNamePrompt:'Source name:', textLayerPrompt:'Source text:',
     ltPresetPrompt:'Preset name:', cancel:'Cancel', ok:'OK',
@@ -6223,7 +6223,7 @@ function renderScenesUI(){
     row.dataset.layerId=layer.id;
     row.addEventListener('click',e=>{ if(e.target.closest('button,input')) return; selectLayer(layer.id); });
     const thumb = (layer.thumbnail || (layer.type==='image'?layer.src:'')) ? '<img class="source-preview" alt="">' : '<span class="layer-kind"></span>';
-    row.innerHTML=`<input type="checkbox" class="vis">${thumb}<div class="layer-copy"><div class="layer-name"></div><div class="layer-meta"></div><span class="layer-program-chip"></span></div><button class="mini up" aria-label="Move layer up">↑</button><button class="mini dn" aria-label="Move layer down">↓</button><button class="mini del" aria-label="Delete layer">✕</button>`;
+    row.innerHTML=`<input type="checkbox" class="vis">${thumb}<button type="button" class="layer-copy layer-select"><span class="layer-name"></span><span class="layer-meta"></span><span class="layer-program-chip"></span></button><button class="mini up" aria-label="Move layer up">↑</button><button class="mini dn" aria-label="Move layer down">↓</button><button class="mini del" aria-label="Delete layer">✕</button>`;
     const visibility=row.querySelector('.vis');
     visibility.checked=layer.visible!==false;
     visibility.setAttribute('aria-label',uiText('layerVisibility',{name:layer.name||layer.sourceName||layer.type}));
@@ -6239,6 +6239,10 @@ function renderScenesUI(){
       const v=await askText(t('layerNamePrompt'), layer.name||'Layer');
       if(v!==null){ layer.name=v.trim()||layer.name; sceneDirty(); }
     });
+    const layerSelect=row.querySelector('.layer-select');
+    layerSelect.setAttribute('aria-label',uiText('layerSelect',{name:layer.name||layer.sourceName||layer.type}));
+    layerSelect.setAttribute('aria-pressed',layer.id===selectedLayerId?'true':'false');
+    layerSelect.addEventListener('click',()=>selectLayer(layer.id));
     const meta=row.querySelector('.layer-meta');
     if(layer.type==='window'||layer.type==='capture'){
       const input=liveInputDefinition(layer.inputId), status=liveInputStatus(layer.inputId);

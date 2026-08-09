@@ -28,6 +28,7 @@ body.compositor-open #panelSources{grid-row:3!important;min-height:0!important}
 .layer-program-copy>span{grid-column:1/-1;color:var(--dim2);font-size:8px;font-weight:800;letter-spacing:.9px}
 .layer-program-copy strong{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:11px;font-weight:680}
 .layer-program-actions{display:flex;align-items:center;gap:6px}.layer-program-actions button{height:31px;padding:5px 9px;font-size:9px;white-space:nowrap}
+.layer-program-actions button:disabled{opacity:.38!important;filter:saturate(.2);box-shadow:none!important;cursor:not-allowed}
 .layer-program-status,.layer-program-chip{display:inline-flex;align-items:center;width:max-content;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;border:1px solid rgba(255,255,255,.1);border-radius:999px;padding:3px 6px;color:#9298a2;background:#1b1c21;font-size:7.5px;font-weight:820;letter-spacing:.65px;line-height:1}
 .layer-program-status.live,.layer-program-chip.live,.layer-program-status.direct,.layer-program-chip.direct{color:#9ed4b0;border-color:rgba(89,165,116,.36);background:rgba(59,126,83,.14)}
 .layer-program-status.changed,.layer-program-chip.changed{color:#d9bc80;border-color:rgba(184,141,64,.36);background:rgba(150,108,38,.13)}
@@ -40,6 +41,8 @@ body.compositor-open #panelSources{grid-row:3!important;min-height:0!important}
 .panel-sources .source-preview{width:44px!important;height:32px!important;border-radius:5px!important}
 .layer-kind{display:grid;place-items:center;width:44px;height:32px;border:1px solid rgba(255,255,255,.1);border-radius:5px;background:#111216;color:#aeb3bc;font-size:8px;font-weight:800;letter-spacing:.7px;text-transform:uppercase;overflow:hidden}
 .layer-copy{min-width:0;display:flex;flex-direction:column;gap:2px}
+.layer-select{height:auto!important;padding:0!important;border:0!important;border-radius:4px!important;background:transparent!important;box-shadow:none!important;color:inherit!important;text-align:left!important;align-items:stretch!important}
+.layer-select:hover{background:transparent!important}.layer-select:focus-visible{outline:2px solid #7db8ff!important;outline-offset:3px}
 .layer-name{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:650}
 .layer-meta{display:flex;align-items:center;gap:6px;min-width:0;color:var(--dim2);font-size:9.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .layer-program-chip{margin-top:2px}
