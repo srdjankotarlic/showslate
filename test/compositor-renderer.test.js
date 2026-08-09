@@ -187,10 +187,37 @@ app.whenReady().then(async () => {
     const disabledOpacity=Number(getComputedStyle(document.getElementById('btnTakeLayer')).opacity);
     const selector=[...document.querySelectorAll('#layerList .layer-select')].find(button=>button.querySelector('.layer-name')?.textContent==='Slides capture');
     const targetId=selector?.closest('.layer-row')?.dataset.layerId||'';
+    selectLayer(null);
+    selector?.focus();
+    const selectedFromFocus=selectedLayer()?.id||'';
     selector?.click();
-    return {button:selector?.tagName||'',aria:selector?.getAttribute('aria-label')||'',current:document.querySelector('#layerList .layer-select[aria-current="true"]')?.closest('.layer-row')?.dataset.layerId||'',targetId,selectedId:selectedLayer()?.id||'',inspectorOpen:document.getElementById('inspector').classList.contains('open'),inspectorName:document.getElementById('inspName').value,takeEnabled:!document.getElementById('btnTakeLayer').disabled,disabledOpacity};
+    const selectedRow=document.querySelector('#layerList .layer-row.sel');
+    return {button:selector?.tagName||'',aria:selector?.getAttribute('aria-label')||'',current:document.querySelector('#layerList .layer-select[aria-current="true"]')?.closest('.layer-row')?.dataset.layerId||'',targetId,selectedFromFocus,selectedId:selectedLayer()?.id||'',inspectorOpen:document.getElementById('inspector').classList.contains('open'),inspectorName:document.getElementById('inspName').value,takeEnabled:!document.getElementById('btnTakeLayer').disabled,rowTakeVisible:!!selectedRow?.querySelector('.row-take')?.getClientRects().length,rowHideVisible:!!selectedRow?.querySelector('.row-hide')?.getClientRects().length,disabledOpacity};
   })())`));
-  check('COMPOSITOR_LAYER_SELECT_USER_CONTROL_OK', layerSelection.button === 'BUTTON' && layerSelection.aria.includes('Slides capture') && layerSelection.targetId === layerSelection.selectedId && layerSelection.current === layerSelection.targetId && layerSelection.inspectorOpen && layerSelection.inspectorName === 'Slides capture' && layerSelection.takeEnabled && layerSelection.disabledOpacity < 0.6, JSON.stringify(layerSelection));
+  check('COMPOSITOR_LAYER_SELECT_USER_CONTROL_OK', layerSelection.button === 'BUTTON' && layerSelection.aria.includes('Slides capture') && layerSelection.targetId === layerSelection.selectedFromFocus && layerSelection.targetId === layerSelection.selectedId && layerSelection.current === layerSelection.targetId && layerSelection.inspectorOpen && layerSelection.inspectorName === 'Slides capture' && layerSelection.takeEnabled && layerSelection.rowTakeVisible && layerSelection.rowHideVisible && layerSelection.disabledOpacity < 0.6, JSON.stringify(layerSelection));
+
+  const layerRowActions=JSON.parse(await win.webContents.executeJavaScript(`JSON.stringify((()=>{
+    const scene=currentScene(), original=cloneState(scene.layers), source=scene.layers[1]||scene.layers[0];
+    const probe={...cloneState(source),id:'layer-action-probe',name:'Layer action probe'};
+    scene.layers.splice(1,0,probe); selectedLayerId=probe.id; sceneDirty();
+    const indexBefore=currentScene().layers.findIndex(layer=>layer.id===probe.id);
+    let row=document.querySelector('#layerList .layer-row[data-layer-id="layer-action-probe"]');
+    row.querySelector('.up').click();
+    const indexForward=currentScene().layers.findIndex(layer=>layer.id===probe.id);
+    row=document.querySelector('#layerList .layer-row[data-layer-id="layer-action-probe"]');
+    row.querySelector('.dn').click();
+    const indexBackward=currentScene().layers.findIndex(layer=>layer.id===probe.id);
+    const activeLayers=currentScene().layers;
+    const topId=activeLayers[activeLayers.length-1].id, bottomId=activeLayers[0].id;
+    const topForwardDisabled=document.querySelector('#layerList .layer-row[data-layer-id="'+topId+'"] .up').disabled;
+    const bottomBackwardDisabled=document.querySelector('#layerList .layer-row[data-layer-id="'+bottomId+'"] .dn').disabled;
+    row=document.querySelector('#layerList .layer-row[data-layer-id="layer-action-probe"]');
+    row.querySelector('.del').click();
+    const deleted=!currentScene().layers.some(layer=>layer.id===probe.id);
+    currentScene().layers=original; selectedLayerId=(original[original.length-1]||{}).id||null; sceneDirty();
+    return {indexBefore,indexForward,indexBackward,topForwardDisabled,bottomBackwardDisabled,deleted};
+  })())`));
+  check('COMPOSITOR_LAYER_REORDER_DELETE_CONTROLS_OK', layerRowActions.indexForward === layerRowActions.indexBefore + 1 && layerRowActions.indexBackward === layerRowActions.indexBefore && layerRowActions.topForwardDisabled && layerRowActions.bottomBackwardDisabled && layerRowActions.deleted, JSON.stringify(layerRowActions));
   if (!await waitFor(() => configuredInputs.some(input => input.type === 'window' && input.active))) throw new Error('window input was not configured');
   check('COMPOSITOR_WINDOW_AND_CAPTURE_CARD_CONFIGURED_ONCE_OK', configuredInputs.filter(input => input.type === 'window').length === 1 && configuredInputs.filter(input => input.type === 'device' && input.videoDeviceId === 'video-card-1' && input.audioDeviceId === 'audio-card-1' && input.withAudio && input.width === 1280 && input.height === 720).length === 1, JSON.stringify(configuredInputs));
 
@@ -281,14 +308,14 @@ app.whenReady().then(async () => {
     const previewAfterEdit=selectedLayer();
     const previewIsolated=findProgramLayer(previewAfterEdit).x!==previewAfterEdit.x;
     const changedStatus=document.getElementById('layerProgramStatus').textContent;
-    document.getElementById('btnTakeLayer').click();
+    document.querySelector('#layerList .layer-row.sel .row-take').click();
     const taken=findProgramLayer(layer);
     const afterOther=JSON.stringify(activeScene(programState).layers.filter(row=>row.id!==taken.id));
     const liveStatus=document.getElementById('layerProgramStatus').textContent;
-    document.getElementById('btnHideLayer').click();
+    document.querySelector('#layerList .layer-row.sel .row-hide').click();
     const hidden=findProgramLayer(layer);
     const hiddenStatus=document.getElementById('layerProgramStatus').textContent;
-    document.getElementById('btnTakeLayer').click();
+    document.querySelector('#layerList .layer-row.sel .row-take').click();
     const restored=findProgramLayer(layer);
     const previewAfterTake=(currentScene().layers||[]).find(row=>row.id===layerId);
     return {previewIsolated,changedStatus,takenX:taken.x,previewX:previewAfterTake.x,otherLayersUnchanged:beforeOther===afterOther,liveStatus,hidden: hidden.visible===false,previewVisible:previewAfterTake.visible!==false,hiddenStatus,restoredVisible:restored.visible!==false,finalStatus:document.getElementById('layerProgramStatus').textContent};
@@ -305,11 +332,11 @@ app.whenReady().then(async () => {
     S.scenes.push(previewScene); S.activeSceneId=previewScene.id; selectedLayerId=previewLayer.id;
     renderScenesUI(); send();
     const programUnchangedBeforeTake=activeScene(programState).id===programSceneId && existingIds.every(id=>activeScene(programState).layers.some(row=>row.id===id));
-    document.getElementById('btnTakeLayer').click();
+    document.querySelector('#layerList .layer-row.sel .row-take').click();
     const live=findProgramLayer(previewLayer), programSceneAfter=activeScene(programState);
     const preservedProgramScene=programSceneAfter.id===programSceneId && existingIds.every(id=>programSceneAfter.layers.some(row=>row.id===id));
     const insertedAsOverlay=!!live && live.programSourceLayerId===previewLayer.id && live.programSourceSceneId===previewScene.id && live.visible!==false;
-    document.getElementById('btnHideLayer').click();
+    document.querySelector('#layerList .layer-row.sel .row-hide').click();
     const hidden=findProgramLayer(previewLayer);
     return {programUnchangedBeforeTake,preservedProgramScene,insertedAsOverlay,hidden:!!hidden&&hidden.visible===false,previewVisible:previewLayer.visible!==false,status:document.getElementById('layerProgramStatus').textContent};
   })())`));
@@ -355,7 +382,7 @@ app.whenReady().then(async () => {
   })())`));
   check('COMPOSITOR_DEMO_STARTS_PREVIEW_PROGRAM_IN_SYNC_OK', demoBaseline.visible && demoBaseline.direct === false && demoBaseline.selectedStatus === 'LIVE' && demoBaseline.statuses.length > 0 && demoBaseline.statuses.every(status=>status === 'LIVE') && demoBaseline.preview === demoBaseline.program, JSON.stringify(demoBaseline));
 
-  console.log(`COMPOSITOR_RENDERER_TESTS_OK ${checks}/21`);
+  console.log(`COMPOSITOR_RENDERER_TESTS_OK ${checks}/22`);
   win.destroy();
   fs.rmSync(profile, { recursive: true, force: true });
   app.quit();

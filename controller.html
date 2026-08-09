@@ -4182,9 +4182,9 @@ const I18N = {
     advanced:'Preview / Program', advancedTitle:'Preview/Program režija (Cut/Transition). Isključeno: sve ide direktno na Program.',
     rundownBtn:'Rundown', sidebarToggle:'Prikaži ili sakrij navigaciju', utilityToggle:'Prikaži ili sakrij poruke, status i izlaze', msgOutBtn:'Poruke', settingsBtn:'Podešavanja', compactMode:'Kompaktan režim', compactTitle:'Fokusirani operater: Program, GO i poruka; kontrole tajmera su u Podešavanjima.', fsMenu:'⛶ Pun ekran', closeMenu:'✕ Zatvori izlaz',
     inspTitle:'Izvor', inspOpacity:'Prozirnost', inspFitTitle:'Kako medij popunjava kutiju',
-    programLayer:'PROGRAM LEJER', layerNoneSelected:'Izaberite lejer', takeLayer:'PUSTI LEJER', hideLayer:'SKLONI',
+    programLayer:'PROGRAM LEJER', layerNoneSelected:'Izaberite lejer', takeLayer:'PUSTI LEJER', hideLayer:'SKLONI', takeLayerShort:'PUSTI', hideLayerShort:'SKLONI',
     layerPreviewOnly:'SAMO PREVIEW', layerLive:'U PROGRAMU', layerChanged:'IZMENJEN', layerHidden:'SKLONJEN', layerDirect:'DIREKTNO', layerLivePreviewHidden:'U PROGRAMU · PREVIEW SKRIVEN',
-    layerVisibility:'Prikaži {name} u Preview-u', layerSelect:'Izaberi lejer {name}',
+    layerVisibility:'Prikaži {name} u Preview-u', layerSelect:'Izaberi lejer {name}', layerMoveForward:'Pomeri lejer napred', layerMoveBackward:'Pomeri lejer nazad', layerDelete:'Obriši lejer',
     fitCover:'Popuni', fitContain:'Uklopi', fitFill:'Razvuci', inspCenter:'Centriraj', inspFull:'Ceo ekran',
     inspFontTitle:'Veličina teksta (% visine)', layerNamePrompt:'Naziv izvora:', textLayerPrompt:'Tekst izvora:',
     ltPresetPrompt:'Naziv preseta:', cancel:'Otkaži', ok:'U redu',
@@ -4281,9 +4281,9 @@ const I18N = {
     advanced:'Preview / Program', advancedTitle:'Preview/Program workflow (Cut/Transition). Off: everything goes straight to Program.',
     rundownBtn:'Rundown', sidebarToggle:'Show or hide navigation', utilityToggle:'Show or hide messages, status and outputs', msgOutBtn:'Message', settingsBtn:'Settings', compactMode:'Compact mode', compactTitle:'Focused operator: Program, GO and message; timer controls are in Settings.', fsMenu:'⛶ Fullscreen', closeMenu:'✕ Close output',
     inspTitle:'Source', inspOpacity:'Opacity', inspFitTitle:'How media fills the box',
-    programLayer:'PROGRAM LAYER', layerNoneSelected:'Select a layer', takeLayer:'TAKE LAYER', hideLayer:'HIDE',
+    programLayer:'PROGRAM LAYER', layerNoneSelected:'Select a layer', takeLayer:'TAKE LAYER', hideLayer:'HIDE', takeLayerShort:'TAKE', hideLayerShort:'HIDE',
     layerPreviewOnly:'PREVIEW ONLY', layerLive:'LIVE', layerChanged:'CHANGED', layerHidden:'HIDDEN', layerDirect:'DIRECT', layerLivePreviewHidden:'LIVE · PREVIEW HIDDEN',
-    layerVisibility:'Show {name} in Preview', layerSelect:'Select layer {name}',
+    layerVisibility:'Show {name} in Preview', layerSelect:'Select layer {name}', layerMoveForward:'Bring layer forward', layerMoveBackward:'Send layer backward', layerDelete:'Delete layer',
     fitCover:'Cover', fitContain:'Fit', fitFill:'Stretch', inspCenter:'Center', inspFull:'Full screen',
     inspFontTitle:'Text size (% of height)', layerNamePrompt:'Source name:', textLayerPrompt:'Source text:',
     ltPresetPrompt:'Preset name:', cancel:'Cancel', ok:'OK',
@@ -4674,6 +4674,9 @@ function refreshLayerProgramIndicators(){
     const info=layerProgramInfo(layer);
     const chip=row.querySelector('.layer-program-chip');
     if(chip){ chip.textContent=info.label; chip.className='layer-program-chip '+info.key; }
+    const take=row.querySelector('.row-take'), hide=row.querySelector('.row-hide');
+    if(take) take.disabled=!layer||S.studioDirect;
+    if(hide) hide.disabled=!layer||S.studioDirect||!info.programLayer||info.programLayer.visible===false;
   });
   updateLayerProgramControls();
 }
@@ -6186,6 +6189,25 @@ function sceneDirty(){
   renderScenesUI();
   send();
 }
+function moveSceneLayer(layerId,delta){
+  const sc=currentScene();
+  const index=(sc.layers||[]).findIndex(layer=>layer.id===layerId);
+  const target=index+delta;
+  if(index<0||target<0||target>=sc.layers.length) return false;
+  [sc.layers[index],sc.layers[target]]=[sc.layers[target],sc.layers[index]];
+  selectedLayerId=layerId;
+  sceneDirty();
+  return true;
+}
+function deleteSceneLayer(layerId){
+  const sc=currentScene();
+  const index=(sc.layers||[]).findIndex(layer=>layer.id===layerId);
+  if(index<0) return false;
+  sc.layers.splice(index,1);
+  selectedLayerId=(sc.layers[Math.min(index,sc.layers.length-1)]||{}).id||null;
+  sceneDirty();
+  return true;
+}
 function renderScenesUI(){
   ensureScenes();
   const sceneBox=$('sceneList'), layerBox=$('layerList');
@@ -6221,9 +6243,11 @@ function renderScenesUI(){
     const row=document.createElement('div');
     row.className='layer-row'+(layer.id===selectedLayerId?' sel':'');
     row.dataset.layerId=layer.id;
-    row.addEventListener('click',e=>{ if(e.target.closest('button,input')) return; selectLayer(layer.id); });
+    const requestLayerSelection=()=>{ if(selectedLayerId!==layer.id) selectLayer(layer.id); };
+    row.addEventListener('pointerdown',e=>{ if(e.button!==0||e.target.closest('input,.layer-row-actions')) return; requestLayerSelection(); });
+    row.addEventListener('click',e=>{ if(e.target.closest('input,.layer-row-actions')) return; requestLayerSelection(); });
     const thumb = (layer.thumbnail || (layer.type==='image'?layer.src:'')) ? '<img class="source-preview" alt="">' : '<span class="layer-kind"></span>';
-    row.innerHTML=`<input type="checkbox" class="vis">${thumb}<button type="button" class="layer-copy layer-select"><span class="layer-name"></span><span class="layer-meta"></span><span class="layer-program-chip"></span></button><button class="mini up" aria-label="Move layer up">↑</button><button class="mini dn" aria-label="Move layer down">↓</button><button class="mini del" aria-label="Delete layer">✕</button>`;
+    row.innerHTML=`<label class="layer-visibility"><input type="checkbox" class="vis"><span>PV</span></label>${thumb}<button type="button" class="layer-copy layer-select"><span class="layer-name"></span><span class="layer-meta"></span></button><span class="layer-program-chip"></span><div class="layer-row-actions"><button type="button" class="row-take">${t('takeLayerShort')}</button><button type="button" class="row-hide">${t('hideLayerShort')}</button><button type="button" class="mini up" aria-label="${t('layerMoveForward')}" title="${t('layerMoveForward')}">↑</button><button type="button" class="mini dn" aria-label="${t('layerMoveBackward')}" title="${t('layerMoveBackward')}">↓</button><button type="button" class="mini del" aria-label="${t('layerDelete')}" title="${t('layerDelete')}">✕</button></div>`;
     const visibility=row.querySelector('.vis');
     visibility.checked=layer.visible!==false;
     visibility.setAttribute('aria-label',uiText('layerVisibility',{name:layer.name||layer.sourceName||layer.type}));
@@ -6242,7 +6266,8 @@ function renderScenesUI(){
     const layerSelect=row.querySelector('.layer-select');
     layerSelect.setAttribute('aria-label',uiText('layerSelect',{name:layer.name||layer.sourceName||layer.type}));
     if(layer.id===selectedLayerId) layerSelect.setAttribute('aria-current','true');
-    layerSelect.addEventListener('click',()=>selectLayer(layer.id));
+    layerSelect.addEventListener('focus',requestLayerSelection);
+    layerSelect.addEventListener('click',requestLayerSelection);
     const meta=row.querySelector('.layer-meta');
     if(layer.type==='window'||layer.type==='capture'){
       const input=liveInputDefinition(layer.inputId), status=liveInputStatus(layer.inputId);
@@ -6254,9 +6279,17 @@ function renderScenesUI(){
     const programInfo=layerProgramInfo(layer);
     programChip.textContent=programInfo.label;
     programChip.className='layer-program-chip '+programInfo.key;
-    row.querySelector('.up').addEventListener('click',()=>{ if(i<sc.layers.length-1){ [sc.layers[i],sc.layers[i+1]]=[sc.layers[i+1],sc.layers[i]]; sceneDirty(); } });
-    row.querySelector('.dn').addEventListener('click',()=>{ if(i>0){ [sc.layers[i],sc.layers[i-1]]=[sc.layers[i-1],sc.layers[i]]; sceneDirty(); } });
-    row.querySelector('.del').addEventListener('click',()=>{ sc.layers.splice(i,1); if(selectedLayerId===layer.id) selectedLayerId=null; sceneDirty(); renderInspector(); });
+    const rowTake=row.querySelector('.row-take'), rowHide=row.querySelector('.row-hide');
+    rowTake.disabled=!!S.studioDirect;
+    rowHide.disabled=!!S.studioDirect||!programInfo.programLayer||programInfo.programLayer.visible===false;
+    rowTake.addEventListener('click',()=>{ selectLayer(layer.id); takeSelectedLayer(); });
+    rowHide.addEventListener('click',()=>{ selectLayer(layer.id); hideSelectedLayer(); });
+    const moveForward=row.querySelector('.up'), moveBackward=row.querySelector('.dn');
+    moveForward.disabled=i>=sc.layers.length-1;
+    moveBackward.disabled=i<=0;
+    moveForward.addEventListener('click',()=>moveSceneLayer(layer.id,1));
+    moveBackward.addEventListener('click',()=>moveSceneLayer(layer.id,-1));
+    row.querySelector('.del').addEventListener('click',()=>deleteSceneLayer(layer.id));
     layerBox.appendChild(row);
   });
   renderInspector();
@@ -9442,10 +9475,21 @@ $('modalOverlay').addEventListener('pointerdown',e=>{ if(e.target===$('modalOver
 
 // ---------- OBS-STIL: izbor + prevlačenje + resize izvora u PREVIEW monitoru ----------
 function selectLayer(id){
-  selectedLayerId=id;
-  monitorSceneKeys.pv='';           // re-render selekcije
-  renderScenesUI();
+  const exists=id&&(currentScene().layers||[]).some(layer=>layer.id===id);
+  selectedLayerId=exists?id:null;
+  document.querySelectorAll('#layerList .layer-row[data-layer-id]').forEach(row=>{
+    const selected=row.dataset.layerId===selectedLayerId;
+    row.classList.toggle('sel',selected);
+    const control=row.querySelector('.layer-select');
+    if(control){
+      if(selected) control.setAttribute('aria-current','true');
+      else control.removeAttribute('aria-current');
+    }
+  });
+  monitorSceneKeys.pv='';
   renderInspector();
+  updateLayerProgramControls();
+  renderStage('pv',S,Date.now());
 }
 function selectedLayer(){
   const sc=currentScene();
