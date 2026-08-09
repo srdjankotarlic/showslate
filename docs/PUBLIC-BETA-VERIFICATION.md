@@ -40,7 +40,7 @@ The live-input service also passed its targeted synthetic-stream test. A hidden 
 - Production dependency audit: zero known vulnerabilities.
 - Mac and Windows packaged-content checks: `PACKAGED_FREE_BUILD_OK`, 1,449 archive entries each, MIT package and no activation/private-key files.
 - Mac DMG checksum verification: valid.
-- Untagged native release rehearsal [GitHub Actions run 31289319270](https://github.com/srdjankotarlic/showslate/actions/runs/31289319270): macOS and Windows jobs both passed from the exact clean compositor build commit `0b60688340caf4b732e4d8d522016ffcd19337ed`; the Windows runner successfully booted the packaged EXE in CLI verification mode. The rehearsal did not publish a release.
+- Untagged native release rehearsal [GitHub Actions run 31308928626](https://github.com/srdjankotarlic/showslate/actions/runs/31308928626): macOS and Windows jobs both passed from exact clean commit `09f4e7d6c007e364355ade270a092ed11937cca0`; the Windows runner successfully booted the packaged EXE in CLI verification mode. The run produced the Mac DMG, Windows installer and Windows portable artifacts, then correctly skipped publication because no release tag existed.
 
 Release builds record the exact full commit and dirty state. Tagged GitHub builds generate SHA-256 checksums and provenance attestations.
 
