@@ -1,10 +1,10 @@
 # Public Beta Verification
 
-Verified for the `0.11.0-beta.1` release candidate on 2026-08-08. This page separates what was exercised on the tested Mac from what was only automated, built or structurally inspected.
+Verified for the `0.11.0-beta.1` release candidate on 2026-08-09. This page separates what was exercised on the tested Mac from what was only automated, built or structurally inspected.
 
 ## Physical Mac verification
 
-The complete source smoke and a fresh packaged Apple Silicon `.app` smoke both passed on the explicitly selected physical `PHL 243V7` display. The test resolver fails closed if that display is missing or ambiguous and does not fall back to another monitor.
+The complete source smoke and a fresh packaged Apple Silicon `.app` smoke both passed on the explicitly selected `Built-in Retina Display`. The test resolver fails closed if that display is missing or ambiguous and does not fall back to another monitor.
 
 The verified Conference Desk workflow includes:
 
@@ -35,12 +35,12 @@ The live-input service also passed its targeted synthetic-stream test. A hidden 
 - Conference Desk renderer: `13/13` checks passed.
 - Canvas/compositor renderer: `15/15` checks passed, including 900x600 reachability, layer order, hidden-source retention, permission-failure recovery, transform persistence and Preview/TAKE isolation.
 - Targeted live-input and multi-output checks passed, including simultaneous Program routes, fail-closed missing-display handling and the one-Program-audio-route guard.
-- Responsive beta usability matrix: `55/55` checks passed at 1440x900, 1280x800, 1024x700 and 900x600.
+- Responsive beta usability matrix: `56/56` checks passed at 1440x900, 1280x800, 1024x700 and 900x600.
 - Public website renderer: `7/7` desktop/mobile checks passed with no horizontal overflow and all local product images loaded.
 - Production dependency audit: zero known vulnerabilities.
 - Mac and Windows packaged-content checks: `PACKAGED_FREE_BUILD_OK`, 1,449 archive entries each, MIT package and no activation/private-key files.
 - Mac DMG checksum verification: valid.
-- Untagged native release rehearsal [GitHub Actions run 31277947984](https://github.com/srdjankotarlic/showslate/actions/runs/31277947984): macOS and Windows jobs both passed; each package reported the exact clean commit `2959869`, and the Windows runner successfully booted the packaged EXE in CLI verification mode.
+- Untagged native release rehearsal [GitHub Actions run 31289319270](https://github.com/srdjankotarlic/showslate/actions/runs/31289319270): macOS and Windows jobs both passed from the exact clean compositor build commit `0b60688340caf4b732e4d8d522016ffcd19337ed`; the Windows runner successfully booted the packaged EXE in CLI verification mode. The rehearsal did not publish a release.
 
 Release builds record the exact full commit and dirty state. Tagged GitHub builds generate SHA-256 checksums and provenance attestations.
 
@@ -48,7 +48,7 @@ Release builds record the exact full commit and dirty state. Tagged GitHub build
 
 ### Proven on physical hardware
 
-- Apple Silicon macOS application on a physical Philips display.
+- Apple Silicon macOS application on the Mac's Built-in Retina Display.
 - Source and packaged output routing, custom Canvas/layer composition, local network renderer and lower-third/media workflows.
 
 ### Built natively and structurally inspected, not physically certified

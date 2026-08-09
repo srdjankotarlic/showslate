@@ -26,28 +26,28 @@ The public-site renderer suite loads the real static site at desktop and mobile 
 npm run test:beta-ui
 ```
 
-Checks the real operator workspace at 1440x900, 1280x800, 1024x700 and 900x600. It covers Standard, Compact, Advanced, panels, Output Routing, Lower Third Studio, wizard, preflight, slides, recovery and report workflows. Current expected result: 55/55.
+Checks the real operator workspace at 1440x900, 1280x800, 1024x700 and 900x600. It covers Standard, Compact, Advanced, panels, Output Routing, Lower Third Studio, wizard, preflight, slides, recovery and report workflows. Current expected result: 56/56.
 
 ## Full source and packaged smoke
 
 ```bash
-npm run smoke:display -- --display "PHL 243V7"
+npm run smoke:display -- --display "Built-in Retina Display"
 npm run dist:mac
-npm run smoke:packaged:display -- --display "PHL 243V7"
+npm run smoke:packaged:display -- --display "Built-in Retina Display"
 ```
 
-Replace the example label with the screen selected for the run. The source and packaged smoke suites cover Program state, timer/GO invariants, media/codecs, localization, simultaneous output routes, Lower Third runtime/editor behavior and responsive UI. They abort before opening the application when the requested display is missing or ambiguous.
+Replace the example label with the exact unique label of the screen selected for the run. The source and packaged smoke suites cover Program state, timer/GO invariants, media/codecs, localization, simultaneous output routes, Lower Third runtime/editor behavior and responsive UI. They abort before opening the application when the requested display is missing or ambiguous; there is no automatic fallback to another screen.
 
 Focused routing verification is available as:
 
 ```bash
-npm run smoke:output-routing -- --display "PHL 243V7"
+npm run smoke:output-routing -- --display "Built-in Retina Display"
 ```
 
 Focused live-input transport verification is available as:
 
 ```bash
-npm run smoke:live-input -- --display "PHL 243V7"
+npm run smoke:live-input -- --display "Built-in Retina Display"
 ```
 
 It proves that one synthetic video-and-audio source is acquired once, advances in muted Preview, leaves Program unchanged before TAKE, then advances in the exact Program scene after TAKE. It does not certify a physical capture card or operating-system permission workflow.
