@@ -2060,6 +2060,14 @@ app.whenReady().then(async () => {
         }
       }, 50);
     });
+    const ensureSmokeOutput = async () => {
+      if (!outputWin || outputWin.isDestroyed() || !outputWin.webContents || outputWin.webContents.isDestroyed()) {
+        createOutputWindow(SMOKE_TARGET && SMOKE_TARGET.id);
+      }
+      const win = await waitOutput();
+      await waitLoad(win);
+      return win;
+    };
     (async () => {
       try {
         const smokeFailures = [];
@@ -2262,9 +2270,7 @@ app.whenReady().then(async () => {
         }
 
         smokeCheck('NO_AUTO_OUTPUT_OK', outputWin === null, 'outputWin=' + (outputWin === null ? 'null' : 'OPEN'));
-        createOutputWindow(null);   // korisnički klik „Send to screen"
-        const ow = await waitOutput();
-        await waitLoad(ow);
+        const ow = await ensureSmokeOutput();   // korisnički klik „Send to screen"
 
         // ===== OUTPUT + all windows stay on target; real fullscreen stays on target =====
         // Contract: VISIBLE windows must sit fully inside target WORKAREA (not just bounds);
@@ -4269,12 +4275,14 @@ app.whenReady().then(async () => {
           const setStudioProofSize = async (w, h) => {
             try { controlWin.webContents.disableDeviceEmulation(); } catch (e) {}
             controlWin.setContentSize(w, h);
+            smokePlaceWindow(controlWin);
             let actual = controlWin.getContentSize();
             for (let i=0;i<25;i++){
               await new Promise(r=>setTimeout(r,60));
               actual=controlWin.getContentSize();
               if (Math.abs(actual[0]-w)<=2 && Math.abs(actual[1]-h)<=2) break;
             }
+            smokePlaceWindow(controlWin);
             if (Math.abs(actual[0]-w)>2 || Math.abs(actual[1]-h)>2) {
               throw new Error(`Studio proof BrowserWindow resize failed: expected ${w}x${h}, got ${actual.join('x')}`);
             }
@@ -4337,9 +4345,7 @@ app.whenReady().then(async () => {
             });
           })()`);
           for (let i=0; i<100 && outputWin && !outputWin.isDestroyed(); i++) await new Promise(r=>setTimeout(r,30));
-          createOutputWindow(SMOKE_TARGET && SMOKE_TARGET.id);
-          const studioOutput = await waitOutput();
-          await waitLoad(studioOutput);
+          const studioOutput = await ensureSmokeOutput();
           smokeCheck('LT_STUDIO_VISIBLE_FROM_NORMAL_UI_OK',
             studioVisible.openBtnVisible && studioVisible.open && (studioVisible.display==='flex' || studioVisible.display==='grid') &&
             studioVisible.templates && studioVisible.layers && studioVisible.canvas && studioVisible.inspector &&
@@ -4958,6 +4964,7 @@ app.whenReady().then(async () => {
         // GO nosi SELEKTOVANI red u LIVE i ažurira SVE izlaze konzistentno
         let goStr = '?';
         try {
+          const outputForGo = await ensureSmokeOutput();
           goStr = await controlWin.webContents.executeJavaScript(`(function(){
             go();   // selectedCue je 2 → transakcija
             return JSON.stringify({live:currentCue, dur:S.durationMs,
@@ -4968,7 +4975,7 @@ app.whenReady().then(async () => {
           let outSync = false;
           for (let k = 0; k < 12 && !outSync; k++) {
             await new Promise(r => setTimeout(r, 150));
-            outSync = await outputWin.webContents.executeJavaScript(
+            outSync = await outputForGo.webContents.executeJavaScript(
               `!!(S && S.currentCue===2 && S.durationMs===180000)`).catch(() => false);
           }
           smokeCheck('GO_UPDATES_ALL_OUTPUTS_OK',
@@ -5140,14 +5147,15 @@ app.whenReady().then(async () => {
         // PRO: font tajmera se primenjuje na izlaz; 12h sat; preset šalje poruku; ⏸ na pauzi
         let extrasOK = false, extrasStr = '?';
         try {
+          const outputForExtras = await ensureSmokeOutput();
           await controlWin.webContents.executeJavaScript(`(function(){
             document.getElementById('fontSel').value='serif'; document.getElementById('fontSel').dispatchEvent(new Event('change'));
             document.getElementById('chk12h').checked=true; document.getElementById('chk12h').dispatchEvent(new Event('change'));
             setMode('clock');
           })()`);
           await new Promise(r => setTimeout(r, 400));
-          const outFont = await outputWin.webContents.executeJavaScript(`getComputedStyle(document.getElementById('timer')).fontFamily`);
-          const clockTxt = await outputWin.webContents.executeJavaScript(`document.getElementById('timer').textContent`);
+          const outFont = await outputForExtras.webContents.executeJavaScript(`getComputedStyle(document.getElementById('timer')).fontFamily`);
+          const clockTxt = await outputForExtras.webContents.executeJavaScript(`document.getElementById('timer').textContent`);
           const presetTxt = await controlWin.webContents.executeJavaScript(`(function(){
             setMode('countdown'); var b=document.querySelector('#msgPresets button'); b.click(); return S.message.text;
           })()`);
@@ -5155,7 +5163,7 @@ app.whenReady().then(async () => {
           await new Promise(r => setTimeout(r, 600));   // pusti da otkuca — da remMs != durationMs
           await controlWin.webContents.executeJavaScript(`startPause();`); // pauza
           await new Promise(r => setTimeout(r, 400));
-          const pauseShown = await outputWin.webContents.executeJavaScript(`document.getElementById('paused').style.display==='block'`);
+          const pauseShown = await outputForExtras.webContents.executeJavaScript(`document.getElementById('paused').style.display==='block'`);
           await controlWin.webContents.executeJavaScript(`reset(); S.message={text:'',flash:false}; document.getElementById('chk12h').checked=false; document.getElementById('chk12h').dispatchEvent(new Event('change')); document.getElementById('fontSel').value='mono'; document.getElementById('fontSel').dispatchEvent(new Event('change'));`);
           const is12h = /AM|PM/.test(clockTxt);
           extrasOK = /Georgia/.test(outFont) && is12h && presetTxt.length > 0 && pauseShown;
@@ -5258,8 +5266,10 @@ app.whenReady().then(async () => {
             await new Promise(r => setTimeout(r, 150));
           } else {
             controlWin.setContentSize(w, h);
+            smokePlaceWindow(controlWin);
             for (let i=0;i<25;i++){ await new Promise(r=>setTimeout(r,80)); const s=controlWin.getContentSize(); if (Math.abs(s[0]-w)<=2 && Math.abs(s[1]-h)<=2) break; }
           }
+          smokePlaceWindow(controlWin);
           // settle: CSS transitions (~180ms) + a couple of rAF render passes, then a margin
           await new Promise(r=>setTimeout(r,240));
           try { await controlWin.webContents.executeJavaScript('new Promise(function(r){var done=false;function finish(){if(done)return;done=true;r();}requestAnimationFrame(function(){requestAnimationFrame(finish);});setTimeout(finish,600);})'); } catch(e){}
@@ -5924,6 +5934,7 @@ app.whenReady().then(async () => {
         smokeCheck('NO_LAYOUT_DOM_REPARENTING_OK', reparent.noop && orderAfter===reparent.before, 'noop='+reparent.noop+' afterResizeSame='+(orderAfter===reparent.before));
 
         // Utility-column: inline and collapsible at wide; a real drawer below 1320px.
+        const resizeOutput = await ensureSmokeOutput();
         await measureAt(1440,900,{advanced:false});
         const uw = await jparse(`(function(){
           function box(el){ var r=el.getBoundingClientRect(); return {l:r.left,r:r.right,t:r.top,b:r.bottom,w:r.width,h:r.height}; }
@@ -5979,7 +5990,8 @@ app.whenReady().then(async () => {
         smokeCheck('RESIZE_PRESERVES_OPERATOR_STATE_OK', R.live===rs.live && R.sel===rs.sel, 'live='+R.live+'/'+rs.live+' sel='+R.sel+'/'+rs.sel);
         smokeCheck('RESIZE_PRESERVES_TIMER_OK', R.running===true && rs.running===true, 'running='+R.running);
         smokeCheck('UTILITY_COLUMN_STATE_PRESERVED_ON_RESIZE_OK', R.live===rs.live && R.sel===rs.sel, 'preserved');
-        smokeCheck('RESIZE_PRESERVES_OUTPUT_OK', !!outputWin && !outputWin.isDestroyed(), 'outputOpen='+(!!outputWin&&!outputWin.isDestroyed()));
+        const resizeOutputOpen = outputWin === resizeOutput && !resizeOutput.isDestroyed() && !resizeOutput.webContents.isDestroyed();
+        smokeCheck('RESIZE_PRESERVES_OUTPUT_OK', resizeOutputOpen, 'outputOpen='+resizeOutputOpen);
         await jx(`reset(); cues=[]; currentCue=-1; selectedCue=-1; renderCues();`);
 
         // ===== LARGE VIEWPORT 1920×1080 — emulated, never a visible OS window larger than workArea =====
