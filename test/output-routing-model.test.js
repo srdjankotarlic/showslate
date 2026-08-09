@@ -14,8 +14,8 @@ const control = { id: 1, label: 'Built-in Retina Display', bounds: { x: 0, y: 0,
 const philips = { id: 3, label: 'PHL 243V7', bounds: { x: -1920, y: 0, width: 1920, height: 1080 } };
 const displays = [control, philips];
 
-const normalized = routing.normalizeConfig({ id: 'route-a', mode: 'custom', displayId: 3, width: 1000, height: 1000, placement: 'custom', x: 40, y: 30 }, 0, { displays, controlDisplayId: 1 });
-check('OUTPUT_MODEL_NORMALIZES_AND_FINGERPRINTS_OK', normalized.displayId === 3 && normalized.displayLabel === 'PHL 243V7' && normalized.displayWidth === 1920 && normalized.gridSize === 3);
+const normalized = routing.normalizeConfig({ id: 'route-a', mode: 'custom', displayId: 3, width: 1000, height: 1000, placement: 'custom', x: 40, y: 30, audioOutputDeviceId: 'speaker-main' }, 0, { displays, controlDisplayId: 1 });
+check('OUTPUT_MODEL_NORMALIZES_AND_FINGERPRINTS_OK', normalized.displayId === 3 && normalized.displayLabel === 'PHL 243V7' && normalized.displayWidth === 1920 && normalized.gridSize === 3 && normalized.audioOutputDeviceId === 'speaker-main');
 
 const exact = routing.resolveDisplay(normalized, displays);
 check('OUTPUT_MODEL_EXACT_DISPLAY_OK', exact.display === philips && exact.match === 'id');

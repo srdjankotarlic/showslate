@@ -28,6 +28,10 @@
   --pro-radius-lg: 10px;
   --pro-shadow-window: 0 28px 80px rgba(0, 0, 0, .48), 0 1px 0 rgba(255, 255, 255, .04) inset;
   --pro-focus: 0 0 0 3px rgba(91, 156, 245, .28);
+  --pro-scrollbar-size: 11px;
+  --pro-scroll-track: #111318;
+  --pro-scroll-thumb: #4d545e;
+  --pro-scroll-thumb-hover: #68717d;
 
   --bg: var(--pro-bg);
   --chrome: var(--pro-chrome);
@@ -77,28 +81,34 @@ body {
 
 * {
   scrollbar-width: thin;
-  scrollbar-color: #454b54 transparent;
+  scrollbar-color: var(--pro-scroll-thumb) var(--pro-scroll-track);
 }
 
 *::-webkit-scrollbar {
-  width: 9px;
-  height: 9px;
+  width: var(--pro-scrollbar-size);
+  height: var(--pro-scrollbar-size);
 }
 
 *::-webkit-scrollbar-track {
-  background: transparent;
+  background: var(--pro-scroll-track);
 }
 
 *::-webkit-scrollbar-thumb {
-  border: 2px solid transparent;
+  min-width: 30px;
+  min-height: 30px;
+  border: 3px solid var(--pro-scroll-track);
   border-radius: 8px;
-  background: #454b54;
+  background: var(--pro-scroll-thumb);
   background-clip: padding-box;
 }
 
 *::-webkit-scrollbar-thumb:hover {
-  background: #59616c;
+  background: var(--pro-scroll-thumb-hover);
   background-clip: padding-box;
+}
+
+*::-webkit-scrollbar-corner {
+  background: var(--pro-scroll-track);
 }
 
 button,
@@ -2317,4 +2327,46 @@ body #setupWrap .tabpane.active {
   .shell-layout .operator-main {
     grid-template-rows: minmax(130px, 1fr) auto !important;
   }
+}
+
+/* Scroll ownership: chrome stays fixed while each content region remains reachable. */
+.shell-layout .utility-column,
+.shell-layout #cueList,
+.shell-layout .cue-editor,
+.shell-layout .slides-list,
+body #setupWrap .tabpane.active,
+.source-dialog-body,
+.flow-content,
+.output-router-list,
+.lt-template-list,
+.lt-layer-list,
+.lt-studio-inspector,
+.tb-menu,
+.scene-list {
+  min-height: 0;
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* These workspaces can genuinely exceed both axes. */
+.report-table-wrap,
+.lt-canvas-shell.zoom-scroll {
+  min-width: 0;
+  min-height: 0;
+  overflow: auto !important;
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Native prompts must also stay usable in a short application window. */
+.modal-box {
+  max-height: calc(100vh - 32px);
+  overflow-y: auto;
+  overflow-x: hidden;
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable;
 }

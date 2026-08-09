@@ -25,10 +25,45 @@ check('COMPOSITOR_COLOR_SOURCE_NORMALIZES_OK', () => {
   assert.strictEqual(layer.bg, '#2468ac');
 });
 
+check('COMPOSITOR_ADVANCED_LAYER_STYLE_NORMALIZES_OK', () => {
+  const layer = compositor.normalizeLayer({
+    type: 'video', crop: { top: 80, left: 7 }, flipX: true, transformOrigin: 'top-left',
+    objectPositionX: 73, blendMode: 'screen', cornerRadius: 14, brightness: 1.2,
+    contrast: 1.3, saturation: 1.4, hue: 22, blur: 3, playbackRate: 1.5
+  });
+  assert.deepStrictEqual(layer.crop, { top: 49, right: 0, bottom: 0, left: 7 });
+  assert.strictEqual(layer.playbackRate, 1.5);
+  const style = compositor.layerVisualStyle(layer);
+  assert.strictEqual(style.transform, 'rotate(0deg) scale(-1, 1)');
+  assert.strictEqual(style.transformOrigin, '0% 0%');
+  assert.strictEqual(style.mixBlendMode, 'screen');
+  assert.strictEqual(style.clipPath, 'inset(49% 0% 0% 7%)');
+  assert.ok(style.filter.includes('brightness(1.2)'));
+  assert.strictEqual(style.borderRadius, '14%');
+  assert.strictEqual(style.objectPosition, '73% 50%');
+});
+
+check('COMPOSITOR_TEXT_STYLE_NORMALIZES_OK', () => {
+  const layer = compositor.normalizeLayer({ type: 'text', text: 'Speaker name', fontFamily: 'mono', fontWeight: 800, textAlign: 'left', verticalAlign: 'bottom', italic: true, underline: true });
+  assert.deepStrictEqual({ fontFamily: layer.fontFamily, fontWeight: layer.fontWeight, textAlign: layer.textAlign, verticalAlign: layer.verticalAlign, italic: layer.italic, underline: layer.underline }, { fontFamily: 'mono', fontWeight: 800, textAlign: 'left', verticalAlign: 'bottom', italic: true, underline: true });
+});
+
 check('COMPOSITOR_LIVE_INPUT_DEVICE_AUDIO_OK', () => {
   const input = compositor.normalizeLiveInput({ id: 'capture-1', type: 'device', videoDeviceId: 'video-1', audioDeviceId: 'audio-1', withAudio: true, width: 3840, height: 2160, fps: 60 });
   assert.strictEqual(input.withAudio, true);
   assert.deepStrictEqual({ width: input.width, height: input.height, fps: input.fps }, { width: 3840, height: 2160, fps: 60 });
+});
+
+check('COMPOSITOR_AUDIO_INPUT_AND_MONITORING_OK', () => {
+  const input = compositor.normalizeLiveInput({ id: 'mixer-1', type: 'audio', name: 'FOH mix', audioDeviceId: 'usb-audio-1', audioDeviceLabel: 'USB Audio Interface', withAudio: true });
+  const layer = compositor.normalizeLayer({ id: 'audio-layer-1', type: 'audio', inputId: input.id, audioEnabled: true, audioMonitoring: 'monitor-only', volume: 0.65 });
+  assert.strictEqual(input.type, 'audio');
+  assert.strictEqual(input.videoDeviceId, '');
+  assert.strictEqual(input.audioDeviceId, 'usb-audio-1');
+  assert.strictEqual(input.withAudio, true);
+  assert.strictEqual(layer.type, 'audio');
+  assert.strictEqual(layer.audioMonitoring, 'monitor-only');
+  assert.deepStrictEqual(compositor.activeLiveInputIds([{ id: 'scene', layers: [layer] }]), ['mixer-1']);
 });
 
 check('COMPOSITOR_LIVE_INPUT_IDS_DEDUPLICATE_OK', () => {

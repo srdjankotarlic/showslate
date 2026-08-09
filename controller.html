@@ -3545,23 +3545,109 @@
           <div class="layer-list" id="layerList"></div>
         </section>
         <div class="inspector compositor-inspector" id="inspector">
-          <span class="glabel" data-i18n="inspTitle">Source inspector</span>
+          <div class="inspector-source-head">
+            <div><span class="glabel" data-i18n="inspTitle">Source</span><strong id="inspTypeBadge">—</strong></div>
+            <label class="inspector-toggle"><input type="checkbox" id="inspVisible"><span data-i18n="sourceVisible">Visible</span></label>
+            <label class="inspector-toggle"><input type="checkbox" id="inspLocked"><span data-i18n="sourceLock">Lock layer</span></label>
+          </div>
           <label class="insp-f insp-name"><span data-i18n="sourceName">Source name</span><input type="text" id="inspName" maxlength="160"></label>
-          <label class="insp-f"><span>X %</span><input type="number" id="inspX" min="-100" max="200" step="0.5"></label>
-          <label class="insp-f"><span>Y %</span><input type="number" id="inspY" min="-100" max="200" step="0.5"></label>
-          <label class="insp-f"><span>W %</span><input type="number" id="inspW" min="1" max="300" step="0.5"></label>
-          <label class="insp-f"><span>H %</span><input type="number" id="inspH" min="1" max="300" step="0.5"></label>
-          <label class="insp-f insp-op"><span data-i18n="inspOpacity">Opacity</span><input type="range" id="inspOpacity" min="0" max="100" step="1"></label>
-          <label class="insp-f insp-fit"><span data-i18n="fit">Fit</span><select id="inspFit" data-i18n-title="inspFitTitle" title="How media fills its box"><option value="cover" data-i18n="fitCover">Cover</option><option value="contain" data-i18n="fitContain">Contain</option><option value="fill" data-i18n="fitFill">Stretch</option></select></label>
-          <label class="insp-f"><span data-i18n="rotation">Rotation</span><input type="number" id="inspRotation" min="-360" max="360" step="1"></label>
-          <label class="insp-f"><span data-i18n="sourceLock">Lock</span><input type="checkbox" id="inspLocked"></label>
-          <div class="insp-actions"><button id="inspCenter" class="mini" data-i18n="inspCenter">Center</button><button id="inspFull" class="mini" data-i18n="inspFull">Fill canvas</button><button id="inspDuplicate" class="mini" data-i18n="duplicate">Duplicate</button><button id="inspDelete" class="mini danger" data-i18n="delete">Delete</button></div>
-          <div class="insp-status" id="inspLiveStatus"><span class="input-state" id="inspLiveDot"></span><span id="inspLiveStatusText">—</span><span class="grow"></span><button id="inspLiveChange" class="mini" data-i18n="changeSource">Change source</button><button id="inspLiveRestart" class="mini" data-i18n="restart">Restart</button></div>
-          <span class="insp-text-only" id="inspTextWrap"><input type="text" id="inspText" placeholder="Text…"><input type="color" id="inspColor" value="#ffffff"><input type="number" id="inspFontSize" min="2" max="40" step="1" data-i18n-title="inspFontTitle" title="Text size"></span>
-          <div class="insp-type-controls" id="inspColorWrap"><label class="half"><span data-i18n="sourceColor">Color</span><input type="color" id="inspSourceColor" value="#20242c"></label></div>
-          <div class="insp-type-controls" id="inspLiveWrap"><label class="check half"><input type="checkbox" id="inspLiveAudio"> <span data-i18n="sourceAudio">Audio in Program</span></label><label class="half"><span data-i18n="volume">Volume</span><input type="range" id="inspLiveVolume" min="0" max="100" step="1" value="100"></label></div>
-          <div class="insp-type-controls" id="inspVideoWrap"><label class="check half"><input type="checkbox" id="inspVideoLoop"> <span data-i18n="loop">Loop</span></label><label class="check half"><input type="checkbox" id="inspVideoMuted"> <span data-i18n="muted">Muted</span></label><label class="wide"><span data-i18n="volume">Volume</span><input type="range" id="inspVideoVolume" min="0" max="100" step="1" value="100"></label></div>
+
+          <details class="inspector-section" id="inspTransformSection" open>
+            <summary><span data-i18n="inspTransform">Transform</span><small data-i18n="inspTransformHint">Position, size and alignment</small></summary>
+            <div class="inspector-section-body inspector-grid">
+              <label class="insp-f"><span>X %</span><input type="number" id="inspX" min="-100" max="200" step="0.5"></label>
+              <label class="insp-f"><span>Y %</span><input type="number" id="inspY" min="-100" max="200" step="0.5"></label>
+              <label class="insp-f"><span>W %</span><input type="number" id="inspW" min="1" max="300" step="0.5"></label>
+              <label class="insp-f"><span>H %</span><input type="number" id="inspH" min="1" max="300" step="0.5"></label>
+              <label class="inspector-toggle insp-aspect"><input type="checkbox" id="inspAspectLock"><span data-i18n="inspAspectLock">Lock aspect ratio</span></label>
+              <label class="insp-f"><span data-i18n="rotation">Rotation</span><input type="number" id="inspRotation" min="-360" max="360" step="1"></label>
+              <label class="insp-f insp-origin"><span data-i18n="inspOrigin">Anchor</span><select id="inspOrigin"><option value="top-left" data-i18n="originTopLeft">Top left</option><option value="top-center" data-i18n="originTopCenter">Top center</option><option value="top-right" data-i18n="originTopRight">Top right</option><option value="center-left" data-i18n="originCenterLeft">Center left</option><option value="center" data-i18n="originCenter">Center</option><option value="center-right" data-i18n="originCenterRight">Center right</option><option value="bottom-left" data-i18n="originBottomLeft">Bottom left</option><option value="bottom-center" data-i18n="originBottomCenter">Bottom center</option><option value="bottom-right" data-i18n="originBottomRight">Bottom right</option></select></label>
+              <div class="transform-toolbar" aria-label="Layer alignment">
+                <span data-i18n="inspAlign">Align</span>
+                <button id="inspAlignLeft" class="mini icon-command" type="button" aria-label="Align left" data-i18n-title="inspAlignLeft" title="Align left">⇤</button>
+                <button id="inspAlignHCenter" class="mini icon-command" type="button" aria-label="Center horizontally" data-i18n-title="inspAlignHCenter" title="Center horizontally">↔</button>
+                <button id="inspAlignRight" class="mini icon-command" type="button" aria-label="Align right" data-i18n-title="inspAlignRight" title="Align right">⇥</button>
+                <button id="inspAlignTop" class="mini icon-command" type="button" aria-label="Align top" data-i18n-title="inspAlignTop" title="Align top">↥</button>
+                <button id="inspAlignVCenter" class="mini icon-command" type="button" aria-label="Center vertically" data-i18n-title="inspAlignVCenter" title="Center vertically">↕</button>
+                <button id="inspAlignBottom" class="mini icon-command" type="button" aria-label="Align bottom" data-i18n-title="inspAlignBottom" title="Align bottom">↧</button>
+              </div>
+              <div class="transform-toolbar transform-toolbar-wide">
+                <button id="inspCenter" class="mini" data-i18n="inspCenter">Center</button><button id="inspFull" class="mini" data-i18n="inspFull">Fill canvas</button><button id="inspResetTransform" class="mini" data-i18n="inspResetTransform">Reset</button>
+                <label class="inspector-toggle"><input type="checkbox" id="inspFlipX"><span data-i18n="inspFlipX">Flip H</span></label>
+                <label class="inspector-toggle"><input type="checkbox" id="inspFlipY"><span data-i18n="inspFlipY">Flip V</span></label>
+              </div>
+            </div>
+          </details>
+
+          <details class="inspector-section" id="inspFramingSection">
+            <summary><span data-i18n="inspFraming">Crop &amp; framing</span><small data-i18n="inspFramingHint">Crop edges and choose the focal point</small></summary>
+            <div class="inspector-section-body inspector-grid">
+              <label class="insp-f insp-fit"><span data-i18n="fit">Fit</span><select id="inspFit" data-i18n-title="inspFitTitle" title="How media fills its box"><option value="cover" data-i18n="fitCover">Cover</option><option value="contain" data-i18n="fitContain">Contain</option><option value="fill" data-i18n="fitFill">Stretch</option></select></label>
+              <label class="insp-f"><span data-i18n="inspFocusX">Focus X</span><input type="range" id="inspObjectX" min="0" max="100" step="1"></label>
+              <label class="insp-f"><span data-i18n="inspFocusY">Focus Y</span><input type="range" id="inspObjectY" min="0" max="100" step="1"></label>
+              <div class="crop-grid">
+                <label class="insp-f"><span data-i18n="cropTop">Crop top</span><input type="number" id="inspCropTop" min="0" max="49" step="0.5"></label>
+                <label class="insp-f"><span data-i18n="cropRight">Crop right</span><input type="number" id="inspCropRight" min="0" max="49" step="0.5"></label>
+                <label class="insp-f"><span data-i18n="cropBottom">Crop bottom</span><input type="number" id="inspCropBottom" min="0" max="49" step="0.5"></label>
+                <label class="insp-f"><span data-i18n="cropLeft">Crop left</span><input type="number" id="inspCropLeft" min="0" max="49" step="0.5"></label>
+              </div>
+              <button id="inspResetCrop" class="mini inspector-inline-action" type="button" data-i18n="inspResetCrop">Reset crop</button>
+            </div>
+          </details>
+
+          <details class="inspector-section" id="inspAppearanceSection">
+            <summary><span data-i18n="inspAppearance">Appearance</span><small data-i18n="inspAppearanceHint">Opacity, blend and color correction</small></summary>
+            <div class="inspector-section-body inspector-grid">
+              <label class="insp-f insp-op"><span data-i18n="inspOpacity">Opacity</span><input type="range" id="inspOpacity" min="0" max="100" step="1"></label>
+              <label class="insp-f"><span data-i18n="inspBlend">Blend mode</span><select id="inspBlend"><option value="normal" data-i18n="blendNormal">Normal</option><option value="multiply" data-i18n="blendMultiply">Multiply</option><option value="screen" data-i18n="blendScreen">Screen</option><option value="overlay" data-i18n="blendOverlay">Overlay</option><option value="darken" data-i18n="blendDarken">Darken</option><option value="lighten" data-i18n="blendLighten">Lighten</option><option value="difference" data-i18n="blendDifference">Difference</option></select></label>
+              <label class="insp-f"><span data-i18n="inspCornerRadius">Corner radius</span><input type="range" id="inspCornerRadius" min="0" max="50" step="1"></label>
+              <label class="insp-f"><span data-i18n="inspBrightness">Brightness</span><input type="range" id="inspBrightness" min="0" max="200" step="1"></label>
+              <label class="insp-f"><span data-i18n="inspContrast">Contrast</span><input type="range" id="inspContrast" min="0" max="200" step="1"></label>
+              <label class="insp-f"><span data-i18n="inspSaturation">Saturation</span><input type="range" id="inspSaturation" min="0" max="300" step="1"></label>
+              <label class="insp-f"><span data-i18n="inspHue">Hue</span><input type="range" id="inspHue" min="-180" max="180" step="1"></label>
+              <label class="insp-f"><span data-i18n="inspBlur">Blur</span><input type="range" id="inspBlur" min="0" max="40" step="0.5"></label>
+              <button id="inspResetAppearance" class="mini inspector-inline-action" type="button" data-i18n="inspResetAppearance">Reset appearance</button>
+            </div>
+          </details>
+
+          <details class="inspector-section inspector-source-section" id="inspSourceSection" open>
+            <summary><span data-i18n="inspSourceProperties">Source properties</span><small id="inspSourceHint">—</small></summary>
+            <div class="inspector-section-body">
+              <div class="insp-status" id="inspLiveStatus"><span class="input-state" id="inspLiveDot"></span><span id="inspLiveStatusText">—</span><span class="grow"></span><button id="inspLiveChange" class="mini" data-i18n="changeSource">Change source</button><button id="inspLiveRestart" class="mini" data-i18n="restart">Restart</button></div>
+              <div class="insp-text-only" id="inspTextWrap">
+                <label class="wide"><span data-i18n="text">Text</span><textarea id="inspText" rows="3" placeholder="Text…"></textarea></label>
+                <label><span data-i18n="timeText">Text color</span><input type="color" id="inspColor" value="#ffffff"></label>
+                <label><span data-i18n="background">Background</span><input type="color" id="inspTextBg" value="#000000"></label>
+                <label class="inspector-toggle"><input type="checkbox" id="inspTextBgEnabled"><span data-i18n="background">Background</span></label>
+                <label><span data-i18n="inspFontSize">Font size</span><input type="number" id="inspFontSize" min="1" max="100" step="1" data-i18n-title="inspFontTitle" title="Text size"></label>
+                <label><span data-i18n="inspFontFamily">Font</span><select id="inspFontFamily"><option value="system" data-i18n="fontSystem">System</option><option value="mono" data-i18n="fontMonoShort">Mono</option><option value="serif" data-i18n="fontSerifShort">Serif</option><option value="display" data-i18n="fontDisplayShort">Display</option></select></label>
+                <label><span data-i18n="inspFontWeight">Weight</span><select id="inspFontWeight"><option value="400">Regular</option><option value="600">Semibold</option><option value="700">Bold</option><option value="800">Extra bold</option><option value="900">Black</option></select></label>
+                <label><span data-i18n="inspTextAlign">Horizontal</span><select id="inspTextAlign"><option value="left" data-i18n="alignLeft">Left</option><option value="center" data-i18n="originCenter">Center</option><option value="right" data-i18n="alignRight">Right</option></select></label>
+                <label><span data-i18n="inspVerticalAlign">Vertical</span><select id="inspVerticalAlign"><option value="top" data-i18n="alignTop">Top</option><option value="center" data-i18n="originCenter">Center</option><option value="bottom" data-i18n="alignBottom">Bottom</option></select></label>
+                <label class="inspector-toggle"><input type="checkbox" id="inspItalic"><span data-i18n="inspItalic">Italic</span></label>
+                <label class="inspector-toggle"><input type="checkbox" id="inspUnderline"><span data-i18n="inspUnderline">Underline</span></label>
+              </div>
+              <div class="insp-type-controls" id="inspColorWrap"><label class="half"><span data-i18n="sourceColor">Color</span><input type="color" id="inspSourceColor" value="#20242c"></label></div>
+              <div class="insp-type-controls media-source-row" id="inspMediaWrap"><span id="inspMediaName">—</span><button id="inspMediaReplace" class="mini" type="button" data-i18n="replaceFile">Replace file</button></div>
+              <div class="insp-type-controls" id="inspLiveWrap"><label class="check half"><input type="checkbox" id="inspLiveAudio"> <span data-i18n="sourceAudio">Audio in Program</span></label><label class="half"><span data-i18n="volume">Volume</span><input type="range" id="inspLiveVolume" min="0" max="100" step="1" value="100"></label></div>
+              <div class="insp-type-controls" id="inspVideoWrap"><label class="check half"><input type="checkbox" id="inspVideoLoop"> <span data-i18n="loop">Loop</span></label><label class="check half"><input type="checkbox" id="inspVideoMuted"> <span data-i18n="muted">Muted</span></label><label class="half"><span data-i18n="volume">Volume</span><input type="range" id="inspVideoVolume" min="0" max="100" step="1" value="100"></label><label class="half"><span data-i18n="inspPlaybackRate">Speed</span><select id="inspVideoRate"><option value="0.25">0.25×</option><option value="0.5">0.5×</option><option value="1">1×</option><option value="1.25">1.25×</option><option value="1.5">1.5×</option><option value="2">2×</option><option value="4">4×</option></select></label></div>
+              <div class="insp-type-controls" id="inspPdfWrap"><label class="half"><span data-i18n="slidePageLabel">Page</span><input type="number" id="inspPdfPage" min="1" max="999" step="1"></label></div>
+            </div>
+          </details>
+
+          <div class="insp-actions inspector-danger-zone"><button id="inspDuplicate" class="mini" data-i18n="duplicate">Duplicate</button><button id="inspDelete" class="mini danger" data-i18n="delete">Delete</button></div>
         </div>
+        <aside class="compositor-audio" id="audioMixer" aria-label="Audio mixer">
+          <div class="compositor-pane-head audio-mixer-head"><strong data-i18n="audioMixer">Audio mixer</strong><span id="audioMixerCount">0 sources</span><button id="btnAudioRefresh" class="ghost mini" type="button" data-i18n-title="refreshAudioDevices" title="Refresh audio devices">↻</button></div>
+          <div class="audio-routing-grid">
+            <label><span data-i18n="programAudioRoute">Program audio route</span><select id="audioProgramRoute"></select></label>
+            <label><span data-i18n="programAudioOutput">Program output device</span><select id="audioProgramDevice"></select></label>
+            <label><span data-i18n="monitorAudioOutput">Monitoring device</span><select id="audioMonitorDevice"></select></label>
+          </div>
+          <div class="audio-route-note" id="audioRouteNote" data-i18n="audioRouteSafe">Only one Program audio route can be active, preventing echo between outputs.</div>
+          <div class="audio-mixer-rows" id="audioMixerRows"></div>
+          <div class="audio-mixer-empty" id="audioMixerEmpty" data-i18n="audioMixerEmpty">Add a video or audio input to mix its sound.</div>
+        </aside>
       </div>
     </div>
 
@@ -3897,15 +3983,23 @@
       <header class="source-dialog-head"><div class="source-dialog-head-copy"><h2 id="sourceDialogTitle" data-i18n="addSourceTitle">Add source</h2><p data-i18n="addSourceBody">Choose what this layer should show on the canvas.</p></div><span class="grow"></span><button id="btnSourceCloseX" class="ghost" aria-label="Close">✕</button></header>
       <main class="source-dialog-body">
         <div class="source-kind-grid" id="sourceKindGrid">
-          <button class="source-kind" data-source-kind="media"><span class="source-kind-icon">IMG</span><span class="source-kind-copy"><strong data-i18n="sourceMedia">Picture / video / PDF</strong><span data-i18n="sourceMediaBody">Import a local media file.</span></span></button>
+          <div class="source-kind-section-title"><strong data-i18n="sourceCategoryMedia">Media &amp; graphics</strong><span data-i18n="sourceCategoryMediaHint">Files, text and generated visual layers</span></div>
+          <button class="source-kind" data-source-kind="image"><span class="source-kind-icon">IMG</span><span class="source-kind-copy"><strong data-i18n="sourceImage">Image</strong><span data-i18n="sourceImageBody">PNG, JPEG, WebP, GIF or SVG.</span></span></button>
+          <button class="source-kind" data-source-kind="video"><span class="source-kind-icon">VID</span><span class="source-kind-copy"><strong data-i18n="sourceVideo">Video</strong><span data-i18n="sourceVideoBody">Local video with loop and audio controls.</span></span></button>
+          <button class="source-kind" data-source-kind="pdf"><span class="source-kind-icon">PDF</span><span class="source-kind-copy"><strong>PDF</strong><span data-i18n="sourcePdfBody">Show a selected page as a scene layer.</span></span></button>
           <button class="source-kind" data-source-kind="color"><span class="source-kind-icon">#</span><span class="source-kind-copy"><strong data-i18n="sourceColor">Color</strong><span data-i18n="sourceColorBody">Create a solid background or design block.</span></span></button>
-          <button class="source-kind" data-source-kind="window"><span class="source-kind-icon">WIN</span><span class="source-kind-copy"><strong data-i18n="sourceWindow">Window capture</strong><span data-i18n="sourceWindowBody">Show an application window or desktop.</span></span></button>
-          <button class="source-kind" data-source-kind="device"><span class="source-kind-icon">IN</span><span class="source-kind-copy"><strong data-i18n="sourceDevice">Video capture device</strong><span data-i18n="sourceDeviceBody">Camera or UVC capture card, with optional audio.</span></span></button>
           <button class="source-kind" data-source-kind="text"><span class="source-kind-icon">T</span><span class="source-kind-copy"><strong data-i18n="sourceText">Text</strong><span data-i18n="sourceTextBody">Add a title or information layer.</span></span></button>
+          <div class="source-kind-section-title"><strong data-i18n="sourceCategoryLive">Live inputs</strong><span data-i18n="sourceCategoryLiveHint">Windows, displays and connected video hardware</span></div>
+          <button class="source-kind" data-source-kind="window"><span class="source-kind-icon">WIN</span><span class="source-kind-copy"><strong data-i18n="sourceWindow">Window capture</strong><span data-i18n="sourceWindowBody">Capture one application window.</span></span></button>
+          <button class="source-kind" data-source-kind="screen"><span class="source-kind-icon">DSP</span><span class="source-kind-copy"><strong data-i18n="sourceDisplay">Display capture</strong><span data-i18n="sourceDisplayBody">Capture an entire connected display.</span></span></button>
+          <button class="source-kind" data-source-kind="device"><span class="source-kind-icon">IN</span><span class="source-kind-copy"><strong data-i18n="sourceDevice">Video capture device</strong><span data-i18n="sourceDeviceBody">Camera or UVC capture card, with optional audio.</span></span></button>
+          <button class="source-kind" data-source-kind="audio"><span class="source-kind-icon">AUD</span><span class="source-kind-copy"><strong data-i18n="sourceAudioInput">Audio input capture</strong><span data-i18n="sourceAudioInputBody">Microphone, mixer or audio interface.</span></span></button>
+          <div class="source-kind-section-title"><strong data-i18n="sourceCategoryShow">Show tools</strong><span data-i18n="sourceCategoryShowHint">Live data generated by ShowSlate</span></div>
           <button class="source-kind" data-source-kind="timer"><span class="source-kind-icon">00</span><span class="source-kind-copy"><strong data-i18n="sourceTimer">Timer</strong><span data-i18n="sourceTimerBody">Place the ShowSlate timer in this scene.</span></span></button>
         </div>
-        <section class="source-picker" id="sourceWindowPicker"><div class="source-picker-head"><button class="ghost mini source-back">‹</button><div><h3 data-i18n="sourceWindow">Window capture</h3><p data-i18n="sourceWindowChoose">Choose the exact window or display.</p></div><span class="grow"></span><button id="btnDesktopRefresh" class="ghost mini" data-i18n="refresh">Refresh</button></div><div class="desktop-source-grid" id="desktopSourceGrid"></div></section>
+        <section class="source-picker" id="sourceWindowPicker"><div class="source-picker-head"><button class="ghost mini source-back">‹</button><div><h3 id="sourceDesktopTitle" data-i18n="sourceWindow">Window capture</h3><p data-i18n="sourceWindowChoose">Choose the exact window or display.</p></div><span class="grow"></span><button id="btnDesktopRefresh" class="ghost mini" data-i18n="refresh">Refresh</button></div><div class="desktop-source-grid" id="desktopSourceGrid"></div></section>
         <section class="source-picker" id="sourceDevicePicker"><div class="source-picker-head"><button class="ghost mini source-back">‹</button><div><h3 data-i18n="sourceDevice">Video capture device</h3><p data-i18n="sourceDeviceChoose">Choose video, audio and requested format.</p></div></div><div class="source-form"><div class="source-permission-note wide" id="sourceDeviceStatus" hidden><span id="sourceDeviceStatusText"></span><div class="source-permission-actions"><button id="btnCameraPermission" class="ghost mini" type="button" data-i18n="sourceAllowCamera">Allow camera</button><button id="btnMicrophonePermission" class="ghost mini" type="button" data-i18n="sourceAllowMicrophone">Allow audio</button><button id="btnCameraSettings" class="ghost mini" type="button" data-i18n="sourceOpenCameraSettings">Open Camera settings</button><button id="btnMicrophoneSettings" class="ghost mini" type="button" data-i18n="sourceOpenMicrophoneSettings">Open Audio settings</button></div></div><label class="wide"><span data-i18n="sourceName">Source name</span><input id="sourceDeviceName" type="text" value="Video input"></label><label class="wide"><span data-i18n="sourceVideoDevice">Video device</span><select id="sourceVideoDevice"></select></label><label class="wide"><span data-i18n="sourceAudioDevice">Audio device</span><select id="sourceAudioDevice"><option value="" data-i18n="sourceNoAudio">No audio</option></select></label><label><span data-i18n="resolution">Resolution</span><select id="sourceDeviceResolution"><option value="1920x1080">1920 × 1080</option><option value="1280x720">1280 × 720</option><option value="720x576">720 × 576</option><option value="720x480">720 × 480</option></select></label><label><span>FPS</span><select id="sourceDeviceFps"><option>60</option><option selected>30</option><option>25</option><option>24</option></select></label><div class="form-actions"><button class="ghost source-back" data-i18n="cancel">Cancel</button><button id="btnDeviceAdd" class="primary" data-i18n="add">Add</button></div></div></section>
+        <section class="source-picker" id="sourceAudioPicker"><div class="source-picker-head"><button class="ghost mini source-back">‹</button><div><h3 data-i18n="sourceAudioInput">Audio input capture</h3><p data-i18n="sourceAudioInputChoose">Choose a microphone, mixer or audio interface.</p></div></div><div class="source-form"><div class="source-permission-note wide" id="sourceAudioStatus" hidden><span id="sourceAudioStatusText"></span><div class="source-permission-actions"><button id="btnAudioPermission" class="ghost mini" type="button" data-i18n="sourceAllowMicrophone">Allow audio</button><button id="btnAudioSettings" class="ghost mini" type="button" data-i18n="sourceOpenMicrophoneSettings">Open Audio settings</button></div></div><label class="wide"><span data-i18n="sourceName">Source name</span><input id="sourceAudioName" type="text" value="Audio input"></label><label class="wide"><span data-i18n="sourceAudioDevice">Audio device</span><select id="sourceAudioInputDevice"></select></label><div class="form-actions"><button class="ghost source-back" data-i18n="cancel">Cancel</button><button id="btnAudioAdd" class="primary" data-i18n="add">Add</button></div></div></section>
         <section class="source-picker" id="sourceColorPicker"><div class="source-picker-head"><button class="ghost mini source-back">‹</button><div><h3 data-i18n="sourceColor">Color</h3><p data-i18n="sourceColorChoose">Choose a color for the new layer.</p></div></div><div class="source-form"><label class="wide"><span data-i18n="sourceName">Source name</span><input id="sourceColorName" type="text" value="Background"></label><label class="wide"><span data-i18n="sourceColor">Color</span><input id="sourceColorValue" type="color" value="#20242c"></label><div class="form-actions"><button class="ghost source-back" data-i18n="cancel">Cancel</button><button id="btnColorAdd" class="primary" data-i18n="add">Add</button></div></div></section>
       </main>
       <footer class="source-dialog-foot"><span id="sourceDialogStatus" data-i18n="sourceLocalNote">Live inputs stay local to this ShowSlate computer and its desktop output windows.</span><span class="grow"></span><button id="btnSourceClose" class="ghost" data-i18n="close">Close</button></footer>
@@ -4462,7 +4556,7 @@ let S = {
   lowerThirdAutoCue:false,
   font:'mono', clock12:false, goAutoStart:true,
   canvasAspect:'16:9', canvas:{schemaVersion:1,width:1920,height:1080,fps:30,background:'#000000',transparent:false}, sceneFadeMs:300,
-  liveInputs:[], primaryLiveAudio:false,
+  liveInputs:[], primaryLiveAudio:false,programAudioDeviceId:'',monitorAudioDeviceId:'',
   studioDirect:false,
   scenes:[{id:'scene-default', name:'Scene 1', layers:[]}],
   activeSceneId:'scene-default',
@@ -4864,6 +4958,20 @@ function layerBounds(layer){
   const pct=(v,f)=>Number.isFinite(Number(v))?Math.max(-100,Math.min(200,Number(v))):f;
   return {x:pct(layer.x,0),y:pct(layer.y,0),w:Math.max(1,pct(layer.w,100)),h:Math.max(1,pct(layer.h,100))};
 }
+const SCENE_FONT_MAP={system:'-apple-system,"Helvetica Neue",Arial,sans-serif',mono:'"SF Mono",ui-monospace,Menlo,monospace',serif:'Georgia,"Times New Roman",serif',display:'"Arial Black",Impact,sans-serif'};
+function applySceneLayerVisual(box,content,layer){
+  const visual=PTCOMP.layerVisualStyle(layer);
+  box.style.transform=visual.transform;
+  box.style.transformOrigin=visual.transformOrigin;
+  box.style.mixBlendMode=visual.mixBlendMode;
+  content.style.filter=visual.filter;
+  content.style.clipPath=visual.clipPath;
+  content.style.borderRadius=visual.borderRadius;
+  return visual;
+}
+function applySceneMediaVisual(media,visual){
+  media.style.objectPosition=visual.objectPosition;
+}
 function renderMonitorScene(prefix, st){
   const root=$(prefix+'Scene');
   if(!root) return;
@@ -4872,38 +4980,48 @@ function renderMonitorScene(prefix, st){
   const key=JSON.stringify(layers.map(l=>({
     id:l.id,type:l.type,name:l.name,src:l.src,thumbnail:l.thumbnail,text:l.text,sourceName:l.sourceName,page:l.page,
     inputId:l.inputId,x:l.x,y:l.y,w:l.w,h:l.h,rotation:l.rotation,opacity:l.opacity,fit:l.fit,color:l.color,bg:l.bg,
-    audioEnabled:l.audioEnabled,volume:l.volume,loop:l.loop,muted:l.muted,
+    lockAspect:l.lockAspect,flipX:l.flipX,flipY:l.flipY,transformOrigin:l.transformOrigin,crop:l.crop,objectPositionX:l.objectPositionX,objectPositionY:l.objectPositionY,
+    blendMode:l.blendMode,cornerRadius:l.cornerRadius,brightness:l.brightness,contrast:l.contrast,saturation:l.saturation,hue:l.hue,blur:l.blur,
+    fontSize:l.fontSize,fontFamily:l.fontFamily,fontWeight:l.fontWeight,textAlign:l.textAlign,verticalAlign:l.verticalAlign,italic:l.italic,underline:l.underline,page:l.page,
+    audioEnabled:l.audioEnabled,audioMonitoring:l.audioMonitoring,volume:l.volume,loop:l.loop,muted:l.muted,playbackRate:l.playbackRate,
     sel:(prefix==='pv' && l.id===selectedLayerId)
   })));
   if(key===monitorSceneKeys[prefix]) return;
   monitorSceneKeys[prefix]=key;
   root.innerHTML='';
   layers.forEach((layer,layerIndex)=>{
-    if(layer.type==='timer') return;   // tajmer renderuje pv/pg stage
+    if(layer.type==='timer'&&prefix!=='pv') return;   // Program timer renderuje pgStage; Preview dobija interaktivni proxy.
     const d=document.createElement('div');
     const b=layerBounds(layer);
-    d.className='pv-scene-layer fit-'+(layer.fit||'cover')+((prefix==='pv'&&layer.id===selectedLayerId)?' sel':'');
+    d.className='pv-scene-layer fit-'+(layer.fit||'cover')+(layer.type==='timer'?' timer-proxy':'')+((prefix==='pv'&&layer.id===selectedLayerId)?' sel':'');
     d.dataset.layerId=layer.id;
     d.style.left=b.x+'%'; d.style.top=b.y+'%'; d.style.width=b.w+'%'; d.style.height=b.h+'%';
     d.style.setProperty('--layerOpacity', Math.max(0, Math.min(1, Number(layer.opacity ?? 1))));
-    d.style.transform=`rotate(${Number(layer.rotation)||0}deg)`;
     d.style.zIndex=String(layerIndex+1);
-    if(layer.bg) d.style.background=layer.bg;
-    if(layer.type==='color'){
-      d.style.background=layer.color||layer.bg||'#20242c';
+    const content=document.createElement('div'); content.className='pv-scene-layer-content';
+    const visual=applySceneLayerVisual(d,content,layer);
+    d.appendChild(content);
+    if(layer.type==='audio'&&layer.inputId){
+      d.style.display='none';
+      const audio=document.createElement('audio');audio.dataset.audioPreview='1';content.appendChild(audio);
+      liveInputConsumer.attach(audio,layer.inputId,{muted:true,volume:0});
+    } else if(layer.type==='timer'){
+      content.setAttribute('aria-hidden','true');
+    } else if(layer.type==='color'){
+      content.style.background=layer.color||layer.bg||'#20242c';
     } else if(layer.type==='image' && layer.src){
-      const img=document.createElement('img'); img.src=mediaSrc(layer.src); d.appendChild(img);
+      const img=document.createElement('img'); img.src=mediaSrc(layer.src); applySceneMediaVisual(img,visual); content.appendChild(img);
     } else if(layer.type==='video' && layer.src){
-      const v=document.createElement('video'); v.src=mediaSrc(layer.src); v.muted=true; v.autoplay=true; v.loop=layer.loop!==false; v.playsInline=true; d.appendChild(v);
+      const v=document.createElement('video'); v.src=mediaSrc(layer.src); v.muted=true; v.autoplay=true; v.loop=layer.loop!==false; v.playbackRate=Math.max(.25,Math.min(4,Number(layer.playbackRate)||1)); v.playsInline=true; applySceneMediaVisual(v,visual); content.appendChild(v);
     } else if(layer.type==='pdf' && layer.src){
-      const f=document.createElement('iframe'); f.src=mediaSrc(layer.src)+'#page='+Math.max(1,Number(layer.page)||1); d.appendChild(f);
+      const f=document.createElement('iframe'); f.src=mediaSrc(layer.src)+'#page='+Math.max(1,Number(layer.page)||1); content.appendChild(f);
     } else if((layer.type==='window'||layer.type==='capture')&&layer.inputId){
       const v=document.createElement('video'); v.className='live-input-video';
       const placeholder=document.createElement('div'); placeholder.className='live-input-placeholder'; placeholder.textContent=(liveInputDefinition(layer.inputId)?.name||t('sourceConnecting'));
-      v.addEventListener('playing',()=>placeholder.remove(),{once:true}); d.append(v,placeholder);
+      v.addEventListener('playing',()=>placeholder.remove(),{once:true}); applySceneMediaVisual(v,visual); content.append(v,placeholder);
       liveInputConsumer.attach(v,layer.inputId,{muted:true,volume:0});
     } else if(layer.type==='text'){
-      const tx=document.createElement('div'); tx.className='pv-scene-text'; tx.textContent=Object.prototype.hasOwnProperty.call(layer,'text')?String(layer.text||''):(layer.name||''); tx.style.color=layer.color||'#fff'; tx.style.background=layer.bg||'transparent'; tx.style.fontSize=Math.max(11,(root.clientHeight||240)*(Number(layer.fontSize)||8)/100)+'px'; d.appendChild(tx);
+      const tx=document.createElement('div'); tx.className='pv-scene-text'; tx.textContent=Object.prototype.hasOwnProperty.call(layer,'text')?String(layer.text||''):(layer.name||''); tx.style.color=layer.color||'#fff'; tx.style.background=layer.bg||'transparent'; tx.style.fontSize=Math.max(11,(root.clientHeight||240)*(Number(layer.fontSize)||8)/100)+'px'; tx.style.fontFamily=SCENE_FONT_MAP[layer.fontFamily]||SCENE_FONT_MAP.system; tx.style.fontWeight=String(Number(layer.fontWeight)||700); tx.style.fontStyle=layer.italic?'italic':'normal'; tx.style.textDecoration=layer.underline?'underline':'none'; tx.style.textAlign=layer.textAlign||'center'; tx.style.justifyContent=layer.textAlign==='left'?'flex-start':layer.textAlign==='right'?'flex-end':'center'; tx.style.alignItems=layer.verticalAlign==='top'?'flex-start':layer.verticalAlign==='bottom'?'flex-end':'center'; content.appendChild(tx);
     }
     if(prefix==='pv'&&layer.id===selectedLayerId){
       ['nw','ne','sw','se'].forEach(handle=>{const marker=document.createElement('span');marker.className='transform-handle handle-'+handle;marker.dataset.handle=handle;marker.setAttribute('aria-hidden','true');d.appendChild(marker);});
@@ -4940,11 +5058,15 @@ function renderStage(prefix, st, now){
         ps.style.left=b.x+'%'; ps.style.top=b.y+'%'; ps.style.width=b.w+'%'; ps.style.height=b.h+'%';
         ps.style.opacity=String(Math.max(0,Math.min(1,Number(tl.opacity??1))));
       } else ps.style.display='flex';
-    } else { ps.style.display='none'; ps.style.zIndex=''; }
+      const timerVisual=PTCOMP.layerVisualStyle(tl);
+      ps.style.transform=timerVisual.transform; ps.style.transformOrigin=timerVisual.transformOrigin;
+      ps.style.filter=timerVisual.filter; ps.style.mixBlendMode=timerVisual.mixBlendMode;
+      ps.style.clipPath=timerVisual.clipPath; ps.style.borderRadius=timerVisual.borderRadius;
+    } else { ps.style.display='none'; ps.style.zIndex=''; ps.style.transform=''; ps.style.transformOrigin=''; ps.style.filter=''; ps.style.mixBlendMode=''; ps.style.clipPath=''; ps.style.borderRadius=''; }
   }
-  // Grid positions the timer itself; letting that full-size stage consume pointer input
-  // would make image/text scene layers underneath impossible to select or drag.
-  ps.style.pointerEvents=(prefix==='pv' && previewTimerLayer && !(st.gridOn && st.gridSize))?'auto':'none';
+  // Preview koristi z-order proxy u pvScene za izbor i transformaciju tajmera.
+  // Sam stage ne sme da presretne klikove namenjene izvorima iznad ili ispod njega.
+  ps.style.pointerEvents='none';
   const sw=ps.clientWidth||root.clientWidth, sh=ps.clientHeight||root.clientHeight;
 
   if(st.text){
@@ -5058,7 +5180,7 @@ function seedDemoShow(){
   showMeta={id:'show-demo-conference',name:'Conference Desk Demo',details:{client:'Example Events',venue:'Main Room',productMode:'conference-desk',showFolder:'Built-in demo',importedAssets:4,matchedAssets:4}};
   currentCue=-1; selectedCue=-1; showLog=[];
   S.mode='countdown'; S.durationMs=cues[0].durationMs; S.remMs=S.durationMs; S.running=false; S.endAt=0; S.startAt=0;
-  S.text=''; S.textOnly=false; S.blackout=false; S.transparent=false; S.gridOn=false; S.goTransaction=null; S.canvasAspect='16:9'; S.canvas=PTCOMP.normalizeCanvas({width:1920,height:1080,fps:30}); S.liveInputs=[]; S.primaryLiveAudio=false;
+  S.text=''; S.textOnly=false; S.blackout=false; S.transparent=false; S.gridOn=false; S.goTransaction=null; S.canvasAspect='16:9'; S.canvas=PTCOMP.normalizeCanvas({width:1920,height:1080,fps:30}); S.liveInputs=[]; S.primaryLiveAudio=false; S.programAudioDeviceId=''; S.monitorAudioDeviceId='';
   outputConfigs=[{id:makeId('out'),name:'Audience',role:'audience',enabled:true,displayId:Number($('displaySel')?.value)||null,mode:'fullscreen',width:1920,height:1080,gridSize:3,gridCell:4,liveAudio:false}];
   try{ api.setOutputConfigs([]); api.closeOutput(); }catch(e){}
   outputOpen=false;
@@ -5395,7 +5517,7 @@ function collectShowDocument(){
         logo:S.logo||'',logoPos:S.logoPos,logoSize:S.logoSize,font:S.font
       },
       outputs:{
-        configs:jsonCopy(outputConfigs,[]),canvasAspect:S.canvasAspect,sceneFadeMs:S.sceneFadeMs,primaryLiveAudio:!!S.primaryLiveAudio,
+        configs:jsonCopy(outputConfigs,[]),canvasAspect:S.canvasAspect,sceneFadeMs:S.sceneFadeMs,primaryLiveAudio:!!S.primaryLiveAudio,programAudioDeviceId:String(S.programAudioDeviceId||''),monitorAudioDeviceId:String(S.monitorAudioDeviceId||''),
         primaryDisplayId:Number($('displaySel')&&$('displaySel').value)||null,
         gridOn:!!S.gridOn,gridSize:S.gridSize,gridCell:S.gridCell,fitWindow:!!S.fitWindow
       },
@@ -5805,7 +5927,7 @@ function applyShowDocument(document,{source='current',announce=true}={}){
       scenes:Array.isArray(content.scenes)&&content.scenes.length?jsonCopy(content.scenes,[]):S.scenes,activeSceneId:content.activeSceneId||S.activeSceneId,
       canvas:PTCOMP.normalizeCanvas(content.canvas||canvasFromLegacyAspect(outputs.canvasAspect||S.canvasAspect)),
       liveInputs:PTCOMP.normalizeLiveInputs(content.liveInputs||[]),
-      canvasAspect:outputs.canvasAspect||S.canvasAspect,sceneFadeMs:Number.isFinite(Number(outputs.sceneFadeMs))?Number(outputs.sceneFadeMs):S.sceneFadeMs,primaryLiveAudio:!!outputs.primaryLiveAudio,
+      canvasAspect:outputs.canvasAspect||S.canvasAspect,sceneFadeMs:Number.isFinite(Number(outputs.sceneFadeMs))?Number(outputs.sceneFadeMs):S.sceneFadeMs,primaryLiveAudio:!!outputs.primaryLiveAudio,programAudioDeviceId:String(outputs.programAudioDeviceId||''),monitorAudioDeviceId:String(outputs.monitorAudioDeviceId||''),
       gridOn:!!outputs.gridOn,gridSize:Number(outputs.gridSize)||S.gridSize,gridCell:Number(outputs.gridCell)||0,fitWindow:!!outputs.fitWindow,
       showStart:String(preferences.showStart||''),showNowNext:!!preferences.showNowNext,flashZero:preferences.flashZero??S.flashZero,
       soundZero:preferences.soundZero??S.soundZero,showProgress:preferences.showProgress??S.showProgress,chimes:preferences.chimes??S.chimes,
@@ -5932,7 +6054,7 @@ function saveSettings(){
     chimes:S.chimes,schedOn:S.schedOn,schedAt:S.schedAt,logo:S.logo,logoPos:S.logoPos,logoSize:S.logoSize,
     lowerThird:snapshotLowerThirdForSave(S.lowerThird),lowerThirdAutoCue:S.lowerThirdAutoCue,
     font:S.font,clock12:S.clock12,goAutoStart:S.goAutoStart,studioDirect:S.studioDirect,canvasAspect:S.canvasAspect,canvas:PTCOMP.normalizeCanvas(S.canvas),sceneFadeMs:S.sceneFadeMs,
-    liveInputs:PTCOMP.normalizeLiveInputs(S.liveInputs),primaryLiveAudio:!!S.primaryLiveAudio,
+    liveInputs:PTCOMP.normalizeLiveInputs(S.liveInputs),primaryLiveAudio:!!S.primaryLiveAudio,programAudioDeviceId:String(S.programAudioDeviceId||''),monitorAudioDeviceId:String(S.monitorAudioDeviceId||''),
     scenes:compactScenesForSave(),activeSceneId:S.activeSceneId,
     screenContentModel:{items:jsonCopy(contentItems,[]),selectedContentItemId,liveContentItemId}
   };
@@ -5973,7 +6095,7 @@ function load(){
       lowerThirdAutoCue:st.lowerThirdAutoCue??S.lowerThirdAutoCue,
       font:st.font??S.font, clock12:st.clock12??S.clock12, goAutoStart:st.goAutoStart??S.goAutoStart,
       canvasAspect:st.canvasAspect??S.canvasAspect, canvas:PTCOMP.normalizeCanvas(st.canvas||canvasFromLegacyAspect(st.canvasAspect||S.canvasAspect)), sceneFadeMs:st.sceneFadeMs??S.sceneFadeMs,
-      liveInputs:PTCOMP.normalizeLiveInputs(st.liveInputs||S.liveInputs),primaryLiveAudio:st.primaryLiveAudio??S.primaryLiveAudio,
+      liveInputs:PTCOMP.normalizeLiveInputs(st.liveInputs||S.liveInputs),primaryLiveAudio:st.primaryLiveAudio??S.primaryLiveAudio,programAudioDeviceId:String(st.programAudioDeviceId??S.programAudioDeviceId??''),monitorAudioDeviceId:String(st.monitorAudioDeviceId??S.monitorAudioDeviceId??''),
       studioDirect:st.studioDirect??S.studioDirect,
       scenes:Array.isArray(st.scenes)&&st.scenes.length?st.scenes:S.scenes,
       activeSceneId:st.activeSceneId??S.activeSceneId
@@ -6168,7 +6290,7 @@ function deleteSelectedContent(){
 function contentThumbnail(row,item){
   const scene=sceneForContent(item);
   const checker=document.createElement('span'); checker.className='slide-thumb-checker'; row.appendChild(checker);
-  const layers=(scene&&Array.isArray(scene.layers)?scene.layers:[]).filter(layer=>layer&&layer.visible!==false);
+  const layers=(scene&&Array.isArray(scene.layers)?scene.layers:[]).filter(layer=>layer&&layer.visible!==false&&layer.type!=='audio');
   if(!layers.length){ const empty=document.createElement('span'); empty.className='scene-thumb-empty'; empty.textContent='EMPTY'; row.appendChild(empty); return; }
   layers.forEach((layer,index)=>{
     const node=document.createElement('span');
@@ -6176,12 +6298,13 @@ function contentThumbnail(row,item){
     node.style.left=Number(layer.x||0)+'%'; node.style.top=Number(layer.y||0)+'%';
     node.style.width=Number(layer.w??100)+'%'; node.style.height=Number(layer.h??100)+'%';
     node.style.opacity=String(Number(layer.opacity??1)); node.style.zIndex=String(index+1);
-    node.style.transform=`rotate(${Number(layer.rotation||0)}deg)`;
+    const visual=PTCOMP.layerVisualStyle(layer);
+    node.style.transform=visual.transform; node.style.transformOrigin=visual.transformOrigin; node.style.filter=visual.filter; node.style.mixBlendMode=visual.mixBlendMode; node.style.clipPath=visual.clipPath; node.style.borderRadius=visual.borderRadius;
     if(layer.type==='color') node.style.background=layer.color||layer.bg||'#20242c';
     else if(layer.type==='image'&&layer.src){
-      const image=document.createElement('img'); image.src=mediaSrc(layer.src); image.alt=''; image.style.objectFit=layer.fit==='contain'?'contain':layer.fit==='fill'?'fill':'cover'; node.appendChild(image);
+      const image=document.createElement('img'); image.src=mediaSrc(layer.src); image.alt=''; image.style.objectFit=layer.fit==='contain'?'contain':layer.fit==='fill'?'fill':'cover'; image.style.objectPosition=visual.objectPosition; node.appendChild(image);
     } else if(layer.type==='text'){
-      node.textContent=String(layer.text||'TEXT').slice(0,80); node.style.color=layer.color||'#ffffff'; node.style.fontSize=Math.max(4,Math.min(11,Number(layer.fontSize||7)*.75))+'px';
+      node.textContent=String(layer.text||'TEXT').slice(0,80); node.style.color=layer.color||'#ffffff'; node.style.fontSize=Math.max(4,Math.min(11,Number(layer.fontSize||7)*.75))+'px'; node.style.fontFamily=SCENE_FONT_MAP[layer.fontFamily]||SCENE_FONT_MAP.system; node.style.fontWeight=String(Number(layer.fontWeight)||700); node.style.textAlign=layer.textAlign||'center';
     } else if(layer.type==='timer'){ node.textContent='10:00'; node.style.fontSize='11px'; }
     else { node.classList.add('placeholder'); node.textContent=String(layer.type||'source').toUpperCase(); }
     row.appendChild(node);
@@ -6312,7 +6435,7 @@ function renderScenesUI(){
   layerBox.innerHTML='';
   if(!sc.layers.some(layer=>layer.id===selectedLayerId)) selectedLayerId=(sc.layers[sc.layers.length-1]||{}).id||null;
   if(!sc.layers.length){
-    const d=document.createElement('div'); d.className='empty'; d.textContent=t('emptyScene'); layerBox.appendChild(d); renderInspector(); updateLayerProgramControls(); return;
+    const d=document.createElement('div'); d.className='empty'; d.textContent=t('emptyScene'); layerBox.appendChild(d); renderInspector(); updateLayerProgramControls(); renderAudioMixer(); return;
   }
   [...sc.layers].reverse().forEach((layer,revIndex)=>{
     const i=sc.layers.length-1-revIndex;
@@ -6345,7 +6468,7 @@ function renderScenesUI(){
     layerSelect.addEventListener('focus',requestLayerSelection);
     layerSelect.addEventListener('click',requestLayerSelection);
     const meta=row.querySelector('.layer-meta');
-    if(layer.type==='window'||layer.type==='capture'){
+    if(layer.type==='window'||layer.type==='capture'||layer.type==='audio'){
       const input=liveInputDefinition(layer.inputId), status=liveInputStatus(layer.inputId);
       const dot=document.createElement('span'); dot.className='input-state '+String(status.state||'idle');
       const label=document.createElement('span'); label.textContent=`${input?input.name:t('sourceMissing')} · ${liveInputStatusText(status)}`;
@@ -6370,6 +6493,7 @@ function renderScenesUI(){
   });
   renderInspector();
   updateLayerProgramControls();
+  renderAudioMixer();
 }
 async function addScene(){
   ensureScenes();
@@ -6415,26 +6539,36 @@ async function addMediaLayers(files){
   if(!list.length) return;
   const targetSceneId=currentScene().id;
   for(const file of list){
-    if(file.size>200*1024*1024){ alert(`${file.name}: ${t('compositorMediaTooLarge')}`); continue; }
-    const type=fileLayerType(file);
-    const dataURL=await readFileAsDataURL(file);
-    // snimi u media biblioteku (disk) → mali media:// link umesto MB dataURL-a u state/SSE
-    let src=dataURL;
-    try{ const saved=await api.mediaSave({name:file.name, dataURL});
-      if(saved && saved.ok) src=saved.src;
-      else if(saved && saved.error && file.size>2000000){ alert(file.name+': '+saved.error); continue; }
-    }catch(e){}
+    const media=await prepareSceneMedia(file); if(!media)continue;
     ensureScenes();
     const sc=S.scenes.find(scene=>scene.id===targetSceneId);
     if(!sc) continue;
     const layer={
-      id:makeId('layer'), type, name:file.name, src, mime:file.type||'',
-      visible:true, fit:type==='pdf'?'contain':'cover', x:0, y:0, w:100, h:100, opacity:1
+      id:makeId('layer'), type:media.type, name:file.name, src:media.src, mime:file.type||'',
+      visible:true, fit:media.type==='pdf'?'contain':'cover', x:0, y:0, w:100, h:100, opacity:1
     };
     sc.layers.push(layer);
     selectedLayerId=layer.id;
   }
   sceneDirty();
+}
+async function prepareSceneMedia(file){
+  if(!file)return null;
+  if(file.size>200*1024*1024){alert(`${file.name}: ${t('compositorMediaTooLarge')}`);return null;}
+  const type=fileLayerType(file),dataURL=await readFileAsDataURL(file);
+  let src=dataURL;
+  try{
+    const saved=await api.mediaSave({name:file.name,dataURL});
+    if(saved&&saved.ok)src=saved.src;
+    else if(saved&&saved.error&&file.size>2000000){alert(file.name+': '+saved.error);return null;}
+  }catch(error){}
+  return {type,src};
+}
+async function replaceSceneMedia(layerId,file){
+  const media=await prepareSceneMedia(file); if(!media)return false;
+  const layer=currentScene().layers.find(row=>row.id===layerId); if(!layer)return false;
+  Object.assign(layer,{type:media.type,name:file.name,src:media.src,mime:file.type||'',page:media.type==='pdf'?1:undefined,fit:media.type==='pdf'?'contain':layer.fit||'cover'});
+  selectedLayerId=layer.id;sceneDirty();renderInspector();return true;
 }
 async function addTextLayer(){
   const text=await askText(t('textLayerPrompt'), 'TITLE / NAME');
@@ -6458,7 +6592,11 @@ $('canvasSceneSelect')?.addEventListener('change',event=>{
   if(!S.scenes.some(scene=>scene.id===event.target.value)) return;
   S.activeSceneId=event.target.value; selectedLayerId=null; sceneDirty(); renderInspector();
 });
-$('sceneMediaFile').addEventListener('change',e=>{ addMediaLayers(e.target.files).finally(()=>{ e.target.value=''; }); });
+$('sceneMediaFile').addEventListener('change',e=>{
+  const files=e.target.files,replaceId=mediaReplaceLayerId;mediaReplaceLayerId='';
+  const task=replaceId?replaceSceneMedia(replaceId,files&&files[0]):addMediaLayers(files);
+  Promise.resolve(task).finally(()=>{e.target.value='';});
+});
 function addTimerLayer(){
   const sc=currentScene();
   if(sc.layers.some(l=>l.type==='timer')){ alert(t('timerLayerOne')); return; }
@@ -6486,19 +6624,28 @@ $('btnCompositor')?.addEventListener('click',()=>setCompositorOpen(!document.bod
 $('btnCompositorClose')?.addEventListener('click',()=>setCompositorOpen(false));
 
 let sourceReplaceLayerId='';
+let sourceDesktopKind='all';
+let mediaReplaceLayerId='';
 function setSourcePicker(kind=''){
   $('sourceKindGrid').style.display=kind?'none':'grid';
-  ['Window','Device','Color'].forEach(name=>$('source'+name+'Picker')?.classList.toggle('open',kind===name.toLowerCase()));
+  ['Window','Device','Audio','Color'].forEach(name=>$('source'+name+'Picker')?.classList.toggle('open',kind===name.toLowerCase()));
 }
 function openSourceDialog(replaceLayerId=''){
+  mediaReplaceLayerId='';
   sourceReplaceLayerId=String(replaceLayerId||'');
+  sourceDesktopKind='all';
   setSourcePicker('');
   const overlay=$('sourceOverlay'); overlay.classList.add('open'); overlay.setAttribute('aria-hidden','false');
   const layer=sourceReplaceLayerId ? currentScene().layers.find(row=>row.id===sourceReplaceLayerId) : null;
   const definition=layer&&liveInputDefinition(layer.inputId);
   if(layer&&definition){
-    setSourcePicker(definition.type==='window'?'window':'device');
-    if(definition.type==='window') renderDesktopSources(); else renderDeviceSources();
+    setSourcePicker(definition.type==='window'?'window':definition.type==='audio'?'audio':'device');
+    if(definition.type==='window'){
+      sourceDesktopKind=String(definition.desktopSourceId||'').startsWith('screen:')?'screen':'window';
+      $('sourceDesktopTitle').textContent=t(sourceDesktopKind==='screen'?'sourceDisplay':'sourceWindow');
+      renderDesktopSources();
+    } else if(definition.type==='audio') renderAudioSources();
+    else renderDeviceSources();
   }
   requestAnimationFrame(()=>(layer?$('sourceOverlay')?.querySelector('.source-picker.open button, .source-picker.open select'):$('sourceKindGrid')?.querySelector('button'))?.focus());
 }
@@ -6529,6 +6676,7 @@ async function renderDesktopSources(){
   const grid=$('desktopSourceGrid'); grid.innerHTML=`<div class="source-empty">${t('sourceScanning')}</div>`;
   let sources=[],permissions={};
   try{[sources,permissions]=await Promise.all([api.liveInputDesktopSources(),api.liveInputPermissions()]);}catch(error){sources=[];}
+  if(sourceDesktopKind==='window'||sourceDesktopKind==='screen') sources=sources.filter(source=>source.kind===sourceDesktopKind);
   grid.innerHTML='';
   if(!sources.length){
     const blocked=['denied','restricted'].includes(permissions&&permissions.screen);
@@ -6605,19 +6753,62 @@ async function renderDeviceSources(requestPermission=''){
   }
   $('btnDeviceAdd').disabled=!videos.length;
 }
+async function renderAudioSources(requestPermission=''){
+  const select=$('sourceAudioInputDevice'),status=$('sourceAudioStatus'),statusText=$('sourceAudioStatusText');
+  const permissionButton=$('btnAudioPermission'),settingsButton=$('btnAudioSettings');
+  select.innerHTML=`<option value="">${t('sourceScanning')}</option>`;
+  status.hidden=true;statusText.textContent='';permissionButton.hidden=true;settingsButton.hidden=true;
+  let devices=[],permissions={},error='';
+  try{
+    const response=await api.liveInputDevices(requestPermission);
+    if(Array.isArray(response)) devices=response;
+    else {devices=Array.isArray(response&&response.devices)?response.devices:[];permissions=response&&response.permissions||{};error=response&&response.error||'';}
+  }catch(reason){devices=[];error='enumeration-failed';}
+  const audios=devices.filter(row=>row.kind==='audioinput');
+  select.innerHTML='';
+  const blocked=['denied','restricted'].includes(permissions.microphone);
+  if(!audios.length){const option=document.createElement('option');option.value='';option.textContent=t(blocked?'sourceMicrophonePermission':error==='timeout'?'sourceDeviceTimeout':'sourceAudioEmpty');select.appendChild(option);}
+  audios.forEach((device,index)=>{const option=document.createElement('option');option.value=device.deviceId;option.textContent=device.label||`${t('sourceAudioInput')} ${index+1}`;select.appendChild(option);});
+  const notices=[];
+  if(blocked) notices.push(t('sourceMicrophonePermission'));
+  if(permissions.microphone==='not-determined') notices.push(t('sourceMicrophonePermissionNeeded'));
+  if(error==='timeout') notices.push(t('sourceDeviceTimeout'));
+  permissionButton.hidden=permissions.microphone!=='not-determined';settingsButton.hidden=permissions.microphone!=='denied';
+  if(notices.length){statusText.textContent=notices.join(' ');status.hidden=false;}
+  if(audios[0]) $('sourceAudioName').value=audios[0].label||t('sourceAudioInput');
+  const replacing=sourceReplaceLayerId ? currentScene().layers.find(row=>row.id===sourceReplaceLayerId) : null;
+  const current=replacing&&liveInputDefinition(replacing.inputId);
+  if(current&&current.type==='audio'){
+    if(audios.some(device=>device.deviceId===current.audioDeviceId))select.value=current.audioDeviceId;
+    $('sourceAudioName').value=current.name||$('sourceAudioName').value;
+  }
+  $('btnAudioAdd').disabled=!audios.length;
+}
 $('btnCameraPermission')?.addEventListener('click',()=>renderDeviceSources('camera'));
 $('btnMicrophonePermission')?.addEventListener('click',()=>renderDeviceSources('microphone'));
 $('btnCameraSettings')?.addEventListener('click',()=>openPrivacySettings('camera'));
 $('btnMicrophoneSettings')?.addEventListener('click',()=>openPrivacySettings('microphone'));
+$('btnAudioPermission')?.addEventListener('click',()=>renderAudioSources('microphone'));
+$('btnAudioSettings')?.addEventListener('click',()=>openPrivacySettings('microphone'));
 $('sourceVideoDevice')?.addEventListener('change',event=>{const label=event.target.selectedOptions[0]?.textContent||'';if(label)$('sourceDeviceName').value=label;});
+$('sourceAudioInputDevice')?.addEventListener('change',event=>{const label=event.target.selectedOptions[0]?.textContent||'';if(label)$('sourceAudioName').value=label;});
 
 $('sourceKindGrid')?.addEventListener('click',event=>{
   const button=event.target.closest('[data-source-kind]'); if(!button)return;
   const kind=button.dataset.sourceKind;
-  if(kind==='media'){closeSourceDialog();$('sceneMediaFile').click();}
+  if(['image','video','pdf','media'].includes(kind)){
+    const accept=kind==='image'?'image/*':kind==='video'?'video/*':kind==='pdf'?'application/pdf,.pdf':'image/*,video/*,application/pdf,.pdf';
+    $('sceneMediaFile').accept=accept;
+    closeSourceDialog();$('sceneMediaFile').click();
+  }
   if(kind==='color')setSourcePicker('color');
-  if(kind==='window'){setSourcePicker('window');renderDesktopSources();}
+  if(kind==='window'||kind==='screen'){
+    sourceDesktopKind=kind;
+    $('sourceDesktopTitle').textContent=t(kind==='screen'?'sourceDisplay':'sourceWindow');
+    setSourcePicker('window');renderDesktopSources();
+  }
   if(kind==='device'){setSourcePicker('device');renderDeviceSources();}
+  if(kind==='audio'){setSourcePicker('audio');renderAudioSources();}
   if(kind==='text'){closeSourceDialog();addTextLayer();}
   if(kind==='timer'){closeSourceDialog();addTimerLayer();}
 });
@@ -6634,6 +6825,14 @@ $('btnDeviceAdd')?.addEventListener('click',()=>{
     videoDeviceId:video.value,videoDeviceLabel:video.selectedOptions[0]?.textContent||'',audioDeviceId:audio.value,audioDeviceLabel:audio.selectedOptions[0]?.textContent||'',
     withAudio:!!audio.value,width,height,fps:+$('sourceDeviceFps').value||30,autoReconnect:true
   },'capture');
+});
+$('btnAudioAdd')?.addEventListener('click',()=>{
+  const audio=$('sourceAudioInputDevice');if(!audio.value)return;
+  addLiveInputLayer({
+    id:makeId('input'),type:'audio',name:$('sourceAudioName').value.trim()||audio.selectedOptions[0]?.textContent||t('sourceAudioInput'),
+    audioDeviceId:audio.value,audioDeviceLabel:audio.selectedOptions[0]?.textContent||'',withAudio:true,
+    width:320,height:180,fps:30,autoReconnect:true
+  },'audio');
 });
 
 // ---------- MONITORI ----------
@@ -6665,6 +6864,7 @@ function normalizeOutputConfigUI(cfg={}, i=0){
     role:PTCD.normalizeOutputRole(cfg.role),
     enabled:cfg.enabled!==false,
     liveAudio:cfg.liveAudio===true,
+    audioOutputDeviceId:String(cfg.audioOutputDeviceId||''),
     displayId:Number(cfg.displayId || outputFallbackDisplay()),
     displayLabel:String(cfg.displayLabel||''),
     displayWidth:Math.max(0,parseInt(cfg.displayWidth,10)||0),
@@ -9520,6 +9720,210 @@ function updateStatusCard(){
 }
 api.isOutputOpen().then(open=>{ outputOpen=open; updateStatusCard(); publishControlStatus(); }).catch(()=>{});
 
+// ---------- AUDIO MIXER ----------
+let audioDeviceInventory=[];
+let audioMeterContext=null;
+let audioMeterFrame=0;
+let audioMeterLastTick=0;
+const audioMeterNodes=new Map();
+const audioMonitorPlayers=new Map();
+
+function audioCapableLayers(){
+  const scene=currentScene();
+  return (scene&&Array.isArray(scene.layers)?scene.layers:[]).filter(layer=>layer&&['video','capture','audio'].includes(layer.type));
+}
+function audioLayerMuted(layer){
+  return layer.type==='video'?layer.muted!==false:layer.audioEnabled===false;
+}
+function audioVolumeDb(value){
+  const volume=Math.max(0,Math.min(1,Number(value??1)));
+  return volume<=.001?-60:Math.max(-60,20*Math.log10(volume));
+}
+function audioDbLabel(value){
+  return value<=-59.9?'−∞ dB':`${value.toFixed(1)} dB`;
+}
+function audioStreamForLayer(layer){
+  if(!layer)return null;
+  if(['capture','audio'].includes(layer.type))return liveInputConsumer&&liveInputConsumer.streams&&liveInputConsumer.streams.get(String(layer.inputId||''))||null;
+  if(layer.type==='video'){
+    const element=document.querySelector(`#pvScene .pv-scene-layer[data-layer-id="${CSS.escape(String(layer.id||''))}"] video`);
+    if(!element)return null;
+    if(element.srcObject instanceof MediaStream)return element.srcObject;
+    try{return typeof element.captureStream==='function'?element.captureStream():null;}catch(error){return null;}
+  }
+  return null;
+}
+function ensureAudioMeterContext(){
+  if(audioMeterContext)return audioMeterContext;
+  const AudioContextClass=window.AudioContext||window.webkitAudioContext;
+  if(!AudioContextClass)return null;
+  try{audioMeterContext=new AudioContextClass({latencyHint:'interactive'});}catch(error){audioMeterContext=new AudioContextClass();}
+  return audioMeterContext;
+}
+function closeAudioMeterNode(id){
+  const record=audioMeterNodes.get(id);if(!record)return;
+  try{record.source.disconnect();}catch(error){}
+  audioMeterNodes.delete(id);
+}
+function meterRecordForLayer(layer){
+  const id=String(layer.id||''),stream=audioStreamForLayer(layer);
+  if(!stream||!stream.getAudioTracks().some(track=>track.readyState==='live')){closeAudioMeterNode(id);return null;}
+  const existing=audioMeterNodes.get(id);
+  if(existing&&existing.stream===stream)return existing;
+  closeAudioMeterNode(id);
+  const context=ensureAudioMeterContext();if(!context)return null;
+  try{
+    const audioOnly=new MediaStream(stream.getAudioTracks());
+    const source=context.createMediaStreamSource(audioOnly),analyser=context.createAnalyser();
+    analyser.fftSize=1024;analyser.smoothingTimeConstant=.68;source.connect(analyser);
+    const record={stream,source,analyser,data:new Float32Array(analyser.fftSize),peakDb:-60,peakAt:0};
+    audioMeterNodes.set(id,record);Promise.resolve(context.resume()).catch(()=>{});return record;
+  }catch(error){return null;}
+}
+function setAudioMeterVisual(row,db,peakDb,hasSignal){
+  const fill=row&&row.querySelector('.audio-meter-fill'),label=row&&row.querySelector('.audio-db');
+  if(fill)fill.style.width=`${Math.max(0,Math.min(100,(db+60)/60*100))}%`;
+  if(label){label.textContent=hasSignal?audioDbLabel(peakDb):t('audioNoSignal');label.classList.toggle('clip',peakDb>-1);}
+  if(row)row.classList.toggle('live',hasSignal);
+}
+function stopAudioMonitorPlayer(id){
+  const player=audioMonitorPlayers.get(id);if(!player)return;
+  try{player.pause();player.srcObject=null;}catch(error){}
+  audioMonitorPlayers.delete(id);
+}
+function syncAudioMonitorPlayer(layer,stream){
+  const id=String(layer.id||''),mode=String(layer.audioMonitoring||'off');
+  if(mode==='off'||audioLayerMuted(layer)||layer.visible===false||!stream){stopAudioMonitorPlayer(id);return;}
+  let player=audioMonitorPlayers.get(id);
+  if(!player){player=document.createElement('audio');player.autoplay=true;player.playsInline=true;audioMonitorPlayers.set(id,player);}
+  if(player.srcObject!==stream)player.srcObject=stream;
+  player.muted=false;player.volume=Math.max(0,Math.min(1,Number(layer.volume??1)));
+  const sinkId=String(S.monitorAudioDeviceId||'');
+  if(sinkId&&typeof player.setSinkId==='function'&&player.sinkId!==sinkId)player.setSinkId(sinkId).catch(()=>{});
+  const played=player.play();if(played&&played.catch)played.catch(()=>{});
+}
+function tickAudioMeters(now=performance.now()){
+  audioMeterFrame=requestAnimationFrame(tickAudioMeters);
+  if(now-audioMeterLastTick<65)return;
+  audioMeterLastTick=now;
+  const rows=new Map([...document.querySelectorAll('#audioMixerRows [data-audio-layer-id]')].map(row=>[row.dataset.audioLayerId,row]));
+  const layers=audioCapableLayers(),ids=new Set(layers.map(layer=>String(layer.id||'')));
+  for(const id of [...audioMeterNodes.keys()])if(!ids.has(id))closeAudioMeterNode(id);
+  for(const id of [...audioMonitorPlayers.keys()])if(!ids.has(id))stopAudioMonitorPlayer(id);
+  layers.forEach(layer=>{
+    const row=rows.get(String(layer.id||'')),record=meterRecordForLayer(layer),stream=audioStreamForLayer(layer);
+    syncAudioMonitorPlayer(layer,stream);
+    if(!record){setAudioMeterVisual(row,-60,-60,false);return;}
+    record.analyser.getFloatTimeDomainData(record.data);
+    let sum=0,peak=0;for(let i=0;i<record.data.length;i++){const value=Math.abs(record.data[i]);sum+=value*value;if(value>peak)peak=value;}
+    const rms=Math.sqrt(sum/Math.max(1,record.data.length));
+    const db=Math.max(-60,Math.min(0,20*Math.log10(Math.max(.000001,rms))));
+    const instantPeak=Math.max(-60,Math.min(0,20*Math.log10(Math.max(.000001,peak))));
+    if(instantPeak>=record.peakDb||now-record.peakAt>1400){record.peakDb=instantPeak;record.peakAt=now;}
+    else record.peakDb=Math.max(-60,record.peakDb-.65);
+    setAudioMeterVisual(row,db,record.peakDb,true);
+  });
+}
+function appendDeviceOptions(select,kind,current,includeOff=false){
+  if(!select)return;
+  select.innerHTML='';
+  const base=document.createElement('option');base.value='';base.textContent=includeOff?t('sourceNoAudio'):t('audioSystemDefault');select.appendChild(base);
+  audioDeviceInventory.filter(device=>device.kind===kind).forEach((device,index)=>{const option=document.createElement('option');option.value=device.deviceId;option.textContent=device.label||`${kind==='audioinput'?t('sourceAudioInput'):t('programAudioOutput')} ${index+1}`;select.appendChild(option);});
+  if(current&&![...select.options].some(option=>option.value===current)){const option=document.createElement('option');option.value=current;option.textContent=t('audioDeviceUnavailable');select.appendChild(option);}
+  select.value=String(current||'');
+}
+function activeProgramAudioRouteValue(){
+  if(S.primaryLiveAudio)return 'primary';
+  const route=outputConfigs.find(config=>config.enabled!==false&&config.liveAudio);return route?`out:${route.id}`:'off';
+}
+function renderAudioRouteControls(){
+  const route=$('audioProgramRoute'),programDevice=$('audioProgramDevice'),monitorDevice=$('audioMonitorDevice');if(!route||!programDevice||!monitorDevice)return;
+  const current=activeProgramAudioRouteValue();route.innerHTML='';
+  [['off',t('audioRouteOff')],['primary',t('audioRoutePrimary')]].forEach(([value,label])=>{const option=document.createElement('option');option.value=value;option.textContent=label;route.appendChild(option);});
+  outputConfigs.forEach(config=>{const option=document.createElement('option');option.value=`out:${config.id}`;option.textContent=`${config.name} · ${outputDisplayName(config.displayId,config)}`;route.appendChild(option);});
+  route.value=[...route.options].some(option=>option.value===current)?current:'off';
+  appendDeviceOptions(programDevice,'audiooutput',S.programAudioDeviceId,false);
+  appendDeviceOptions(monitorDevice,'audiooutput',S.monitorAudioDeviceId,false);
+}
+function pushAudioRoutingState(){
+  if(programState){programState.primaryLiveAudio=!!S.primaryLiveAudio;programState.programAudioDeviceId=String(S.programAudioDeviceId||'');api.sendState(programState);}
+  api.setOutputConfigs(outputConfigs);
+  saveOutputConfigsLocal();saveSettings();renderAudioRouteControls();renderOutputRows();
+}
+function setProgramAudioRoute(value){
+  S.primaryLiveAudio=value==='primary';
+  outputConfigs.forEach(config=>{config.liveAudio=value===`out:${config.id}`;if(config.liveAudio){config.enabled=true;config.audioOutputDeviceId=String(S.programAudioDeviceId||'');}});
+  if($('chkPrimaryLiveAudio'))$('chkPrimaryLiveAudio').checked=!!S.primaryLiveAudio;
+  pushAudioRoutingState();
+}
+async function refreshAudioDevices(requestPermission=false){
+  let devices=[];
+  try{const response=await api.liveInputDevices(requestPermission);devices=Array.isArray(response)?response:Array.isArray(response&&response.devices)?response.devices:[];}catch(error){}
+  audioDeviceInventory=devices.filter(device=>['audioinput','audiooutput'].includes(device.kind));
+  renderAudioMixer();
+  return audioDeviceInventory;
+}
+function updateAudioInputForLayer(layer,deviceId){
+  const definition=liveInputDefinition(layer.inputId);if(!definition||!['device','audio'].includes(definition.type))return;
+  const device=audioDeviceInventory.find(row=>row.kind==='audioinput'&&row.deviceId===deviceId);
+  definition.audioDeviceId=String(deviceId||'');definition.audioDeviceLabel=device&&device.label||'';definition.withAudio=!!deviceId;
+  if(definition.type==='audio'&&!deviceId)return;
+  layer.audioEnabled=!!deviceId;S.liveInputs=PTCOMP.normalizeLiveInputs(S.liveInputs);liveInputConfigKey='';sceneDirty();
+}
+function renderAudioMixer(){
+  const root=$('audioMixerRows'),empty=$('audioMixerEmpty'),count=$('audioMixerCount');if(!root||!empty||!count)return;
+  renderAudioRouteControls();root.innerHTML='';
+  const layers=audioCapableLayers();count.textContent=textVars(t('audioSourceCount'),{n:layers.length});empty.hidden=layers.length>0;
+  layers.slice().reverse().forEach(layer=>{
+    const definition=liveInputDefinition(layer.inputId),status=definition?liveInputStatus(layer.inputId):null;
+    const row=document.createElement('section');row.className='audio-channel';row.dataset.audioLayerId=layer.id;
+    row.innerHTML=`<div class="audio-channel-head"><div class="audio-channel-title"><strong></strong><span></span></div><output class="audio-db">${t('audioNoSignal')}</output><button class="audio-mute" type="button" aria-label="${t('audioMute')}" title="${t('audioMute')}">M</button></div><div><div class="audio-meter" role="meter" aria-valuemin="-60" aria-valuemax="0"><span class="audio-meter-fill"></span></div><div class="audio-meter-scale"><span>−60</span><span>−30</span><span>−12</span><span>0 dB</span></div></div><label class="audio-fader-row"><span>${t('audioLevel')}</span><input class="audio-fader" type="range" min="0" max="100" step="1"><output class="audio-fader-value"></output></label><details class="audio-mixer-advanced"><summary>${t('audioAdvanced')}</summary><div class="audio-mixer-advanced-body"></div></details>`;
+    row.querySelector('.audio-channel-title strong').textContent=layer.name||layer.type;
+    row.querySelector('.audio-channel-title span').textContent=definition?`${definition.audioDeviceLabel||definition.name} · ${liveInputStatusText(status)}`:layer.type==='video'?t('audioLocalMedia'):t('sourceMissing');
+    const mute=row.querySelector('.audio-mute'),fader=row.querySelector('.audio-fader'),faderValue=row.querySelector('.audio-fader-value');
+    const muted=audioLayerMuted(layer);mute.classList.toggle('on',muted);mute.setAttribute('aria-pressed',muted?'true':'false');
+    fader.value=String(Math.round(Math.max(0,Math.min(1,Number(layer.volume??1)))*100));faderValue.textContent=audioDbLabel(audioVolumeDb(layer.volume));
+    const advanced=row.querySelector('.audio-mixer-advanced-body');
+    if(definition&&['device','audio'].includes(definition.type)){
+      const label=document.createElement('label');label.innerHTML=`<span>${t('sourceAudioDevice')}</span><select class="audio-input-device"></select>`;advanced.appendChild(label);
+      const input=label.querySelector('select');appendDeviceOptions(input,'audioinput',definition.audioDeviceId,definition.type==='device');
+    }
+    const monitorLabel=document.createElement('label');monitorLabel.innerHTML=`<span>${t('audioMonitoring')}</span><select class="audio-monitoring"><option value="off">${t('audioMonitorOff')}</option><option value="monitor-only">${t('audioMonitorOnly')}</option><option value="monitor-and-output">${t('audioMonitorAndOutput')}</option></select>`;advanced.appendChild(monitorLabel);
+    const monitoring=monitorLabel.querySelector('select');monitoring.value=String(layer.audioMonitoring||'off');
+    const warning=document.createElement('div');warning.className='audio-monitor-warning';warning.textContent=t('audioMonitorWarning');advanced.appendChild(warning);
+    row.addEventListener('pointerdown',event=>{if(!event.target.closest('input,select,button,summary'))selectLayer(layer.id);});
+    root.appendChild(row);
+  });
+  if(!audioMeterFrame)audioMeterFrame=requestAnimationFrame(tickAudioMeters);
+}
+function audioLayerFromMixerEvent(event){
+  const id=event.target.closest('[data-audio-layer-id]')?.dataset.audioLayerId;
+  return id?(currentScene().layers||[]).find(layer=>layer.id===id)||null:null;
+}
+$('audioMixerRows')?.addEventListener('input',event=>{
+  if(!event.target.classList.contains('audio-fader'))return;
+  const layer=audioLayerFromMixerEvent(event);if(!layer)return;
+  layer.volume=(+event.target.value)/100;
+  const label=event.target.closest('.audio-channel')?.querySelector('.audio-fader-value');if(label)label.textContent=audioDbLabel(audioVolumeDb(layer.volume));
+  syncAudioMonitorPlayer(layer,audioStreamForLayer(layer));
+});
+$('audioMixerRows')?.addEventListener('change',event=>{
+  const layer=audioLayerFromMixerEvent(event);if(!layer)return;
+  if(event.target.classList.contains('audio-fader'))sceneDirty();
+  if(event.target.classList.contains('audio-monitoring')){layer.audioMonitoring=event.target.value;sceneDirty();}
+  if(event.target.classList.contains('audio-input-device'))updateAudioInputForLayer(layer,event.target.value);
+});
+$('audioMixerRows')?.addEventListener('click',event=>{
+  const button=event.target.closest('.audio-mute');if(!button)return;
+  const layer=audioLayerFromMixerEvent(event);if(!layer)return;
+  if(layer.type==='video')layer.muted=layer.muted===false;else layer.audioEnabled=layer.audioEnabled===false;
+  sceneDirty();
+});
+$('audioProgramRoute')?.addEventListener('change',event=>setProgramAudioRoute(event.target.value));
+$('audioProgramDevice')?.addEventListener('change',event=>{S.programAudioDeviceId=event.target.value;outputConfigs.forEach(config=>{if(config.liveAudio)config.audioOutputDeviceId=S.programAudioDeviceId;});pushAudioRoutingState();});
+$('audioMonitorDevice')?.addEventListener('change',event=>{S.monitorAudioDeviceId=event.target.value;saveSettings();for(const id of [...audioMonitorPlayers.keys()])stopAudioMonitorPlayer(id);});
+$('btnAudioRefresh')?.addEventListener('click',()=>refreshAudioDevices(false));
+
 // Prečice
 document.addEventListener('keydown',e=>{
   // GUARD: prečice ne rade dok korisnik kuca ili je modal otvoren —
@@ -9565,7 +9969,7 @@ buildLanguageSelect(); buildGridSizeControl(); arrangeOperatorLayout(); load();
   setCompositorOpen(openComposer,{scroll:false,persist:firstIdentityLaunch});
   if(firstIdentityLaunch) localStorage.setItem(identityKey,'1');
 }
-refreshDisplays(); loadOutputConfigs(); send(true); updateButtons(); applyLang(); requestAnimationFrame(render); initShowPersistence();
+refreshDisplays(); loadOutputConfigs(); refreshAudioDevices(false); send(true); updateButtons(); applyLang(); requestAnimationFrame(render); initShowPersistence();
 
 // ---------- MODAL: askText (Electron NE podržava window.prompt!) ----------
 let modalResolve=null;
@@ -9613,26 +10017,55 @@ function selectedLayer(){
   const sc=currentScene();
   return (sc.layers||[]).find(l=>l.id===selectedLayerId) || null;
 }
+function inspectorColor(value,fallback='#000000'){
+  const color=String(value||'').trim();
+  return /^#[0-9a-f]{6}$/i.test(color)?color:fallback;
+}
+function inspectorLayerTypeLabel(layer){
+  if(!layer)return '—';
+  if(layer.type==='capture')return t('sourceDevice');
+  if(layer.type==='audio')return t('sourceAudioInput');
+  if(layer.type==='window'){
+    const definition=liveInputDefinition(layer.inputId);
+    return String(definition&&definition.desktopSourceId||'').startsWith('screen:')?t('sourceDisplay'):t('sourceWindow');
+  }
+  const keys={image:'sourceImage',video:'sourceVideo',pdf:'PDF',text:'sourceText',color:'sourceColor',timer:'sourceTimer'};
+  return keys[layer.type]==='PDF'?'PDF':t(keys[layer.type]||'inspTitle');
+}
 function renderInspector(){
   const box=$('inspector'); if(!box) return;
   const L=selectedLayer();
   box.classList.toggle('open', !!L);
   if(!L) return;
+  const normalized=PTCOMP.normalizeLayer(L);
   inspBinding=true;
+  $('inspTypeBadge').textContent=inspectorLayerTypeLabel(L);
+  $('inspSourceHint').textContent=inspectorLayerTypeLabel(L);
   $('inspName').value=String(L.name||L.sourceName||L.type||'');
+  $('inspVisible').checked=L.visible!==false;
+  $('inspLocked').checked=!!L.locked;
   $('inspX').value=Number(L.x??0).toFixed(1).replace(/\.0$/,'');
   $('inspY').value=Number(L.y??0).toFixed(1).replace(/\.0$/,'');
   $('inspW').value=Number(L.w??100).toFixed(1).replace(/\.0$/,'');
   $('inspH').value=Number(L.h??100).toFixed(1).replace(/\.0$/,'');
+  $('inspAspectLock').checked=!!L.lockAspect;
   $('inspOpacity').value=Math.round(Number(L.opacity??1)*100);
   $('inspFit').value=L.fit||'cover';
   $('inspRotation').value=Number(L.rotation||0).toFixed(1).replace(/\.0$/,'');
-  $('inspLocked').checked=!!L.locked;
+  $('inspOrigin').value=normalized.transformOrigin;
+  $('inspFlipX').checked=!!L.flipX; $('inspFlipY').checked=!!L.flipY;
+  $('inspObjectX').value=normalized.objectPositionX; $('inspObjectY').value=normalized.objectPositionY;
+  $('inspCropTop').value=normalized.crop.top; $('inspCropRight').value=normalized.crop.right; $('inspCropBottom').value=normalized.crop.bottom; $('inspCropLeft').value=normalized.crop.left;
+  $('inspBlend').value=normalized.blendMode; $('inspCornerRadius').value=normalized.cornerRadius;
+  $('inspBrightness').value=Math.round(normalized.brightness*100); $('inspContrast').value=Math.round(normalized.contrast*100); $('inspSaturation').value=Math.round(normalized.saturation*100); $('inspHue').value=normalized.hue; $('inspBlur').value=normalized.blur;
   const isText=L.type==='text';
   $('inspTextWrap').classList.toggle('open', isText);
-  if(isText){ $('inspText').value=L.text||''; $('inspColor').value=L.color||'#ffffff'; $('inspFontSize').value=Number(L.fontSize)||8; }
+  if(isText){
+    $('inspText').value=L.text||''; $('inspColor').value=inspectorColor(L.color,'#ffffff'); $('inspTextBg').value=inspectorColor(L.bg,'#000000'); $('inspTextBgEnabled').checked=String(L.bg||'transparent')!=='transparent'; $('inspFontSize').value=normalized.fontSize;
+    $('inspFontFamily').value=normalized.fontFamily; $('inspFontWeight').value=String(normalized.fontWeight); $('inspTextAlign').value=normalized.textAlign; $('inspVerticalAlign').value=normalized.verticalAlign; $('inspItalic').checked=normalized.italic; $('inspUnderline').checked=normalized.underline;
+  }
   const isColor=L.type==='color'; $('inspColorWrap').classList.toggle('open',isColor); if(isColor)$('inspSourceColor').value=L.color||L.bg||'#20242c';
-  const isLive=L.type==='window'||L.type==='capture';
+  const isLive=L.type==='window'||L.type==='capture'||L.type==='audio';
   $('inspLiveWrap').classList.toggle('open',isLive); $('inspLiveStatus').classList.toggle('open',isLive);
   if(isLive){
     $('inspLiveAudio').checked=L.audioEnabled!==false; $('inspLiveVolume').value=Math.round(Number(L.volume??1)*100);
@@ -9641,7 +10074,13 @@ function renderInspector(){
     $('inspLiveStatusText').textContent=`${definition?definition.name:t('sourceMissing')} · ${liveInputStatusText(status)}`;
   }
   const isVideo=L.type==='video'; $('inspVideoWrap').classList.toggle('open',isVideo);
-  if(isVideo){$('inspVideoLoop').checked=L.loop!==false;$('inspVideoMuted').checked=L.muted!==false;$('inspVideoVolume').value=Math.round(Number(L.volume??1)*100);}
+  if(isVideo){$('inspVideoLoop').checked=L.loop!==false;$('inspVideoMuted').checked=L.muted!==false;$('inspVideoVolume').value=Math.round(Number(L.volume??1)*100);$('inspVideoRate').value=String(normalized.playbackRate);}
+  const isPdf=L.type==='pdf'; $('inspPdfWrap').classList.toggle('open',isPdf); if(isPdf)$('inspPdfPage').value=normalized.page;
+  const isMedia=['image','video','pdf'].includes(L.type); $('inspMediaWrap').classList.toggle('open',isMedia); if(isMedia)$('inspMediaName').textContent=String(L.name||inspectorLayerTypeLabel(L));
+  $('inspTransformSection').hidden=L.type==='audio';
+  $('inspAppearanceSection').hidden=L.type==='audio';
+  $('inspFramingSection').hidden=!['image','video','pdf','window','capture'].includes(L.type);
+  $('inspSourceSection').hidden=!(isText||isColor||isLive||isMedia);
   inspBinding=false;
 }
 function inspApply(mut){
@@ -9654,29 +10093,64 @@ function inspApply(mut){
   renderInspector();
 }
 $('inspName').addEventListener('change',e=>inspApply(L=>L.name=e.target.value.trim().slice(0,160)||L.name||L.type));
+$('inspVisible').addEventListener('change',e=>inspApply(L=>L.visible=e.target.checked));
 $('inspX').addEventListener('change',e=>inspApply(L=>L.x=+e.target.value));
 $('inspY').addEventListener('change',e=>inspApply(L=>L.y=+e.target.value));
-$('inspW').addEventListener('change',e=>inspApply(L=>L.w=+e.target.value));
-$('inspH').addEventListener('change',e=>inspApply(L=>L.h=+e.target.value));
+$('inspW').addEventListener('change',e=>inspApply(L=>{const ratio=Math.max(.001,Number(L.w||100)/Math.max(.001,Number(L.h||100)));L.w=+e.target.value;if(L.lockAspect)L.h=L.w/ratio;}));
+$('inspH').addEventListener('change',e=>inspApply(L=>{const ratio=Math.max(.001,Number(L.w||100)/Math.max(.001,Number(L.h||100)));L.h=+e.target.value;if(L.lockAspect)L.w=L.h*ratio;}));
+$('inspAspectLock').addEventListener('change',e=>inspApply(L=>L.lockAspect=e.target.checked));
 $('inspOpacity').addEventListener('input',e=>inspApply(L=>L.opacity=(+e.target.value)/100));
 $('inspFit').addEventListener('change',e=>inspApply(L=>L.fit=e.target.value));
 $('inspRotation').addEventListener('change',e=>inspApply(L=>L.rotation=+e.target.value||0));
+$('inspOrigin').addEventListener('change',e=>inspApply(L=>L.transformOrigin=e.target.value));
 $('inspLocked').addEventListener('change',e=>inspApply(L=>L.locked=e.target.checked));
+$('inspFlipX').addEventListener('change',e=>inspApply(L=>L.flipX=e.target.checked));
+$('inspFlipY').addEventListener('change',e=>inspApply(L=>L.flipY=e.target.checked));
 $('inspCenter').addEventListener('click',()=>inspApply(L=>{ L.x=(100-L.w)/2; L.y=(100-L.h)/2; }));
 $('inspFull').addEventListener('click',()=>inspApply(L=>{ L.x=0; L.y=0; L.w=100; L.h=100; }));
+$('inspResetTransform').addEventListener('click',()=>inspApply(L=>{L.x=0;L.y=0;L.w=100;L.h=100;L.rotation=0;L.flipX=false;L.flipY=false;L.transformOrigin='center';}));
+$('inspAlignLeft').addEventListener('click',()=>inspApply(L=>L.x=0));
+$('inspAlignHCenter').addEventListener('click',()=>inspApply(L=>L.x=(100-L.w)/2));
+$('inspAlignRight').addEventListener('click',()=>inspApply(L=>L.x=100-L.w));
+$('inspAlignTop').addEventListener('click',()=>inspApply(L=>L.y=0));
+$('inspAlignVCenter').addEventListener('click',()=>inspApply(L=>L.y=(100-L.h)/2));
+$('inspAlignBottom').addEventListener('click',()=>inspApply(L=>L.y=100-L.h));
+$('inspObjectX').addEventListener('input',e=>inspApply(L=>L.objectPositionX=+e.target.value));
+$('inspObjectY').addEventListener('input',e=>inspApply(L=>L.objectPositionY=+e.target.value));
+[['inspCropTop','top'],['inspCropRight','right'],['inspCropBottom','bottom'],['inspCropLeft','left']].forEach(([id,side])=>$(id).addEventListener('change',e=>inspApply(L=>{L.crop={...PTCOMP.normalizeCrop(L.crop),[side]:+e.target.value};})));
+$('inspResetCrop').addEventListener('click',()=>inspApply(L=>{L.crop={top:0,right:0,bottom:0,left:0};L.objectPositionX=50;L.objectPositionY=50;}));
+$('inspBlend').addEventListener('change',e=>inspApply(L=>L.blendMode=e.target.value));
+$('inspCornerRadius').addEventListener('input',e=>inspApply(L=>L.cornerRadius=+e.target.value));
+$('inspBrightness').addEventListener('input',e=>inspApply(L=>L.brightness=(+e.target.value)/100));
+$('inspContrast').addEventListener('input',e=>inspApply(L=>L.contrast=(+e.target.value)/100));
+$('inspSaturation').addEventListener('input',e=>inspApply(L=>L.saturation=(+e.target.value)/100));
+$('inspHue').addEventListener('input',e=>inspApply(L=>L.hue=+e.target.value));
+$('inspBlur').addEventListener('input',e=>inspApply(L=>L.blur=+e.target.value));
+$('inspResetAppearance').addEventListener('click',()=>inspApply(L=>{L.opacity=1;L.blendMode='normal';L.cornerRadius=0;L.brightness=1;L.contrast=1;L.saturation=1;L.hue=0;L.blur=0;}));
 $('inspDuplicate').addEventListener('click',()=>{const L=selectedLayer();if(!L)return;const copy={...cloneState(L),id:makeId('layer'),name:(L.name||L.type||'Source')+' copy',x:Math.min(96,Number(L.x||0)+2),y:Math.min(96,Number(L.y||0)+2)};currentScene().layers.push(copy);selectedLayerId=copy.id;sceneDirty();renderInspector();});
 $('inspDelete').addEventListener('click',()=>{const sc=currentScene(),index=sc.layers.findIndex(layer=>layer.id===selectedLayerId);if(index<0)return;sc.layers.splice(index,1);selectedLayerId=null;sceneDirty();renderInspector();});
 $('inspText').addEventListener('input',e=>inspApply(L=>{ if(L.type==='text') L.text=e.target.value; }));
 $('inspColor').addEventListener('input',e=>inspApply(L=>{ if(L.type==='text') L.color=e.target.value; }));
+$('inspTextBg').addEventListener('input',e=>inspApply(L=>{if(L.type==='text'){L.bg=e.target.value;$('inspTextBgEnabled').checked=true;}}));
+$('inspTextBgEnabled').addEventListener('change',e=>inspApply(L=>{if(L.type==='text')L.bg=e.target.checked?$('inspTextBg').value:'transparent';}));
 $('inspFontSize').addEventListener('change',e=>inspApply(L=>{ if(L.type==='text') L.fontSize=+e.target.value||8; }));
+$('inspFontFamily').addEventListener('change',e=>inspApply(L=>{if(L.type==='text')L.fontFamily=e.target.value;}));
+$('inspFontWeight').addEventListener('change',e=>inspApply(L=>{if(L.type==='text')L.fontWeight=+e.target.value||700;}));
+$('inspTextAlign').addEventListener('change',e=>inspApply(L=>{if(L.type==='text')L.textAlign=e.target.value;}));
+$('inspVerticalAlign').addEventListener('change',e=>inspApply(L=>{if(L.type==='text')L.verticalAlign=e.target.value;}));
+$('inspItalic').addEventListener('change',e=>inspApply(L=>{if(L.type==='text')L.italic=e.target.checked;}));
+$('inspUnderline').addEventListener('change',e=>inspApply(L=>{if(L.type==='text')L.underline=e.target.checked;}));
 $('inspSourceColor').addEventListener('input',e=>inspApply(L=>{if(L.type==='color'){L.color=e.target.value;L.bg=e.target.value;}}));
-$('inspLiveAudio').addEventListener('change',e=>inspApply(L=>{if(L.type==='window'||L.type==='capture')L.audioEnabled=e.target.checked;}));
-$('inspLiveVolume').addEventListener('input',e=>inspApply(L=>{if(L.type==='window'||L.type==='capture')L.volume=(+e.target.value)/100;}));
+$('inspMediaReplace').addEventListener('click',()=>{const L=selectedLayer();if(!L||!['image','video','pdf'].includes(L.type))return;mediaReplaceLayerId=L.id;$('sceneMediaFile').accept=L.type==='image'?'image/*':L.type==='video'?'video/*':'application/pdf,.pdf';$('sceneMediaFile').click();});
+$('inspLiveAudio').addEventListener('change',e=>inspApply(L=>{if(L.type==='window'||L.type==='capture'||L.type==='audio')L.audioEnabled=e.target.checked;}));
+$('inspLiveVolume').addEventListener('input',e=>inspApply(L=>{if(L.type==='window'||L.type==='capture'||L.type==='audio')L.volume=(+e.target.value)/100;}));
 $('inspVideoLoop').addEventListener('change',e=>inspApply(L=>{if(L.type==='video')L.loop=e.target.checked;}));
 $('inspVideoMuted').addEventListener('change',e=>inspApply(L=>{if(L.type==='video')L.muted=e.target.checked;}));
 $('inspVideoVolume').addEventListener('input',e=>inspApply(L=>{if(L.type==='video')L.volume=(+e.target.value)/100;}));
-$('inspLiveChange').addEventListener('click',()=>{const L=selectedLayer();if(L&&(L.type==='window'||L.type==='capture'))openSourceDialog(L.id);});
-$('inspLiveRestart').addEventListener('click',()=>{const L=selectedLayer();if(L&&(L.type==='window'||L.type==='capture'))api.liveInputRestart(L.inputId);});
+$('inspVideoRate').addEventListener('change',e=>inspApply(L=>{if(L.type==='video')L.playbackRate=+e.target.value||1;}));
+$('inspPdfPage').addEventListener('change',e=>inspApply(L=>{if(L.type==='pdf')L.page=+e.target.value||1;}));
+$('inspLiveChange').addEventListener('click',()=>{const L=selectedLayer();if(L&&(L.type==='window'||L.type==='capture'||L.type==='audio'))openSourceDialog(L.id);});
+$('inspLiveRestart').addEventListener('click',()=>{const L=selectedLayer();if(L&&(L.type==='window'||L.type==='capture'||L.type==='audio'))api.liveInputRestart(L.inputId);});
 (function(){
   const box=$('preview'); if(!box) return;
   let drag=null;
@@ -9725,10 +10199,22 @@ $('inspLiveRestart').addEventListener('click',()=>{const L=selectedLayer();if(L&
       layer.x=Math.max(0, Math.min(100-drag.ow, drag.ox+dx));
       layer.y=Math.max(0, Math.min(100-drag.oh, drag.oy+dy));
     } else {
-      if(drag.handle.includes('e')) layer.w=Math.max(4,Math.min(100-drag.ox,drag.ow+dx));
-      if(drag.handle.includes('s')) layer.h=Math.max(4,Math.min(100-drag.oy,drag.oh+dy));
-      if(drag.handle.includes('w')){const right=drag.ox+drag.ow;layer.x=Math.max(0,Math.min(right-4,drag.ox+dx));layer.w=right-layer.x;}
-      if(drag.handle.includes('n')){const bottom=drag.oy+drag.oh;layer.y=Math.max(0,Math.min(bottom-4,drag.oy+dy));layer.h=bottom-layer.y;}
+      const right=drag.ox+drag.ow,bottom=drag.oy+drag.oh;
+      let nextX=drag.ox,nextY=drag.oy,nextW=drag.ow,nextH=drag.oh;
+      if(drag.handle.includes('e')) nextW=Math.max(4,Math.min(100-drag.ox,drag.ow+dx));
+      if(drag.handle.includes('s')) nextH=Math.max(4,Math.min(100-drag.oy,drag.oh+dy));
+      if(drag.handle.includes('w')){nextX=Math.max(0,Math.min(right-4,drag.ox+dx));nextW=right-nextX;}
+      if(drag.handle.includes('n')){nextY=Math.max(0,Math.min(bottom-4,drag.oy+dy));nextH=bottom-nextY;}
+      if(layer.lockAspect){
+        const ratio=Math.max(.001,drag.ow/Math.max(.001,drag.oh));
+        const widthChange=Math.abs(nextW-drag.ow)/Math.max(1,drag.ow),heightChange=Math.abs(nextH-drag.oh)/Math.max(1,drag.oh);
+        if(widthChange>=heightChange) nextH=Math.max(4,nextW/ratio); else nextW=Math.max(4,nextH*ratio);
+        nextW=Math.min(nextW,drag.handle.includes('w')?right:100-drag.ox);
+        nextH=Math.min(nextH,drag.handle.includes('n')?bottom:100-drag.oy);
+        if(drag.handle.includes('w'))nextX=right-nextW;
+        if(drag.handle.includes('n'))nextY=bottom-nextH;
+      }
+      layer.x=nextX;layer.y=nextY;layer.w=nextW;layer.h=nextH;
     }
     layer.x=Math.round(layer.x*2)/2; layer.y=Math.round(layer.y*2)/2;
     layer.w=Math.round(layer.w*2)/2; layer.h=Math.round(layer.h*2)/2;
@@ -9748,7 +10234,12 @@ $('inspLiveRestart').addEventListener('click',()=>{const L=selectedLayer();if(L&
   window.addEventListener('pointercancel',finish,true);
 })();
 document.addEventListener('keydown',e=>{
-  if(e.key==='Escape' && selectedLayerId && !e.target.closest('input,textarea,select')) selectLayer(null);
+  if(e.target.closest('input,textarea,select,[contenteditable="true"]')) return;
+  if(e.key==='Escape' && selectedLayerId){selectLayer(null);return;}
+  const layer=selectedLayer(); if(!layer||layer.locked)return;
+  const step=e.shiftKey?2:.5;
+  const moves={ArrowLeft:[-step,0],ArrowRight:[step,0],ArrowUp:[0,-step],ArrowDown:[0,step]};
+  if(moves[e.key]){e.preventDefault();const [dx,dy]=moves[e.key];inspApply(L=>{L.x=Number(L.x||0)+dx;L.y=Number(L.y||0)+dy;});}
 });
 
 // ---------- SETUP TABOVI ----------

@@ -78,7 +78,8 @@ ipcMain.handle('live-input-devices', () => {
   return {
     devices: [
       { deviceId: 'video-card-1', groupId: 'capture-card', kind: 'videoinput', label: 'UVC Capture Card' },
-      { deviceId: 'audio-card-1', groupId: 'capture-card', kind: 'audioinput', label: 'UVC Capture Audio' }
+      { deviceId: 'audio-card-1', groupId: 'capture-card', kind: 'audioinput', label: 'UVC Capture Audio' },
+      { deviceId: 'speaker-main', groupId: 'speaker', kind: 'audiooutput', label: 'Main Audio Output' }
     ],
     permissions: { camera: 'granted', microphone: 'granted', screen: 'granted' }, error: ''
   };
@@ -120,6 +121,8 @@ app.whenReady().then(async () => {
 
   const picturePath = path.join(profile, 'picture.svg');
   fs.writeFileSync(picturePath, '<svg xmlns="http://www.w3.org/2000/svg" width="640" height="360"><rect width="640" height="360" fill="#d9dde2"/><circle cx="320" cy="180" r="90" fill="#3b6d94"/></svg>');
+  const replacementPath = path.join(profile, 'replacement.svg');
+  fs.writeFileSync(replacementPath, '<svg xmlns="http://www.w3.org/2000/svg" width="640" height="360"><rect width="640" height="360" fill="#111820"/><rect x="180" y="70" width="280" height="220" rx="24" fill="#c6a25d"/></svg>');
   win.webContents.debugger.attach('1.3');
   const documentNode = await win.webContents.debugger.sendCommand('DOM.getDocument');
   const mediaNode = await win.webContents.debugger.sendCommand('DOM.querySelector', { nodeId: documentNode.root.nodeId, selector: '#sceneMediaFile' });
@@ -129,7 +132,13 @@ app.whenReady().then(async () => {
     const state = await win.webContents.executeJavaScript(`JSON.stringify({events:window.__compositorFileEvents,errors:window.__compositorFileErrors,files:document.getElementById('sceneMediaFile').files.length,layers:currentScene().layers.map(layer=>({type:layer.type,name:layer.name}))})`);
     throw new Error(`picture file input did not add a layer: ${state}`);
   }
+  const pictureLayerId = await win.webContents.executeJavaScript(`currentScene().layers.find(layer=>layer.name==='picture.svg').id`);
+  await win.webContents.executeJavaScript(`selectLayer(${JSON.stringify(pictureLayerId)});document.getElementById('sceneMediaFile').addEventListener('click',event=>event.preventDefault(),{once:true});document.getElementById('inspMediaReplace').click()`);
+  await win.webContents.debugger.sendCommand('DOM.setFileInputFiles', { files: [replacementPath], nodeId: mediaNode.nodeId });
+  if (!await waitFor(() => win.webContents.executeJavaScript(`currentScene().layers.some(layer=>layer.id===${JSON.stringify(pictureLayerId)}&&layer.name==='replacement.svg')`))) throw new Error('media replacement did not preserve the selected layer');
+  const mediaReplacement = JSON.parse(await win.webContents.executeJavaScript(`JSON.stringify((()=>{const layer=currentScene().layers.find(row=>row.id===${JSON.stringify(pictureLayerId)});return {id:layer.id,name:layer.name,type:layer.type,selected:selectedLayer().id};})())`));
   win.webContents.debugger.detach();
+  check('COMPOSITOR_MEDIA_REPLACE_PRESERVES_LAYER_OK', mediaReplacement.id === pictureLayerId && mediaReplacement.selected === pictureLayerId && mediaReplacement.name === 'replacement.svg' && mediaReplacement.type === 'image', JSON.stringify(mediaReplacement));
 
   const authored = JSON.parse(await win.webContents.executeJavaScript(`(async()=>{
     const change=(element)=>element.dispatchEvent(new Event('change',{bubbles:true}));
@@ -163,6 +172,23 @@ app.whenReady().then(async () => {
     await new Promise(resolve=>setTimeout(resolve,80));
 
     document.getElementById('btnAddSource').click();
+    document.querySelector('[data-source-kind="audio"]').click();
+    const audioStarted=Date.now(); while(Date.now()-audioStarted<2000&&document.getElementById('sourceAudioInputDevice').options[0]?.value!=='audio-card-1') await new Promise(resolve=>setTimeout(resolve,25));
+    document.getElementById('sourceAudioName').value='FOH mix';
+    document.getElementById('btnAudioAdd').click();
+    await new Promise(resolve=>setTimeout(resolve,80));
+    const audioLayer=currentScene().layers.find(layer=>layer.type==='audio');
+    let audioRow=document.querySelector('[data-audio-layer-id="'+audioLayer.id+'"]');
+    const fader=audioRow.querySelector('.audio-fader');fader.value='62';fader.dispatchEvent(new Event('input',{bubbles:true}));const volumeAfterInput=currentScene().layers.find(layer=>layer.id===audioLayer.id)?.volume;fader.dispatchEvent(new Event('change',{bubbles:true}));const volumeAfterChange=currentScene().layers.find(layer=>layer.id===audioLayer.id)?.volume;
+    audioRow=document.querySelector('[data-audio-layer-id="'+audioLayer.id+'"]');audioRow.querySelector('.audio-mixer-advanced').open=true;
+    const monitor=audioRow.querySelector('.audio-monitoring');monitor.value='monitor-only';monitor.dispatchEvent(new Event('change',{bubbles:true}));const monitoringAfterChange=currentScene().layers.find(layer=>layer.id===audioLayer.id)?.audioMonitoring;
+    const deviceReady=Date.now();while(Date.now()-deviceReady<1000&&![...document.getElementById('audioProgramDevice').options].some(option=>option.value==='speaker-main'))await new Promise(resolve=>setTimeout(resolve,20));
+    const outputDevice=document.getElementById('audioProgramDevice');outputDevice.value='speaker-main';change(outputDevice);
+    const audioRoute=document.getElementById('audioProgramRoute');audioRoute.value='primary';change(audioRoute);
+    const audioState={layer:cloneState(currentScene().layers.find(layer=>layer.id===audioLayer.id)),input:cloneState(liveInputDefinition(audioLayer.inputId)),volumeAfterInput,volumeAfterChange,monitoringAfterChange,rows:document.querySelectorAll('#audioMixerRows .audio-channel').length,meters:document.querySelectorAll('#audioMixerRows .audio-meter').length,programRoute:activeProgramAudioRouteValue(),programDevice:S.programAudioDeviceId,programStateDevice:programState.programAudioDeviceId};
+    document.getElementById('audioProgramRoute').value='off';change(document.getElementById('audioProgramRoute'));
+
+    document.getElementById('btnAddSource').click();
     document.querySelector('[data-source-kind="window"]').click();
     const windowStarted=Date.now(); while(Date.now()-windowStarted<2000&&!document.querySelector('.desktop-source-card')) await new Promise(resolve=>setTimeout(resolve,25));
     document.querySelector('.desktop-source-card').click();
@@ -177,18 +203,29 @@ app.whenReady().then(async () => {
     const scene=currentScene(); const timer=scene.layers.find(layer=>layer.type==='timer'); const color=scene.layers.find(layer=>layer.type==='color'); const capture=scene.layers.find(layer=>layer.type==='window');
     const captureElement=document.querySelector('#pvScene [data-layer-id="'+capture.id+'"]');
     const previewRect=document.getElementById('preview').getBoundingClientRect();
-    return JSON.stringify({canvas:S.canvas,previewRatio:previewRect.width/previewRect.height,types:scene.layers.map(layer=>layer.type),timerIndex:scene.layers.indexOf(timer),colorIndex:scene.layers.indexOf(color),capture:{x:capture.x,y:capture.y,w:capture.w,h:capture.h,name:capture.name},handles:captureElement?captureElement.querySelectorAll('.transform-handle').length:0,layerRows:document.querySelectorAll('#layerList .layer-row').length,liveInputs:S.liveInputs.length});
+    return JSON.stringify({canvas:S.canvas,previewRatio:previewRect.width/previewRect.height,types:scene.layers.map(layer=>layer.type),timerIndex:scene.layers.indexOf(timer),colorIndex:scene.layers.indexOf(color),capture:{x:capture.x,y:capture.y,w:capture.w,h:capture.h,name:capture.name},audioState,handles:captureElement?captureElement.querySelectorAll('.transform-handle').length:0,layerRows:document.querySelectorAll('#layerList .layer-row').length,liveInputs:S.liveInputs.length});
   })()`));
   check('COMPOSITOR_CUSTOM_CANVAS_AND_SOURCE_TYPES_OK', authored.canvas.width === 1000 && authored.canvas.height === 1000 && authored.canvas.fps === 25 && Math.abs(authored.previewRatio - 1) < 0.02 && ['color','image','text','window','capture','timer'].every(type => authored.types.includes(type)), JSON.stringify(authored));
   check('COMPOSITOR_LAYER_INSPECTOR_AND_HANDLES_OK', authored.capture.name === 'Slides capture' && authored.capture.x === 54 && authored.capture.y === 8 && authored.capture.w === 42 && authored.capture.h === 40 && authored.handles === 4 && authored.layerRows === authored.types.length, JSON.stringify(authored));
   check('COMPOSITOR_COLOR_DEFAULTS_BEHIND_TIMER_OK', authored.colorIndex === 0 && authored.timerIndex > authored.colorIndex, JSON.stringify({ colorIndex: authored.colorIndex, timerIndex: authored.timerIndex }));
+  check('COMPOSITOR_AUDIO_INPUT_AND_MIXER_OK', authored.types.includes('audio') && authored.audioState.layer.volume === 0.62 && authored.audioState.layer.audioMonitoring === 'monitor-only' && authored.audioState.input.type === 'audio' && authored.audioState.input.audioDeviceId === 'audio-card-1' && authored.audioState.rows >= 2 && authored.audioState.meters === authored.audioState.rows, JSON.stringify(authored.audioState));
+  check('COMPOSITOR_AUDIO_OUTPUT_ROUTING_OK', authored.audioState.programRoute === 'primary' && authored.audioState.programDevice === 'speaker-main' && authored.audioState.programStateDevice === 'speaker-main', JSON.stringify(authored.audioState));
+  const sourceCatalog = JSON.parse(await win.webContents.executeJavaScript(`JSON.stringify((()=>{document.getElementById('btnAddSource').click();const kinds=[...document.querySelectorAll('#sourceKindGrid [data-source-kind]')].map(button=>button.dataset.sourceKind);const groups=[...document.querySelectorAll('#sourceKindGrid .source-kind-section-title strong')].map(node=>node.textContent);closeSourceDialog();return {kinds,groups};})())`));
+  check('COMPOSITOR_ADVANCED_SOURCE_CATALOG_OK', ['image','video','pdf','color','text','window','screen','device','audio','timer'].every(kind=>sourceCatalog.kinds.includes(kind)) && sourceCatalog.groups.length === 3, JSON.stringify(sourceCatalog));
+  const advancedInspector = JSON.parse(await win.webContents.executeJavaScript(`JSON.stringify((()=>{
+    const fire=(id,value,event='change')=>{const element=document.getElementById(id);if(element.type==='checkbox')element.checked=!!value;else element.value=String(value);element.dispatchEvent(new Event(event,{bubbles:true}));};
+    fire('inspOrigin','top-left');fire('inspFlipX',true);fire('inspCropTop',8);fire('inspCropLeft',6);fire('inspObjectX',68,'input');fire('inspBlend','screen');fire('inspCornerRadius',12,'input');fire('inspBrightness',115,'input');fire('inspContrast',125,'input');fire('inspSaturation',135,'input');fire('inspHue',18,'input');
+    renderStage('pv',S,Date.now());const layer=selectedLayer();const box=document.querySelector('#pvScene [data-layer-id="'+layer.id+'"]');const content=box&&box.querySelector('.pv-scene-layer-content');
+    const result={layer:{origin:layer.transformOrigin,flipX:layer.flipX,crop:layer.crop,objectX:layer.objectPositionX,blend:layer.blendMode,radius:layer.cornerRadius,brightness:layer.brightness,contrast:layer.contrast,saturation:layer.saturation,hue:layer.hue},style:{transform:box&&box.style.transform,origin:box&&box.style.transformOrigin,blend:box&&box.style.mixBlendMode,clip:content&&content.style.clipPath,filter:content&&content.style.filter,radius:content&&content.style.borderRadius},sections:document.querySelectorAll('#inspector .inspector-section').length};
+    Object.assign(layer,{transformOrigin:'center',flipX:false,crop:{top:0,right:0,bottom:0,left:0},objectPositionX:50,blendMode:'normal',cornerRadius:0,brightness:1,contrast:1,saturation:1,hue:0});sceneDirty();selectLayer(layer.id);return result;
+  })())`));
+  check('COMPOSITOR_ADVANCED_INSPECTOR_RENDER_OK', advancedInspector.layer.origin === 'top-left' && advancedInspector.layer.flipX && advancedInspector.layer.crop.top === 8 && advancedInspector.layer.crop.left === 6 && advancedInspector.layer.objectX === 68 && advancedInspector.layer.blend === 'screen' && advancedInspector.layer.radius === 12 && advancedInspector.style.transform.includes('scale(-1, 1)') && advancedInspector.style.origin === '0% 0%' && advancedInspector.style.blend === 'screen' && advancedInspector.style.clip.includes('8%') && advancedInspector.style.filter.includes('brightness(1.15)') && advancedInspector.style.radius === '12%' && advancedInspector.sections >= 4, JSON.stringify(advancedInspector));
   const layerSelection = JSON.parse(await win.webContents.executeJavaScript(`JSON.stringify((()=>{
-    selectedLayerId=null; renderInspector(); updateLayerProgramControls();
+    document.activeElement?.blur(); selectLayer(null);
     const disabledOpacity=Number(getComputedStyle(document.getElementById('btnTakeLayer')).opacity);
     const selector=[...document.querySelectorAll('#layerList .layer-select')].find(button=>button.querySelector('.layer-name')?.textContent==='Slides capture');
     const targetId=selector?.closest('.layer-row')?.dataset.layerId||'';
-    selectLayer(null);
-    selector?.focus();
+    selector?.dispatchEvent(new FocusEvent('focus'));
     const selectedFromFocus=selectedLayer()?.id||'';
     selector?.click();
     const selectedRow=document.querySelector('#layerList .layer-row.sel');
@@ -273,15 +310,15 @@ app.whenReady().then(async () => {
     const after=selectedLayer();
     return JSON.stringify({highlighted,closed:!document.getElementById('sourceOverlay').classList.contains('open'),sameLayer:after.id===transform.id,newInput:after.inputId!==transform.inputId,geometry:after.x===transform.x&&after.y===transform.y&&after.w===transform.w&&after.h===transform.h&&after.opacity===transform.opacity&&after.rotation===transform.rotation,liveInputs:S.liveInputs.length});
   })()`));
-  check('COMPOSITOR_CHANGE_SOURCE_PRESERVES_TRANSFORM_OK', replaced.highlighted && replaced.closed && replaced.sameLayer && replaced.newInput && replaced.geometry && replaced.liveInputs === 2, JSON.stringify(replaced));
+  check('COMPOSITOR_CHANGE_SOURCE_PRESERVES_TRANSFORM_OK', replaced.highlighted && replaced.closed && replaced.sameLayer && replaced.newInput && replaced.geometry && replaced.liveInputs === 3, JSON.stringify(replaced));
 
-  const handle = JSON.parse(await win.webContents.executeJavaScript(`JSON.stringify((()=>{const el=document.querySelector('#pvScene .transform-handle.handle-se');const r=el.getBoundingClientRect();const layer=selectedLayer();return {x:Math.round(r.left+r.width/2),y:Math.round(r.top+r.height/2),w:layer.w,h:layer.h};})())`));
+  const handle = JSON.parse(await win.webContents.executeJavaScript(`JSON.stringify((()=>{const el=document.querySelector('#pvScene .transform-handle.handle-se');const r=el.getBoundingClientRect();const layer=selectedLayer();return {x:Math.round(r.left+r.width/2),y:Math.round(r.top+r.height/2),w:layer.w,h:layer.h,id:layer.id,type:layer.type,handleLayerId:el.closest('.pv-scene-layer')?.dataset.layerId||''};})())`));
   win.webContents.sendInputEvent({ type: 'mouseDown', x: handle.x, y: handle.y, button: 'left', clickCount: 1 });
   win.webContents.sendInputEvent({ type: 'mouseMove', x: handle.x + 45, y: handle.y + 28, movementX: 45, movementY: 28 });
   win.webContents.sendInputEvent({ type: 'mouseUp', x: handle.x + 45, y: handle.y + 28, button: 'left', clickCount: 1 });
   await new Promise(resolve => setTimeout(resolve, 100));
-  const resized = JSON.parse(await win.webContents.executeJavaScript(`JSON.stringify((()=>{const layer=selectedLayer();return {w:layer.w,h:layer.h,inspectorW:Number(document.getElementById('inspW').value),inspectorH:Number(document.getElementById('inspH').value)};})())`));
-  check('COMPOSITOR_POINTER_RESIZE_PERSISTS_OK', resized.w > handle.w && resized.h > handle.h && resized.inspectorW === resized.w && resized.inspectorH === resized.h, JSON.stringify({ before: handle, after: resized }));
+  const resized = JSON.parse(await win.webContents.executeJavaScript(`JSON.stringify((()=>{const layer=selectedLayer();return {w:layer.w,h:layer.h,id:layer.id,type:layer.type,inspectorW:Number(document.getElementById('inspW').value),inspectorH:Number(document.getElementById('inspH').value)};})())`));
+  check('COMPOSITOR_POINTER_RESIZE_PERSISTS_OK', resized.id === handle.id && handle.handleLayerId === handle.id && resized.w > handle.w && resized.h > handle.h && resized.inspectorW === resized.w && resized.inspectorH === resized.h, JSON.stringify({ before: handle, after: resized }));
 
   const isolation = JSON.parse(await win.webContents.executeJavaScript(`JSON.stringify((()=>{
     const direct=document.getElementById('chkDirectProgram');
@@ -298,7 +335,7 @@ app.whenReady().then(async () => {
     const deleteStayedInPreview=!currentScene().layers.some(row=>row.id===layer.id)&&activeScene(programState).layers.some(row=>row.id===layer.id);
     const programDefinitionRetained=S.liveInputs.some(input=>input.id===inputId)&&programState.liveInputs.some(input=>input.id===inputId);
     currentScene().layers.splice(index,0,layer); selectedLayerId=layer.id; sceneDirty();
-    return {previewOnly,taken,direct:S.studioDirect,directReset,deleteStayedInPreview,programDefinitionRetained,restored:currentScene().layers.some(row=>row.id===layer.id)};
+    return {previewOnly,taken,direct:S.studioDirect,directReset,deleteStayedInPreview,programDefinitionRetained,restored:currentScene().layers.some(row=>row.id===layer.id),inputId,previewInputIds:(S.liveInputs||[]).map(row=>row.id),programInputIds:(programState.liveInputs||[]).map(row=>row.id)};
   })())`));
   check('COMPOSITOR_PREVIEW_TAKE_ISOLATION_OK', isolation.previewOnly && isolation.taken && isolation.direct === false && isolation.directReset && isolation.deleteStayedInPreview && isolation.programDefinitionRetained && isolation.restored, JSON.stringify(isolation));
 
@@ -363,16 +400,16 @@ app.whenReady().then(async () => {
     liveInputs: disk.document.show.screenContent.liveInputs.length,
     layerTypes: disk.document.show.screenContent.scenes[0].layers.map(layer => layer.type)
   } : { saved: !!saved.ok, disk };
-  check('COMPOSITOR_FILE_ROUNDTRIP_OK', saved.ok && disk.ok && disk.document.show.screenContent.canvas.width === 1000 && disk.document.show.screenContent.liveInputs.length === 2 && disk.document.show.screenContent.scenes[0].layers.some(layer => layer.type === 'window') && disk.document.show.screenContent.scenes[0].layers.some(layer => layer.type === 'capture'), JSON.stringify(roundtripDetail));
+  check('COMPOSITOR_FILE_ROUNDTRIP_OK', saved.ok && disk.ok && disk.document.show.screenContent.canvas.width === 1000 && disk.document.show.screenContent.liveInputs.length === 3 && disk.document.show.screenContent.scenes[0].layers.some(layer => layer.type === 'window') && disk.document.show.screenContent.scenes[0].layers.some(layer => layer.type === 'capture') && disk.document.show.screenContent.scenes[0].layers.some(layer => layer.type === 'audio'), JSON.stringify(roundtripDetail));
 
   win.setBounds(smokeDisplay.clampToWorkArea({ width: 900, height: 600 }, target.workArea));
   if (!await waitFor(() => win.webContents.executeJavaScript('innerWidth===900 && innerHeight>=560'))) throw new Error('900x600 viewport did not settle');
   const compact = JSON.parse(await win.webContents.executeJavaScript(`JSON.stringify((()=>{
-    const root=document.getElementById('panelSources'); root.scrollTop=root.scrollHeight;
-    const panel=root.getBoundingClientRect(); const add=document.getElementById('btnAddSource').getBoundingClientRect(); const action=document.getElementById('inspDelete').getBoundingClientRect();
-    return {vw:innerWidth,vh:innerHeight,panel:{left:panel.left,right:panel.right,top:panel.top,bottom:panel.bottom},add:{left:add.left,right:add.right,top:add.top,bottom:add.bottom},action:{left:action.left,right:action.right,top:action.top,bottom:action.bottom},scrollTop:root.scrollTop,scrollable:root.scrollHeight>root.clientHeight};
+    const root=document.getElementById('panelSources'); const actionElement=document.getElementById('inspDelete'); actionElement.scrollIntoView({block:'center'});
+    const panel=root.getBoundingClientRect(); const add=document.getElementById('btnAddSource').getBoundingClientRect(); const action=actionElement.getBoundingClientRect(); const preview=document.getElementById('preview').getBoundingClientRect(); const program=document.getElementById('program').getBoundingClientRect();
+    return {vw:innerWidth,vh:innerHeight,panel:{left:panel.left,right:panel.right,top:panel.top,bottom:panel.bottom},add:{left:add.left,right:add.right,top:add.top,bottom:add.bottom},action:{left:action.left,right:action.right,top:action.top,bottom:action.bottom},preview:{left:preview.left,right:preview.right,top:preview.top,bottom:preview.bottom},program:{left:program.left,right:program.right,top:program.top,bottom:program.bottom},scrollTop:root.scrollTop,scrollable:root.scrollHeight>root.clientHeight};
   })())`));
-  check('COMPOSITOR_900X600_CONTROLS_REACHABLE_OK', compact.panel.left >= 0 && compact.panel.right <= compact.vw + 1 && compact.add.left >= 0 && compact.add.right <= compact.vw + 1 && compact.scrollable && compact.scrollTop > 0 && compact.action.left >= 0 && compact.action.right <= compact.vw + 1 && compact.action.top >= compact.panel.top && compact.action.bottom <= compact.panel.bottom + 1, JSON.stringify(compact));
+  check('COMPOSITOR_900X600_CONTROLS_REACHABLE_OK', compact.panel.left >= 0 && compact.panel.right <= compact.vw + 1 && compact.add.left >= 0 && compact.add.right <= compact.vw + 1 && compact.preview.right > compact.preview.left && compact.preview.bottom > compact.preview.top && compact.program.right > compact.program.left && compact.program.bottom > compact.program.top && compact.scrollable && compact.scrollTop > 0 && compact.action.left >= 0 && compact.action.right <= compact.vw + 1 && compact.action.top >= compact.panel.top && compact.action.bottom <= compact.panel.bottom + 1, JSON.stringify(compact));
   await win.webContents.executeJavaScript(`document.getElementById('panelSources').scrollTop=0`);
   await new Promise(resolve => setTimeout(resolve, 120));
   fs.writeFileSync(path.join(artifactDirectory, 'compositor-900x600.png'), (await win.webContents.capturePage()).toPNG());
@@ -385,7 +422,7 @@ app.whenReady().then(async () => {
   })())`));
   check('COMPOSITOR_DEMO_STARTS_PREVIEW_PROGRAM_IN_SYNC_OK', demoBaseline.visible && demoBaseline.direct === false && demoBaseline.selectedStatus === 'LIVE' && demoBaseline.statuses.length > 0 && demoBaseline.statuses.every(status=>status === 'LIVE') && demoBaseline.preview === demoBaseline.program, JSON.stringify(demoBaseline));
 
-  console.log(`COMPOSITOR_RENDERER_TESTS_OK ${checks}/22`);
+  console.log(`COMPOSITOR_RENDERER_TESTS_OK ${checks}/27`);
   win.destroy();
   fs.rmSync(profile, { recursive: true, force: true });
   app.quit();

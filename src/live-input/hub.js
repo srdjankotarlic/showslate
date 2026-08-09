@@ -63,8 +63,9 @@
   }
 
   async function deviceStream(definition) {
-    if (!definition.videoDeviceId) throw new Error('Choose a video capture device first.');
-    const video = {
+    if (definition.type === 'audio' && !definition.audioDeviceId) throw new Error('Choose an audio input first.');
+    if (definition.type !== 'audio' && !definition.videoDeviceId) throw new Error('Choose a video capture device first.');
+    const video = definition.type === 'audio' ? false : {
       deviceId: { exact: definition.videoDeviceId },
       width: { ideal: definition.width },
       height: { ideal: definition.height },
@@ -122,7 +123,7 @@
     const definition = definitions.get(id);
     if (!definition || !definition.active) return null;
     const existing = inputs.get(id);
-    if (existing && existing.stream && existing.stream.getVideoTracks().some(track => track.readyState === 'live')) return existing.stream;
+    if (existing && existing.stream && existing.stream.getTracks().some(track => track.readyState === 'live')) return existing.stream;
     closeInput(id, 'starting');
     status(id, 'starting', { name: definition.name, type: definition.type });
     try {
@@ -267,11 +268,11 @@
       }
     }
     const devices = await navigator.mediaDevices.enumerateDevices();
-    return devices.filter(device => device.kind === 'videoinput' || device.kind === 'audioinput').map(device => ({
+    return devices.filter(device => device.kind === 'videoinput' || device.kind === 'audioinput' || device.kind === 'audiooutput').map(device => ({
       deviceId: device.deviceId,
       groupId: device.groupId,
       kind: device.kind,
-      label: device.label || (device.kind === 'videoinput' ? 'Video input' : 'Audio input')
+      label: device.label || (device.kind === 'videoinput' ? 'Video input' : device.kind === 'audiooutput' ? 'Audio output' : 'Audio input')
     }));
   }
 

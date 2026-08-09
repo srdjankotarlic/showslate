@@ -6,9 +6,15 @@
   'use strict';
 
   const SCHEMA_VERSION = 1;
-  const LAYER_TYPES = new Set(['color', 'image', 'video', 'pdf', 'text', 'timer', 'window', 'capture']);
-  const LIVE_INPUT_TYPES = new Set(['window', 'device']);
+  const LAYER_TYPES = new Set(['color', 'image', 'video', 'pdf', 'text', 'timer', 'window', 'capture', 'audio']);
+  const LIVE_INPUT_TYPES = new Set(['window', 'device', 'audio']);
+  const AUDIO_MONITORING_MODES = new Set(['off', 'monitor-only', 'monitor-and-output']);
   const FITS = new Set(['cover', 'contain', 'fill']);
+  const BLEND_MODES = new Set(['normal', 'multiply', 'screen', 'overlay', 'darken', 'lighten', 'difference']);
+  const TRANSFORM_ORIGINS = new Set(['top-left', 'top-center', 'top-right', 'center-left', 'center', 'center-right', 'bottom-left', 'bottom-center', 'bottom-right']);
+  const FONT_FAMILIES = new Set(['system', 'mono', 'serif', 'display']);
+  const TEXT_ALIGNS = new Set(['left', 'center', 'right']);
+  const VERTICAL_ALIGNS = new Set(['top', 'center', 'bottom']);
   const CANVAS_PRESETS = Object.freeze([
     { id: '1080p', label: 'HD 1080p', width: 1920, height: 1080 },
     { id: '720p', label: 'HD 720p', width: 1280, height: 720 },
@@ -42,6 +48,16 @@
       ? color : fallback;
   }
 
+  function normalizeCrop(raw = {}) {
+    const source = raw && typeof raw === 'object' ? raw : {};
+    return {
+      top: finite(source.top, 0, 0, 49),
+      right: finite(source.right, 0, 0, 49),
+      bottom: finite(source.bottom, 0, 0, 49),
+      left: finite(source.left, 0, 0, 49)
+    };
+  }
+
   function normalizeCanvas(raw = {}) {
     const source = raw && typeof raw === 'object' ? raw : {};
     const width = integer(source.width, 1920, 320, 8192);
@@ -70,7 +86,7 @@
   function normalizeLiveInput(raw = {}, index = 0) {
     const source = raw && typeof raw === 'object' ? raw : {};
     const type = LIVE_INPUT_TYPES.has(source.type) ? source.type : 'device';
-    const fallbackName = type === 'window' ? `Window ${index + 1}` : `Video input ${index + 1}`;
+    const fallbackName = type === 'window' ? `Window ${index + 1}` : type === 'audio' ? `Audio input ${index + 1}` : `Video input ${index + 1}`;
     return {
       schemaVersion: SCHEMA_VERSION,
       id: id(source.id, `input-${index + 1}`),
@@ -80,9 +96,9 @@
       desktopSourceName: type === 'window' ? cleanName(source.desktopSourceName, '') : '',
       videoDeviceId: type === 'device' ? String(source.videoDeviceId || '').slice(0, 1024) : '',
       videoDeviceLabel: type === 'device' ? cleanName(source.videoDeviceLabel, '') : '',
-      audioDeviceId: type === 'device' ? String(source.audioDeviceId || '').slice(0, 1024) : '',
-      audioDeviceLabel: type === 'device' ? cleanName(source.audioDeviceLabel, '') : '',
-      withAudio: type === 'device' && source.withAudio === true && !!String(source.audioDeviceId || ''),
+      audioDeviceId: type === 'device' || type === 'audio' ? String(source.audioDeviceId || '').slice(0, 1024) : '',
+      audioDeviceLabel: type === 'device' || type === 'audio' ? cleanName(source.audioDeviceLabel, '') : '',
+      withAudio: (type === 'device' || type === 'audio') && source.withAudio !== false && !!String(source.audioDeviceId || ''),
       width: integer(source.width, 1920, 160, 7680),
       height: integer(source.height, 1080, 120, 4320),
       fps: integer(source.fps, 30, 1, 60),
@@ -111,13 +127,13 @@
   function normalizeLayer(raw = {}, index = 0) {
     const source = raw && typeof raw === 'object' ? raw : {};
     const type = layerType(source);
-    const isLive = type === 'window' || type === 'capture';
+    const isLive = type === 'window' || type === 'capture' || type === 'audio';
     const isColor = type === 'color';
     const layer = {
       ...source,
       id: id(source.id, `layer-${index + 1}`),
       type,
-      name: cleanName(source.name || source.sourceName, type === 'capture' ? 'Video input' : type === 'window' ? 'Window capture' : type[0].toUpperCase() + type.slice(1)),
+      name: cleanName(source.name || source.sourceName, type === 'capture' ? 'Video input' : type === 'audio' ? 'Audio input' : type === 'window' ? 'Window capture' : type[0].toUpperCase() + type.slice(1)),
       visible: source.visible !== false,
       locked: source.locked === true,
       x: finite(source.x, 0, -100, 200),
@@ -126,7 +142,21 @@
       h: finite(source.h, 100, 1, 300),
       rotation: finite(source.rotation, 0, -360, 360),
       opacity: finite(source.opacity, 1, 0, 1),
-      fit: FITS.has(source.fit) ? source.fit : (type === 'pdf' ? 'contain' : 'cover')
+      fit: FITS.has(source.fit) ? source.fit : (type === 'pdf' ? 'contain' : 'cover'),
+      lockAspect: source.lockAspect === true,
+      flipX: source.flipX === true,
+      flipY: source.flipY === true,
+      transformOrigin: TRANSFORM_ORIGINS.has(source.transformOrigin) ? source.transformOrigin : 'center',
+      crop: normalizeCrop(source.crop),
+      objectPositionX: finite(source.objectPositionX, 50, 0, 100),
+      objectPositionY: finite(source.objectPositionY, 50, 0, 100),
+      blendMode: BLEND_MODES.has(source.blendMode) ? source.blendMode : 'normal',
+      cornerRadius: finite(source.cornerRadius, 0, 0, 50),
+      brightness: finite(source.brightness, 1, 0, 2),
+      contrast: finite(source.contrast, 1, 0, 2),
+      saturation: finite(source.saturation, 1, 0, 3),
+      hue: finite(source.hue, 0, -180, 180),
+      blur: finite(source.blur, 0, 0, 40)
     };
     if (isColor) {
       layer.color = cleanColor(source.color || source.bg, '#20242c');
@@ -136,13 +166,51 @@
       layer.inputId = id(source.inputId || source.sourceId, '');
       layer.audioEnabled = source.audioEnabled !== false;
       layer.volume = finite(source.volume, 1, 0, 1);
+      layer.audioMonitoring = AUDIO_MONITORING_MODES.has(source.audioMonitoring) ? source.audioMonitoring : 'off';
     }
     if (type === 'video') {
       layer.loop = source.loop !== false;
       layer.muted = source.muted !== false;
       layer.volume = finite(source.volume, 1, 0, 1);
+      layer.audioMonitoring = AUDIO_MONITORING_MODES.has(source.audioMonitoring) ? source.audioMonitoring : 'off';
+      layer.playbackRate = finite(source.playbackRate, 1, 0.25, 4);
+    }
+    if (type === 'pdf') {
+      layer.page = integer(source.page, 1, 1, 999);
+    }
+    if (type === 'text') {
+      layer.text = String(source.text ?? source.name ?? '').slice(0, 4000);
+      layer.color = cleanColor(source.color, '#ffffff');
+      layer.bg = cleanColor(source.bg, 'transparent');
+      layer.fontSize = finite(source.fontSize, 8, 1, 100);
+      layer.fontFamily = FONT_FAMILIES.has(source.fontFamily) ? source.fontFamily : 'system';
+      layer.fontWeight = integer(source.fontWeight, 700, 100, 900);
+      layer.textAlign = TEXT_ALIGNS.has(source.textAlign) ? source.textAlign : 'center';
+      layer.verticalAlign = VERTICAL_ALIGNS.has(source.verticalAlign) ? source.verticalAlign : 'center';
+      layer.italic = source.italic === true;
+      layer.underline = source.underline === true;
     }
     return layer;
+  }
+
+  const ORIGIN_CSS = Object.freeze({
+    'top-left': '0% 0%', 'top-center': '50% 0%', 'top-right': '100% 0%',
+    'center-left': '0% 50%', center: '50% 50%', 'center-right': '100% 50%',
+    'bottom-left': '0% 100%', 'bottom-center': '50% 100%', 'bottom-right': '100% 100%'
+  });
+
+  function layerVisualStyle(raw = {}) {
+    const layer = normalizeLayer(raw);
+    const crop = layer.crop;
+    return {
+      transform: `rotate(${layer.rotation}deg) scale(${layer.flipX ? -1 : 1}, ${layer.flipY ? -1 : 1})`,
+      transformOrigin: ORIGIN_CSS[layer.transformOrigin] || ORIGIN_CSS.center,
+      filter: `brightness(${layer.brightness}) contrast(${layer.contrast}) saturate(${layer.saturation}) hue-rotate(${layer.hue}deg) blur(${layer.blur}px)`,
+      mixBlendMode: layer.blendMode,
+      clipPath: `inset(${crop.top}% ${crop.right}% ${crop.bottom}% ${crop.left}%)`,
+      borderRadius: `${layer.cornerRadius}%`,
+      objectPosition: `${layer.objectPositionX}% ${layer.objectPositionY}%`
+    };
   }
 
   function normalizeScene(raw = {}, index = 0) {
@@ -160,7 +228,7 @@
     (Array.isArray(scenes) ? scenes : []).forEach(scene => {
       (Array.isArray(scene && scene.layers) ? scene.layers : []).forEach(layer => {
         const type = layerType(layer);
-        if ((type === 'window' || type === 'capture') && (!visibleOnly || layer.visible !== false) && layer.inputId) ids.add(String(layer.inputId));
+        if ((type === 'window' || type === 'capture' || type === 'audio') && (!visibleOnly || layer.visible !== false) && layer.inputId) ids.add(String(layer.inputId));
       });
     });
     return [...ids];
@@ -179,7 +247,7 @@
     const scene = scenes.find(row => row && row.id === state.activeSceneId) || scenes[0];
     return (scene && Array.isArray(scene.layers) ? scene.layers : []).filter(layer => {
       const type = layerType(layer);
-      return layer && layer.visible !== false && (type === 'window' || type === 'capture') && layer.inputId;
+      return layer && layer.visible !== false && (type === 'window' || type === 'capture' || type === 'audio') && layer.inputId;
     }).map(normalizeLayer);
   }
 
@@ -197,6 +265,9 @@
     SCHEMA_VERSION,
     LAYER_TYPES: [...LAYER_TYPES],
     LIVE_INPUT_TYPES: [...LIVE_INPUT_TYPES],
+    AUDIO_MONITORING_MODES: [...AUDIO_MONITORING_MODES],
+    BLEND_MODES: [...BLEND_MODES],
+    TRANSFORM_ORIGINS: [...TRANSFORM_ORIGINS],
     CANVAS_PRESETS,
     normalizeCanvas,
     canvasPreset,
@@ -204,6 +275,8 @@
     normalizeLiveInput,
     normalizeLiveInputs,
     normalizeLayer,
+    normalizeCrop,
+    layerVisualStyle,
     normalizeScene,
     referencedLiveInputIds,
     activeLiveInputIds,

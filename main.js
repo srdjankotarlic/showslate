@@ -583,7 +583,12 @@ function outputPayload(state, routeId, role, revision = stateRevision, routeConf
   const payload = {
     ...(state || {}),
     transparent: normalizedRole === 'stream' ? true : !!(state && state.transparent),
-    _outputRoute: { id: String(routeId || 'primary'), role: normalizedRole, liveAudio: routeConfig.liveAudio === true },
+    _outputRoute: {
+      id: String(routeId || 'primary'),
+      role: normalizedRole,
+      liveAudio: routeConfig.liveAudio === true,
+      audioOutputDeviceId: String(routeConfig.audioOutputDeviceId || state && state.programAudioDeviceId || '')
+    },
     _dispatch: {
       revision: Math.max(0, Number(revision) || 0),
       routeId: String(routeId || 'primary'),
@@ -597,7 +602,10 @@ function dispatchPrimaryState(state) {
   if (!outputWin || outputWin.isDestroyed()) return false;
   primaryDelivery.lastDispatchRevision = stateRevision;
   primaryDelivery.lastDispatchAt = Date.now();
-  outputWin.webContents.send('state', outputPayload(state, 'primary', 'audience', stateRevision, { liveAudio: state && state.primaryLiveAudio === true }));
+  outputWin.webContents.send('state', outputPayload(state, 'primary', 'audience', stateRevision, {
+    liveAudio: state && state.primaryLiveAudio === true,
+    audioOutputDeviceId: state && state.programAudioDeviceId
+  }));
   return true;
 }
 function dispatchAuxState(rec, state) {

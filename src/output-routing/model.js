@@ -38,6 +38,7 @@ function normalizeConfig(config, index = 0, context = {}) {
     role: conference.normalizeOutputRole(source.role),
     enabled: source.enabled !== false,
     liveAudio: source.liveAudio === true,
+    audioOutputDeviceId: String(source.audioOutputDeviceId || '').slice(0, 1024),
     displayId,
     displayLabel: String(source.displayLabel || ''),
     displayWidth: Math.max(0, parseInt(source.displayWidth, 10) || 0),
