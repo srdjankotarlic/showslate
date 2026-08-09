@@ -28,7 +28,7 @@ Status audited against the `0.11.0-beta.1` release candidate on 2026-08-08. `PRO
 
 ## Current decision
 
-`0.11.0-beta.1` is an honest public-beta candidate for **ShowSlate Conference Desk**. It is not ready to be called stable, signed or production-certified until the manual live-source gate above is closed.
+`0.11.0-beta.1` is an honest public-beta candidate for **ShowSlate Live Compositor**. It is not ready to be called stable, signed or production-certified until the manual live-source gate above is closed.
 
 The strongest proven workflow is a local-first, single-room conference desk on the tested Apple Silicon Mac: import a schedule and media folder, compose Canvas scenes, assign output roles, run preflight, select NEXT and press GO. The product can now place local live sources inside scenes, but deliberately does not replace camera switching, multibus audio mixing, streaming/encoding, NDI or a multi-room cloud platform.
 

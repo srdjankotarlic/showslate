@@ -1,4 +1,4 @@
-# ShowSlate Conference Desk architecture
+# ShowSlate Live Compositor architecture
 
 Current public product architecture.
 

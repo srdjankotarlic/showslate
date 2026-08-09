@@ -63,6 +63,7 @@ ipcMain.handle('lt-package-import', () => ({ ok: false, canceled: true }));
 ipcMain.handle('identify-displays', () => 1);
 ipcMain.handle('qr', () => '');
 ipcMain.handle('share-info', () => ({}));
+ipcMain.handle('live-input-statuses', () => []);
 
 app.whenReady().then(async () => {
   repository = new ShowRepository({ userDataDir: profile, appMetadata: { commit: 'show-setup-test' } });

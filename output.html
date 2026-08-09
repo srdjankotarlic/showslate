@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'unsafe-inline'; connect-src 'self'; img-src 'self' http://127.0.0.1:* data: blob:; media-src 'self' http://127.0.0.1:* data: blob:; frame-src 'self' http://127.0.0.1:* data: blob:;">
-<title>ShowSlate Conference Desk — Output</title>
+<title>ShowSlate — Program Output</title>
 <style>
   *{box-sizing:border-box; user-select:none; margin:0;}
   html,body{height:100%; overflow:hidden;
@@ -22,7 +22,7 @@
   .scene-layer.fit-cover img,.scene-layer.fit-cover video{object-fit:cover;}
   .scene-layer.fit-fill img,.scene-layer.fit-fill video{object-fit:fill;}
   .scene-text{width:100%; height:100%; display:flex; align-items:center; justify-content:center; text-align:center;
-    padding:4vh; font-weight:780; line-height:1.05; white-space:pre-wrap; word-break:break-word;}
+    padding:1.5vmin; font-weight:780; line-height:1.05; white-space:pre-wrap; word-break:break-word;}
   .live-input-placeholder{position:absolute;inset:0;display:grid;place-items:center;padding:3vh;background:#090b0e;color:#8c949f;font-size:2vh;font-weight:700;letter-spacing:.12em;text-align:center;text-transform:uppercase;}
 
   .scene-frame{position:absolute; inset:0;}
@@ -165,7 +165,7 @@
   <div id="ltCanvas" aria-hidden="true"></div>
   <div id="roleView" aria-live="polite">
     <div class="role-head">
-      <div><div class="role-kicker" id="roleRoomLabel">ROOM</div><div class="role-show" id="roleShowName">ShowSlate Conference Desk</div></div>
+      <div><div class="role-kicker" id="roleRoomLabel">ROOM</div><div class="role-show" id="roleShowName">ShowSlate</div></div>
       <div class="role-clock" id="roleClock">--:--</div>
     </div>
     <div class="role-current"><div class="role-kicker" id="roleCurrentLabel">NOW</div><strong id="roleCurrent">Waiting for first cue</strong><span id="roleCurrentMeta"></span></div>
@@ -279,7 +279,7 @@ function renderRoleView(){
   const next=nextIndex<cues.length?cues[nextIndex]:null;
   const details=S.show&&S.show.details||{};
   $('roleRoomLabel').textContent=details.room||details.venue||roleText('room');
-  $('roleShowName').textContent=(S.show&&S.show.name)||'ShowSlate Conference Desk';
+  $('roleShowName').textContent=(S.show&&S.show.name)||'ShowSlate';
   $('roleCurrentLabel').textContent=roleText('now');
   $('roleNextLabel').textContent=roleText('next');
   $('roleCurrent').textContent=current&&current.name||roleText('waiting');

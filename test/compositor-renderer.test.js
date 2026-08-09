@@ -106,8 +106,9 @@ app.whenReady().then(async () => {
   const opened = JSON.parse(await win.webContents.executeJavaScript(`JSON.stringify((()=>{
     const button=document.getElementById('btnCompositor');
     const visible=button.getClientRects().length>0;
-    button.click();
-    return {visible,open:document.body.classList.contains('compositor-open'),advanced:document.body.classList.contains('adv'),previewVisible:document.getElementById('preview').getClientRects().length>0,panelVisible:document.getElementById('panelSources').getClientRects().length>0};
+    const defaultOpen=document.body.classList.contains('compositor-open');
+    if(!defaultOpen) button.click();
+    return {visible,defaultOpen,open:document.body.classList.contains('compositor-open'),advanced:document.body.classList.contains('adv'),previewVisible:document.getElementById('preview').getClientRects().length>0,panelVisible:document.getElementById('panelSources').getClientRects().length>0};
   })())`));
   check('COMPOSITOR_VISIBLE_FROM_NORMAL_UI_OK', opened.visible && opened.open && opened.advanced && opened.previewVisible && opened.panelVisible, JSON.stringify(opened));
   const sceneControls = JSON.parse(await win.webContents.executeJavaScript(`JSON.stringify((()=>{const ids=['canvasSceneSelect','btnCanvasSceneAdd','btnCanvasSceneDuplicate','btnCanvasSceneDelete'];return {visible:ids.every(id=>document.getElementById(id).getClientRects().length>0),options:document.getElementById('canvasSceneSelect').options.length,duplicateTitle:document.getElementById('btnCanvasSceneDuplicate').title};})())`));
@@ -142,6 +143,10 @@ app.whenReady().then(async () => {
     document.querySelector('[data-source-kind="text"]').click();
     const modalStarted=Date.now(); while(Date.now()-modalStarted<1000&&!document.getElementById('modalOverlay').classList.contains('open')) await new Promise(resolve=>setTimeout(resolve,20));
     document.getElementById('modalInput').value='Guest camera'; document.getElementById('modalOk').click();
+    await new Promise(resolve=>setTimeout(resolve,40));
+
+    document.getElementById('btnAddSource').click();
+    document.querySelector('[data-source-kind="timer"]').click();
     await new Promise(resolve=>setTimeout(resolve,40));
 
     document.getElementById('btnAddSource').click();

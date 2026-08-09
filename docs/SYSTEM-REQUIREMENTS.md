@@ -2,7 +2,7 @@
 
 ## Release status
 
-ShowSlate Conference Desk `0.11.0-beta.1` targets Apple Silicon Macs and Windows x64. Windows packages are produced in CI but still need broader real-hardware feedback.
+ShowSlate Live Compositor `0.11.0-beta.1` targets Apple Silicon Macs and Windows x64. Windows packages are produced in CI but still need broader real-hardware feedback.
 
 ## macOS release candidate
 

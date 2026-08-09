@@ -1,6 +1,6 @@
 # Conference Desk Workflow
 
-ShowSlate Conference Desk coordinates one conference room from one local operator workspace. The normal path is:
+The ShowSlate **Conference Desk** workflow coordinates one conference room from one local operator workspace. The normal path is:
 
 `show folder -> setup wizard -> output roles -> preflight -> Live Mode -> GO`
 

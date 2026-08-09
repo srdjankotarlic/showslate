@@ -17,9 +17,14 @@ All notable changes to ShowSlate are documented here.
 
 ### Changed
 
+- Reframed the global product identity as **ShowSlate Live Compositor**; Conference Desk remains an included room workflow instead of the application-wide identity.
+- New installations open directly into the Composer with Preview, Program, scenes, layers and the inspector visible; timing controls remain available in a compact operator strip.
+- Replaced the timer-like application icon with a restrained layered-canvas mark and a single Program tally accent.
+- Updated the website, README, release documentation and primary product image around the compositor workflow.
 - Canvas media now uses the same 200 MB per-file safety limit as show-folder assets.
 - New output routes default to the active Canvas dimensions.
 - Preview and Program monitors now follow square, vertical and custom Canvas aspect ratios reliably at every supported controller size.
+- Preview and Program text-layer padding now scales with the rendered canvas so narrow text layers remain visually consistent.
 - Live-input smoke waits for actual media-time progression instead of relying on a fixed delay.
 
 ### Fixed

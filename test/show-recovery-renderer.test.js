@@ -55,6 +55,7 @@ ipcMain.handle('show-storage-recover', (event, choice) => repository.resolveReco
 ipcMain.handle('identify-displays', () => 0);
 ipcMain.handle('qr', () => '');
 ipcMain.handle('share-info', () => ({}));
+ipcMain.handle('live-input-statuses', () => []);
 
 app.whenReady().then(async () => {
   const clean = new ShowRepository({ userDataDir: profile, appMetadata: { commit: 'baseline' } });

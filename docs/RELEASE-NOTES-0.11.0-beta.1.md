@@ -1,6 +1,6 @@
-# ShowSlate Conference Desk 0.11.0 Beta 1
+# ShowSlate Live Compositor 0.11.0 Beta 1
 
-This beta adds a local scene compositor to the existing conference-room workflow. It keeps the previous rundown, timer, lower-third, GO transaction and role-based outputs, while allowing an operator to prepare layered visual scenes before taking them to Program.
+This beta establishes ShowSlate as a local-first live compositor. New installations open with Composer, Preview and Program ready for scene work, while the previous rundown, timer, lower-third, GO transaction and role-based Conference Desk workflow remain available when a production needs them.
 
 ## Download
 
@@ -13,10 +13,11 @@ The [portable Windows EXE](https://github.com/srdjankotarlic/showslate/releases/
 
 GitHub's automatic **Source code** ZIP and TAR.GZ files are developer archives and will not install ShowSlate. Download one of the named packages above.
 
-## New Canvas workflow
+## New Composer workflow
 
+- Start in a Composer-first workspace with Preview, Program, scenes, layers and the inspector visible together.
 - Choose a 1080p, 720p, square, vertical, UHD or custom Canvas resolution and frame rate.
-- Create, duplicate, select and delete reusable scenes from the Canvas header.
+- Create, duplicate, select and delete reusable scenes from the Composer header.
 - Stack pictures, local video, PDF pages, colors, text and the ShowSlate timer as ordered layers.
 - Add an application window, entire display, camera or UVC capture card as a live layer.
 - Select an optional audio input for a capture device.
@@ -24,6 +25,8 @@ GitHub's automatic **Source code** ZIP and TAR.GZ files are developer archives a
 - Drag and resize layers in Preview or enter exact position, size, opacity, rotation and fit in the inspector.
 - Replace a window or device without losing its layer transform.
 - Prepare privately in Preview, then use TAKE to send the complete scene to Program.
+
+The application now uses a layered-canvas icon and a neutral compositor interface. Timing controls remain in a compact strip instead of defining the entire workspace.
 
 ## Output and audio safety
 

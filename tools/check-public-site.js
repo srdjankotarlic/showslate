@@ -26,7 +26,7 @@ const requiredSnippets = [
   macInstallerUrl,
   windowsInstallerUrl,
   'https://srdjankotarlic.github.io/protimer/',
-  'ShowSlate Conference Desk',
+  'ShowSlate Live Compositor',
   'Stream Graphics',
   'Door Agenda',
   'Custom Canvas',

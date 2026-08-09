@@ -1,4 +1,4 @@
-# ShowSlate Conference Desk Public Beta Known Limitations
+# ShowSlate Live Compositor Public Beta Known Limitations
 
 - The public Mac beta has an ad-hoc bundle signature and is not Apple Developer ID signed or notarized. macOS can require explicit approval in Privacy & Security on first launch.
 - The Mac beta is Apple Silicon only. Intel Mac packages are not currently published.

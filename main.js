@@ -664,7 +664,7 @@ function pushOutputState() {
 function createControlWindow() {
   controlWin = new BrowserWindow({
     width: 1280, height: 800, minWidth: 900, minHeight: 600,
-    title: 'ShowSlate Conference Desk — Control', backgroundColor: '#0b0d11',
+    title: 'ShowSlate — Live Compositor', backgroundColor: '#0b0d11',
     webPreferences: { preload: path.join(__dirname, 'preload.js'), contextIsolation: true, nodeIntegration: false, backgroundThrottling: false }
   });
   controlWin.loadFile('controller.html');
@@ -825,7 +825,7 @@ function createAuxOutputWindow(cfg, target) {
   const win = new BrowserWindow({
     x: target.bounds.x, y: target.bounds.y,
     width: normalized.width || 1000, height: normalized.height || 1000, minWidth: 80, minHeight: 60, show: false,
-    title: `ShowSlate Conference Desk — ${normalized.name}`,
+    title: `ShowSlate — ${normalized.name}`,
     backgroundColor: transparent ? '#00000000' : '#000000',
     transparent,
     frame: !frameless,
@@ -951,7 +951,7 @@ function createOutputWindow(displayId) {
   const win = new BrowserWindow({
     ...smokeXY,
     width: 900, height: 506, minWidth: 80, minHeight: 60, show: false,
-    title: 'ShowSlate Conference Desk — Output',
+    title: 'ShowSlate — Program Output',
     backgroundColor: transparent ? '#00000000' : '#000000',
     transparent: transparent,
     frame: !frameless,

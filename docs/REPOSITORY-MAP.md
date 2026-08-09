@@ -1,4 +1,4 @@
-# ShowSlate Conference Desk repository map
+# ShowSlate Live Compositor repository map
 
 Current public repository map. Line counts are approximate and should be checked with `wc -l` before line-sensitive work.
 

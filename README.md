@@ -1,11 +1,11 @@
 <p align="center">
-  <img src="build/icon.png" width="112" alt="ShowSlate Conference Desk icon">
+  <img src="build/icon.png" width="112" alt="ShowSlate Live Compositor icon">
 </p>
 
-<h1 align="center">ShowSlate Conference Desk</h1>
+<h1 align="center">ShowSlate</h1>
 
 <p align="center">
-  Offline conference room control and live scene composition for rundowns, speaker timing, media, lower thirds and every room display.
+  A local-first live compositor for layered scenes, Preview/Program switching, show control and multiple display outputs.
 </p>
 
 <p align="center">
@@ -26,13 +26,21 @@
   <a href="docs/USER-GUIDE.md"><strong>User guide</strong></a>
 </p>
 
-![ShowSlate Conference Desk operator workspace](docs/images/conference-desk-workspace.png)
+![ShowSlate Live Compositor operator workspace](docs/images/live-compositor-workspace.png)
 
-ShowSlate Conference Desk is built for a single conference room operated from one Mac or Windows PC. Import a schedule and its media, compose reusable visual scenes, assign explicit output roles, run preflight, then use one **GO** or **TAKE** action to update every active destination from the same Program state.
+ShowSlate builds a visual Program from reusable layered scenes on one Mac or Windows PC. Combine pictures, video, PDF pages, colors, text, a timer, application windows, displays, cameras and UVC capture devices; prepare the result in **Preview**, use **TAKE** to send it to **Program**, then route Program to one or more local displays.
 
-It is useful for conferences, corporate events, education, community venues, houses of worship and small AV teams that currently synchronize a spreadsheet, timer, slide folder and speaker graphics by hand.
+The included **Conference Desk** workflow adds a rundown, LIVE/NEXT/GO, speaker timing, cue-driven lower thirds, show-folder import and role-based room displays. It is intended for conferences, corporate events, education, community venues, houses of worship and small AV teams that need more structure than a media player but less complexity than a broadcast switcher.
 
-> Need only a large countdown, OBS overlay, phone remote and simple rundown? Use the smaller **[ProTimer](https://github.com/srdjankotarlic/protimer)**. Choose ShowSlate Conference Desk when the room needs a cue-driven workflow and several purpose-built outputs.
+> Need only a large countdown, OBS overlay, phone remote and simple rundown? Use the smaller **[ProTimer](https://github.com/srdjankotarlic/protimer)**. Choose ShowSlate when you need layered scenes, Preview/Program switching, live inputs or several controlled outputs.
+
+## Live compositor workflow
+
+1. Open **Composer**, choose the Canvas resolution and create a scene.
+2. Add and arrange media, color, text, timing or a local live input as ordered layers.
+3. Prepare the scene in Preview, verify it, then use **TAKE** or **Cut** to send it to Program.
+4. Open **Outputs**, assign each destination to an explicit display and choose fullscreen, window, exact pixel size or grid placement.
+5. Enable Program audio on at most one local output when a video or capture source needs sound.
 
 ## The room workflow
 
@@ -56,9 +64,9 @@ Selecting a row prepares NEXT and never changes LIVE. GO creates one transaction
 
 Each role can be fullscreen, windowed, an exact pixel size or a grid region. ShowSlate does not silently move a route to another monitor when a display disappears.
 
-## Canvas and live sources
+## Composer and live sources
 
-Open **Canvas** to build the visual Program as an ordered stack of layers. A scene can combine:
+Open **Composer** to build the visual Program as an ordered stack of layers. A scene can combine:
 
 - pictures, local video, PDF pages and solid colors;
 - text and the live ShowSlate timer;
@@ -111,7 +119,7 @@ Supported folder media includes PNG, JPEG, WebP, GIF, SVG, MP4, WebM, MOV, M4V a
 - Rundown with NEXT, LIVE, GO, planned times, actual timing and post-show CSV reports.
 - Countdown, stopwatch and clock with warning colors, overtime, chimes and speaker messages.
 - Screen content for images, video, PDF pages, text, logos, timer and blank states.
-- Custom-resolution Canvas with reusable scenes, ordered layers, Preview/Program switching and drag/resize editing.
+- Custom-resolution Composer with reusable scenes, ordered layers, Preview/Program switching and drag/resize editing.
 - Window/display capture and camera/UVC capture-card layers with optional local Program audio.
 - Lower Third Studio with cue-driven dynamic fields, shapes, logos, images and muted video.
 - Explicit multi-display routing with render acknowledgements and unavailable-display blocking.
@@ -121,7 +129,7 @@ Supported folder media includes PNG, JPEG, WebP, GIF, SVG, MP4, WebM, MOV, M4V a
 
 ## Deliberate scope
 
-ShowSlate can arrange live and media sources for room displays, but it is not a streaming encoder, multibus audio mixer, NDI router, PTZ controller or multi-room cloud platform. Keep OBS, vMix or dedicated production hardware where recording, streaming, broadcast audio or advanced switching is required. The product remains focused on making one conference room easier and safer to operate.
+ShowSlate can arrange live and media sources for local displays, but it is not a streaming encoder, multibus audio mixer, NDI router, PTZ controller or multi-room cloud platform. Keep OBS, vMix or dedicated production hardware where recording, streaming, broadcast audio or advanced switching is required. The product remains focused on dependable visual composition and show control for one operator and a small set of local destinations.
 
 External OBS/vMix alpha behavior is not certified in this beta. Test the exact show computer, displays, network, media and capture path off-air before every event. Show-critical productions still need an independent fallback timer and rundown.
 

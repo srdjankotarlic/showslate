@@ -1,4 +1,4 @@
-# Conference Desk public beta plan
+# ShowSlate Live Compositor public beta plan
 
 The immediate objective is not a large download number. It is to learn whether a real single-room operator can prepare, preflight and run a conference without manually synchronizing a spreadsheet, timer, media folder and speaker graphics.
 
@@ -38,7 +38,7 @@ Ask for app version, OS, CPU, display arrangement and exact reproduction steps. 
 
 ### Suggested post
 
-I built ShowSlate Conference Desk for one-room conference setups that currently use a spreadsheet, speaker timer, media folder and separate speaker-name graphics.
+I built ShowSlate as a local live compositor for small productions that need layered media and live inputs, Preview/Program switching and controlled display outputs. It also includes a Conference Desk workflow for rundowns, speaker timing and cue-driven graphics.
 
 Import a CSV/TSV and its media, assign Audience/Confidence/Timer/Stream/Door outputs, run preflight, then use one GO to update the live cue, timer, linked content and lower third.
 
@@ -49,7 +49,7 @@ I am looking for room operators willing to try the built-in demo off-air and tel
 
 Use the current social preview with the post:
 
-![ShowSlate Conference Desk preview](../site/assets/social-preview.png)
+![ShowSlate Live Compositor preview](../site/assets/social-preview.png)
 
 ## Feedback and metrics
 

@@ -1,6 +1,6 @@
-# ShowSlate Conference Desk User Guide
+# ShowSlate Live Compositor User Guide
 
-ShowSlate Conference Desk is an offline-first control application for a single conference room. It keeps the rundown, speaker timer, linked content, lower thirds and role-based outputs on the same LIVE cue.
+ShowSlate is a local-first live compositor and show-control application. Its Composer builds layered scenes for Preview and Program; the included Conference Desk workflow keeps a rundown, speaker timing, linked content, lower thirds and role-based outputs on the same LIVE cue.
 
 ## Quick start
 
@@ -80,7 +80,7 @@ The Live strip always shows LIVE and NEXT together. **NEXT ROW** advances strict
 
 Select **Canvas** in the visible header to open the scene compositor. This workspace stays available at narrow window sizes and keeps the scene selector, scene actions, Add Source, layer list and inspector reachable by scrolling.
 
-1. Select an existing scene or create, duplicate or delete one from the Canvas header.
+1. Open **Composer**, then select an existing scene or create, duplicate or delete one from its header.
 2. Choose a standard preset or enter a custom width, height and frame rate.
 3. Select **Add Source** and add a picture/video/PDF, solid color, text, timer, application window/display or video capture device.
 4. For a camera or UVC capture card, choose **Allow camera** when access is first needed. Choose **Allow audio** separately only when that source should carry sound, then select the devices, resolution and frame rate.

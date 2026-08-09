@@ -55,6 +55,7 @@ ipcMain.handle('lt-package-import', () => ({ ok: false, canceled: true }));
 ipcMain.handle('identify-displays', () => 1);
 ipcMain.handle('qr', () => '');
 ipcMain.handle('share-info', () => ({}));
+ipcMain.handle('live-input-statuses', () => []);
 
 app.whenReady().then(async () => {
   target = smokeDisplay.resolveTargetDisplay(screen, { root }).display;

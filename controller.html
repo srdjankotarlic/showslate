@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' http://127.0.0.1:* data: blob:; media-src 'self' http://127.0.0.1:* data: blob:; frame-src 'self' http://127.0.0.1:* data: blob:">
-<title>ShowSlate Conference Desk — Control</title>
+<title>ShowSlate — Live Compositor</title>
 <link rel="stylesheet" href="styles/operator-shell.css">
 <style>
   :root{
@@ -845,7 +845,7 @@
   .pv-scene-layer.fit-contain img,.pv-scene-layer.fit-contain video,.pv-scene-layer.fit-contain iframe{object-fit:contain;}
   .pv-scene-layer.fit-fill img,.pv-scene-layer.fit-fill video{object-fit:fill;}
   .pv-scene-text{width:100%; height:100%; display:flex; align-items:center; justify-content:center; text-align:center;
-    padding:14px; color:#fff; font-weight:800; line-height:1.05; white-space:pre-wrap; word-break:break-word;}
+    padding:6px; color:#fff; font-weight:800; line-height:1.05; white-space:pre-wrap; word-break:break-word;}
   .pv-stage,.pv-lower-third,.pv-msg,.pv-prog,.pv-blackout{z-index:2;}
   .pv-blackout{position:absolute;}
 
@@ -3266,7 +3266,7 @@
 <div id="app-shell" class="mode-standard shell-layout">
 
 <div class="topbar app-header">
-  <div class="brand"><img class="brand-mark" src="build/icon.png" alt=""><span>ShowSlate</span><span class="probadge">CONFERENCE DESK</span></div>
+  <div class="brand"><img class="brand-mark" src="build/icon.png" alt=""><span>ShowSlate</span><span class="probadge">LIVE COMPOSITOR</span></div>
   <button id="btnRundownDrawer" class="ghost tb-drawerbtn sidebar-toggle" type="button"
     aria-label="Toggle navigation sidebar" aria-controls="primarySidebar" aria-expanded="true"
     data-i18n-title="sidebarToggle" title="Show or hide navigation">
@@ -3283,8 +3283,10 @@
     </svg>
     <span class="tb-badge" id="msgBadge"></span>
   </button>
-  <button id="btnSettingsDrawer" class="ghost tb-drawerbtn" aria-label="Podešavanja" data-i18n="settingsBtn" title="Podešavanja">Podešavanja</button>
-  <button id="btnCompositor" class="ghost tb-drawerbtn compositor-button" type="button" aria-controls="panelSources" aria-expanded="false" data-i18n="compositorButton">Canvas</button>
+  <div class="workspace-nav" role="group" aria-label="Workspace">
+    <button id="btnCompositor" class="ghost tb-drawerbtn compositor-button" type="button" aria-controls="panelSources" aria-expanded="false" data-i18n="compositorButton">Composer</button>
+    <button id="btnSettingsDrawer" class="ghost tb-drawerbtn" aria-label="Podešavanja" data-i18n="settingsBtn" title="Podešavanja">Podešavanja</button>
+  </div>
   <div class="legacy-output-picker" aria-hidden="true">
     <span class="lbl tb-outlabel" data-i18n="outLabel">Izlaz na</span>
     <span data-i18n="sendScreen">Pošalji na ekran</span>
@@ -3454,31 +3456,33 @@
       </div>
     </div>
 
-    <div class="transport">
-      <button id="btnStart" class="primary" data-testid="start-pause-button">START</button>
-      <button id="btnReset">RESET</button>
-      <div class="adjust">
-        <button data-adj="-300">−5m</button>
-        <button data-adj="-60">−1m</button>
-        <button data-adj="-10">−10s</button>
-        <button data-adj="10">+10s</button>
-        <button data-adj="60">+1m</button>
-        <button data-adj="300">+5m</button>
+    <div class="show-command-strip" data-testid="show-command-strip">
+      <div class="transport">
+        <button id="btnStart" class="primary" data-testid="start-pause-button">START</button>
+        <button id="btnReset">RESET</button>
+        <div class="adjust">
+          <button data-adj="-300">−5m</button>
+          <button data-adj="-60">−1m</button>
+          <button data-adj="-10">−10s</button>
+          <button data-adj="10">+10s</button>
+          <button data-adj="60">+1m</button>
+          <button data-adj="300">+5m</button>
+        </div>
+        <button id="btnBlackout">BLACKOUT</button>
       </div>
-      <button id="btnBlackout">BLACKOUT</button>
-    </div>
 
-    <div class="golane">
-      <div class="liveinfo" id="liveInfo">
-        <span class="li-chip li-live" data-i18n="liveLabel">U PROGRAMU</span>
-        <span class="li-name" id="liName" data-testid="live-cue">—</span>
-        <span class="li-sep">·</span>
-        <span class="li-chip li-next" data-i18n="badgeNext">SLEDI</span>
-        <span class="li-name li-dim" id="liNext" data-testid="next-cue">—</span>
+      <div class="golane">
+        <div class="liveinfo" id="liveInfo">
+          <span class="li-chip li-live" data-i18n="liveLabel">U PROGRAMU</span>
+          <span class="li-name" id="liName" data-testid="live-cue">—</span>
+          <span class="li-sep">·</span>
+          <span class="li-chip li-next" data-i18n="badgeNext">SLEDI</span>
+          <span class="li-name li-dim" id="liNext" data-testid="next-cue">—</span>
+        </div>
+        <button id="btnGo" class="primary" style="font-weight:800" data-testid="go-next-button" data-i18n-html="goNext">GO SLEDEĆI &nbsp;(N)</button>
+        <button id="btnGoNext" class="secondary-next-row" data-i18n="goNextOnly" data-i18n-title="goNextOnlyTitle" title="Ide na sledeći red u rundown-u, bez obzira na izabrani red.">SLEDEĆI RED</button>
+        <label class="chk locklive" data-testid="lock-live" data-i18n-title="lockTitle" title="Štiti živ program: GO, RESET i preskakanje traže otključavanje; poruke i ±vreme rade"><input type="checkbox" id="chkLock"> <span data-i18n="lockLive">Zaključaj program</span></label>
       </div>
-      <button id="btnGo" class="primary" style="font-weight:800" data-testid="go-next-button" data-i18n-html="goNext">GO SLEDEĆI &nbsp;(N)</button>
-      <button id="btnGoNext" class="secondary-next-row" data-i18n="goNextOnly" data-i18n-title="goNextOnlyTitle" title="Ide na sledeći red u rundown-u, bez obzira na izabrani red.">SLEDEĆI RED</button>
-      <label class="chk locklive" data-testid="lock-live" data-i18n-title="lockTitle" title="Štiti živ program: GO, RESET i preskakanje traže otključavanje; poruke i ±vreme rade"><input type="checkbox" id="chkLock"> <span data-i18n="lockLive">Zaključaj program</span></label>
     </div>
 
     <!-- compact operater: poruka govorniku inline (samo u compact modu) -->
@@ -3534,7 +3538,7 @@
     <div class="setupwrap" id="setupWrap">
     <div class="setupwrap-head"><span data-i18n="settingsBtn">Podešavanja</span><button id="btnSetupClose" class="ghost mini" aria-label="Zatvori">✕</button></div>
     <div class="tabbar" id="setupTabs">
-      <button data-pane="timer" class="active" data-i18n="tabTimer">Tajmer</button>
+      <button data-pane="timer" class="active" data-i18n="tabTimer">Timing</button>
       <button data-pane="look" data-i18n="tabLook">Izgled</button>
       <button data-pane="lt" data-i18n="tabLt">Potpis</button>
       <button data-pane="net" data-i18n="tabNet">Mreža &amp; Izlazi</button>
@@ -4157,14 +4161,14 @@ const I18N = {
     stStage:'Ekran govornika', stServer:'Mrežni prikazi (OBS · Backstage · Signal)', stRemote:'Telefon daljinski', stApi:'API / Companion',
     badgeLive:'U PROGRAMU', badgeSelected:'IZABRANO', badgeNext:'SLEDI', badgeSkipped:'PRESKOČENO',
     goSelectedBtn:'KRENI ▶ {name}', goAutoStart:'Auto-start na GO', goAutoTitle:'GO odmah pokreće tajmer novog reda',
-    advanced:'Napredno', advancedTitle:'Preview/Program režija (Cut/Transition). Isključeno: sve ide direktno na Program.',
+    advanced:'Preview / Program', advancedTitle:'Preview/Program režija (Cut/Transition). Isključeno: sve ide direktno na Program.',
     rundownBtn:'Rundown', sidebarToggle:'Prikaži ili sakrij navigaciju', utilityToggle:'Prikaži ili sakrij poruke, status i izlaze', msgOutBtn:'Poruke', settingsBtn:'Podešavanja', compactMode:'Kompaktan režim', compactTitle:'Kompaktan operater: samo tajmer, START, GO, ±, poruka; rundown u draweru.', fsMenu:'⛶ Pun ekran', closeMenu:'✕ Zatvori izlaz',
     inspTitle:'Izvor', inspOpacity:'Prozirnost', inspFitTitle:'Kako medij popunjava kutiju',
     fitCover:'Popuni', fitContain:'Uklopi', fitFill:'Razvuci', inspCenter:'Centriraj', inspFull:'Ceo ekran',
     inspFontTitle:'Veličina teksta (% visine)', layerNamePrompt:'Naziv izvora:', textLayerPrompt:'Tekst izvora:',
     ltPresetPrompt:'Naziv preseta:', cancel:'Otkaži', ok:'U redu',
     addTimer:'+ Tajmer', timerLayerOne:'Ova scena već ima tajmer lejer.',
-    tabTimer:'Tajmer', tabLook:'Izgled', tabScenes:'Scene', tabLt:'Potpis', tabNet:'Mreža & Izlazi',
+    tabTimer:'Tajming', tabLook:'Dizajn', tabScenes:'Scene', tabLt:'Potpis', tabNet:'Mreža & Izlazi',
     mode:'Režim', modeCountdown:'Odbrojavanje', modeCountup:'Štoperica', modeClock:'Sat',
     set:'Postavi', endAt:'Kraj u', startTarget:'Start', targetTitle:'Odbrojavanje do tačnog vremena',
     durTitle:'10 = minuti · 10:00 = MM:SS · 1:00:00 = HH:MM:SS', quick:'Brzo',
@@ -4200,7 +4204,7 @@ const I18N = {
     preflightEyebrow:'OPERATOR PREFLIGHT', preflightTitle:'Spremnost show-a', preflightRefresh:'Osveži', preflightTestOutputs:'Testiraj izlaze', preflightTestingOutputs:'Čekam potvrde…', preflightContinue:'Nastavi u radni prostor', preflightReady:'Spremno', preflightWarning:'Upozorenje', preflightBlocking:'Blokirano', preflightChecking:'Proveravam',
     preflightSummary:'{ok} prolazi · {warn} upozorenja · {block} blokira',
     preflightCheck_showSaved:'Show je sačuvan', preflightCheck_autosaveWritable:'Autosave je upisiv', preflightCheck_rundownValid:'Rundown je ispravan', preflightCheck_missingAssets:'Svi asseti postoje', preflightCheck_liveInputSources:'Live video izvori', preflightCheck_liveInputAudio:'Live audio ruta', preflightCheck_speakerScreen:'Ekran govornika', preflightCheck_programBrowser:'Program / browser output', preflightCheck_backstage:'Backstage', preflightCheck_phoneRemote:'Telefon daljinski', preflightCheck_apiCompanion:'API / Companion', preflightCheck_soundChime:'Zvuk / chime', preflightCheck_lowerThirdTemplate:'Lower-third template', preflightCheck_displayAssignment:'Dodela ekrana', preflightCheck_outputResolution:'Rezolucija izlaza', preflightCheck_outputAspect:'Odnos stranica Canvas / izlaz', preflightCheck_recoveryStatus:'Recovery stanje', preflightCheck_conferenceMode:'Conference Desk režim', preflightCheck_conferenceAudienceRoute:'Audience izlaz', preflightCheck_conferenceRouteAssignments:'Uloge i dodela ekrana', preflightCheck_conferenceCueActions:'GO akcije po tački', preflightCheck_conferenceMediaMapping:'Povezani mediji', preflightCheck_conferenceOutputDelivery:'Potvrda prikaza izlaza',
-    slides:'SLIDES', slideMedia:'Medija', slideHolding:'Holding', slideLogo:'Logo', slideTimer:'Tajmer', slideBlank:'Prazno', slideSelected:'Izabrano', slideTake:'TAKE', slideClear:'CLEAR', slideEmpty:'Dodajte sliku, video, PDF, holding tekst, logo ili tajmer.', slideNamePrompt:'Naziv sadržaja:', slideHoldingPrompt:'Holding tekst:', slideLogoMissing:'Prvo dodajte logo u brendingu.', slideCount:'{n} stavki', slidePage:'Strana {n}',
+    slides:'SADRŽAJ', slideMedia:'Medija', slideHolding:'Holding', slideLogo:'Logo', slideTimer:'Tajmer', slideBlank:'Prazno', slideSelected:'Izabrano', slideTake:'TAKE', slideClear:'CLEAR', slideEmpty:'Dodajte sliku, video, PDF, holding tekst, logo ili tajmer.', slideNamePrompt:'Naziv sadržaja:', slideHoldingPrompt:'Holding tekst:', slideLogoMissing:'Prvo dodajte logo u brendingu.', slideCount:'{n} stavki', slidePage:'Strana {n}',
     cueContent:'Vezani sadržaj ekrana', cueContentAuto:'Auto TAKE sadržaja na GO', cueContentNone:'Bez vezanog sadržaja',
     backstageLabel:'Backstage (raspored / crew)', signalLabel:'Signal svetlo (govornica)', onTime:'NA VREME', late:'kasni', early:'ispred',
     apiLabel:'API (Stream Deck / Companion)', apiTitle:'Autorizovani URL za Companion / Stream Deck. Podržava GO, tajmer, poruke, potpise i sadržaj ekrana.',
@@ -4253,14 +4257,14 @@ const I18N = {
     stStage:'Speaker screen', stServer:'Network views (OBS · Backstage · Signal)', stRemote:'Phone remote', stApi:'API / Companion',
     badgeLive:'LIVE', badgeSelected:'SELECTED', badgeNext:'NEXT', badgeSkipped:'SKIPPED',
     goSelectedBtn:'GO ▶ {name}', goAutoStart:'Auto-start on GO', goAutoTitle:'GO immediately starts the new item timer',
-    advanced:'Advanced', advancedTitle:'Preview/Program workflow (Cut/Transition). Off: everything goes straight to Program.',
+    advanced:'Preview / Program', advancedTitle:'Preview/Program workflow (Cut/Transition). Off: everything goes straight to Program.',
     rundownBtn:'Rundown', sidebarToggle:'Show or hide navigation', utilityToggle:'Show or hide messages, status and outputs', msgOutBtn:'Message', settingsBtn:'Settings', compactMode:'Compact mode', compactTitle:'Compact operator: only timer, START, GO, ±, message; rundown in a drawer.', fsMenu:'⛶ Fullscreen', closeMenu:'✕ Close output',
     inspTitle:'Source', inspOpacity:'Opacity', inspFitTitle:'How media fills the box',
     fitCover:'Cover', fitContain:'Fit', fitFill:'Stretch', inspCenter:'Center', inspFull:'Full screen',
     inspFontTitle:'Text size (% of height)', layerNamePrompt:'Source name:', textLayerPrompt:'Source text:',
     ltPresetPrompt:'Preset name:', cancel:'Cancel', ok:'OK',
     addTimer:'+ Timer', timerLayerOne:'This scene already has a timer layer.',
-    tabTimer:'Timer', tabLook:'Look', tabScenes:'Scenes', tabLt:'Lower third', tabNet:'Network & Outputs',
+    tabTimer:'Timing', tabLook:'Design', tabScenes:'Scenes', tabLt:'Lower third', tabNet:'Network & Outputs',
     mode:'Mode', modeCountdown:'Countdown', modeCountup:'Stopwatch', modeClock:'Clock',
     set:'Set', endAt:'End at', startTarget:'Start', targetTitle:'Countdown to exact time',
     durTitle:'10 = minutes · 10:00 = MM:SS · 1:00:00 = HH:MM:SS', quick:'Quick',
@@ -4296,7 +4300,7 @@ const I18N = {
     preflightEyebrow:'OPERATOR PREFLIGHT', preflightTitle:'Show readiness', preflightRefresh:'Refresh', preflightTestOutputs:'Test outputs', preflightTestingOutputs:'Waiting for confirmation…', preflightContinue:'Continue to workspace', preflightReady:'Ready', preflightWarning:'Warning', preflightBlocking:'Blocking', preflightChecking:'Checking',
     preflightSummary:'{ok} pass · {warn} warnings · {block} blocking',
     preflightCheck_showSaved:'Show saved', preflightCheck_autosaveWritable:'Autosave writable', preflightCheck_rundownValid:'Rundown valid', preflightCheck_missingAssets:'Assets available', preflightCheck_liveInputSources:'Live video sources', preflightCheck_liveInputAudio:'Live audio route', preflightCheck_speakerScreen:'Speaker screen', preflightCheck_programBrowser:'Program / browser output', preflightCheck_backstage:'Backstage', preflightCheck_phoneRemote:'Phone remote', preflightCheck_apiCompanion:'API / Companion', preflightCheck_soundChime:'Sound / chime', preflightCheck_lowerThirdTemplate:'Lower-third template', preflightCheck_displayAssignment:'Display assignment', preflightCheck_outputResolution:'Output resolution', preflightCheck_outputAspect:'Canvas / output aspect ratio', preflightCheck_recoveryStatus:'Recovery status', preflightCheck_conferenceMode:'Conference Desk mode', preflightCheck_conferenceAudienceRoute:'Audience output', preflightCheck_conferenceRouteAssignments:'Role and display assignments', preflightCheck_conferenceCueActions:'Cue GO actions', preflightCheck_conferenceMediaMapping:'Media mapping', preflightCheck_conferenceOutputDelivery:'Output render confirmation',
-    slides:'SLIDES', slideMedia:'Media', slideHolding:'Holding', slideLogo:'Logo', slideTimer:'Timer', slideBlank:'Blank', slideSelected:'Selected', slideTake:'TAKE', slideClear:'CLEAR', slideEmpty:'Add an image, video, PDF, holding text, logo or timer.', slideNamePrompt:'Content name:', slideHoldingPrompt:'Holding text:', slideLogoMissing:'Add a branding logo first.', slideCount:'{n} items', slidePage:'Page {n}',
+    slides:'CONTENT', slideMedia:'Media', slideHolding:'Holding', slideLogo:'Logo', slideTimer:'Timer', slideBlank:'Blank', slideSelected:'Selected', slideTake:'TAKE', slideClear:'CLEAR', slideEmpty:'Add an image, video, PDF, holding text, logo or timer.', slideNamePrompt:'Content name:', slideHoldingPrompt:'Holding text:', slideLogoMissing:'Add a branding logo first.', slideCount:'{n} items', slidePage:'Page {n}',
     cueContent:'Linked screen content', cueContentAuto:'Auto TAKE content on GO', cueContentNone:'No linked content',
     backstageLabel:'Backstage (schedule / crew)', signalLabel:'Signal light (podium)', onTime:'ON TIME', late:'behind', early:'ahead',
     apiLabel:'API (Stream Deck / Companion)', apiTitle:'Authenticated Companion / Stream Deck URL for GO, timer, message, lower-third and screen-content actions.',
@@ -4403,7 +4407,7 @@ let S = {
   canvasAspect:'16:9', canvas:{schemaVersion:1,width:1920,height:1080,fps:30,background:'#000000',transparent:false}, sceneFadeMs:300,
   liveInputs:[], primaryLiveAudio:false,
   studioDirect:true,
-  scenes:[{id:'scene-default', name:'Timer', layers:[]}],
+  scenes:[{id:'scene-default', name:'Scene 1', layers:[]}],
   activeSceneId:'scene-default',
   goTransaction:null,
   // rundown / raspored
@@ -5180,7 +5184,7 @@ function collectShowDocument(){
   const runtime=S.lowerThird&&S.lowerThird.runtime;
   return {
     schemaVersion:1,
-    app:{productName:'ShowSlate Conference Desk'},
+    app:{productName:'ShowSlate',productDescriptor:'Live Compositor'},
     show:{
       id:String(showMeta.id||'show-current'),
       name:String(showMeta.name||'Untitled show'),
@@ -5827,7 +5831,8 @@ function load(){
   initLtStudio();
   buildPresets();
   updateLiveInfo(); updateGoLabel(); updateStatusCard();
-  const adv=localStorage.getItem('pt_advanced')==='1';
+  const storedAdvanced=localStorage.getItem('pt_advanced');
+  const adv=storedAdvanced===null ? true : storedAdvanced==='1';
   $('chkAdvanced').checked=adv;
   applyAdvancedMode(adv);
   const cmp=localStorage.getItem('pt_compact')==='1';
@@ -5863,9 +5868,9 @@ function ensureScenes(){
   S.canvas=PTCOMP.normalizeCanvas(S.canvas||canvasFromLegacyAspect(S.canvasAspect));
   S.canvasAspect=legacyAspectForCanvas(S.canvas);
   S.liveInputs=PTCOMP.normalizeLiveInputs(S.liveInputs);
-  if(!Array.isArray(S.scenes) || !S.scenes.length) S.scenes=[{id:'scene-default', name:'Timer', layers:[makeTimerLayer()]}];
-  // migracija: legacy podrazumevana scena bez ijednog lejera dobija fullscreen tajmer
-  S.scenes.forEach(sc=>{ if(Array.isArray(sc.layers) && !sc.layers.length && sc.id==='scene-default') sc.layers.push(makeTimerLayer()); });
+  if(!Array.isArray(S.scenes) || !S.scenes.length) S.scenes=[{id:'scene-default', name:'Scene 1', layers:[]}];
+  // Legacy ShowSlate projects used an empty scene named Timer as the timer canvas.
+  S.scenes.forEach(sc=>{ if(Array.isArray(sc.layers) && !sc.layers.length && sc.id==='scene-default' && sc.name==='Timer') sc.layers.push(makeTimerLayer()); });
   S.scenes=S.scenes.map((scene,index)=>PTCOMP.normalizeScene(scene,index));
   if(!S.scenes.find(sc=>sc.id===S.activeSceneId)) S.activeSceneId=S.scenes[0].id;
 }
@@ -6076,8 +6081,9 @@ function renderScenesUI(){
     canvasSceneSelect.value=sc.id;
   }
   layerBox.innerHTML='';
+  if(!sc.layers.some(layer=>layer.id===selectedLayerId)) selectedLayerId=(sc.layers[sc.layers.length-1]||{}).id||null;
   if(!sc.layers.length){
-    const d=document.createElement('div'); d.className='empty'; d.textContent='No layers in this scene yet.'; layerBox.appendChild(d); return;
+    const d=document.createElement('div'); d.className='empty'; d.textContent=t('emptyScene'); layerBox.appendChild(d); renderInspector(); return;
   }
   [...sc.layers].reverse().forEach((layer,revIndex)=>{
     const i=sc.layers.length-1-revIndex;
@@ -6111,6 +6117,7 @@ function renderScenesUI(){
     row.querySelector('.del').addEventListener('click',()=>{ sc.layers.splice(i,1); if(selectedLayerId===layer.id) selectedLayerId=null; sceneDirty(); renderInspector(); });
     layerBox.appendChild(row);
   });
+  renderInspector();
 }
 async function addScene(){
   ensureScenes();
@@ -6168,21 +6175,25 @@ async function addMediaLayers(files){
     ensureScenes();
     const sc=S.scenes.find(scene=>scene.id===targetSceneId);
     if(!sc) continue;
-    sc.layers.push({
+    const layer={
       id:makeId('layer'), type, name:file.name, src, mime:file.type||'',
       visible:true, fit:type==='pdf'?'contain':'cover', x:0, y:0, w:100, h:100, opacity:1
-    });
+    };
+    sc.layers.push(layer);
+    selectedLayerId=layer.id;
   }
   sceneDirty();
 }
 async function addTextLayer(){
   const text=await askText(t('textLayerPrompt'), 'TITLE / NAME');
   if(text===null) return;
-  currentScene().layers.push({
+  const layer={
     id:makeId('layer'), type:'text', name:text.slice(0,28)||'Text',
     text, color:'#ffffff', bg:'rgba(0,0,0,.25)', fontSize:8,
     visible:true, fit:'contain', x:0, y:0, w:100, h:100, opacity:1
-  });
+  };
+  currentScene().layers.push(layer);
+  selectedLayerId=layer.id;
   sceneDirty();
 }
 $('btnSceneAdd').addEventListener('click',addScene);
@@ -6199,7 +6210,9 @@ $('sceneMediaFile').addEventListener('change',e=>{ addMediaLayers(e.target.files
 function addTimerLayer(){
   const sc=currentScene();
   if(sc.layers.some(l=>l.type==='timer')){ alert(t('timerLayerOne')); return; }
-  sc.layers.push(makeTimerLayer());
+  const layer=makeTimerLayer();
+  sc.layers.push(layer);
+  selectedLayerId=layer.id;
   sceneDirty();
 }
 
@@ -6213,7 +6226,8 @@ function setCompositorOpen(flag,options={}){
   document.body.classList.toggle('compositor-open',open);
   $('btnCompositor')?.classList.toggle('active',open);
   $('btnCompositor')?.setAttribute('aria-expanded',open?'true':'false');
-  localStorage.setItem('pt_compositor_open',open?'1':'0');
+  if(options.persist!==false) localStorage.setItem('pt_compositor_open',open?'1':'0');
+  if(open) closeDrawers();
   if(open&&options.scroll!==false) requestAnimationFrame(()=>$('panelSources')?.scrollIntoView({behavior:'smooth',block:'start'}));
 }
 $('btnCompositor')?.addEventListener('click',()=>setCompositorOpen(!document.body.classList.contains('compositor-open')));
@@ -9098,7 +9112,10 @@ function toggleUtilitySidebar(){
 }
 $('btnRundownDrawer').addEventListener('click',toggleNavigationSidebar);
 $('btnMsgDrawer').addEventListener('click',toggleUtilitySidebar);
-$('btnSettingsDrawer').addEventListener('click',()=>toggleDrawer('dr-setup'));
+$('btnSettingsDrawer').addEventListener('click',()=>{
+  if(document.body.classList.contains('compositor-open')) setCompositorOpen(false);
+  if(window.innerWidth<=1319) toggleDrawer('dr-setup');
+});
 if($('btnSetupClose')) $('btnSetupClose').addEventListener('click',closeDrawers);
 $('drawerScrim').addEventListener('click',closeDrawers);
 window.addEventListener('resize',()=>{ updateSidebarToggle(); updateUtilityToggle(); });
@@ -9147,7 +9164,7 @@ $('btnAbout')?.addEventListener('click',async()=>{
   let info={};
   try{ info=await api.buildInfo(); }catch(e){ info={error:String(e&&e.message||e)}; }
   const lines=[
-    'ShowSlate Conference Desk',
+    'ShowSlate — Live Compositor',
     'Version: '+(info.version || '1.0.0'),
     'Commit: '+(info.commit || 'unknown'),
     'Source state: '+(info.dirty ? 'modified (non-release build)' : 'clean'),
@@ -9224,7 +9241,16 @@ $('langSel').addEventListener('change',e=>{
 });
 
 // ---------- START ----------
-buildLanguageSelect(); buildGridSizeControl(); arrangeOperatorLayout(); load(); setCompositorOpen(localStorage.getItem('pt_compositor_open')==='1',{scroll:false}); refreshDisplays(); loadOutputConfigs(); send(true); updateButtons(); applyLang(); requestAnimationFrame(render); initShowPersistence();
+buildLanguageSelect(); buildGridSizeControl(); arrangeOperatorLayout(); load();
+{
+  const identityKey='showslate_live_compositor_identity_v1';
+  const firstIdentityLaunch=localStorage.getItem(identityKey)!=='1';
+  const storedComposer=localStorage.getItem('pt_compositor_open');
+  const openComposer=firstIdentityLaunch || storedComposer===null ? true : storedComposer==='1';
+  setCompositorOpen(openComposer,{scroll:false,persist:firstIdentityLaunch});
+  if(firstIdentityLaunch) localStorage.setItem(identityKey,'1');
+}
+refreshDisplays(); loadOutputConfigs(); send(true); updateButtons(); applyLang(); requestAnimationFrame(render); initShowPersistence();
 
 // ---------- MODAL: askText (Electron NE podržava window.prompt!) ----------
 let modalResolve=null;
