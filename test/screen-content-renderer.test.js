@@ -92,26 +92,34 @@ app.whenReady().then(async () => {
     document.getElementById('btnCueAdd').click();
     const cueRow=document.querySelector('#cueList .cue');
     const cueCreated=cues.length===1 && selectedCue===0 && cues[0].name==='Welcome cue' && cues[0].contentItemId===holding.id && cues[0].autoTakeContentOnGo===true && cueEditorMode==='edit' && document.getElementById('btnCueAdd').hidden && !document.getElementById('btnCueSave').hidden && cueRow?.querySelector('.cue-scene-link')?.textContent.includes('Welcome');
+    S.activeSceneId=timer.sceneId; selectedContentItemId=timer.id; liveContentItemId=timer.id; programState=outputSnapshot(S); selectedCue=-1; S.studioDirect=true; renderCues();
+    document.querySelector('#cueList .cue').click();
+    const rundownRowPreviewSafe=selectedCue===0 && S.activeSceneId===holding.sceneId && selectedContentItemId===holding.id && programState.activeSceneId===timer.sceneId && liveContentItemId===timer.id;
+    S.studioDirect=false;
     document.getElementById('btnGo').click();
     const cueGoWorked=currentCue===0 && programState.activeSceneId===holding.sceneId && liveContentItemId===holding.id;
     S.running=false; S.endAt=0; currentCue=-1; selectedCue=-1; cues=[]; S.activeSceneId=timer.sceneId; selectedContentItemId=timer.id; liveContentItemId=timer.id; programState=outputSnapshot(S); setCueEditorOpen(false); renderCues();
-    const rundownSceneFlow=newEditorVisible && previewButtonSafe && cueCreated && cueGoWorked;
+    const rundownSceneFlow=newEditorVisible && previewButtonSafe && cueCreated && rundownRowPreviewSafe && cueGoWorked;
     const slidesTab=document.getElementById('btnSidebarSlides');
     const slidesTabVisible=!!slidesTab && slidesTab.getClientRects().length>0;
     if(slidesTabVisible) slidesTab.click();
     renderContentItems();
     const sceneRows=[...document.querySelectorAll('#slidesList .slide-row')];
     const sceneUi={
-      tab:slidesTab.textContent.trim(),
+      tab:slidesTab.querySelector('[data-i18n]')?.textContent.trim(),
       rows:sceneRows.length,
       thumbnails:sceneRows.filter(row=>row.querySelector('.slide-thumb .scene-thumb-layer')).length,
+      numbered:sceneRows.every((row,index)=>row.querySelector('.slide-index')?.textContent===String(index+1).padStart(2,'0')),
+      metadata:sceneRows.every(row=>/source|layer/i.test(row.querySelector('.slide-meta')?.textContent||'')&&/1920×1080/.test(row.querySelector('.slide-meta')?.textContent||'')),
       newScene:!!document.getElementById('btnSceneLibraryNew')?.getClientRects().length,
       duplicate:!!document.getElementById('btnSceneLibraryDuplicate')?.getClientRects().length,
       rename:!!document.getElementById('btnSceneLibraryRename')?.getClientRects().length,
       take:document.getElementById('btnSlideTake')?.textContent.trim(),
-      cut:document.getElementById('btnSlideClear')?.textContent.trim()
+      cut:document.getElementById('btnSlideClear')?.textContent.trim(),
+      rundownCount:document.getElementById('rundownTabCount')?.textContent,
+      sceneCount:document.getElementById('scenesTabCount')?.textContent
     };
-    const normalUi=slidesTabVisible && document.getElementById('sidebarSlidesPane').classList.contains('active') && sceneUi.tab==='SCENES' && sceneUi.rows===3 && sceneUi.thumbnails===3 && sceneUi.newScene && sceneUi.duplicate && sceneUi.rename && sceneUi.take==='TAKE' && sceneUi.cut==='CUT';
+    const normalUi=slidesTabVisible && document.getElementById('sidebarSlidesPane').classList.contains('active') && sceneUi.tab==='SCENES' && sceneUi.rows===3 && sceneUi.thumbnails===3 && sceneUi.numbered && sceneUi.metadata && sceneUi.newScene && sceneUi.duplicate && sceneUi.rename && sceneUi.take==='TAKE' && sceneUi.cut==='CUT' && sceneUi.rundownCount==='0' && sceneUi.sceneCount==='3';
     selectContentItem(holding.id);
     const selectedSafe=programState.activeSceneId===timer.sceneId && S.activeSceneId===holding.sceneId && liveContentItemId===timer.id;
     await new Promise(resolve=>setTimeout(resolve,120));
@@ -128,6 +136,9 @@ app.whenReady().then(async () => {
     const pageWorked=canonicalDeck.page===2 && deckLayer.page===2 && !!deckFrame && deckFrame.src.endsWith('#page=2');
     S.studioDirect=true; selectContentItem(timer.id);
     const directWorked=programState.activeSceneId===timer.sceneId && liveContentItemId===timer.id;
+    renderContentItems();
+    document.querySelector('#slidesList .slide-row[data-content-id="'+holding.id+'"]').click();
+    const sceneCardPreviewSafe=programState.activeSceneId===timer.sceneId && liveContentItemId===timer.id && S.activeSceneId===holding.sceneId && selectedContentItemId===holding.id;
     S.studioDirect=false; selectContentItem(deck.id);
     cues=migrateCues([{id:'content-cue',name:'Sponsor segment',durationMs:60000,contentItemId:deck.id,autoTakeContentOnGo:true}]);
     currentCue=-1; selectedCue=0; saveCues(); renderCues();
@@ -137,7 +148,7 @@ app.whenReady().then(async () => {
     renderStage('pg',programState,Date.now());
     const clearWorked=liveContentItemId==='' && programState.activeSceneId==='scene-content-clear' && document.getElementById('pgScene').textContent.trim()==='';
     const saved=await flushShowAutosave({reason:'screen-content-test',force:true});
-    return JSON.stringify({normalUi,sceneUi,rundownSceneFlow,selectedSafe,previewRendered,timerSafe,takeWorked,directWorked,pageWorked,goWorked,clearWorked,saved,ids:{timer:timer.id,holding:holding.id,deck:deck.id}});
+    return JSON.stringify({normalUi,sceneUi,rundownSceneFlow,selectedSafe,previewRendered,timerSafe,takeWorked,directWorked,sceneCardPreviewSafe,pageWorked,goWorked,clearWorked,saved,ids:{timer:timer.id,holding:holding.id,deck:deck.id}});
   })()`));
   win.webContents.reload();
   const reloadReady = await waitFor(() => win.webContents.executeJavaScript('showAutosaveReady===true && lastDisplays.length>0'));
@@ -156,7 +167,7 @@ app.whenReady().then(async () => {
   check('RUNDOWN_SCENE_ON_GO_USER_FLOW_OK', state.rundownSceneFlow, JSON.stringify(state));
   check('SCREEN_CONTENT_SELECT_PREVIEW_ONLY_OK', state.selectedSafe && state.timerSafe, JSON.stringify(state));
   check('SCREEN_CONTENT_SCENE_CARD_RENDERS_PREVIEW_OK', state.previewRendered && reloadReady && reloadState.previewRendered, JSON.stringify({state,reloadReady,reloadState}));
-  check('SCREEN_CONTENT_DIRECT_PROGRAM_SCENE_SELECT_OK', state.directWorked, JSON.stringify(state));
+  check('SCREEN_CONTENT_DIRECT_PROGRAM_SCENE_SELECT_OK', state.directWorked && state.sceneCardPreviewSafe, JSON.stringify(state));
   check('SCREEN_CONTENT_TAKE_AND_CLEAR_OK', state.takeWorked && state.clearWorked, JSON.stringify(state));
   check('SCREEN_CONTENT_PDF_DECK_NAV_OK', state.pageWorked, JSON.stringify(state));
   check('SCREEN_CONTENT_CUE_AUTO_TAKE_ON_GO_OK', state.goWorked, JSON.stringify(state));
@@ -165,6 +176,16 @@ app.whenReady().then(async () => {
   await new Promise(resolve => setTimeout(resolve, 160));
   fs.mkdirSync(artifactDirectory, { recursive: true });
   fs.writeFileSync(path.join(artifactDirectory, 'scenes-1280x800.png'), (await win.webContents.capturePage()).toPNG());
+  const disk = await repository.loadCurrent();
+  check('SCREEN_CONTENT_FILE_ROUNDTRIP_OK', disk.ok && disk.document.show.screenContent.items.length === 3 && disk.document.show.rundown[0].autoTakeContentOnGo === true && disk.document.show.rundown[0].contentItemId === state.ids.deck);
+  await win.webContents.executeJavaScript(`(()=>{
+    for(let index=4;index<=16;index++){
+      S.scenes.push({id:'overflow-scene-'+index,name:'Event scene '+index,layers:[{id:'overflow-layer-'+index,type:'text',name:'Scene '+index,text:'SCENE '+index,color:'#ffffff',bg:'transparent',fontSize:9,visible:true,fit:'contain',x:5,y:5,w:90,h:90,opacity:1}]});
+    }
+    ensureScenes(); normalizeContentWorkflow();
+    cues=migrateCues(Array.from({length:18},(_,index)=>({id:'overflow-cue-'+index,name:'Rundown item '+(index+1),durationMs:60000,note:'Scene '+((index%16)+1),contentItemId:contentItems[index%contentItems.length]?.id||'',autoTakeContentOnGo:false})));
+    currentCue=-1; selectedCue=-1; renderCues(); renderContentItems();
+  })()`);
   win.setBounds(smokeDisplay.clampToWorkArea({ width: 900, height: 600 }, target.workArea));
   if (!await waitFor(() => win.webContents.executeJavaScript('innerWidth===900 && innerHeight>=560'))) {
     throw new Error('900x600 viewport did not settle');
@@ -196,20 +217,34 @@ app.whenReady().then(async () => {
     const panel=panelElement.getBoundingClientRect();
     const foot=document.querySelector('.slides-foot').getBoundingClientRect();
     const tabs=document.querySelector('.sidebar-view-tabs').getBoundingClientRect();
+    const sceneList=document.getElementById('slidesList');
+    const sceneOverflow=getComputedStyle(sceneList).overflowY==='auto'&&sceneList.scrollHeight>sceneList.clientHeight+1;
+    sceneList.scrollTop=sceneList.scrollHeight;
+    const sceneScrolled=sceneList.scrollTop>0;
+    document.getElementById('btnSidebarRundown').click();
+    await new Promise(resolve=>setTimeout(resolve,50));
+    const cueList=document.getElementById('cueList');
+    const cueOverflow=getComputedStyle(cueList).overflowY==='auto'&&cueList.scrollHeight>cueList.clientHeight+1;
+    cueList.scrollTop=cueList.scrollHeight;
+    const cueScrolled=cueList.scrollTop>0;
+    const cueRects=[...cueList.querySelectorAll('.cue')].map(row=>row.getBoundingClientRect());
+    const cuesDoNotOverlap=cueRects.every((rect,index)=>index===0||cueRects[index-1].bottom<=rect.top+.5);
+    document.getElementById('btnSidebarSlides').click();
     const probeX=Math.max(1,Math.min(innerWidth-1,panel.left+Math.min(20,panel.width/2)));
     const probeY=Math.max(1,Math.min(innerHeight-1,panel.top+Math.min(80,panel.height/2)));
     const hit=document.elementFromPoint(probeX,probeY);
     const exposed=!!hit&&sidebar.contains(hit);
     const scrimStyle=getComputedStyle(document.getElementById('drawerScrim'));
     const scrimVisible=scrimStyle.display!=='none'&&scrimStyle.visibility!=='hidden';
-    return JSON.stringify({navAvailable,navClicked,initial,afterNavClass,slidesAvailable,afterSlidesClass,active:document.getElementById('sidebarSlidesPane').classList.contains('active'),exposed,scrimVisible,hit:hit?.id||hit?.className||hit?.tagName||'',bodyClass:document.body.className,sidebarTransform:getComputedStyle(sidebar).transform,vw:innerWidth,vh:innerHeight,panel:{x:panel.x,y:panel.y,right:panel.right,bottom:panel.bottom},foot:{top:foot.top,bottom:foot.bottom},tabs:{top:tabs.top,bottom:tabs.bottom}});
+    return JSON.stringify({navAvailable,navClicked,initial,afterNavClass,slidesAvailable,afterSlidesClass,active:document.getElementById('sidebarSlidesPane').classList.contains('active'),exposed,scrimVisible,sceneOverflow,sceneScrolled,cueOverflow,cueScrolled,cuesDoNotOverlap,hit:hit?.id||hit?.className||hit?.tagName||'',bodyClass:document.body.className,sidebarTransform:getComputedStyle(sidebar).transform,vw:innerWidth,vh:innerHeight,panel:{x:panel.x,y:panel.y,right:panel.right,bottom:panel.bottom},foot:{top:foot.top,bottom:foot.bottom},tabs:{top:tabs.top,bottom:tabs.bottom}});
   })()`));
-  check('SCREEN_CONTENT_900X600_REACHABLE_OK', layout.navAvailable && layout.slidesAvailable && layout.active && layout.exposed && layout.scrimVisible && layout.panel.x >= 0 && layout.panel.right <= layout.vw + 1 && layout.tabs.top >= 0 && layout.foot.bottom <= layout.vh + 1, JSON.stringify(layout));
+  check('SCREEN_CONTENT_900X600_REACHABLE_OK', layout.navAvailable && layout.slidesAvailable && layout.active && layout.exposed && layout.scrimVisible && layout.sceneOverflow && layout.sceneScrolled && layout.cueOverflow && layout.cueScrolled && layout.cuesDoNotOverlap && layout.panel.x >= 0 && layout.panel.right <= layout.vw + 1 && layout.tabs.top >= 0 && layout.foot.bottom <= layout.vh + 1, JSON.stringify(layout));
   await new Promise(resolve => setTimeout(resolve, 220));
   fs.writeFileSync(path.join(artifactDirectory, 'scenes-900x600.png'), (await win.webContents.capturePage()).toPNG());
+  await win.webContents.executeJavaScript(`(()=>{ document.getElementById('btnSidebarRundown').click(); document.getElementById('cueList').scrollTop=0; })()`);
+  await new Promise(resolve => setTimeout(resolve, 160));
+  fs.writeFileSync(path.join(artifactDirectory, 'rundown-900x600.png'), (await win.webContents.capturePage()).toPNG());
 
-  const disk = await repository.loadCurrent();
-  check('SCREEN_CONTENT_FILE_ROUNDTRIP_OK', disk.ok && disk.document.show.screenContent.items.length === 3 && disk.document.show.rundown[0].autoTakeContentOnGo === true && disk.document.show.rundown[0].contentItemId === state.ids.deck);
   console.log('SCREEN_CONTENT_RENDERER_TESTS_OK ' + checks + '/12');
   win.destroy();
   fs.rmSync(profile, { recursive: true, force: true });
