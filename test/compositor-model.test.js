@@ -62,6 +62,20 @@ check('COMPOSITOR_WINDOW_SYSTEM_AUDIO_OK', () => {
   assert.strictEqual(disabled.withAudio, false);
 });
 
+check('COMPOSITOR_CAPTURE_FRAMING_AND_QUALITY_OK', () => {
+  assert.strictEqual(compositor.normalizeLayer({ type: 'window' }).fit, 'contain');
+  assert.strictEqual(compositor.normalizeLayer({ type: 'image' }).fit, 'cover');
+  const scaled = compositor.captureQuality({ width: 1308, height: 950 }, { width: 1920, height: 1080 }, 'contain');
+  assert.strictEqual(scaled.ready, true);
+  assert.strictEqual(scaled.needsUpscale, true);
+  assert.strictEqual(scaled.aspectMismatch, true);
+  assert.strictEqual(scaled.crops, false);
+  const native = compositor.captureQuality({ width: 1920, height: 1080 }, { width: 1920, height: 1080 }, 'cover');
+  assert.strictEqual(native.needsUpscale, false);
+  assert.strictEqual(native.aspectMismatch, false);
+  assert.strictEqual(native.crops, false);
+});
+
 check('COMPOSITOR_AUDIO_INPUT_AND_MONITORING_OK', () => {
   const input = compositor.normalizeLiveInput({ id: 'mixer-1', type: 'audio', name: 'FOH mix', audioDeviceId: 'usb-audio-1', audioDeviceLabel: 'USB Audio Interface', withAudio: true });
   const layer = compositor.normalizeLayer({ id: 'audio-layer-1', type: 'audio', inputId: input.id, audioEnabled: true, audioMonitoring: 'monitor-only', volume: 0.65 });

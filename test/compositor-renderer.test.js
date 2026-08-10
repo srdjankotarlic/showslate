@@ -213,6 +213,13 @@ app.whenReady().then(async () => {
     document.querySelector('.desktop-source-card').click();
     await new Promise(resolve=>setTimeout(resolve,80));
 
+    document.getElementById('btnAddSource').click();
+    document.querySelector('[data-source-kind="window"]').click();
+    const duplicateStarted=Date.now();while(Date.now()-duplicateStarted<2000&&!document.querySelector('.desktop-source-card'))await new Promise(resolve=>setTimeout(resolve,25));
+    const duplicateAudioDefault=document.getElementById('sourceDesktopAudio').checked;
+    const duplicateNoticeVisible=!document.getElementById('sourceDesktopNotice').hidden;
+    closeSourceDialog();
+
     document.getElementById('inspName').value='Slides capture'; change(document.getElementById('inspName'));
     document.getElementById('inspX').value='54'; change(document.getElementById('inspX'));
     document.getElementById('inspY').value='8'; change(document.getElementById('inspY'));
@@ -223,8 +230,9 @@ app.whenReady().then(async () => {
     const captureElement=document.querySelector('#pvScene [data-layer-id="'+capture.id+'"]');
     const previewRect=document.getElementById('preview').getBoundingClientRect();
     const windowInput=liveInputDefinition(capture.inputId);
-    return JSON.stringify({canvas:S.canvas,previewRatio:previewRect.width/previewRect.height,types:scene.layers.map(layer=>layer.type),timerIndex:scene.layers.indexOf(timer),colorIndex:scene.layers.indexOf(color),text:{bg:text.bg,x:text.x,y:text.y,w:text.w,h:text.h},captureAudioDefault,systemAudioDefault,capture:{x:capture.x,y:capture.y,w:capture.w,h:capture.h,name:capture.name,audioEnabled:capture.audioEnabled,withAudio:windowInput&&windowInput.withAudio},audioState,windowAudioRows:document.querySelectorAll('#audioMixerRows [data-audio-layer-id="'+capture.id+'"]').length,handles:captureElement?captureElement.querySelectorAll('.transform-handle').length:0,layerRows:document.querySelectorAll('#layerList .layer-row').length,liveInputs:S.liveInputs.length});
+    return JSON.stringify({canvas:S.canvas,previewRatio:previewRect.width/previewRect.height,types:scene.layers.map(layer=>layer.type),timerIndex:scene.layers.indexOf(timer),colorIndex:scene.layers.indexOf(color),text:{bg:text.bg,x:text.x,y:text.y,w:text.w,h:text.h},captureAudioDefault,systemAudioDefault,duplicateAudioDefault,duplicateNoticeVisible,capture:{x:capture.x,y:capture.y,w:capture.w,h:capture.h,fit:capture.fit,name:capture.name,audioEnabled:capture.audioEnabled,withAudio:windowInput&&windowInput.withAudio},audioState,windowAudioRows:document.querySelectorAll('#audioMixerRows [data-audio-layer-id="'+capture.id+'"]').length,handles:captureElement?captureElement.querySelectorAll('.transform-handle').length:0,layerRows:document.querySelectorAll('#layerList .layer-row').length,liveInputs:S.liveInputs.length});
   })()`));
+  fs.writeFileSync(path.join(artifactDirectory, 'capture-safe-defaults.png'), (await win.webContents.capturePage()).toPNG());
   check('COMPOSITOR_CUSTOM_CANVAS_AND_SOURCE_TYPES_OK', authored.canvas.width === 1000 && authored.canvas.height === 1000 && authored.canvas.fps === 25 && Math.abs(authored.previewRatio - 1) < 0.02 && ['color','image','text','window','capture','timer'].every(type => authored.types.includes(type)), JSON.stringify(authored));
   check('COMPOSITOR_LAYER_INSPECTOR_AND_HANDLES_OK', authored.capture.name === 'Slides capture' && authored.capture.x === 54 && authored.capture.y === 8 && authored.capture.w === 42 && authored.capture.h === 40 && authored.handles === 4 && authored.layerRows === authored.types.length, JSON.stringify(authored));
   check('COMPOSITOR_CAPTURE_AUDIO_REQUIRES_EXPLICIT_CHOICE_OK', authored.captureAudioDefault === '', JSON.stringify({ captureAudioDefault: authored.captureAudioDefault }));
@@ -234,6 +242,7 @@ app.whenReady().then(async () => {
   check('COMPOSITOR_TEXT_DEFAULT_IS_NON_OBSCURING_OK', authored.text.bg === 'transparent' && authored.text.x > 0 && authored.text.y > 0 && authored.text.w < 100 && authored.text.h < 100, JSON.stringify(authored.text));
   check('COMPOSITOR_AUDIO_INPUT_AND_MIXER_OK', authored.types.includes('audio') && authored.audioState.layer.volume === 0.62 && authored.audioState.layer.audioMonitoring === 'monitor-only' && authored.audioState.input.type === 'audio' && authored.audioState.input.audioDeviceId === 'audio-card-1' && authored.audioState.rows >= 2 && authored.audioState.meters === authored.audioState.rows, JSON.stringify(authored.audioState));
   check('COMPOSITOR_WINDOW_SYSTEM_AUDIO_MIXER_OK', authored.systemAudioDefault && authored.capture.withAudio && authored.capture.audioEnabled && authored.windowAudioRows === 1, JSON.stringify({ systemAudioDefault: authored.systemAudioDefault, capture: authored.capture, windowAudioRows: authored.windowAudioRows }));
+  check('COMPOSITOR_WINDOW_CAPTURE_SAFE_DEFAULTS_OK', authored.capture.fit === 'contain' && authored.duplicateAudioDefault === false && authored.duplicateNoticeVisible, JSON.stringify({ capture: authored.capture, duplicateAudioDefault: authored.duplicateAudioDefault, duplicateNoticeVisible: authored.duplicateNoticeVisible }));
   check('COMPOSITOR_AUDIO_OUTPUT_ROUTING_OK', authored.audioState.programRoute === 'primary' && authored.audioState.programDevice === 'speaker-main' && authored.audioState.programStateDevice === 'speaker-main', JSON.stringify(authored.audioState));
   const sourceCatalog = JSON.parse(await win.webContents.executeJavaScript(`JSON.stringify((()=>{document.getElementById('btnAddSource').click();const kinds=[...document.querySelectorAll('#sourceKindGrid [data-source-kind]')].map(button=>button.dataset.sourceKind);const groups=[...document.querySelectorAll('#sourceKindGrid .source-kind-section-title strong')].map(node=>node.textContent);closeSourceDialog();return {kinds,groups};})())`));
   check('COMPOSITOR_ADVANCED_SOURCE_CATALOG_OK', ['image','video','pdf','color','text','window','screen','device','audio','timer'].every(kind=>sourceCatalog.kinds.includes(kind)) && sourceCatalog.groups.length === 3, JSON.stringify(sourceCatalog));
@@ -466,7 +475,7 @@ app.whenReady().then(async () => {
   })())`));
   check('COMPOSITOR_DEMO_STARTS_PREVIEW_PROGRAM_IN_SYNC_OK', demoBaseline.visible && demoBaseline.direct === false && demoBaseline.selectedStatus === 'LIVE' && demoBaseline.statuses.length > 0 && demoBaseline.statuses.every(status=>status === 'LIVE') && demoBaseline.preview === demoBaseline.program, JSON.stringify(demoBaseline));
 
-  console.log(`COMPOSITOR_RENDERER_TESTS_OK ${checks}/34`);
+  console.log(`COMPOSITOR_RENDERER_TESTS_OK ${checks}/35`);
   win.destroy();
   fs.rmSync(profile, { recursive: true, force: true });
   app.quit();

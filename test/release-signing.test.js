@@ -97,9 +97,17 @@ assert.strictEqual(pkg.build.electronFuses.enableCookieEncryption, false,
   'public beta must not open a macOS Safe Storage prompt for unused cookies');
 console.log('RELEASE_MAC_KEYCHAIN_PROMPT_DISABLED_OK=true');
 
+assert.strictEqual(pkg.build.afterSign, 'tools/after-sign-local.js',
+  'macOS local builds must preserve a stable TCC identity');
+assert.match(pkg.scripts['dist:mac'], /SHOWSLATE_LOCAL_SIGNING=1/,
+  'the local Mac build must explicitly enable stable local signing');
+assert.doesNotMatch(pkg.scripts['dist:mac:release'], /SHOWSLATE_LOCAL_SIGNING/,
+  'release builds must use Developer ID signing instead of the local requirement');
+console.log('RELEASE_LOCAL_MAC_TCC_IDENTITY_OK=true');
+
 const smokeLauncher = fs.readFileSync(path.join(root, 'tools', 'run-smoke-on-display.js'), 'utf8');
 assert.match(smokeLauncher, /--smoke-user-data-dir=/,
   'smoke launcher must isolate Chromium and application state');
 console.log('RELEASE_SMOKE_PROFILE_ISOLATED_OK=true');
 
-console.log('RELEASE_SIGNING_TESTS_OK count=11');
+console.log('RELEASE_SIGNING_TESTS_OK count=12');

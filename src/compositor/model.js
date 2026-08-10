@@ -83,6 +83,43 @@
     return `${clean.width} / ${clean.height}`;
   }
 
+  function captureQuality(rawStatus = {}, rawCanvas = {}, fit = 'contain') {
+    const canvas = normalizeCanvas(rawCanvas);
+    const sourceWidth = Math.max(0, Math.round(Number(rawStatus.width) || 0));
+    const sourceHeight = Math.max(0, Math.round(Number(rawStatus.height) || 0));
+    if (!sourceWidth || !sourceHeight) {
+      return {
+        ready: false,
+        sourceWidth,
+        sourceHeight,
+        canvasWidth: canvas.width,
+        canvasHeight: canvas.height,
+        scale: 1,
+        needsUpscale: false,
+        aspectMismatch: false,
+        crops: false
+      };
+    }
+    const sourceAspect = sourceWidth / sourceHeight;
+    const canvasRatio = canvas.width / canvas.height;
+    const containScale = Math.min(canvas.width / sourceWidth, canvas.height / sourceHeight);
+    const coverScale = Math.max(canvas.width / sourceWidth, canvas.height / sourceHeight);
+    const mode = FITS.has(fit) ? fit : 'contain';
+    const scale = mode === 'contain' ? containScale : coverScale;
+    const aspectMismatch = Math.abs(sourceAspect - canvasRatio) / canvasRatio > 0.01;
+    return {
+      ready: true,
+      sourceWidth,
+      sourceHeight,
+      canvasWidth: canvas.width,
+      canvasHeight: canvas.height,
+      scale,
+      needsUpscale: scale > 1.01,
+      aspectMismatch,
+      crops: mode === 'cover' && aspectMismatch
+    };
+  }
+
   function normalizeLiveInput(raw = {}, index = 0) {
     const source = raw && typeof raw === 'object' ? raw : {};
     const type = LIVE_INPUT_TYPES.has(source.type) ? source.type : 'device';
@@ -144,7 +181,7 @@
       h: finite(source.h, 100, 1, 300),
       rotation: finite(source.rotation, 0, -360, 360),
       opacity: finite(source.opacity, 1, 0, 1),
-      fit: FITS.has(source.fit) ? source.fit : (type === 'pdf' ? 'contain' : 'cover'),
+      fit: FITS.has(source.fit) ? source.fit : (type === 'pdf' || type === 'window' ? 'contain' : 'cover'),
       lockAspect: source.lockAspect === true,
       flipX: source.flipX === true,
       flipY: source.flipY === true,
@@ -274,6 +311,7 @@
     normalizeCanvas,
     canvasPreset,
     canvasAspect,
+    captureQuality,
     normalizeLiveInput,
     normalizeLiveInputs,
     normalizeLayer,

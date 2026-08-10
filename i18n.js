@@ -141,8 +141,36 @@
 
   en.sourceSystemAudio = 'Include system audio';
   en.sourceSystemAudioHint = 'Adds desktop sound to the mixer. Program audio remains off until you route it to one output.';
+  en.sourceWindowChoose = 'Choose one application window. The desktop and other windows are not included.';
+  en.sourceDisplayChoose = 'Choose one complete display.';
+  en.sourceDesktopTypeWindow = 'Application window';
+  en.sourceDesktopTypeScreen = 'Complete display';
+  en.sourceCaptureFraming = 'Framing';
+  en.sourceCaptureQualityWaiting = 'Waiting for the input format.';
+  en.sourceCaptureQualityNative = '{source} → {canvas} · native or downscaled';
+  en.sourceCaptureQualityScaled = '{source} → {canvas} · enlarged {scale}×. Increase the source size for a sharper LED output.';
+  en.sourceCaptureQualityAspect = 'Different aspect ratio. Fit keeps the complete source visible.';
+  en.sourceCaptureQualityCropped = 'Cover crops the source edges.';
+  en.sourceCaptureMultiple = '{n} live captures are active in this scene. Keep only the inputs needed on air to reduce lag.';
+  en.sourceCaptureAudioDuplicate = 'System audio is already captured by {name}, so it is off here to prevent duplicate sound.';
+  en.sourceCaptureExistingOne = 'One other live capture input is already active in this scene.';
+  en.sourceCaptureExistingMany = '{n} other live capture inputs are already active in this scene.';
   sr.sourceSystemAudio = 'Uključi sistemski zvuk';
   sr.sourceSystemAudioHint = 'Dodaje zvuk računara u mikser. Program zvuk ostaje isključen dok ga ne usmeriš na jedan izlaz.';
+  sr.sourceWindowChoose = 'Izaberi jedan prozor aplikacije. Desktop i drugi prozori nisu uključeni.';
+  sr.sourceDisplayChoose = 'Izaberi jedan ceo displej.';
+  sr.sourceDesktopTypeWindow = 'Prozor aplikacije';
+  sr.sourceDesktopTypeScreen = 'Ceo displej';
+  sr.sourceCaptureFraming = 'Prikaz';
+  sr.sourceCaptureQualityWaiting = 'Čekam format ulaznog signala.';
+  sr.sourceCaptureQualityNative = '{source} → {canvas} · izvorna veličina ili umanjenje';
+  sr.sourceCaptureQualityScaled = '{source} → {canvas} · uvećanje {scale}×. Povećaj izvor za oštriji LED izlaz.';
+  sr.sourceCaptureQualityAspect = 'Odnos stranica je drugačiji. Uklopi prikazuje ceo izvor.';
+  sr.sourceCaptureQualityCropped = 'Popuni seče ivice izvora.';
+  sr.sourceCaptureMultiple = 'U ovoj sceni su aktivna {n} live capture izvora. Zadrži samo ulaze potrebne za Program da smanjiš kašnjenje.';
+  sr.sourceCaptureAudioDuplicate = 'Sistemski zvuk već snima {name}, pa je ovde isključen da nema duplog zvuka.';
+  sr.sourceCaptureExistingOne = 'U ovoj sceni je već aktivan još jedan live capture ulaz.';
+  sr.sourceCaptureExistingMany = 'U ovoj sceni su već aktivna još {n} live capture ulaza.';
 
   const core = {
     es:{languageTitle:'Idioma de la interfaz',outLabel:'Salida a',sendScreen:'Enviar a pantalla',mode:'Modo',modeCountdown:'Cuenta atrás',modeCountup:'Cronómetro',modeClock:'Reloj',set:'Fijar',quick:'Rápido',colors:'Colores',background:'Fondo',timeText:'Tiempo/texto',yellow:'Amarillo',red:'Rojo',transparent:'Fondo transparente (OBS)',text:'Texto',textOnly:'Solo texto',clear:'Borrar',thresholds:'Avisos',sound:'Sonido',progress:'Barra de progreso',message:'Mensaje',flash:'Parpadear',send:'Enviar',namePh:'Nombre',autoNext:'Avanzar al siguiente',goNext:'GO ▶ SIGUIENTE &nbsp;(N)',rundown:'RUNDOWN',notePh:'Nota (opcional)…',cueImport:'⬆ Importar',cueExport:'⬇ CSV',copy:'Copiar',remoteLabel:'Remoto (teléfono / tablet)',shareOnline:'🌐 Compartir online',stopSharing:'✕ Dejar de compartir',start:'▶ START',pause:'⏸ PAUSA',outLive:'PANTALLA EN VIVO',outClosed:'PANTALLA CERRADA',live:'en vivo',connected:'conectado'},

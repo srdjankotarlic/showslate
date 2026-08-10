@@ -81,7 +81,7 @@
     "smoke:packaged:display": "node tools/run-smoke-on-display.js --packaged",
     "smoke:philips": "npm run smoke:display",
     "smoke:packaged:philips": "npm run smoke:packaged:display",
-    "dist:mac": "node tools/write-build-info.js && CSC_IDENTITY_AUTO_DISCOVERY=false electron-builder --mac --arm64 --publish never -c.mac.identity=- -c.mac.hardenedRuntime=false -c.mac.notarize=false",
+    "dist:mac": "node tools/write-build-info.js && SHOWSLATE_LOCAL_SIGNING=1 CSC_IDENTITY_AUTO_DISCOVERY=false electron-builder --mac --arm64 --publish never -c.mac.identity=- -c.mac.hardenedRuntime=false -c.mac.notarize=false",
     "dist:mac:release": "node tools/assert-release-signing.js mac && node tools/write-build-info.js && electron-builder --mac --arm64 --publish never -c.forceCodeSigning=true",
     "dist:win": "node tools/write-build-info.js && electron-builder --win --x64 --publish never",
     "dist:win:release": "node tools/assert-release-signing.js win && node tools/write-build-info.js && electron-builder --win --x64 --publish never -c.forceCodeSigning=true",
@@ -106,6 +106,7 @@
   "build": {
     "appId": "com.srdjankotarlic.showslate",
     "productName": "ShowSlate",
+    "afterSign": "tools/after-sign-local.js",
     "directories": {
       "buildResources": "build",
       "output": "dist-installers"

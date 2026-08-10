@@ -1175,13 +1175,22 @@ ipcMain.handle('live-input-desktop-sources', async (event) => {
       types: ['window', 'screen'], thumbnailSize: { width: 320, height: 180 }, fetchWindowIcons: true
     }), 8000, 'Desktop source discovery');
   } catch (_) {}
-  return rows.map(source => ({
-    id: source.id,
-    name: source.name,
-    kind: source.id.startsWith('screen:') ? 'screen' : 'window',
-    thumbnail: source.thumbnail && !source.thumbnail.isEmpty() ? source.thumbnail.toDataURL() : '',
-    appIcon: source.appIcon && !source.appIcon.isEmpty() ? source.appIcon.toDataURL() : ''
-  }));
+  const displays = screen.getAllDisplays();
+  return rows.map(source => {
+    const kind = source.id.startsWith('screen:') ? 'screen' : 'window';
+    const display = kind === 'screen'
+      ? displays.find(row => String(row.id) === String(source.display_id || ''))
+      : null;
+    return {
+      id: source.id,
+      name: source.name,
+      kind,
+      width: display ? Math.round(display.size.width * display.scaleFactor) : 0,
+      height: display ? Math.round(display.size.height * display.scaleFactor) : 0,
+      thumbnail: source.thumbnail && !source.thumbnail.isEmpty() ? source.thumbnail.toDataURL() : '',
+      appIcon: source.appIcon && !source.appIcon.isEmpty() ? source.appIcon.toDataURL() : ''
+    };
+  });
 });
 ipcMain.handle('live-input-devices', async (event, requestPermission) => {
   if (!controlWin || controlWin.isDestroyed() || event.sender.id !== controlWin.webContents.id) return { devices: [], permissions: liveInputPermissionSnapshot(), error: 'unauthorized' };

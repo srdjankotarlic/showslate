@@ -282,7 +282,10 @@
       const sender = pc.addTrack(track, stream);
       if (track.kind !== 'video' || typeof sender.getParameters !== 'function' || typeof sender.setParameters !== 'function') return;
       const parameters = sender.getParameters();
-      const pixelsPerSecond = Math.max(1, Number(definition.width) || 1920) * Math.max(1, Number(definition.height) || 1080) * Math.max(1, Number(definition.fps) || 30);
+      const settings = typeof track.getSettings === 'function' ? track.getSettings() : {};
+      const pixelsPerSecond = Math.max(1, Number(settings.width) || Number(definition.width) || 1920)
+        * Math.max(1, Number(settings.height) || Number(definition.height) || 1080)
+        * Math.max(1, Number(settings.frameRate) || Number(definition.fps) || 30);
       const maxBitrate = Math.max(4000000, Math.min(24000000, Math.round(pixelsPerSecond * 0.24)));
       parameters.degradationPreference = 'maintain-resolution';
       if (!Array.isArray(parameters.encodings) || !parameters.encodings.length) parameters.encodings = [{}];
