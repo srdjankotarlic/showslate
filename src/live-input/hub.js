@@ -83,16 +83,35 @@
   function desktopStream(definition) {
     if (!definition.desktopSourceId) return Promise.reject(new Error('Choose a window or screen first.'));
     const capture = async () => {
-      const selection = await api.liveHubSelectDesktopSource(definition.desktopSourceId);
+      const selection = await api.liveHubSelectDesktopSource(definition.desktopSourceId, definition.desktopSourceName || definition.name, definition.withAudio === true);
       if (!selection || selection.ok !== true) throw new Error('The selected window is no longer available.');
-      return navigator.mediaDevices.getDisplayMedia({
-        video: { frameRate: { ideal: definition.fps, max: definition.fps } },
-        audio: false
+      if (selection.sourceId) definition.desktopSourceId = selection.sourceId;
+      const stream = await navigator.mediaDevices.getDisplayMedia({
+        video: {
+          width: definition.width,
+          height: definition.height,
+          frameRate: definition.fps
+        },
+        audio: definition.withAudio === true
       });
+      const videoTrack = stream.getVideoTracks()[0];
+      if (videoTrack && typeof videoTrack.applyConstraints === 'function') {
+        await videoTrack.applyConstraints({ frameRate: { ideal: definition.fps, max: definition.fps } }).catch(() => {});
+      }
+      return stream;
     };
     const result = desktopCaptureQueue.then(capture, capture);
     desktopCaptureQueue = result.then(() => undefined, () => undefined);
     return result;
+  }
+
+  function streamReadyForDefinition(stream, definition) {
+    if (!stream || typeof stream.getTracks !== 'function') return false;
+    const liveVideo = stream.getVideoTracks().some(track => track.readyState === 'live');
+    const liveAudio = stream.getAudioTracks().some(track => track.readyState === 'live');
+    if (definition.type === 'audio') return liveAudio;
+    if (!liveVideo) return false;
+    return definition.withAudio !== true || liveAudio;
   }
 
   async function deviceStream(definition) {
@@ -156,7 +175,7 @@
     const definition = definitions.get(id);
     if (!definition || !definition.active) return null;
     const existing = inputs.get(id);
-    if (existing && existing.stream && existing.stream.getTracks().some(track => track.readyState === 'live')) return existing.stream;
+    if (existing && streamReadyForDefinition(existing.stream, definition)) return existing.stream;
     const pending = startTasks.get(id);
     if (pending) return pending;
     const previousFailure = failedStarts.get(id);
@@ -172,6 +191,10 @@
           ? desktopStream(definition)
           : (TEST_MODE && definition.videoDeviceId === '__showslate_synthetic__' ? syntheticStream() : deviceStream(definition));
         const stream = await captureWithTimeout(captureTask);
+        if (!streamReadyForDefinition(stream, definition)) {
+          stopTracks(stream);
+          throw new Error(definition.withAudio ? 'The selected source did not provide the requested video and system audio.' : 'The selected source did not provide a live video track.');
+        }
         if (startGenerations.get(id) !== generation) {
           stopTracks(stream);
           throw new Error('Capture start was replaced by a newer request.');

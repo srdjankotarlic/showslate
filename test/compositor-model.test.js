@@ -55,6 +55,13 @@ check('COMPOSITOR_LIVE_INPUT_DEVICE_AUDIO_OK', () => {
   assert.deepStrictEqual({ width: input.width, height: input.height, fps: input.fps }, { width: 3840, height: 2160, fps: 60 });
 });
 
+check('COMPOSITOR_WINDOW_SYSTEM_AUDIO_OK', () => {
+  const enabled = compositor.normalizeLiveInput({ id: 'window-audio', type: 'window', desktopSourceId: 'window:42', withAudio: true });
+  const disabled = compositor.normalizeLiveInput({ id: 'window-silent', type: 'window', desktopSourceId: 'window:43', withAudio: false });
+  assert.strictEqual(enabled.withAudio, true);
+  assert.strictEqual(disabled.withAudio, false);
+});
+
 check('COMPOSITOR_AUDIO_INPUT_AND_MONITORING_OK', () => {
   const input = compositor.normalizeLiveInput({ id: 'mixer-1', type: 'audio', name: 'FOH mix', audioDeviceId: 'usb-audio-1', audioDeviceLabel: 'USB Audio Interface', withAudio: true });
   const layer = compositor.normalizeLayer({ id: 'audio-layer-1', type: 'audio', inputId: input.id, audioEnabled: true, audioMonitoring: 'monitor-only', volume: 0.65 });
@@ -83,6 +90,26 @@ check('COMPOSITOR_LIVE_INPUT_ERROR_WAITS_FOR_RESTART_OK', () => {
   assert.strictEqual(record.retryTimer, null);
   consumer.handleStatus({ inputId: 'capture-1', state: 'restarting' });
   assert.strictEqual(record.blockedByError, false);
+  consumer.dispose();
+});
+
+check('COMPOSITOR_LIVE_INPUT_REATTACHES_BOTH_MONITORS_OK', () => {
+  const consumer = new LiveInputConsumer({});
+  const listeners = {};
+  const element = {
+    dataset: {}, isConnected: true, srcObject: null, muted: true, defaultMuted: true, volume: 0,
+    addEventListener(name, callback) { listeners[name] = callback; },
+    play() { return Promise.resolve(); }
+  };
+  const first = { getTracks: () => [] };
+  const second = { getTracks: () => [] };
+  consumer.streams.set('window-1', first);
+  consumer.attach(element, 'window-1', { muted: true, volume: 0 });
+  assert.strictEqual(element.srcObject, first);
+  assert.strictEqual(listeners.emptied, undefined);
+  consumer.streams.set('window-1', second);
+  consumer.sync(['window-1']);
+  assert.strictEqual(element.srcObject, second);
   consumer.dispose();
 });
 

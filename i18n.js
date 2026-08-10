@@ -139,6 +139,11 @@
     shortcuts:'<kbd>Space</kbd> start/pauza · <kbd>R</kbd> reset · <kbd>N</kbd> sledeći · <kbd>↑↓</kbd> ±1m · <kbd>←→</kbd> ±10s · <kbd>B</kbd> blackout · <kbd>F</kbd> pun ekran · <kbd>M</kbd> poruka · <kbd>C</kbd> obriši poruku'
   };
 
+  en.sourceSystemAudio = 'Include system audio';
+  en.sourceSystemAudioHint = 'Adds desktop sound to the mixer. Program audio remains off until you route it to one output.';
+  sr.sourceSystemAudio = 'Uključi sistemski zvuk';
+  sr.sourceSystemAudioHint = 'Dodaje zvuk računara u mikser. Program zvuk ostaje isključen dok ga ne usmeriš na jedan izlaz.';
+
   const core = {
     es:{languageTitle:'Idioma de la interfaz',outLabel:'Salida a',sendScreen:'Enviar a pantalla',mode:'Modo',modeCountdown:'Cuenta atrás',modeCountup:'Cronómetro',modeClock:'Reloj',set:'Fijar',quick:'Rápido',colors:'Colores',background:'Fondo',timeText:'Tiempo/texto',yellow:'Amarillo',red:'Rojo',transparent:'Fondo transparente (OBS)',text:'Texto',textOnly:'Solo texto',clear:'Borrar',thresholds:'Avisos',sound:'Sonido',progress:'Barra de progreso',message:'Mensaje',flash:'Parpadear',send:'Enviar',namePh:'Nombre',autoNext:'Avanzar al siguiente',goNext:'GO ▶ SIGUIENTE &nbsp;(N)',rundown:'RUNDOWN',notePh:'Nota (opcional)…',cueImport:'⬆ Importar',cueExport:'⬇ CSV',copy:'Copiar',remoteLabel:'Remoto (teléfono / tablet)',shareOnline:'🌐 Compartir online',stopSharing:'✕ Dejar de compartir',start:'▶ START',pause:'⏸ PAUSA',outLive:'PANTALLA EN VIVO',outClosed:'PANTALLA CERRADA',live:'en vivo',connected:'conectado'},
     zh:{languageTitle:'界面语言',outLabel:'输出到',sendScreen:'发送到屏幕',mode:'模式',modeCountdown:'倒计时',modeCountup:'秒表',modeClock:'时钟',set:'设置',quick:'快速',colors:'颜色',background:'背景',timeText:'时间/文字',yellow:'黄色',red:'红色',transparent:'透明背景 (OBS)',text:'文字',textOnly:'仅文字',clear:'清除',thresholds:'提醒',sound:'声音',progress:'进度条',message:'消息',flash:'闪烁',send:'发送',namePh:'名称',autoNext:'自动进入下一项',goNext:'GO ▶ 下一项 &nbsp;(N)',rundown:'流程表',notePh:'备注（可选）…',cueImport:'⬆ 导入',cueExport:'⬇ CSV',copy:'复制',remoteLabel:'遥控（手机/平板）',shareOnline:'🌐 在线分享',stopSharing:'✕ 停止分享',start:'▶ 开始',pause:'⏸ 暂停',outLive:'屏幕在线',outClosed:'屏幕已关闭',live:'在线',connected:'已连接'},

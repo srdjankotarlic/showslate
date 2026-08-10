@@ -98,7 +98,9 @@
       videoDeviceLabel: type === 'device' ? cleanName(source.videoDeviceLabel, '') : '',
       audioDeviceId: type === 'device' || type === 'audio' ? String(source.audioDeviceId || '').slice(0, 1024) : '',
       audioDeviceLabel: type === 'device' || type === 'audio' ? cleanName(source.audioDeviceLabel, '') : '',
-      withAudio: (type === 'device' || type === 'audio') && source.withAudio !== false && !!String(source.audioDeviceId || ''),
+      withAudio: type === 'window'
+        ? source.withAudio === true
+        : (type === 'device' || type === 'audio') && source.withAudio !== false && !!String(source.audioDeviceId || ''),
       width: integer(source.width, 1920, 160, 7680),
       height: integer(source.height, 1080, 120, 4320),
       fps: integer(source.fps, 30, 1, 60),

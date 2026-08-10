@@ -134,7 +134,7 @@ let outputConfigs = [];          // dodatni profesionalni izlazi (multi-display)
 const auxOutputs = new Map();    // id -> { win, config, frameless, transparent }
 let liveInputHubWin = null;
 let liveInputHubReady = false;
-let pendingDesktopSourceId = '';
+let pendingDesktopSource = null;
 let liveInputDefinitions = [];
 const liveInputStatuses = new Map();
 let stateRevision = 0;
@@ -242,13 +242,13 @@ function setupLiveInputPermissions() {
     try {
       const sender = request && request.frame ? webContents.fromFrame(request.frame) : null;
       const trusted = sender && liveInputHubWin && !liveInputHubWin.isDestroyed() && sender.id === liveInputHubWin.webContents.id;
-      if (!trusted || !pendingDesktopSourceId) { callback({}); return; }
-      const sources = await desktopCapturer.getSources({ types: ['window', 'screen'], thumbnailSize: { width: 0, height: 0 }, fetchWindowIcons: false });
-      const source = sources.find(row => row.id === pendingDesktopSourceId);
-      pendingDesktopSourceId = '';
-      callback(source ? { video: source } : {});
+      if (!trusted || !pendingDesktopSource || !pendingDesktopSource.sourceId) { callback({}); return; }
+      const selection = pendingDesktopSource;
+      pendingDesktopSource = null;
+      const source = selection.source;
+      callback(source ? { video: source, ...(selection.withAudio && request.audioRequested ? { audio: 'loopback' } : {}) } : {});
     } catch (_) {
-      pendingDesktopSourceId = '';
+      pendingDesktopSource = null;
       callback({});
     }
   });
@@ -1270,10 +1270,22 @@ ipcMain.handle('live-input-signal-to-hub', async (event, payload) => {
   const clean = payload && typeof payload === 'object' ? { ...payload, inputId: String(payload.inputId || '') } : {};
   return { ok: sendLiveHubCommand({ type: 'signal', payload: { ...clean, consumerId: event.sender.id } }) };
 });
-ipcMain.handle('live-hub-select-desktop-source', async (event, sourceId) => {
+ipcMain.handle('live-hub-select-desktop-source', async (event, selection) => {
   if (!liveInputHubWin || liveInputHubWin.isDestroyed() || event.sender.id !== liveInputHubWin.webContents.id) return { ok: false };
-  pendingDesktopSourceId = String(sourceId || '');
-  return { ok: !!pendingDesktopSourceId };
+  const sourceId = String(selection && selection.sourceId || '');
+  const sourceName = String(selection && selection.sourceName || '').trim();
+  const sourceKind = sourceId.startsWith('screen:') ? 'screen' : 'window';
+  let sources = [];
+  try {
+    sources = await desktopCapturer.getSources({ types: ['window', 'screen'], thumbnailSize: { width: 0, height: 0 }, fetchWindowIcons: false });
+  } catch (_) {}
+  let source = sources.find(row => row.id === sourceId) || null;
+  if (!source && sourceName) {
+    const matches = sources.filter(row => (row.id.startsWith('screen:') ? 'screen' : 'window') === sourceKind && String(row.name || '').trim() === sourceName);
+    if (matches.length === 1) source = matches[0];
+  }
+  pendingDesktopSource = source ? { source, sourceId: source.id, withAudio: selection && selection.withAudio === true } : null;
+  return { ok: !!pendingDesktopSource, sourceId: source ? source.id : '', sourceName: source ? source.name : '', rebound: !!source && source.id !== sourceId };
 });
 ipcMain.on('live-hub-ready', event => {
   if (!liveInputHubWin || liveInputHubWin.isDestroyed() || event.sender.id !== liveInputHubWin.webContents.id) return;

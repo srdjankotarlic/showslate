@@ -21,6 +21,20 @@
       if (typeof this.api.onLiveInputStatus === 'function') this.api.onLiveInputStatus(payload => this.handleStatus(payload));
     }
 
+    peerRecord() {
+      return {
+        pc: null,
+        stream: null,
+        pendingCandidates: [],
+        subscribing: false,
+        awaitingOffer: false,
+        retryTimer: null,
+        disconnectTimer: null,
+        retryCount: 0,
+        blockedByError: false
+      };
+    }
+
     handleStatus(payload) {
       const rows = Array.isArray(payload) ? payload : [payload];
       rows.forEach(row => {
@@ -55,7 +69,7 @@
       if (!id || typeof this.api.liveInputSubscribe !== 'function') return;
       let record = this.peers.get(id);
       if (!record) {
-        record = { pc: null, pendingCandidates: [], subscribing: false, awaitingOffer: false, retryTimer: null, retryCount: 0, blockedByError: false };
+        record = this.peerRecord();
         this.peers.set(id, record);
       }
       if (record.pc || record.subscribing || record.awaitingOffer || record.blockedByError) return;
@@ -96,12 +110,14 @@
       if (!inputId || !this.desired.has(inputId)) return;
       let record = this.peers.get(inputId);
       if (!record) {
-        record = { pc: null, pendingCandidates: [], subscribing: false, awaitingOffer: false, retryTimer: null, retryCount: 0, blockedByError: false };
+        record = this.peerRecord();
         this.peers.set(inputId, record);
       }
       if (payload.type === 'offer' && payload.description) {
         if (record.retryTimer) clearTimeout(record.retryTimer);
+        if (record.disconnectTimer) clearTimeout(record.disconnectTimer);
         record.retryTimer = null;
+        record.disconnectTimer = null;
         record.awaitingOffer = false;
         record.retryCount = 0;
         record.blockedByError = false;
@@ -109,10 +125,18 @@
         if (record.pc) record.pc.close();
         const pc = new RTCPeerConnection({ iceServers: [] });
         record.pc = pc;
+        record.stream = new MediaStream();
+        this.streams.set(inputId, record.stream);
+        this.refreshElements(inputId);
         record.pendingCandidates = [];
         pc.ontrack = event => {
-          const stream = event.streams && event.streams[0] ? event.streams[0] : new MediaStream([event.track]);
-          this.streams.set(inputId, stream);
+          if (this.peers.get(inputId) !== record || record.pc !== pc) return;
+          const incoming = event.streams && event.streams[0];
+          const tracks = incoming && typeof incoming.getTracks === 'function' ? incoming.getTracks() : [event.track];
+          tracks.forEach(track => {
+            if (!record.stream.getTracks().some(existing => existing.id === track.id)) record.stream.addTrack(track);
+          });
+          const stream = record.stream;
           this.refreshElements(inputId);
           this.handleStatus({ inputId, state: 'live', hasVideo: stream.getVideoTracks().length > 0, hasAudio: stream.getAudioTracks().length > 0 });
         };
@@ -122,9 +146,27 @@
           }
         };
         pc.onconnectionstatechange = () => {
-          if (['failed', 'disconnected', 'closed'].includes(pc.connectionState)) {
+          if (this.peers.get(inputId) !== record || record.pc !== pc) return;
+          if (pc.connectionState === 'connected') {
+            if (record.disconnectTimer) clearTimeout(record.disconnectTimer);
+            record.disconnectTimer = null;
+            this.refreshElements(inputId);
+            return;
+          }
+          if (pc.connectionState === 'disconnected') {
+            this.handleStatus({ inputId, state: 'disconnected' });
+            if (!record.disconnectTimer) record.disconnectTimer = setTimeout(() => {
+              record.disconnectTimer = null;
+              if (this.peers.get(inputId) === record && record.pc === pc && pc.connectionState === 'disconnected') {
+                this.closePeer(inputId, true);
+                if (this.desired.has(inputId)) this.ensure(inputId);
+              }
+            }, 1500);
+            return;
+          }
+          if (['failed', 'closed'].includes(pc.connectionState)) {
             this.handleStatus({ inputId, state: pc.connectionState });
-            if (pc.connectionState === 'failed' && this.peers.get(inputId) === record) {
+            if (this.peers.get(inputId) === record && record.pc === pc) {
               this.closePeer(inputId, true);
               if (this.desired.has(inputId)) this.ensure(inputId);
             }
@@ -159,7 +201,6 @@
       element.volume = Math.max(0, Math.min(1, Number(options.volume ?? 1)));
       if (!this.elements.has(id)) this.elements.set(id, new Set());
       this.elements.get(id).add(element);
-      element.addEventListener('emptied', () => this.elements.get(id)?.delete(element), { once: true });
       const stream = this.streams.get(id);
       if (stream) this.assign(element, stream);
       this.desired.add(id);
@@ -189,7 +230,11 @@
       next.forEach(id => this.ensure(id));
       for (const id of [...this.peers.keys()]) if (!next.has(id)) this.closePeer(id, true);
       for (const [id, elements] of this.elements) {
-        for (const element of [...elements]) if (!element.isConnected) elements.delete(element);
+        const stream = this.streams.get(id);
+        for (const element of [...elements]) {
+          if (!element.isConnected) elements.delete(element);
+          else if (stream && element.srcObject !== stream) this.assign(element, stream);
+        }
         if (!elements.size && !next.has(id)) this.elements.delete(id);
       }
     }
@@ -198,10 +243,13 @@
       const id = String(inputId || '');
       const record = this.peers.get(id);
       if (record && record.retryTimer) clearTimeout(record.retryTimer);
+      if (record && record.disconnectTimer) clearTimeout(record.disconnectTimer);
       if (record && record.pc) record.pc.close();
       this.peers.delete(id);
       const stream = this.streams.get(id);
       if (stream) stream.getTracks().forEach(track => track.stop());
+      const elements = this.elements.get(id);
+      if (stream && elements) for (const element of elements) if (element.srcObject === stream) element.srcObject = null;
       this.streams.delete(id);
       if (notify && typeof this.api.liveInputUnsubscribe === 'function') this.api.liveInputUnsubscribe(id);
     }
