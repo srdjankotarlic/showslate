@@ -139,6 +139,23 @@ app.whenReady().then(async () => {
   const mediaReplacement = JSON.parse(await win.webContents.executeJavaScript(`JSON.stringify((()=>{const layer=currentScene().layers.find(row=>row.id===${JSON.stringify(pictureLayerId)});return {id:layer.id,name:layer.name,type:layer.type,selected:selectedLayer().id};})())`));
   win.webContents.debugger.detach();
   check('COMPOSITOR_MEDIA_REPLACE_PRESERVES_LAYER_OK', mediaReplacement.id === pictureLayerId && mediaReplacement.selected === pictureLayerId && mediaReplacement.name === 'replacement.svg' && mediaReplacement.type === 'image', JSON.stringify(mediaReplacement));
+  const mediaRecovery = JSON.parse(await win.webContents.executeJavaScript(`(async()=>{
+    monitorSceneKeys={pv:'cached-preview',pg:'cached-program'};
+    const previousBase=ctlMediaBase;
+    showNet({running:true,ip:'127.0.0.1',port:7979,clients:0,token:'media-test'});
+    const startupInvalidated=monitorSceneKeys.pv===''&&monitorSceneKeys.pg===''&&ctlMediaBase==='http://127.0.0.1:7979';
+    const scene=currentScene();const programScene=activeScene(programState);const priorSelected=selectedLayerId;
+    const broken={id:makeId('layer'),type:'image',name:'Offline sponsor slate',src:'data:image/png;base64,broken',visible:true,fit:'contain',x:4,y:4,w:32,h:24,opacity:1};
+    scene.layers.push(broken);programScene.layers.push(cloneState(broken));selectedLayerId=broken.id;monitorSceneKeys={pv:'',pg:''};renderMonitorScene('pv',S);renderMonitorScene('pg',programState);
+    const started=Date.now();while(Date.now()-started<1200){const previewReady=document.querySelector('#pvScene [data-layer-id="'+broken.id+'"] .scene-media-error');const programReady=document.querySelector('#pgScene [data-layer-id="'+broken.id+'"]');if(previewReady&&programReady&&!programReady.querySelector('img,video,.scene-media-error'))break;await new Promise(resolve=>setTimeout(resolve,25));}
+    const previewWarning=document.querySelector('#pvScene [data-layer-id="'+broken.id+'"] .scene-media-error');
+    const programLayer=document.querySelector('#pgScene [data-layer-id="'+broken.id+'"]');
+    const programMediaCount=programLayer?programLayer.querySelectorAll('img,video,.scene-media-error').length:-1;
+    const programClean=!!programLayer&&programMediaCount===0;
+    scene.layers=scene.layers.filter(layer=>layer.id!==broken.id);programScene.layers=programScene.layers.filter(layer=>layer.id!==broken.id);selectedLayerId=priorSelected;ctlMediaBase=previousBase;monitorSceneKeys={pv:'',pg:''};renderMonitorScene('pv',S);renderMonitorScene('pg',programState);
+    return JSON.stringify({startupInvalidated,previewWarning:previewWarning&&previewWarning.textContent||'',programClean,programMediaCount,programHtml:programLayer&&programLayer.innerHTML||''});
+  })()`));
+  check('COMPOSITOR_MEDIA_STARTUP_AND_ERROR_RECOVERY_OK', mediaRecovery.startupInvalidated && mediaRecovery.previewWarning.includes('Offline sponsor slate') && mediaRecovery.programClean, JSON.stringify(mediaRecovery));
 
   const authored = JSON.parse(await win.webContents.executeJavaScript(`(async()=>{
     const change=(element)=>element.dispatchEvent(new Event('change',{bubbles:true}));
@@ -165,6 +182,7 @@ app.whenReady().then(async () => {
     document.getElementById('btnAddSource').click();
     document.querySelector('[data-source-kind="device"]').click();
     const deviceStarted=Date.now(); while(Date.now()-deviceStarted<2000&&document.getElementById('sourceVideoDevice').options[0]?.value!=='video-card-1') await new Promise(resolve=>setTimeout(resolve,25));
+    const captureAudioDefault=document.getElementById('sourceAudioDevice').value;
     document.getElementById('sourceAudioDevice').value='audio-card-1';
     document.getElementById('sourceDeviceResolution').value='1280x720';
     document.getElementById('sourceDeviceFps').value='30';
@@ -200,14 +218,18 @@ app.whenReady().then(async () => {
     document.getElementById('inspW').value='42'; change(document.getElementById('inspW'));
     document.getElementById('inspH').value='40'; change(document.getElementById('inspH'));
     renderStage('pv',S,Date.now());
-    const scene=currentScene(); const timer=scene.layers.find(layer=>layer.type==='timer'); const color=scene.layers.find(layer=>layer.type==='color'); const capture=scene.layers.find(layer=>layer.type==='window');
+    const scene=currentScene(); const timer=scene.layers.find(layer=>layer.type==='timer'); const color=scene.layers.find(layer=>layer.type==='color'); const text=scene.layers.find(layer=>layer.type==='text'); const capture=scene.layers.find(layer=>layer.type==='window');
     const captureElement=document.querySelector('#pvScene [data-layer-id="'+capture.id+'"]');
     const previewRect=document.getElementById('preview').getBoundingClientRect();
-    return JSON.stringify({canvas:S.canvas,previewRatio:previewRect.width/previewRect.height,types:scene.layers.map(layer=>layer.type),timerIndex:scene.layers.indexOf(timer),colorIndex:scene.layers.indexOf(color),capture:{x:capture.x,y:capture.y,w:capture.w,h:capture.h,name:capture.name},audioState,handles:captureElement?captureElement.querySelectorAll('.transform-handle').length:0,layerRows:document.querySelectorAll('#layerList .layer-row').length,liveInputs:S.liveInputs.length});
+    return JSON.stringify({canvas:S.canvas,previewRatio:previewRect.width/previewRect.height,types:scene.layers.map(layer=>layer.type),timerIndex:scene.layers.indexOf(timer),colorIndex:scene.layers.indexOf(color),text:{bg:text.bg,x:text.x,y:text.y,w:text.w,h:text.h},captureAudioDefault,capture:{x:capture.x,y:capture.y,w:capture.w,h:capture.h,name:capture.name},audioState,handles:captureElement?captureElement.querySelectorAll('.transform-handle').length:0,layerRows:document.querySelectorAll('#layerList .layer-row').length,liveInputs:S.liveInputs.length});
   })()`));
   check('COMPOSITOR_CUSTOM_CANVAS_AND_SOURCE_TYPES_OK', authored.canvas.width === 1000 && authored.canvas.height === 1000 && authored.canvas.fps === 25 && Math.abs(authored.previewRatio - 1) < 0.02 && ['color','image','text','window','capture','timer'].every(type => authored.types.includes(type)), JSON.stringify(authored));
   check('COMPOSITOR_LAYER_INSPECTOR_AND_HANDLES_OK', authored.capture.name === 'Slides capture' && authored.capture.x === 54 && authored.capture.y === 8 && authored.capture.w === 42 && authored.capture.h === 40 && authored.handles === 4 && authored.layerRows === authored.types.length, JSON.stringify(authored));
+  check('COMPOSITOR_CAPTURE_AUDIO_REQUIRES_EXPLICIT_CHOICE_OK', authored.captureAudioDefault === '', JSON.stringify({ captureAudioDefault: authored.captureAudioDefault }));
+  const layerListLayout = JSON.parse(await win.webContents.executeJavaScript(`JSON.stringify((()=>{const rows=[...document.querySelectorAll('#layerList .layer-row')];const chips=[...document.querySelectorAll('#layerList .layer-program-chip')];const bar=document.getElementById('layerProgramBar').getBoundingClientRect();return {rows:rows.map(row=>row.getBoundingClientRect().height),chips:chips.map(chip=>chip.getBoundingClientRect().height),bar:bar.height};})())`));
+  check('COMPOSITOR_LAYER_LIST_STAYS_COMPACT_OK', layerListLayout.rows.length > 0 && layerListLayout.rows.every(height=>height >= 72 && height <= 80) && layerListLayout.chips.every(height=>height <= 18) && layerListLayout.bar <= 64, JSON.stringify(layerListLayout));
   check('COMPOSITOR_COLOR_DEFAULTS_BEHIND_TIMER_OK', authored.colorIndex === 0 && authored.timerIndex > authored.colorIndex, JSON.stringify({ colorIndex: authored.colorIndex, timerIndex: authored.timerIndex }));
+  check('COMPOSITOR_TEXT_DEFAULT_IS_NON_OBSCURING_OK', authored.text.bg === 'transparent' && authored.text.x > 0 && authored.text.y > 0 && authored.text.w < 100 && authored.text.h < 100, JSON.stringify(authored.text));
   check('COMPOSITOR_AUDIO_INPUT_AND_MIXER_OK', authored.types.includes('audio') && authored.audioState.layer.volume === 0.62 && authored.audioState.layer.audioMonitoring === 'monitor-only' && authored.audioState.input.type === 'audio' && authored.audioState.input.audioDeviceId === 'audio-card-1' && authored.audioState.rows >= 2 && authored.audioState.meters === authored.audioState.rows, JSON.stringify(authored.audioState));
   check('COMPOSITOR_AUDIO_OUTPUT_ROUTING_OK', authored.audioState.programRoute === 'primary' && authored.audioState.programDevice === 'speaker-main' && authored.audioState.programStateDevice === 'speaker-main', JSON.stringify(authored.audioState));
   const sourceCatalog = JSON.parse(await win.webContents.executeJavaScript(`JSON.stringify((()=>{document.getElementById('btnAddSource').click();const kinds=[...document.querySelectorAll('#sourceKindGrid [data-source-kind]')].map(button=>button.dataset.sourceKind);const groups=[...document.querySelectorAll('#sourceKindGrid .source-kind-section-title strong')].map(node=>node.textContent);closeSourceDialog();return {kinds,groups};})())`));
@@ -263,7 +285,8 @@ app.whenReady().then(async () => {
     document.getElementById('btnAddSource').click();
     document.querySelector('[data-source-kind="device"]').click();
     const started=Date.now(); while(Date.now()-started<2000&&document.getElementById('sourceVideoDevice').options[0]?.textContent.includes('Scanning')) await new Promise(resolve=>setTimeout(resolve,25));
-    const result={option:document.getElementById('sourceVideoDevice').options[0]?.textContent||'',status:document.getElementById('sourceDeviceStatusText').textContent,visible:!document.getElementById('sourceDeviceStatus').hidden,cameraAction:!document.getElementById('btnCameraPermission').hidden,microphoneAction:!document.getElementById('btnMicrophonePermission').hidden,addDisabled:document.getElementById('btnDeviceAdd').disabled};
+    const add=document.getElementById('btnDeviceAdd');
+    const result={option:document.getElementById('sourceVideoDevice').options[0]?.textContent||'',status:document.getElementById('sourceDeviceStatusText').textContent,visible:!document.getElementById('sourceDeviceStatus').hidden,cameraAction:!document.getElementById('btnCameraPermission').hidden,microphoneAction:!document.getElementById('btnMicrophonePermission').hidden,addDisabled:add.disabled,addOpacity:Number.parseFloat(getComputedStyle(add).opacity)};
     closeSourceDialog(); return JSON.stringify(result);
   })()`));
   deviceDiscoveryMode = 'blocked';
@@ -275,7 +298,7 @@ app.whenReady().then(async () => {
     closeSourceDialog(); return JSON.stringify(result);
   })()`));
   deviceDiscoveryMode = 'ready';
-  check('COMPOSITOR_PERMISSION_FAILURE_EXITS_SCANNING_OK', permissionPending.visible && permissionPending.cameraAction && permissionPending.microphoneAction && permissionPending.addDisabled && !permissionPending.option.includes('Scanning') && permissionFailure.visible && permissionFailure.cameraSettings && permissionFailure.microphoneSettings && permissionFailure.addDisabled && !permissionFailure.option.includes('Scanning') && permissionFailure.status.includes('Camera') && permissionFailure.status.includes('Microphone'), JSON.stringify({ permissionPending, permissionFailure }));
+  check('COMPOSITOR_PERMISSION_FAILURE_EXITS_SCANNING_OK', permissionPending.visible && permissionPending.cameraAction && permissionPending.microphoneAction && permissionPending.addDisabled && permissionPending.addOpacity <= .5 && !permissionPending.option.includes('Scanning') && permissionFailure.visible && permissionFailure.cameraSettings && permissionFailure.microphoneSettings && permissionFailure.addDisabled && !permissionFailure.option.includes('Scanning') && permissionFailure.status.includes('Camera') && permissionFailure.status.includes('Microphone'), JSON.stringify({ permissionPending, permissionFailure }));
 
   screenPermissionMode = 'denied';
   privacySettingsRequests = [];
@@ -388,6 +411,17 @@ app.whenReady().then(async () => {
     return {primary:S.primaryLiveAudio,checked:primary.checked,router:document.getElementById('outputRouterOverlay').classList.contains('open'),status:document.getElementById('outputRouterStatus').textContent};
   })())`));
   check('COMPOSITOR_SINGLE_LIVE_AUDIO_ROUTE_GUARD_OK', !audioGuard.primary && !audioGuard.checked && audioGuard.router && audioGuard.status.length > 10, JSON.stringify(audioGuard));
+  const unavailableOutputGuard = JSON.parse(await win.webContents.executeJavaScript(`JSON.stringify((()=>{
+    const previous=outputConfigs; const previousDirty=outputRoutingDirty;
+    outputConfigs=[normalizeOutputConfigUI({id:'missing-route',name:'Missing LED',enabled:true,displayId:999999,displayLabel:'Disconnected LED',displayWidth:1920,displayHeight:1080},0)];
+    outputRoutingDirty=true; renderOutputRows(); openOutputRouter();
+    const blocked=document.getElementById('btnOutputRouterApply').disabled;
+    const status=document.getElementById('outputRouterStatus').textContent;
+    const state=document.querySelector('.output-route-state')?.textContent||'';
+    outputConfigs=previous; outputRoutingDirty=previousDirty; renderOutputRows(); closeOutputRouter();
+    return {blocked,status,state};
+  })())`));
+  check('COMPOSITOR_UNAVAILABLE_OUTPUT_BLOCKS_APPLY_OK', unavailableOutputGuard.blocked && unavailableOutputGuard.status.includes('available display') && unavailableOutputGuard.state === 'DISPLAY UNAVAILABLE', JSON.stringify(unavailableOutputGuard));
   await win.webContents.executeJavaScript(`document.getElementById('btnOutputRouterCloseX').click(); document.getElementById('panelSources').scrollIntoView({block:'start'});`);
   await new Promise(resolve => setTimeout(resolve, 160));
   fs.writeFileSync(path.join(artifactDirectory, 'compositor-1280x800.png'), (await win.webContents.capturePage()).toPNG());
@@ -410,6 +444,13 @@ app.whenReady().then(async () => {
     return {vw:innerWidth,vh:innerHeight,panel:{left:panel.left,right:panel.right,top:panel.top,bottom:panel.bottom},add:{left:add.left,right:add.right,top:add.top,bottom:add.bottom},action:{left:action.left,right:action.right,top:action.top,bottom:action.bottom},preview:{left:preview.left,right:preview.right,top:preview.top,bottom:preview.bottom},program:{left:program.left,right:program.right,top:program.top,bottom:program.bottom},scrollTop:root.scrollTop,scrollable:root.scrollHeight>root.clientHeight};
   })())`));
   check('COMPOSITOR_900X600_CONTROLS_REACHABLE_OK', compact.panel.left >= 0 && compact.panel.right <= compact.vw + 1 && compact.add.left >= 0 && compact.add.right <= compact.vw + 1 && compact.preview.right > compact.preview.left && compact.preview.bottom > compact.preview.top && compact.program.right > compact.program.left && compact.program.bottom > compact.program.top && compact.scrollable && compact.scrollTop > 0 && compact.action.left >= 0 && compact.action.right <= compact.vw + 1 && compact.action.top >= compact.panel.top && compact.action.bottom <= compact.panel.bottom + 1, JSON.stringify(compact));
+  const compactUtility = JSON.parse(await win.webContents.executeJavaScript(`JSON.stringify((()=>{
+    document.body.classList.add('dr-right'); const utility=document.getElementById('utilitySidebar'); utility.scrollTop=0;
+    const status=document.querySelector('.card-status').getBoundingClientRect(); const scenes=document.querySelector('.card-scenes').getBoundingClientRect(); const rows=[...document.querySelectorAll('.card-status .strow')].map(row=>row.getBoundingClientRect());
+    const result={scrollable:utility.scrollHeight>utility.clientHeight,statusBottom:status.bottom,scenesTop:scenes.top,rowsInside:rows.every(row=>row.top>=status.top&&row.bottom<=status.bottom+1)};
+    document.body.classList.remove('dr-right'); return result;
+  })())`));
+  check('COMPOSITOR_COMPACT_UTILITY_CARDS_DO_NOT_OVERLAP_OK', compactUtility.scrollable && compactUtility.rowsInside && compactUtility.statusBottom <= compactUtility.scenesTop + 1, JSON.stringify(compactUtility));
   await win.webContents.executeJavaScript(`document.getElementById('panelSources').scrollTop=0`);
   await new Promise(resolve => setTimeout(resolve, 120));
   fs.writeFileSync(path.join(artifactDirectory, 'compositor-900x600.png'), (await win.webContents.capturePage()).toPNG());
@@ -422,7 +463,7 @@ app.whenReady().then(async () => {
   })())`));
   check('COMPOSITOR_DEMO_STARTS_PREVIEW_PROGRAM_IN_SYNC_OK', demoBaseline.visible && demoBaseline.direct === false && demoBaseline.selectedStatus === 'LIVE' && demoBaseline.statuses.length > 0 && demoBaseline.statuses.every(status=>status === 'LIVE') && demoBaseline.preview === demoBaseline.program, JSON.stringify(demoBaseline));
 
-  console.log(`COMPOSITOR_RENDERER_TESTS_OK ${checks}/27`);
+  console.log(`COMPOSITOR_RENDERER_TESTS_OK ${checks}/33`);
   win.destroy();
   fs.rmSync(profile, { recursive: true, force: true });
   app.quit();

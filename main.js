@@ -146,6 +146,41 @@ let cleanQuitComplete = false;
 let rendererCrashed = false;
 let controlCloseAllowed = false;
 let lastCleanFlushSucceeded = false;
+let liveQuitConfirmed = false;
+let liveQuitPromptOpen = false;
+let controlCloseFlowInProgress = false;
+
+function hasActiveOutputWindows() {
+  if (outputWin && !outputWin.isDestroyed()) return true;
+  for (const rec of auxOutputs.values()) {
+    if (rec && rec.win && !rec.win.isDestroyed()) return true;
+  }
+  return false;
+}
+
+async function confirmStopOutputsAndQuit() {
+  if (SMOKE || liveQuitConfirmed || !hasActiveOutputWindows()) return true;
+  if (liveQuitPromptOpen) return false;
+  liveQuitPromptOpen = true;
+  try {
+    const result = await dialog.showMessageBox(controlWin && !controlWin.isDestroyed() ? controlWin : null, {
+      type: 'warning',
+      title: 'Program output is live',
+      message: 'Stop all outputs and quit ShowSlate?',
+      detail: 'The audience Program feed will close immediately.',
+      buttons: ['Keep Running', 'Stop Outputs and Quit'],
+      defaultId: 0,
+      cancelId: 0,
+      destructiveId: 1,
+      noLink: true
+    });
+    if (result.response !== 1) return false;
+    liveQuitConfirmed = true;
+    return true;
+  } finally {
+    liveQuitPromptOpen = false;
+  }
+}
 
 async function flushRendererShow() {
   if (!controlWin || controlWin.isDestroyed() || rendererCrashed) return { ok: false, skipped: true };
@@ -262,9 +297,11 @@ function liveInputPermissionSnapshot() {
 }
 
 async function requestDarwinLiveInputPermission(mediaType) {
-  if (!['camera', 'microphone'].includes(mediaType)) return;
-  if (systemPreferences.getMediaAccessStatus(mediaType) !== 'not-determined') return;
-  await boundedLiveInputTask(systemPreferences.askForMediaAccess(mediaType), 20000, `${mediaType} permission`);
+  if (!['camera', 'microphone'].includes(mediaType)) return false;
+  const current = systemPreferences.getMediaAccessStatus(mediaType);
+  if (current === 'granted') return true;
+  if (current !== 'not-determined') return false;
+  return boundedLiveInputTask(systemPreferences.askForMediaAccess(mediaType), 20000, `${mediaType} permission`);
 }
 
 // ---------------- MREŽNI IZLAZ (OBS Browser Source / NDI most / confidence monitor) ----------------
@@ -683,11 +720,19 @@ function createControlWindow() {
   controlWin.on('close', (event) => {
     if (SMOKE || rendererCrashed || controlCloseAllowed || cleanQuitComplete) return;
     event.preventDefault();
-    flushRendererShow().then((result) => {
-      lastCleanFlushSucceeded = !!(result && result.ok);
+    if (controlCloseFlowInProgress) return;
+    controlCloseFlowInProgress = true;
+    confirmStopOutputsAndQuit().then(confirmed => {
+      if (!confirmed) return null;
+      return flushRendererShow().then((result) => {
+        lastCleanFlushSucceeded = !!(result && result.ok);
+        controlCloseAllowed = true;
+        if (controlWin && !controlWin.isDestroyed()) controlWin.close();
+      });
+    }).catch(error => {
+      console.error('CONTROL_CLOSE_CONFIRM_FAILED ' + String(error && error.message || error));
     }).finally(() => {
-      controlCloseAllowed = true;
-      if (controlWin && !controlWin.isDestroyed()) controlWin.close();
+      controlCloseFlowInProgress = false;
     });
   });
   controlWin.on('closed', () => {
@@ -721,7 +766,8 @@ function positionOutput(target) {
     const h = Math.floor(w * 9 / 16);
     outputWin.setBounds({ x: b.x + b.width - w - 24, y: b.y + 48, width: w, height: h });
   }
-  outputWin.show();
+  if (typeof outputWin.showInactive === 'function') outputWin.showInactive();
+  else outputWin.show();
   pushDisplays();
 }
 
@@ -807,7 +853,8 @@ function positionAuxOutput(rec, targetOverride = null) {
     const height = Math.min(cfg.height || Math.round(width * 9 / 16), Math.floor(area.height * 0.8));
     rec.win.setBounds(placedOutputBounds(area, width, height, cfg));
   }
-  rec.win.show();
+  if (typeof rec.win.showInactive === 'function') rec.win.showInactive();
+  else rec.win.show();
   return true;
 }
 
@@ -839,6 +886,7 @@ function createAuxOutputWindow(cfg, target) {
     frame: !frameless,
     hasShadow: !frameless,
     alwaysOnTop: frameless,
+    focusable: false,
     webPreferences: { preload: path.join(__dirname, 'preload.js'), contextIsolation: true, nodeIntegration: false, backgroundThrottling: false }
   });
   if (frameless) win.setAlwaysOnTop(true, 'floating');
@@ -965,6 +1013,7 @@ function createOutputWindow(displayId) {
     frame: !frameless,
     hasShadow: !frameless,
     alwaysOnTop: frameless,
+    focusable: false,
     webPreferences: { preload: path.join(__dirname, 'preload.js'), contextIsolation: true, nodeIntegration: false, backgroundThrottling: false }
   });
   outputWin = win;
@@ -1138,11 +1187,19 @@ ipcMain.handle('live-input-devices', async (event, requestPermission) => {
   if (!controlWin || controlWin.isDestroyed() || event.sender.id !== controlWin.webContents.id) return { devices: [], permissions: liveInputPermissionSnapshot(), error: 'unauthorized' };
   let permissions = liveInputPermissionSnapshot();
   const permissionType = ['camera', 'microphone'].includes(requestPermission) ? requestPermission : (requestPermission === true ? 'camera' : '');
+  let permissionRequest = null;
   if (permissionType && process.platform === 'darwin') {
     try {
-      await requestDarwinLiveInputPermission(permissionType);
-    } catch (_) {}
+      const granted = await requestDarwinLiveInputPermission(permissionType);
+      permissionRequest = { type: permissionType, granted: granted === true, error: '' };
+    } catch (error) {
+      permissionRequest = { type: permissionType, granted: false, error: String(error && error.message || error) };
+    }
     permissions = liveInputPermissionSnapshot();
+    if (permissionRequest) {
+      permissionRequest.status = permissions[permissionType] || 'unknown';
+      permissionRequest.granted = permissionRequest.granted || permissionRequest.status === 'granted';
+    }
   }
   if (!liveInputHubWin || liveInputHubWin.isDestroyed()) createLiveInputHub();
   await new Promise(resolve => {
@@ -1159,9 +1216,9 @@ ipcMain.handle('live-input-devices', async (event, requestPermission) => {
       12000,
       'Capture device discovery'
     );
-    return { devices: Array.isArray(devices) ? devices : [], permissions: liveInputPermissionSnapshot(), error: '' };
+    return { devices: Array.isArray(devices) ? devices : [], permissions: liveInputPermissionSnapshot(), permissionRequest, error: '' };
   } catch (error) {
-    return { devices: [], permissions: liveInputPermissionSnapshot(), error: /timed out/i.test(String(error && error.message || error)) ? 'timeout' : 'enumeration-failed' };
+    return { devices: [], permissions: liveInputPermissionSnapshot(), permissionRequest, error: /timed out/i.test(String(error && error.message || error)) ? 'timeout' : 'enumeration-failed' };
   }
 });
 ipcMain.handle('live-input-permissions', async () => {
@@ -6114,6 +6171,17 @@ app.whenReady().then(async () => {
 });
 
 app.on('before-quit', (event) => {
+  if (!SMOKE && !rendererCrashed && !liveQuitConfirmed && hasActiveOutputWindows()) {
+    event.preventDefault();
+    if (!liveQuitPromptOpen) {
+      confirmStopOutputsAndQuit().then(confirmed => {
+        if (confirmed) app.quit();
+      }).catch(error => {
+        console.error('LIVE_OUTPUT_QUIT_CONFIRM_FAILED ' + String(error && error.message || error));
+      });
+    }
+    return;
+  }
   if (rendererCrashed || !showRepository || !showRepository.trackSession || cleanQuitComplete) return;
   event.preventDefault();
   if (cleanQuitInProgress) return;

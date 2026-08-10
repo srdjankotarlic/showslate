@@ -7,8 +7,12 @@
   const inputs = new Map();
   const peers = new Map();
   const reconnectTimers = new Map();
+  const startTasks = new Map();
+  const startGenerations = new Map();
+  const failedStarts = new Map();
   let desktopCaptureQueue = Promise.resolve();
   const TEST_MODE = new URLSearchParams(location.search).get('test') === '1';
+  const CAPTURE_START_TIMEOUT_MS = 10000;
 
   function status(inputId, state, extra = {}) {
     const payload = { inputId: String(inputId || ''), state, at: Date.now(), ...extra };
@@ -18,6 +22,35 @@
 
   function stopTracks(stream) {
     if (stream && typeof stream.getTracks === 'function') stream.getTracks().forEach(track => track.stop());
+  }
+
+  function invalidateStart(inputId) {
+    const id = String(inputId || '');
+    startGenerations.set(id, (startGenerations.get(id) || 0) + 1);
+    startTasks.delete(id);
+  }
+
+  function captureWithTimeout(task, timeoutMs = CAPTURE_START_TIMEOUT_MS) {
+    let timedOut = false;
+    let timer = null;
+    return new Promise((resolve, reject) => {
+      timer = setTimeout(() => {
+        timedOut = true;
+        reject(new Error('Capture did not start within 10 seconds. Check permission, cable and device, then choose Restart.'));
+      }, timeoutMs);
+      Promise.resolve(task).then(stream => {
+        if (timedOut) {
+          stopTracks(stream);
+          return;
+        }
+        clearTimeout(timer);
+        resolve(stream);
+      }, error => {
+        if (timedOut) return;
+        clearTimeout(timer);
+        reject(error);
+      });
+    });
   }
 
   function closeInput(inputId, reason = 'stopped', extra = {}) {
@@ -124,51 +157,83 @@
     if (!definition || !definition.active) return null;
     const existing = inputs.get(id);
     if (existing && existing.stream && existing.stream.getTracks().some(track => track.readyState === 'live')) return existing.stream;
-    closeInput(id, 'starting');
-    status(id, 'starting', { name: definition.name, type: definition.type });
+    const pending = startTasks.get(id);
+    if (pending) return pending;
+    const previousFailure = failedStarts.get(id);
+    if (previousFailure) throw previousFailure;
+
+    const generation = (startGenerations.get(id) || 0) + 1;
+    startGenerations.set(id, generation);
+    const task = (async () => {
+      closeInput(id, 'starting');
+      status(id, 'starting', { name: definition.name, type: definition.type });
+      try {
+        const captureTask = definition.type === 'window'
+          ? desktopStream(definition)
+          : (TEST_MODE && definition.videoDeviceId === '__showslate_synthetic__' ? syntheticStream() : deviceStream(definition));
+        const stream = await captureWithTimeout(captureTask);
+        if (startGenerations.get(id) !== generation) {
+          stopTracks(stream);
+          throw new Error('Capture start was replaced by a newer request.');
+        }
+        const record = { definition, stream, startedAt: Date.now() };
+        inputs.set(id, record);
+        failedStarts.delete(id);
+        stream.getTracks().forEach(track => track.addEventListener('ended', () => {
+          if (inputs.get(id) !== record) return;
+          closeInput(id, 'ended', { kind: track.kind, label: track.label || '' });
+          scheduleReconnect(id);
+        }));
+        const videoTrack = stream.getVideoTracks()[0];
+        const audioTrack = stream.getAudioTracks()[0];
+        const settings = videoTrack && typeof videoTrack.getSettings === 'function' ? videoTrack.getSettings() : {};
+        status(id, 'live', {
+          name: definition.name,
+          type: definition.type,
+          hasVideo: stream.getVideoTracks().length > 0,
+          hasAudio: stream.getAudioTracks().length > 0,
+          videoLabel: videoTrack?.label || '',
+          audioLabel: audioTrack?.label || '',
+          width: Number(settings.width) || 0,
+          height: Number(settings.height) || 0,
+          frameRate: Number(settings.frameRate) || 0
+        });
+        for (const peer of [...peers.values()]) if (peer.inputId === id) createOffer(peer.consumerId, id, true).catch(() => {});
+        return stream;
+      } catch (error) {
+        if (startGenerations.get(id) === generation) {
+          const failure = error instanceof Error ? error : new Error(String(error || 'Capture failed.'));
+          failedStarts.set(id, failure);
+          status(id, 'error', { name: definition.name, type: definition.type, error: failure.message });
+        }
+        throw error;
+      }
+    })();
+    startTasks.set(id, task);
     try {
-      const stream = definition.type === 'window'
-        ? await desktopStream(definition)
-        : (TEST_MODE && definition.videoDeviceId === '__showslate_synthetic__' ? syntheticStream() : await deviceStream(definition));
-      const record = { definition, stream, startedAt: Date.now() };
-      inputs.set(id, record);
-      stream.getTracks().forEach(track => track.addEventListener('ended', () => {
-        if (inputs.get(id) !== record) return;
-        closeInput(id, 'ended', { kind: track.kind, label: track.label || '' });
-        scheduleReconnect(id);
-      }));
-      const videoTrack = stream.getVideoTracks()[0];
-      const audioTrack = stream.getAudioTracks()[0];
-      const settings = videoTrack && typeof videoTrack.getSettings === 'function' ? videoTrack.getSettings() : {};
-      status(id, 'live', {
-        name: definition.name,
-        type: definition.type,
-        hasVideo: stream.getVideoTracks().length > 0,
-        hasAudio: stream.getAudioTracks().length > 0,
-        videoLabel: videoTrack?.label || '',
-        audioLabel: audioTrack?.label || '',
-        width: Number(settings.width) || 0,
-        height: Number(settings.height) || 0,
-        frameRate: Number(settings.frameRate) || 0
-      });
-      for (const peer of [...peers.values()]) if (peer.inputId === id) createOffer(peer.consumerId, id, true).catch(() => {});
-      return stream;
-    } catch (error) {
-      status(id, 'error', { name: definition.name, type: definition.type, error: String(error && error.message || error) });
-      scheduleReconnect(id);
-      throw error;
+      return await task;
+    } finally {
+      if (startTasks.get(id) === task) startTasks.delete(id);
     }
   }
 
   async function configure(rawDefinitions) {
     const clean = compositor.normalizeLiveInputs(rawDefinitions);
     const next = new Map(clean.map(row => [row.id, row]));
-    for (const id of definitions.keys()) if (!next.has(id)) closeInput(id, 'removed');
+    for (const id of definitions.keys()) if (!next.has(id)) {
+      invalidateStart(id);
+      failedStarts.delete(id);
+      closeInput(id, 'removed');
+    }
     for (const [id, definition] of next) {
       const old = definitions.get(id);
       const changed = JSON.stringify(old || null) !== JSON.stringify(definition);
       definitions.set(id, definition);
-      if ((!definition.active || changed) && inputs.has(id)) closeInput(id, definition.active ? 'restarting' : 'idle');
+      if (!definition.active || changed) {
+        invalidateStart(id);
+        failedStarts.delete(id);
+        if (inputs.has(id)) closeInput(id, definition.active ? 'restarting' : 'idle');
+      }
       if (definition.active) startInput(id).catch(() => {});
     }
     for (const id of [...definitions.keys()]) if (!next.has(id)) definitions.delete(id);
@@ -283,12 +348,17 @@
       if (command.type === 'unsubscribe') unsubscribe(command.consumerId, command.inputId);
       if (command.type === 'release-consumer') releaseConsumer(command.consumerId);
       if (command.type === 'signal') await handleConsumerSignal(command.payload);
-      if (command.type === 'restart') { closeInput(command.inputId, 'restarting'); await startInput(command.inputId); }
+      if (command.type === 'restart') {
+        invalidateStart(command.inputId);
+        failedStarts.delete(String(command.inputId || ''));
+        closeInput(command.inputId, 'restarting');
+        await startInput(command.inputId);
+      }
     } catch (error) {
       status(command.inputId, 'error', { error: String(error && error.message || error) });
     }
   });
 
-  window.liveCapture = { configure, enumerateDevices, startInput, closeInput, createOffer, inputs, definitions };
+  window.liveCapture = { configure, enumerateDevices, startInput, closeInput, createOffer, inputs, definitions, failedStarts };
   api.liveHubReady();
 })();

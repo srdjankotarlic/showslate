@@ -3949,7 +3949,7 @@
           <option value="700">0.7s</option>
           <option value="1200">1.2s</option>
         </select>
-        <label class="route-check" data-i18n-title="outputAudioHint" title="Play scene and capture audio on the legacy screen output"><input type="checkbox" id="chkPrimaryLiveAudio"> <span data-i18n="outputLiveAudio">Live audio</span></label>
+        <label class="route-check" data-i18n-title="outputAudioHint" title="Play scene and capture audio on the primary output window"><input type="checkbox" id="chkPrimaryLiveAudio"> <span data-i18n="outputPrimaryAudio">Primary output audio</span></label>
         <div class="grow"></div>
         <button id="btnAddOutput" class="mini ghost" data-i18n="outputAddDestination">Dodaj</button>
         <button id="btnApplyOutputs" class="mini primary" data-i18n="outputManage">Upravljaj</button>
@@ -4292,7 +4292,7 @@ const I18N = {
     outLabel:'Izlaz na', displayTitle:'Monitor za izlazni ekran', sendScreen:'Pošalji na ekran', outputRouting:'Izlazi',
     outputRouterEyebrow:'DISTRIBUCIJA PROGRAMA', outputRouterTitle:'Usmeravanje izlaza', outputRouterBody:'Pošaljite Program na jedan ili više ekrana, prozora ili precizno pozicioniranih oblasti.',
     outputLiveDestinations:'aktivnih destinacija', outputProgramFeed:'PROGRAM signal', outputExplicitApply:'Izmene ne idu uživo dok ne izaberete Primeni usmeravanje.', outputAddDestination:'Dodaj destinaciju', outputManage:'Upravljaj', outputStopAll:'Zaustavi sve', outputApplyRouting:'Primeni usmeravanje', outputReady:'Usmeravanje je spremno.',
-    outputName:'Naziv', outputDisplay:'Ekran', outputRole:'Uloga', outputRole_audience:'Publika', outputRole_confidence:'Govornik / confidence', outputRole_timer:'Samo tajmer', outputRole_stream:'Stream grafika', outputRole_door:'Agenda na vratima', outputMode:'Režim', outputPlacement:'Pozicija', outputResolution:'Rezolucija', outputCoordinates:'Koordinate', outputGrid:'Grid', outputCell:'Polje', outputEnabled:'Aktivan', outputLiveState:'PRIKAZ POTVRĐEN', outputSyncingState:'SINHRONIZACIJA', outputOffState:'ISKLJUČENO', outputPendingState:'ČEKA PRIMENU', outputUnavailableState:'EKRAN NIJE DOSTUPAN', outputAmbiguousState:'EKRAN NIJE JEDINSTVEN', outputUnavailableDisplay:'Nedostupan ekran', outputNoDestinations:'Nema podešenih izlaza. Dodajte destinaciju za publiku, govornika, stream ili agendu na vratima.', outputRouteApplied:'Usmeravanje je primenjeno.', outputAllStopped:'Svi izlazi su zaustavljeni.', outputRemove:'Ukloni izlaz',
+    outputName:'Naziv', outputDisplay:'Ekran', outputRole:'Uloga', outputRole_audience:'Publika', outputRole_confidence:'Govornik / confidence', outputRole_timer:'Samo tajmer', outputRole_stream:'Stream grafika', outputRole_door:'Agenda na vratima', outputMode:'Režim', outputPlacement:'Pozicija', outputResolution:'Rezolucija', outputCoordinates:'Koordinate', outputGrid:'Grid', outputCell:'Polje', outputEnabled:'Aktivan', outputLiveState:'PRIKAZ POTVRĐEN', outputSyncingState:'SINHRONIZACIJA', outputOffState:'ISKLJUČENO', outputPendingState:'ČEKA PRIMENU', outputUnavailableState:'EKRAN NIJE DOSTUPAN', outputAmbiguousState:'EKRAN NIJE JEDINSTVEN', outputUnavailableDisplay:'Nedostupan ekran', outputNoDestinations:'Nema podešenih izlaza. Dodajte destinaciju za publiku, govornika, stream ili agendu na vratima.', outputRouteApplied:'Usmeravanje je primenjeno.', outputAllStopped:'Svi izlazi su zaustavljeni.', outputRemove:'Ukloni izlaz', outputFixUnavailable:'Izaberi dostupan ekran za svaku aktivnu destinaciju pre primene.', outputFixAmbiguous:'Izaberi tačan ekran za svaku aktivnu destinaciju pre primene.',
     outputFullscreen:'Ceo ekran', outputWindow:'Prozor', outputCustom:'Tačna veličina', outputGridMode:'Grid polje', outputCenter:'Centar', outputTopLeft:'Gore levo', outputTopRight:'Gore desno', outputBottomLeft:'Dole levo', outputBottomRight:'Dole desno', outputCustomPosition:'X / Y',
     fsTitle:'Pun ekran (F)', closeTitle:'Zatvori izlazni prozor', onTop:'Na vrhu',
     sources:'Izvori', tabRundown:'Rundown', sceneNamePrompt:'Naziv scene:', rename:'Preimenuj',
@@ -4392,7 +4392,7 @@ const I18N = {
     outLabel:'Output to', displayTitle:'Monitor for the output screen', sendScreen:'Send to screen', outputRouting:'Outputs',
     outputRouterEyebrow:'PROGRAM DISTRIBUTION', outputRouterTitle:'Output Routing', outputRouterBody:'Send Program to one or more displays, windows or precisely positioned regions.',
     outputLiveDestinations:'live destinations', outputProgramFeed:'PROGRAM feed', outputExplicitApply:'Changes stay off-air until Apply Routing.', outputAddDestination:'Add destination', outputManage:'Manage', outputStopAll:'Stop all', outputApplyRouting:'Apply routing', outputReady:'Routing ready.',
-    outputName:'Name', outputDisplay:'Display', outputRole:'Role', outputRole_audience:'Audience', outputRole_confidence:'Confidence', outputRole_timer:'Timer only', outputRole_stream:'Stream graphics', outputRole_door:'Door agenda', outputMode:'Mode', outputPlacement:'Placement', outputResolution:'Resolution', outputCoordinates:'Coordinates', outputGrid:'Grid', outputCell:'Cell', outputEnabled:'Enabled', outputLiveState:'RENDER CONFIRMED', outputSyncingState:'SYNCING', outputOffState:'OFF', outputPendingState:'PENDING APPLY', outputUnavailableState:'DISPLAY UNAVAILABLE', outputAmbiguousState:'DISPLAY NOT UNIQUE', outputUnavailableDisplay:'Unavailable display', outputNoDestinations:'No outputs configured. Add a destination for the audience, confidence, stream or door agenda.', outputRouteApplied:'Routing applied.', outputAllStopped:'All outputs stopped.', outputRemove:'Remove output',
+    outputName:'Name', outputDisplay:'Display', outputRole:'Role', outputRole_audience:'Audience', outputRole_confidence:'Confidence', outputRole_timer:'Timer only', outputRole_stream:'Stream graphics', outputRole_door:'Door agenda', outputMode:'Mode', outputPlacement:'Placement', outputResolution:'Resolution', outputCoordinates:'Coordinates', outputGrid:'Grid', outputCell:'Cell', outputEnabled:'Enabled', outputLiveState:'RENDER CONFIRMED', outputSyncingState:'SYNCING', outputOffState:'OFF', outputPendingState:'PENDING APPLY', outputUnavailableState:'DISPLAY UNAVAILABLE', outputAmbiguousState:'DISPLAY NOT UNIQUE', outputUnavailableDisplay:'Unavailable display', outputNoDestinations:'No outputs configured. Add a destination for the audience, confidence, stream or door agenda.', outputRouteApplied:'Routing applied.', outputAllStopped:'All outputs stopped.', outputRemove:'Remove output', outputFixUnavailable:'Choose an available display for every enabled destination before applying.', outputFixAmbiguous:'Choose the exact display for every enabled destination before applying.',
     outputFullscreen:'Fullscreen', outputWindow:'Window', outputCustom:'Custom size', outputGridMode:'Grid cell', outputCenter:'Center', outputTopLeft:'Top left', outputTopRight:'Top right', outputBottomLeft:'Bottom left', outputBottomRight:'Bottom right', outputCustomPosition:'X / Y',
     fsTitle:'Fullscreen (F)', closeTitle:'Close output window', onTop:'On top',
     sources:'Sources', tabRundown:'Rundown', sceneNamePrompt:'Scene name:', rename:'Rename',
@@ -4972,6 +4972,18 @@ function applySceneLayerVisual(box,content,layer){
 function applySceneMediaVisual(media,visual){
   media.style.objectPosition=visual.objectPosition;
 }
+function handleSceneMediaError(media,content,box,layer,prefix){
+  media.addEventListener('error',()=>{
+    media.remove();
+    box.dataset.mediaOffline='true';
+    if(prefix!=='pv'||content.querySelector('.scene-media-error')) return;
+    const warning=document.createElement('span');
+    warning.className='scene-media-error';
+    warning.textContent=`${t('sourceMissing')}: ${layer.name||layer.sourceName||layer.type}`;
+    warning.setAttribute('role','status');
+    content.appendChild(warning);
+  },{once:true});
+}
 function renderMonitorScene(prefix, st){
   const root=$(prefix+'Scene');
   if(!root) return;
@@ -5010,9 +5022,9 @@ function renderMonitorScene(prefix, st){
     } else if(layer.type==='color'){
       content.style.background=layer.color||layer.bg||'#20242c';
     } else if(layer.type==='image' && layer.src){
-      const img=document.createElement('img'); img.src=mediaSrc(layer.src); applySceneMediaVisual(img,visual); content.appendChild(img);
+      const img=document.createElement('img'); handleSceneMediaError(img,content,d,layer,prefix); img.src=mediaSrc(layer.src); applySceneMediaVisual(img,visual); content.appendChild(img);
     } else if(layer.type==='video' && layer.src){
-      const v=document.createElement('video'); v.src=mediaSrc(layer.src); v.muted=true; v.autoplay=true; v.loop=layer.loop!==false; v.playbackRate=Math.max(.25,Math.min(4,Number(layer.playbackRate)||1)); v.playsInline=true; applySceneMediaVisual(v,visual); content.appendChild(v);
+      const v=document.createElement('video'); handleSceneMediaError(v,content,d,layer,prefix); v.src=mediaSrc(layer.src); v.muted=true; v.autoplay=true; v.loop=layer.loop!==false; v.playbackRate=Math.max(.25,Math.min(4,Number(layer.playbackRate)||1)); v.playsInline=true; applySceneMediaVisual(v,visual); content.appendChild(v);
     } else if(layer.type==='pdf' && layer.src){
       const f=document.createElement('iframe'); f.src=mediaSrc(layer.src)+'#page='+Math.max(1,Number(layer.page)||1); content.appendChild(f);
     } else if((layer.type==='window'||layer.type==='capture')&&layer.inputId){
@@ -6452,7 +6464,15 @@ function renderScenesUI(){
     visibility.setAttribute('aria-label',uiText('layerVisibility',{name:layer.name||layer.sourceName||layer.type}));
     visibility.addEventListener('change',e=>{ layer.visible=e.target.checked; sceneDirty(); });
     const img=row.querySelector('img.source-preview');
-    if(img) img.src=layer.thumbnail || layer.src;
+    if(img){
+      img.addEventListener('error',()=>{
+        const fallback=document.createElement('span');
+        fallback.className='layer-kind';
+        fallback.textContent=(layer.type||'layer').slice(0,10);
+        img.replaceWith(fallback);
+      },{once:true});
+      img.src=layer.thumbnail || layer.src;
+    }
     const kind=row.querySelector('.layer-kind');
     if(kind){ kind.textContent=(layer.type||'layer').slice(0,10); if(layer.type==='color') kind.style.background=layer.color||layer.bg||'#20242c'; }
     const name=row.querySelector('.layer-name');
@@ -6575,8 +6595,8 @@ async function addTextLayer(){
   if(text===null) return;
   const layer={
     id:makeId('layer'), type:'text', name:text.slice(0,28)||'Text',
-    text, color:'#ffffff', bg:'rgba(0,0,0,.25)', fontSize:8,
-    visible:true, fit:'contain', x:0, y:0, w:100, h:100, opacity:1
+    text, color:'#ffffff', bg:'transparent', fontSize:8,
+    visible:true, fit:'contain', x:8, y:32, w:84, h:36, opacity:1
   };
   currentScene().layers.push(layer);
   selectedLayerId=layer.id;
@@ -6718,28 +6738,35 @@ async function renderDeviceSources(requestPermission=''){
   const cameraSettings=$('btnCameraSettings'),microphoneSettings=$('btnMicrophoneSettings');
   video.innerHTML=`<option value="">${t('sourceScanning')}</option>`; audio.innerHTML=`<option value="">${t('sourceNoAudio')}</option>`;
   status.hidden=true;statusText.textContent='';cameraPermission.hidden=true;microphonePermission.hidden=true;cameraSettings.hidden=true;microphoneSettings.hidden=true;
-  let devices=[],permissions={},error='';
+  let devices=[],permissions={},permissionRequest=null,error='';
   try{
     const response=await api.liveInputDevices(requestPermission);
     if(Array.isArray(response)) devices=response;
-    else {devices=Array.isArray(response&&response.devices)?response.devices:[];permissions=response&&response.permissions||{};error=response&&response.error||'';}
+    else {devices=Array.isArray(response&&response.devices)?response.devices:[];permissions=response&&response.permissions||{};permissionRequest=response&&response.permissionRequest||null;error=response&&response.error||'';}
   }catch(reason){devices=[];error='enumeration-failed';}
   const videos=devices.filter(row=>row.kind==='videoinput'), audios=devices.filter(row=>row.kind==='audioinput');
   video.innerHTML='';
   const cameraBlocked=['denied','restricted'].includes(permissions.camera);
+  const microphoneBlocked=['denied','restricted'].includes(permissions.microphone);
+  const cameraRequestFailed=permissionRequest&&permissionRequest.type==='camera'&&!permissionRequest.granted;
+  const microphoneRequestFailed=permissionRequest&&permissionRequest.type==='microphone'&&!permissionRequest.granted;
   if(!videos.length){const option=document.createElement('option');option.value='';option.textContent=t(cameraBlocked?'sourceCameraPermission':error==='timeout'?'sourceDeviceTimeout':'sourceDeviceEmpty');video.appendChild(option);}
   videos.forEach((device,index)=>{const option=document.createElement('option');option.value=device.deviceId;option.textContent=device.label||`${t('sourceDevice')} ${index+1}`;video.appendChild(option);});
+  audio.innerHTML='';
+  const noAudio=document.createElement('option');noAudio.value='';noAudio.textContent=t('sourceNoAudio');audio.appendChild(noAudio);
   audios.forEach((device,index)=>{const option=document.createElement('option');option.value=device.deviceId;option.textContent=device.label||`${t('sourceAudioDevice')} ${index+1}`;audio.appendChild(option);});
   const notices=[];
   if(cameraBlocked) notices.push(t('sourceCameraPermission'));
-  if(permissions.camera==='not-determined') notices.push(t('sourceCameraPermissionNeeded'));
-  if(['denied','restricted'].includes(permissions.microphone)) notices.push(t('sourceMicrophonePermission'));
-  if(permissions.microphone==='not-determined') notices.push(t('sourceMicrophonePermissionNeeded'));
+  if(cameraRequestFailed) notices.push(t('sourceCameraRequestFailed'));
+  else if(permissions.camera==='not-determined') notices.push(t('sourceCameraPermissionNeeded'));
+  if(microphoneBlocked) notices.push(t('sourceMicrophonePermission'));
+  if(microphoneRequestFailed) notices.push(t('sourceMicrophoneRequestFailed'));
+  else if(permissions.microphone==='not-determined') notices.push(t('sourceMicrophonePermissionNeeded'));
   if(error==='timeout') notices.push(t('sourceDeviceTimeout'));
   cameraPermission.hidden=permissions.camera!=='not-determined';
   microphonePermission.hidden=permissions.microphone!=='not-determined';
-  cameraSettings.hidden=permissions.camera!=='denied';
-  microphoneSettings.hidden=permissions.microphone!=='denied';
+  cameraSettings.hidden=!(cameraBlocked||cameraRequestFailed);
+  microphoneSettings.hidden=!(microphoneBlocked||microphoneRequestFailed);
   if(notices.length){statusText.textContent=notices.join(' ');status.hidden=false;}
   if(videos[0]) $('sourceDeviceName').value=videos[0].label||t('sourceDevice');
   const replacing=sourceReplaceLayerId ? currentScene().layers.find(row=>row.id===sourceReplaceLayerId) : null;
@@ -6751,29 +6778,35 @@ async function renderDeviceSources(requestPermission=''){
     const size=`${current.width}x${current.height}`; if([...$('sourceDeviceResolution').options].some(option=>option.value===size)) $('sourceDeviceResolution').value=size;
     $('sourceDeviceFps').value=String(current.fps||30);
   }
-  $('btnDeviceAdd').disabled=!videos.length;
+  const cameraUnavailable=['denied','restricted','not-determined'].includes(permissions.camera);
+  const microphoneUnavailable=['denied','restricted','not-determined'].includes(permissions.microphone);
+  const updateAdd=()=>{ $('btnDeviceAdd').disabled=!videos.length||cameraUnavailable||Boolean(audio.value&&microphoneUnavailable); };
+  audio.onchange=updateAdd;
+  updateAdd();
 }
 async function renderAudioSources(requestPermission=''){
   const select=$('sourceAudioInputDevice'),status=$('sourceAudioStatus'),statusText=$('sourceAudioStatusText');
   const permissionButton=$('btnAudioPermission'),settingsButton=$('btnAudioSettings');
   select.innerHTML=`<option value="">${t('sourceScanning')}</option>`;
   status.hidden=true;statusText.textContent='';permissionButton.hidden=true;settingsButton.hidden=true;
-  let devices=[],permissions={},error='';
+  let devices=[],permissions={},permissionRequest=null,error='';
   try{
     const response=await api.liveInputDevices(requestPermission);
     if(Array.isArray(response)) devices=response;
-    else {devices=Array.isArray(response&&response.devices)?response.devices:[];permissions=response&&response.permissions||{};error=response&&response.error||'';}
+    else {devices=Array.isArray(response&&response.devices)?response.devices:[];permissions=response&&response.permissions||{};permissionRequest=response&&response.permissionRequest||null;error=response&&response.error||'';}
   }catch(reason){devices=[];error='enumeration-failed';}
   const audios=devices.filter(row=>row.kind==='audioinput');
   select.innerHTML='';
   const blocked=['denied','restricted'].includes(permissions.microphone);
+  const requestFailed=permissionRequest&&permissionRequest.type==='microphone'&&!permissionRequest.granted;
   if(!audios.length){const option=document.createElement('option');option.value='';option.textContent=t(blocked?'sourceMicrophonePermission':error==='timeout'?'sourceDeviceTimeout':'sourceAudioEmpty');select.appendChild(option);}
   audios.forEach((device,index)=>{const option=document.createElement('option');option.value=device.deviceId;option.textContent=device.label||`${t('sourceAudioInput')} ${index+1}`;select.appendChild(option);});
   const notices=[];
   if(blocked) notices.push(t('sourceMicrophonePermission'));
-  if(permissions.microphone==='not-determined') notices.push(t('sourceMicrophonePermissionNeeded'));
+  if(requestFailed) notices.push(t('sourceMicrophoneRequestFailed'));
+  else if(permissions.microphone==='not-determined') notices.push(t('sourceMicrophonePermissionNeeded'));
   if(error==='timeout') notices.push(t('sourceDeviceTimeout'));
-  permissionButton.hidden=permissions.microphone!=='not-determined';settingsButton.hidden=permissions.microphone!=='denied';
+  permissionButton.hidden=permissions.microphone!=='not-determined';settingsButton.hidden=!(blocked||requestFailed);
   if(notices.length){statusText.textContent=notices.join(' ');status.hidden=false;}
   if(audios[0]) $('sourceAudioName').value=audios[0].label||t('sourceAudioInput');
   const replacing=sourceReplaceLayerId ? currentScene().layers.find(row=>row.id===sourceReplaceLayerId) : null;
@@ -6782,7 +6815,7 @@ async function renderAudioSources(requestPermission=''){
     if(audios.some(device=>device.deviceId===current.audioDeviceId))select.value=current.audioDeviceId;
     $('sourceAudioName').value=current.name||$('sourceAudioName').value;
   }
-  $('btnAudioAdd').disabled=!audios.length;
+  $('btnAudioAdd').disabled=!audios.length||['denied','restricted','not-determined'].includes(permissions.microphone);
 }
 $('btnCameraPermission')?.addEventListener('click',()=>renderDeviceSources('camera'));
 $('btnMicrophonePermission')?.addEventListener('click',()=>renderDeviceSources('microphone'));
@@ -6892,6 +6925,44 @@ function outputDisplayName(id,cfg={}){
   const size=cfg.displayWidth&&cfg.displayHeight?` · ${cfg.displayWidth}×${cfg.displayHeight}`:'';
   return `${label||t('outputUnavailableDisplay')}${size}`;
 }
+function resolveOutputDisplayUI(cfg={}){
+  const requestedId=Number(cfg.displayId);
+  const requestedLabel=String(cfg.displayLabel||'').trim();
+  const exact=lastDisplays.find(display=>Number(display.id)===requestedId);
+  if(exact&&(!requestedLabel||String(exact.label||'')===requestedLabel)) return {display:exact,reason:''};
+  let candidates=[];
+  if(requestedLabel) candidates=lastDisplays.filter(display=>String(display.label||'')===requestedLabel);
+  else if(cfg.displayWidth&&cfg.displayHeight) candidates=lastDisplays.filter(display=>Number(display.width)===Number(cfg.displayWidth)&&Number(display.height)===Number(cfg.displayHeight));
+  if(candidates.length===1) return {display:candidates[0],reason:''};
+  return {display:null,reason:candidates.length>1?'ambiguous-display':'missing-display'};
+}
+function reconcileOutputDisplayUI(cfg){
+  const resolved=resolveOutputDisplayUI(cfg);
+  if(resolved.display){
+    cfg.displayId=Number(resolved.display.id);
+    cfg.displayLabel=String(resolved.display.label||'');
+    cfg.displayWidth=Number(resolved.display.width)||0;
+    cfg.displayHeight=Number(resolved.display.height)||0;
+  }
+  return resolved;
+}
+function outputConfigIssue(cfg){
+  if(!cfg||cfg.enabled===false) return '';
+  return resolveOutputDisplayUI(cfg).reason;
+}
+function outputValidationIssues(){
+  return outputConfigs.map(cfg=>({cfg,issue:outputConfigIssue(cfg)})).filter(row=>row.issue);
+}
+function updateOutputRoutingValidation(){
+  const issues=outputValidationIssues();
+  const apply=$('btnOutputRouterApply');
+  if(apply) apply.disabled=issues.length>0;
+  if(issues.length){
+    const status=$('outputRouterStatus');
+    if(status) status.textContent=t(issues.some(row=>row.issue==='ambiguous-display')?'outputFixAmbiguous':'outputFixUnavailable');
+  }
+  return issues;
+}
 function outputModeName(mode){
   return t({fullscreen:'outputFullscreen',window:'outputWindow',custom:'outputCustom',grid:'outputGridMode'}[mode]||'outputFullscreen');
 }
@@ -6906,6 +6977,10 @@ function outputLiveCount(){
 }
 function outputRouteStateText(cfg,runtime){
   if(!cfg.enabled) return t('outputOffState');
+  const issue=outputConfigIssue(cfg);
+  if(issue==='ambiguous-display') return t('outputAmbiguousState');
+  if(issue==='missing-display') return t('outputUnavailableState');
+  if(outputRoutingDirty) return t('outputPendingState');
   if(runtime&&runtime.open) return runtime.status==='syncing'?t('outputSyncingState'):t('outputLiveState');
   if(runtime&&runtime.status==='ambiguous-display') return t('outputAmbiguousState');
   if(runtime&&runtime.status==='missing-display') return t('outputUnavailableState');
@@ -6931,6 +7006,7 @@ function markOutputRoutingDirty(){
   outputRoutingDirty=true;
   const status=$('outputRouterStatus');
   if(status) status.textContent=t('outputPendingState');
+  updateOutputRoutingValidation();
 }
 function renderOutputRows(){
   const box=$('outputList');
@@ -6941,10 +7017,11 @@ function renderOutputRows(){
     renderOutputRouterRows(); updateOutputRoutingStatus(); return;
   }
   outputConfigs=outputConfigs.map(normalizeOutputConfigUI);
+  outputConfigs.forEach(reconcileOutputDisplayUI);
   outputConfigs.forEach((cfg,i)=>{
     const row=document.createElement('div');
     const runtime=outputRuntimeRoute(cfg.id);
-    const unavailable=runtime&&['missing-display','ambiguous-display'].includes(runtime.status);
+    const unavailable=!!outputConfigIssue(cfg)||(runtime&&['missing-display','ambiguous-display'].includes(runtime.status));
     row.className='output-summary-route'+(runtime&&runtime.open?' live':'')+(!cfg.enabled?' disabled':'')+(unavailable?' unavailable':'');
     const dot=document.createElement('span'); dot.className='output-route-dot'+(runtime&&runtime.open?' live':'');
     const copy=document.createElement('button'); copy.className='output-summary-copy'; copy.type='button';
@@ -6976,7 +7053,7 @@ function renderOutputRouterRows(){
   }
   outputConfigs.forEach((cfg,i)=>{
     const runtime=outputRuntimeRoute(cfg.id);
-    const unavailable=runtime&&['missing-display','ambiguous-display'].includes(runtime.status);
+    const unavailable=!!outputConfigIssue(cfg)||(runtime&&['missing-display','ambiguous-display'].includes(runtime.status));
     const row=document.createElement('article');
     row.className='output-route-editor'+(runtime&&runtime.open?' live':'')+(!cfg.enabled?' disabled':'')+(unavailable?' unavailable':'');
     row.dataset.routeId=cfg.id;
@@ -7044,12 +7121,15 @@ function renderOutputRouterRows(){
       cfg.gridCell=Math.max(0,Math.min(cfg.gridSize*cfg.gridSize-1,+row.querySelector('.out-cell').value||0));
       row.querySelector('.out-cell').max=String(cfg.gridSize*cfg.gridSize-1);
       row.classList.toggle('disabled',!cfg.enabled);
+      const issue=outputConfigIssue(cfg);
+      row.classList.toggle('unavailable',!!issue);
       updateOutputRouterRowVisibility(row);
       saveOutputConfigsLocal(); markOutputRoutingDirty();
       const routeState=row.querySelector('.output-route-state');
       const routeRuntime=row.querySelector('.output-route-runtime');
-      if(routeState) routeState.textContent=t('outputPendingState');
-      if(routeRuntime) routeRuntime.textContent=`${outputDisplayName(cfg.displayId,cfg)} · ${t('outputPendingState')}`;
+      const pendingText=issue?outputRouteStateText(cfg,runtime):t('outputPendingState');
+      if(routeState) routeState.textContent=pendingText;
+      if(routeRuntime) routeRuntime.textContent=`${outputDisplayName(cfg.displayId,cfg)} · ${pendingText}`;
     };
     row.querySelectorAll('input,select').forEach(el=>el.addEventListener('change',sync));
     row.querySelector('.out-del').addEventListener('click',()=>{
@@ -7058,6 +7138,7 @@ function renderOutputRouterRows(){
     updateOutputRouterRowVisibility(row);
     box.appendChild(row);
   });
+  updateOutputRoutingValidation();
 }
 function saveOutputConfigsLocal(){
   try{ localStorage.setItem('pt_output_configs', JSON.stringify(outputConfigs)); }catch(e){}
@@ -7087,6 +7168,12 @@ function addOutputConfig(options={}){
 }
 function applyOutputConfigs(){
   outputConfigs=outputConfigs.map(normalizeOutputConfigUI);
+  outputConfigs.forEach(reconcileOutputDisplayUI);
+  if(updateOutputRoutingValidation().length){
+    outputRoutingDirty=true;
+    renderOutputRows();
+    return false;
+  }
   const audioRoutes=outputConfigs.filter(config=>config.enabled!==false&&config.liveAudio);
   if(audioRoutes.length+(S.primaryLiveAudio?1:0)>1){
     outputRoutingDirty=true;
@@ -7186,7 +7273,13 @@ $('outputRouterOverlay').addEventListener('click',event=>{ if(event.target===$('
 // ---------- MREŽA ----------
 let netUrl='', remoteUrl='', backstageUrl='', signalUrl='', apiUrl='';
 function showNet(info){
-  if(info && info.port) ctlMediaBase='http://127.0.0.1:'+info.port;
+  if(info && info.port){
+    const nextMediaBase='http://127.0.0.1:'+info.port;
+    if(nextMediaBase!==ctlMediaBase){
+      ctlMediaBase=nextMediaBase;
+      monitorSceneKeys={pv:'',pg:''};
+    }
+  }
   lastNetInfo = info;
   if(!info||!info.running){ $('netUrl').textContent='—'; $('netRemote').textContent='—'; $('netBackstage').textContent='—'; $('netSignal').textContent='—'; $('netApi').textContent='—'; $('netStatus').textContent=t('netOff'); $('netDot').classList.remove('on'); return; }
   netUrl=`http://${info.ip}:${info.port}`;

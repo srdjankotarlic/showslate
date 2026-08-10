@@ -2,6 +2,7 @@
 
 const assert = require('assert');
 const compositor = require('../src/compositor/model.js');
+const { LiveInputConsumer } = require('../src/live-input/consumer.js');
 
 let passed = 0;
 function check(name, fn) { fn(); passed++; console.log(name + '=true'); }
@@ -70,6 +71,19 @@ check('COMPOSITOR_LIVE_INPUT_IDS_DEDUPLICATE_OK', () => {
   const inputs = compositor.normalizeLiveInputs([{ id: 'same', type: 'window' }, { id: 'same', type: 'device' }]);
   assert.strictEqual(inputs.length, 1);
   assert.strictEqual(inputs[0].type, 'window');
+});
+
+check('COMPOSITOR_LIVE_INPUT_ERROR_WAITS_FOR_RESTART_OK', () => {
+  const consumer = new LiveInputConsumer({});
+  const record = { pc: null, pendingCandidates: [], subscribing: false, awaitingOffer: true, retryTimer: setTimeout(() => {}, 1000), retryCount: 2, blockedByError: false };
+  consumer.peers.set('capture-1', record);
+  consumer.handleStatus({ inputId: 'capture-1', state: 'error', error: 'Capture timed out.' });
+  assert.strictEqual(record.blockedByError, true);
+  assert.strictEqual(record.awaitingOffer, false);
+  assert.strictEqual(record.retryTimer, null);
+  consumer.handleStatus({ inputId: 'capture-1', state: 'restarting' });
+  assert.strictEqual(record.blockedByError, false);
+  consumer.dispose();
 });
 
 check('COMPOSITOR_REFERENCED_INPUTS_AND_ACTIVATION_OK', () => {

@@ -161,6 +161,19 @@ button.primary:hover {
   border-color: #5a9ae5 !important;
 }
 
+button:disabled,
+button:disabled:hover,
+button:disabled:active {
+  opacity: .42 !important;
+  background: var(--pro-surface-2) !important;
+  border-color: var(--pro-line) !important;
+  color: var(--pro-text-3) !important;
+  box-shadow: none !important;
+  filter: saturate(.25) !important;
+  cursor: not-allowed !important;
+  transform: none !important;
+}
+
 button.ghost {
   background: transparent !important;
   border-color: transparent !important;
@@ -2349,6 +2362,12 @@ body #setupWrap .tabpane.active,
   overscroll-behavior: contain;
   scrollbar-gutter: stable;
   -webkit-overflow-scrolling: touch;
+}
+
+/* The utility column owns drawer scrolling, so its cards must keep their content height. */
+.shell-layout .utility-column > .panel,
+.shell-layout .utility-column > .card {
+  flex: 0 0 auto !important;
 }
 
 /* These workspaces can genuinely exceed both axes. */

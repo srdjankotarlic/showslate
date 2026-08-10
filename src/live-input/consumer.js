@@ -27,6 +27,21 @@
         if (!row || !row.inputId) return;
         const id = String(row.inputId);
         this.statuses.set(id, { ...(this.statuses.get(id) || {}), ...row, inputId: id });
+        const record = this.peers.get(id);
+        if (!record) return;
+        const state = String(row.state || '');
+        if (state === 'error') {
+          record.blockedByError = true;
+          record.awaitingOffer = false;
+          if (record.retryTimer) clearTimeout(record.retryTimer);
+          record.retryTimer = null;
+        } else if (['starting', 'restarting', 'live'].includes(state)) {
+          const wasBlocked = record.blockedByError;
+          record.blockedByError = false;
+          if (wasBlocked && this.desired.has(id) && !record.pc && !record.subscribing && !record.awaitingOffer) {
+            queueMicrotask(() => this.ensure(id));
+          }
+        }
       });
       if (this.onStatus) this.onStatus(this.statusSnapshot());
     }
@@ -40,10 +55,10 @@
       if (!id || typeof this.api.liveInputSubscribe !== 'function') return;
       let record = this.peers.get(id);
       if (!record) {
-        record = { pc: null, pendingCandidates: [], subscribing: false, awaitingOffer: false, retryTimer: null, retryCount: 0 };
+        record = { pc: null, pendingCandidates: [], subscribing: false, awaitingOffer: false, retryTimer: null, retryCount: 0, blockedByError: false };
         this.peers.set(id, record);
       }
-      if (record.pc || record.subscribing || record.awaitingOffer) return;
+      if (record.pc || record.subscribing || record.awaitingOffer || record.blockedByError) return;
       record.subscribing = true;
       try {
         const result = await this.api.liveInputSubscribe(id);
@@ -67,7 +82,7 @@
 
     scheduleRetry(inputId, record) {
       const id = String(inputId || '');
-      if (!record || this.peers.get(id) !== record || !this.desired.has(id) || record.retryTimer) return;
+      if (!record || this.peers.get(id) !== record || !this.desired.has(id) || record.retryTimer || record.blockedByError) return;
       const delay = Math.min(2000, 200 + record.retryCount * 250);
       record.retryCount += 1;
       record.retryTimer = setTimeout(() => {
@@ -81,7 +96,7 @@
       if (!inputId || !this.desired.has(inputId)) return;
       let record = this.peers.get(inputId);
       if (!record) {
-        record = { pc: null, pendingCandidates: [] };
+        record = { pc: null, pendingCandidates: [], subscribing: false, awaitingOffer: false, retryTimer: null, retryCount: 0, blockedByError: false };
         this.peers.set(inputId, record);
       }
       if (payload.type === 'offer' && payload.description) {
@@ -89,6 +104,7 @@
         record.retryTimer = null;
         record.awaitingOffer = false;
         record.retryCount = 0;
+        record.blockedByError = false;
         const queuedCandidates = record.pendingCandidates.splice(0);
         if (record.pc) record.pc.close();
         const pc = new RTCPeerConnection({ iceServers: [] });
