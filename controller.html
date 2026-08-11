@@ -3420,7 +3420,7 @@
         <div class="slides-foot">
           <div class="slides-selection"><span data-i18n="slideSelected">Selected</span><strong id="slideSelectedName">—</strong></div>
           <div class="slide-deck-nav" id="slideDeckNav"><button id="btnSlidePrev" aria-label="Previous page">‹</button><span class="slide-page" id="slidePage">1</span><button id="btnSlideNext" aria-label="Next page">›</button></div>
-          <div class="slide-actions"><button id="btnSlideTake" class="primary" data-i18n="slideTake" data-i18n-title="sceneTakeTitle" title="Transition Preview to Program">TAKE</button><button id="btnSlideClear" data-i18n="slideClear" data-i18n-title="sceneCutTitle" title="Cut Preview to Program">CUT</button><button id="btnSlideDelete" class="ghost slide-delete" data-i18n-aria="sceneDelete" aria-label="Delete scene">✕</button></div>
+          <div class="slide-actions"><button id="btnSlideTake" class="primary" data-i18n="slideTake" data-i18n-title="sceneTakeTitle" title="Transition Preview to Program">TAKE</button><button id="btnSlideDelete" class="ghost slide-delete" data-i18n-aria="sceneDelete" aria-label="Delete scene">✕</button></div>
         </div>
       </div>
     </div>
@@ -3455,18 +3455,20 @@
         </div>
       </div>
 
-      <div class="studio-switcher">
-        <button id="btnCut" data-i18n="cutToProgram">Cut</button>
-        <button id="btnTake" class="primary" data-i18n="transitionToProgram">Transition</button>
-        <button id="btnFadeBlack" class="danger" data-i18n="fadeToBlack">Fade to black</button>
-        <label class="chk direct-toggle" data-i18n-title="directProgramTitle" title="Changes go straight to Program instead of Preview"><input type="checkbox" id="chkDirectProgram"> <span data-i18n="directProgram">Direct Program</span></label>
+      <div class="studio-switcher" data-testid="program-switcher" aria-label="Program controls">
+        <button id="btnTake" class="primary switcher-take" data-i18n="slideTake" data-i18n-title="sceneTakeTitle" title="Transition Preview to Program">TAKE</button>
+        <button id="btnGo" class="primary switcher-go" style="font-weight:800" data-testid="go-next-button" data-i18n="goNext">GO NEXT</button>
+        <div class="switcher-secondary">
+          <button id="btnBack" class="switcher-back" type="button" data-i18n="operatorBack" data-i18n-title="operatorBackTitle" title="Prepare the previous rundown item in Preview">BACK</button>
+          <button id="btnFadeBlack" class="danger switcher-black" type="button" data-i18n="programBlack" data-i18n-title="programBlackoutTitle" title="Toggle black on the Program output">BLACK</button>
+        </div>
       </div>
 
       <div class="studio-monitor studio-program">
         <div class="monitor-head">
           <span class="monitor-title" data-i18n="studioProgram">Program</span>
           <span class="monitor-chip on" id="bdgOut">EKRAN</span>
-          <button type="button" class="monitor-chip monitor-blackout" id="bdgBk" data-testid="program-blackout-button" data-i18n-title="programBlackoutTitle" title="Toggle Program blackout">BLACKOUT</button>
+          <span class="monitor-chip monitor-blackout" id="bdgBk" data-testid="program-blackout-status" data-i18n="programBlackStatus">BLACK</span>
         </div>
         <div class="preview monitor-screen program-screen" id="program" data-testid="program-monitor">
           <div class="pv-checker" id="pgChecker"></div>
@@ -3488,21 +3490,6 @@
           <div class="pv-prog" id="pgProg"></div>
           <div class="pv-blackout" id="pgBlackout"></div>
         </div>
-      </div>
-    </div>
-
-    <div class="show-command-strip" data-testid="show-command-strip">
-      <div class="golane">
-        <div class="liveinfo" id="liveInfo">
-          <span class="li-chip li-live" data-i18n="liveLabel">U PROGRAMU</span>
-          <span class="li-name" id="liName" data-testid="live-cue">—</span>
-          <span class="li-sep">·</span>
-          <span class="li-chip li-next" data-i18n="badgeNext">SLEDI</span>
-          <span class="li-name li-dim" id="liNext" data-testid="next-cue">—</span>
-        </div>
-        <button id="btnGo" class="primary" style="font-weight:800" data-testid="go-next-button" data-i18n-html="goNext">GO SLEDEĆI &nbsp;(N)</button>
-        <button id="btnGoNext" class="secondary-next-row" data-i18n="goNextOnly" data-i18n-title="goNextOnlyTitle" title="Ide na sledeći red u rundown-u, bez obzira na izabrani red.">SLEDEĆI RED</button>
-        <label class="chk locklive" data-testid="lock-live" data-i18n-title="lockTitle" title="Štiti živ program: GO, RESET i preskakanje traže otključavanje; poruke i ±vreme rade"><input type="checkbox" id="chkLock"> <span data-i18n="lockLive">Zaključaj program</span></label>
       </div>
     </div>
 
@@ -3686,6 +3673,24 @@
           <button data-adj="60">+1m</button>
           <button data-adj="300">+5m</button>
         </div>
+      </div>
+    </div>
+    <div class="panel panel-live-safety">
+      <div class="timer-transport-head">
+        <span class="glabel" data-i18n="liveControls">Live controls</span>
+        <span class="timer-transport-hint" data-i18n="liveControlsHint">Secondary controls and current rundown status.</span>
+      </div>
+      <div class="liveinfo settings-liveinfo" id="liveInfo">
+        <span class="li-chip li-live" data-i18n="liveLabel">LIVE</span>
+        <span class="li-name" id="liName" data-testid="live-cue">—</span>
+        <span class="li-sep">·</span>
+        <span class="li-chip li-next" data-i18n="badgeNext">NEXT</span>
+        <span class="li-name li-dim" id="liNext" data-testid="next-cue">—</span>
+      </div>
+      <div class="live-safety-actions">
+        <button id="btnGoNext" class="secondary-next-row" data-i18n="goNextOnly" data-i18n-title="goNextOnlyTitle" title="Advance to the next rundown row regardless of selection">NEXT ROW</button>
+        <label class="chk direct-toggle" data-i18n-title="directProgramTitle" title="Changes go straight to Program instead of Preview"><input type="checkbox" id="chkDirectProgram"> <span data-i18n="directProgram">Direct Program</span></label>
+        <label class="chk locklive" data-testid="lock-live" data-i18n-title="lockTitle" title="Protects the live show"><input type="checkbox" id="chkLock"> <span data-i18n="lockLive">Lock Live</span></label>
       </div>
     </div>
     <div class="panel panel-mode">
@@ -4308,10 +4313,10 @@ const I18N = {
     canvasTitle:'Canvas — odnos stranica platna (i vertikalni ekrani)', fadeTitle:'Trajanje prelaza scene na izlazu', fadeCut:'Cut',
     lockLive:'Zaključaj program', lockTitle:'Štiti živ program: GO, RESET i preskakanje traže otključavanje; poruke i ±vreme rade', enterLiveMode:'Live režim', exitLiveMode:'Izađi iz Live',
     demoShow:'Učitaj konferencijski demo', identify:'Prepoznaj ekrane', identifyTitle:'Na svakom fizičkom ekranu prikaži veliki broj (3s)',
-    liveLabel:'U PROGRAMU', goNextOnly:'SLEDEĆI RED', goNextOnlyTitle:'Ide na sledeći red u rundown-u, bez obzira na izabrani red.', statusTitle:'IZLAZI · STATUS',
+    liveLabel:'U PROGRAMU', goNextOnly:'SLEDEĆI RED', goNextOnlyTitle:'Ide na sledeći red u rundown-u, bez obzira na izabrani red.', operatorBack:'NAZAD', operatorBackTitle:'Pripremi prethodni rundown red u Preview-u bez promene Programa', programBlack:'CRNO', programBlackStatus:'CRNO', liveControls:'Live kontrole', liveControlsHint:'Sekundarne komande i trenutno stanje rundown-a.', statusTitle:'IZLAZI · STATUS',
     stStage:'Ekran govornika', stServer:'Mrežni prikazi (OBS · Backstage · Signal)', stRemote:'Telefon daljinski', stApi:'API / Companion',
     badgeLive:'U PROGRAMU', badgeSelected:'IZABRANO', badgeNext:'SLEDI', badgeSkipped:'PRESKOČENO',
-    goSelectedBtn:'KRENI ▶ {name}', goAutoStart:'Auto-start na GO', goAutoTitle:'GO odmah pokreće tajmer novog reda',
+    goSelectedBtn:'KRENI ▶ {name}', goSelectedShort:'GO IZABRANO &nbsp;(N)', goAutoStart:'Auto-start na GO', goAutoTitle:'GO odmah pokreće tajmer novog reda',
     advanced:'Preview / Program', advancedTitle:'Preview/Program režija (Cut/Transition). Isključeno: sve ide direktno na Program.',
     rundownBtn:'Rundown', sidebarToggle:'Prikaži ili sakrij navigaciju', utilityToggle:'Prikaži ili sakrij poruke, status i izlaze', msgOutBtn:'Poruke', settingsBtn:'Podešavanja', compactMode:'Kompaktan režim', compactTitle:'Fokusirani operater: Program, GO i poruka; kontrole tajmera su u Podešavanjima.', fsMenu:'⛶ Pun ekran', closeMenu:'✕ Zatvori izlaz',
     inspTitle:'Izvor', inspOpacity:'Prozirnost', inspFitTitle:'Kako medij popunjava kutiju',
@@ -4334,8 +4339,8 @@ const I18N = {
     thresholds:'Pragovi', yellowAt:'Žuto na', redAt:'Crveno na', flashZero:'Blic na nuli',
     sound:'Zvuk', overtime:'Minus posle nule', progress:'Traka napretka',
     message:'Poruka', messagePh:'Poruka govorniku… (M za fokus, Enter šalje)', flash:'Treperi', send:'Pošalji',
-    cueList:'CUE LISTA', cueEmpty:'Raspored je prazan. Izaberi NOVA STAVKA.', namePh:'Naziv', rundownCueCount:'{n} tačaka', rundownListAria:'Stavke rundown-a',
-    autoNext:'Auto-prelaz na sledeći', goNext:'GO SLEDEĆI &nbsp;(N)', noName:'(bez naziva)',
+    cueList:'CUE LISTA', cueEmpty:'Raspored je prazan. Izaberi NOVA STAVKA.', namePh:'Naziv', rundownCueCount:'{n} tačaka', rundownListAria:'Stavke rundown-a', sortableItem:'Stavka promenljivog redosleda', sortableHint:'Prevuci mišem iznad ili ispod druge stavke da promeniš redosled',
+    autoNext:'Auto-prelaz na sledeći', goNext:'GO SLEDEĆI', noName:'(bez naziva)',
     rundown:'RUNDOWN', showStart:'Start', notePh:'Beleška (opciono)…', nowNextOut:'NOW/NEXT na ekranu',
     cueImport:'Uvoz', cueExport:'CSV', cueImportTitle:'Uvezi CSV / nalepi iz Excel-a ili Sheets-a (naziv, trajanje, beleška)', cueExportTitle:'Izvezi rundown kao CSV', cueImportNone:'Nijedan red nije prepoznat. Format: naziv, trajanje (10:00), beleška',
     cueNew:'NOVA STAVKA', cueNewTitle:'Napravi novu stavku rasporeda', cueAdd:'DODAJ U RASPORED', cueNewEditor:'Nova stavka rasporeda',
@@ -4408,10 +4413,10 @@ const I18N = {
     canvasTitle:'Canvas — output aspect ratio (incl. vertical screens)', fadeTitle:'Scene transition duration on outputs', fadeCut:'Cut',
     lockLive:'Lock Live', lockTitle:'Protects the live show: GO, RESET and skip require unlocking; messages and ±time still work', enterLiveMode:'Live Mode', exitLiveMode:'Exit Live',
     demoShow:'Load conference demo', identify:'Identify displays', identifyTitle:'Show a big number on every physical display (3s)',
-    liveLabel:'LIVE', goNextOnly:'NEXT ROW', goNextOnlyTitle:'Advances to the next rundown row, regardless of the selected row.', statusTitle:'OUTPUTS · STATUS',
+    liveLabel:'LIVE', goNextOnly:'NEXT ROW', goNextOnlyTitle:'Advances to the next rundown row, regardless of the selected row.', operatorBack:'BACK', operatorBackTitle:'Prepare the previous rundown item in Preview without changing Program', programBlack:'BLACK', programBlackStatus:'BLACK', liveControls:'Live controls', liveControlsHint:'Secondary commands and current rundown status.', statusTitle:'OUTPUTS · STATUS',
     stStage:'Speaker screen', stServer:'Network views (OBS · Backstage · Signal)', stRemote:'Phone remote', stApi:'API / Companion',
     badgeLive:'LIVE', badgeSelected:'SELECTED', badgeNext:'NEXT', badgeSkipped:'SKIPPED',
-    goSelectedBtn:'GO ▶ {name}', goAutoStart:'Auto-start on GO', goAutoTitle:'GO immediately starts the new item timer',
+    goSelectedBtn:'GO ▶ {name}', goSelectedShort:'GO SELECTED &nbsp;(N)', goAutoStart:'Auto-start on GO', goAutoTitle:'GO immediately starts the new item timer',
     advanced:'Preview / Program', advancedTitle:'Preview/Program workflow (Cut/Transition). Off: everything goes straight to Program.',
     rundownBtn:'Rundown', sidebarToggle:'Show or hide navigation', utilityToggle:'Show or hide messages, status and outputs', msgOutBtn:'Message', settingsBtn:'Settings', compactMode:'Compact mode', compactTitle:'Focused operator: Program, GO and message; timer controls are in Settings.', fsMenu:'⛶ Fullscreen', closeMenu:'✕ Close output',
     inspTitle:'Source', inspOpacity:'Opacity', inspFitTitle:'How media fills the box',
@@ -4434,8 +4439,8 @@ const I18N = {
     thresholds:'Warnings', yellowAt:'Yellow at', redAt:'Red at', flashZero:'Flash at zero',
     sound:'Sound', overtime:'Count past zero', progress:'Progress bar',
     message:'Message', messagePh:'Message to speaker… (M to focus, Enter sends)', flash:'Flash', send:'Send',
-    cueList:'CUE LIST', cueEmpty:'The rundown is empty. Choose NEW ITEM.', namePh:'Name', rundownCueCount:'{n} cues', rundownListAria:'Rundown items',
-    autoNext:'Auto-advance to next', goNext:'GO NEXT &nbsp;(N)', noName:'(no name)',
+    cueList:'CUE LIST', cueEmpty:'The rundown is empty. Choose NEW ITEM.', namePh:'Name', rundownCueCount:'{n} cues', rundownListAria:'Rundown items', sortableItem:'Sortable item', sortableHint:'Drag above or below another item to change the order',
+    autoNext:'Auto-advance to next', goNext:'GO NEXT', noName:'(no name)',
     rundown:'RUNDOWN', showStart:'Start', notePh:'Note (optional)…', nowNextOut:'NOW/NEXT on screen',
     cueImport:'Import', cueExport:'CSV', cueImportTitle:'Import CSV / paste from Excel or Sheets (name, duration, note)', cueExportTitle:'Export rundown as CSV', cueImportNone:'No rows recognized. Format: name, duration (10:00), note',
     cueNew:'NEW ITEM', cueNewTitle:'Create a new rundown item', cueAdd:'ADD TO RUNDOWN', cueNewEditor:'New rundown item',
@@ -4576,6 +4581,7 @@ let S = {
 };
 let lastNetInfo = null, lastDisplays = [];
 let cues = [], currentCue = -1, selectedCue = -1, autoNext = false, zeroFired = false, outputOpen = false;
+let draggedCueId = '', draggedContentItemId = '', suppressSortableClickUntil = 0;
 let outputRuntime = {primaryOpen:false,revision:0,primary:null,routes:[]};
 let lowerThirdTimer = null;
 let lowerThirdOutroTimer = null;
@@ -5229,6 +5235,62 @@ function revealListRow(list,row){
     else if(rowRect.bottom>listRect.bottom-4) list.scrollTop+=rowRect.bottom-listRect.bottom+4;
   });
 }
+function clearSortableMarkers(root){
+  if(!root) return;
+  root.querySelectorAll('.drop-before,.drop-after').forEach(row=>row.classList.remove('drop-before','drop-after'));
+}
+function sortableDropAfter(row,event){
+  const rect=row.getBoundingClientRect();
+  return event.clientY>=rect.top+(rect.height/2);
+}
+function wireSortableRow(row,{type,id,reorder}){
+  const value=String(id||'');
+  row.draggable=true;
+  row.setAttribute('aria-roledescription',t('sortableItem'));
+  row.title=t('sortableHint');
+  row.addEventListener('dragstart',event=>{
+    const control=event.target.closest('button,input,select,textarea,a');
+    if(control&&control!==row){ event.preventDefault(); return; }
+    if(type==='cue') draggedCueId=value; else draggedContentItemId=value;
+    row.classList.add('dragging');
+    row.setAttribute('aria-grabbed','true');
+    document.body.classList.add('sorting-list');
+    if(event.dataTransfer){
+      event.dataTransfer.effectAllowed='move';
+      event.dataTransfer.setData('text/plain',`${type}:${value}`);
+    }
+  });
+  row.addEventListener('dragover',event=>{
+    const active=type==='cue'?draggedCueId:draggedContentItemId;
+    if(!active||active===value) return;
+    event.preventDefault();
+    if(event.dataTransfer) event.dataTransfer.dropEffect='move';
+    clearSortableMarkers(row.parentElement);
+    row.classList.add(sortableDropAfter(row,event)?'drop-after':'drop-before');
+  });
+  row.addEventListener('dragleave',event=>{
+    if(event.relatedTarget&&row.contains(event.relatedTarget)) return;
+    row.classList.remove('drop-before','drop-after');
+  });
+  row.addEventListener('drop',event=>{
+    const active=type==='cue'?draggedCueId:draggedContentItemId;
+    if(!active||active===value) return;
+    event.preventDefault();
+    const after=sortableDropAfter(row,event);
+    clearSortableMarkers(row.parentElement);
+    suppressSortableClickUntil=Date.now()+250;
+    if(type==='cue') draggedCueId=''; else draggedContentItemId='';
+    reorder(active,value,after);
+  });
+  row.addEventListener('dragend',()=>{
+    clearSortableMarkers(row.parentElement);
+    row.classList.remove('dragging');
+    row.setAttribute('aria-grabbed','false');
+    draggedCueId=''; draggedContentItemId='';
+    suppressSortableClickUntil=Date.now()+180;
+    document.body.classList.remove('sorting-list');
+  });
+}
 function renderCues(){
   const el=$('cueList'); el.innerHTML='';
   updateSidebarGroupLabels();
@@ -5239,6 +5301,7 @@ function renderCues(){
     b.addEventListener('click',seedDemoShow);
     el.appendChild(b);
     updateCueEditorMode();
+    updateBackButton();
     return;
   }
   const sch=schedule(Date.now());
@@ -5280,8 +5343,9 @@ function renderCues(){
         : t('cueSceneMissingRow');
       sceneLinkEl.title=sceneLinkEl.textContent;
     }
+    wireSortableRow(row,{type:'cue',id:c.id,reorder:reorderCueById});
     const activateCue=()=>selectCue(i,{previewLinkedScene:true});
-    row.addEventListener('click',e=>{ if(e.detail>1||e.target.closest('button')) return; activateCue(); });
+    row.addEventListener('click',e=>{ if(Date.now()<suppressSortableClickUntil||e.detail>1||e.target.closest('button')) return; activateCue(); });
     row.addEventListener('dblclick',e=>{ if(e.target.closest('button')) return; });   // dblclick NIKAD ne šalje LIVE
     row.addEventListener('keydown',e=>{
       if(e.key==='Enter'||e.key===' '){ e.preventDefault(); activateCue(); }
@@ -5301,6 +5365,7 @@ function renderCues(){
     el.appendChild(row);
   });
   updateCueEditorMode();
+  updateBackButton();
 }
 // SELECTED ≠ LIVE: klik bira red i priprema povezanu scenu u Preview, bez promene Program izlaza.
 let cueEditorOpen=false;
@@ -5329,11 +5394,10 @@ function updateLiveInfo(){
 }
 function updateGoLabel(){
   const b=$('btnGo'); if(!b) return;
+  b.innerHTML = t('goNext');
   if(selectedCue>=0 && selectedCue!==currentCue && cues[selectedCue]){
-    b.innerHTML = t('goSelectedBtn').replace('{name}', escHtml(cues[selectedCue].name||t('noName')));
-    b.title=b.textContent.trim();
+    b.title=t('goSelectedBtn').replace('{name}',cues[selectedCue].name||t('noName'));
   } else {
-    b.innerHTML = t('goNext');
     b.title=b.textContent.trim();
   }
   b.setAttribute('aria-label',b.textContent.trim());
@@ -5344,7 +5408,7 @@ function escHtml(x){ const d=document.createElement('span'); d.textContent=Strin
 let liveLocked=false;
 function lockBlocked(){
   if(!liveLocked) return false;
-  const g=$('golane')||document.querySelector('.golane');
+  const g=document.querySelector('.studio-switcher');
   if(g){ g.classList.remove('lock-flash'); void g.offsetWidth; g.classList.add('lock-flash'); }
   return true;
 }
@@ -5430,10 +5494,39 @@ function goLiveWithCue(i, opts={}){
 }
 // kompatibilnost sa postojećim pozivima (remote/OSC/demo)
 function loadCue(i,autostart){ goLiveWithCue(i, {autostart: !!autostart}); }
-function moveCue(i,dir){ const j=i+dir; if(j<0||j>=cues.length) return; [cues[i],cues[j]]=[cues[j],cues[i]];
-  if(currentCue===i) currentCue=j; else if(currentCue===j) currentCue=i;
-  if(selectedCue===i) selectedCue=j; else if(selectedCue===j) selectedCue=i;
-  saveCues(); send(); renderCues(); }
+function reorderCueById(dragId,targetId,after=false){
+  const from=cues.findIndex(cue=>String(cue.id)===String(dragId));
+  const target=cues.findIndex(cue=>String(cue.id)===String(targetId));
+  if(from<0||target<0||from===target) return false;
+  const liveId=currentCue>=0&&cues[currentCue]?String(cues[currentCue].id):'';
+  const selectedId=selectedCue>=0&&cues[selectedCue]?String(cues[selectedCue].id):'';
+  const [moved]=cues.splice(from,1);
+  const destination=cues.findIndex(cue=>String(cue.id)===String(targetId));
+  cues.splice(Math.max(0,destination+(after?1:0)),0,moved);
+  currentCue=liveId?cues.findIndex(cue=>String(cue.id)===liveId):-1;
+  selectedCue=selectedId?cues.findIndex(cue=>String(cue.id)===selectedId):-1;
+  saveCues(); send(); renderCues(); updateGoLabel(); updateLiveInfo();
+  return true;
+}
+function moveCue(i,dir){
+  const target=i+dir;
+  if(i<0||i>=cues.length||target<0||target>=cues.length) return false;
+  return reorderCueById(cues[i].id,cues[target].id,dir>0);
+}
+function previousCuePreviewIndex(){
+  const anchor=selectedCue>=0?selectedCue:currentCue;
+  return anchor>0?anchor-1:-1;
+}
+function updateBackButton(){
+  const button=$('btnBack');
+  if(button) button.disabled=previousCuePreviewIndex()<0;
+}
+function preparePreviousCue(){
+  const index=previousCuePreviewIndex();
+  if(index<0) return false;
+  selectCue(index,{previewLinkedScene:true});
+  return true;
+}
 function go(){
   if(selectedCue>=0 && selectedCue!==currentCue) goLiveWithCue(selectedCue);
   else goNext();
@@ -6364,6 +6457,21 @@ function contentThumbnail(row,item){
     row.appendChild(node);
   });
 }
+function reorderContentItemById(dragId,targetId,after=false){
+  const from=contentItems.findIndex(item=>String(item.id)===String(dragId));
+  const target=contentItems.findIndex(item=>String(item.id)===String(targetId));
+  if(from<0||target<0||from===target) return false;
+  const [moved]=contentItems.splice(from,1);
+  const destination=contentItems.findIndex(item=>String(item.id)===String(targetId));
+  contentItems.splice(Math.max(0,destination+(after?1:0)),0,moved);
+  const orderedSceneIds=new Set(contentItems.map(item=>String(item.sceneId)));
+  const sceneById=new Map((S.scenes||[]).map(scene=>[String(scene.id),scene]));
+  const orderedScenes=contentItems.map(item=>sceneById.get(String(item.sceneId))).filter(Boolean);
+  const remainingScenes=(S.scenes||[]).filter(scene=>!orderedSceneIds.has(String(scene.id)));
+  S.scenes=[...orderedScenes,...remainingScenes];
+  contentWorkflowDirty();
+  return true;
+}
 function renderContentItems(){
   if(!$('slidesList')) return;
   normalizeContentWorkflow({items:contentItems,selectedContentItemId,liveContentItemId});
@@ -6394,7 +6502,8 @@ function renderContentItems(){
     if(live){ const badge=document.createElement('span'); badge.className='slide-badge live'; badge.textContent=t('sceneLiveBadge'); badges.appendChild(badge); }
     if(preview){ const badge=document.createElement('span'); badge.className='slide-badge selected'; badge.textContent=t('scenePreviewBadge'); badges.appendChild(badge); }
     row.append(index,thumb,name,meta,badges);
-    row.addEventListener('click',()=>selectContentItem(item.id,{previewOnly:true}));
+    wireSortableRow(row,{type:'scene',id:item.id,reorder:reorderContentItemById});
+    row.addEventListener('click',()=>{ if(Date.now()>=suppressSortableClickUntil) selectContentItem(item.id,{previewOnly:true}); });
     root.appendChild(row);
   });
   const selected=selectedContentItem();
@@ -6404,7 +6513,6 @@ function renderContentItems(){
   $('slideDeckNav').classList.toggle('open',!!selected&&selected.type==='pdf');
   $('slidePage').textContent=selected?textVars(t('slidePage'),{n:selected.page||1}):'—';
   $('btnSlideTake').disabled=!selected;
-  $('btnSlideClear').disabled=!selected;
   const selectedIsLive=!!selected&&!!programState&&selected.sceneId===programState.activeSceneId;
   $('btnSlideDelete').disabled=!selected||selectedIsLive||S.scenes.filter(scene=>!scene.internal).length<=1;
   $('btnSlideDelete').title=selectedIsLive?t('sceneDeleteLive'):t('sceneDelete');
@@ -6431,7 +6539,6 @@ $('btnSceneLibraryRename')?.addEventListener('click',async()=>{
   if(value!==null){ scene.name=value.trim()||scene.name; sceneDirty(); }
 });
 $('btnSlideTake')?.addEventListener('click',()=>takeSelectedContent('transition'));
-$('btnSlideClear')?.addEventListener('click',()=>takeSelectedContent('cut'));
 $('btnSlideDelete')?.addEventListener('click',deleteSelectedContent);
 $('btnSlidePrev')?.addEventListener('click',()=>changeSelectedPdfPage(-1));
 $('btnSlideNext')?.addEventListener('click',()=>changeSelectedPdfPage(1));
@@ -9339,12 +9446,11 @@ function buildGrid(){
 $('chkGrid').addEventListener('change',e=>{ S.gridOn=e.target.checked; lastKey=''; buildGrid(); send(true); });
 $('gridSizeSel').addEventListener('change',e=>setGridSize(+e.target.value));
 
-$('btnCut').addEventListener('click',()=>takePreview('cut'));
 $('btnTake').addEventListener('click',()=>takePreview('transition'));
+$('btnBack').addEventListener('click',preparePreviousCue);
 $('btnTakeLayer').addEventListener('click',takeSelectedLayer);
 $('btnHideLayer').addEventListener('click',hideSelectedLayer);
 $('btnFadeBlack').addEventListener('click',()=>setProgramBlackout(!ensureProgramState().blackout));
-$('bdgBk').addEventListener('click',()=>setProgramBlackout(!ensureProgramState().blackout));
 $('chkDirectProgram').addEventListener('change',e=>{
   S.studioDirect=!!e.target.checked;
   if(S.studioDirect) takePreview('cut');

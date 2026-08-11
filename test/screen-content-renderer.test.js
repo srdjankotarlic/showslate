@@ -74,6 +74,24 @@ app.whenReady().then(async () => {
 
   const state = JSON.parse(await win.webContents.executeJavaScript(`(async function(){
     S.scenes=[]; contentItems=[]; selectedContentItemId=''; liveContentItemId=''; programState=null;
+    const dragVisibleRow=(source,target,after=false)=>{
+      const transfer={effectAllowed:'',dropEffect:'',setData(){},getData(){return '';}};
+      const event=(type,clientY=0)=>{
+        const value=new Event(type,{bubbles:true,cancelable:true});
+        Object.defineProperty(value,'dataTransfer',{value:transfer});
+        Object.defineProperty(value,'clientY',{value:clientY});
+        return value;
+      };
+      source.dispatchEvent(event('dragstart'));
+      const grabbed=source.classList.contains('dragging')&&source.getAttribute('aria-grabbed')==='true';
+      const rect=target.getBoundingClientRect();
+      const y=after?rect.bottom-1:rect.top+1;
+      target.dispatchEvent(event('dragover',y));
+      const marked=target.classList.contains(after?'drop-after':'drop-before');
+      target.dispatchEvent(event('drop',y));
+      source.dispatchEvent(event('dragend',y));
+      return grabbed&&marked;
+    };
     const timer=addContentScene('Event Timer','timer',[makeTimerLayer()]);
     const holding=addContentScene('Welcome','text',[{id:makeId('layer'),type:'text',name:'Welcome',text:'WELCOME',color:'#ffffff',bg:'transparent',fontSize:10,visible:true,fit:'contain',x:4,y:4,w:92,h:92,opacity:1}]);
     const deck=addContentScene('Sponsor Deck','pdf',[{id:makeId('layer'),type:'pdf',name:'Sponsor Deck',src:'media://test-deck.pdf',page:1,visible:true,fit:'contain',x:0,y:0,w:100,h:100,opacity:1}],{assetId:'media://test-deck.pdf',page:1});
@@ -99,7 +117,20 @@ app.whenReady().then(async () => {
     document.getElementById('btnGo').click();
     const cueGoWorked=currentCue===0 && programState.activeSceneId===holding.sceneId && liveContentItemId===holding.id;
     S.running=false; S.endAt=0; currentCue=-1; selectedCue=-1; cues=[]; S.activeSceneId=timer.sceneId; selectedContentItemId=timer.id; liveContentItemId=timer.id; programState=outputSnapshot(S); setCueEditorOpen(false); renderCues();
-    const rundownSceneFlow=newEditorVisible && previewButtonSafe && cueCreated && rundownRowPreviewSafe && cueGoWorked;
+    cues=migrateCues([
+      {id:'sort-a',name:'First',durationMs:60000,contentItemId:timer.id},
+      {id:'sort-b',name:'Second',durationMs:60000,contentItemId:holding.id},
+      {id:'sort-c',name:'Third',durationMs:60000,contentItemId:deck.id}
+    ]);
+    currentCue=1; selectedCue=2; renderCues();
+    const programBeforeCueReorder=programState.activeSceneId;
+    const cueRows=[...document.querySelectorAll('#cueList .cue')];
+    const cueDragged=dragVisibleRow(cueRows[2],cueRows[0],false);
+    const cueReordered=cueDragged && cues.map(cue=>cue.id).join(',')==='sort-c,sort-a,sort-b' && cues[currentCue].id==='sort-b' && cues[selectedCue].id==='sort-c' && programState.activeSceneId===programBeforeCueReorder && [...document.querySelectorAll('#cueList .cue')].every(row=>row.draggable);
+    selectedCue=currentCue; renderCues();
+    const backPrepared=preparePreviousCue() && selectedCue===1 && S.activeSceneId===timer.sceneId && programState.activeSceneId===programBeforeCueReorder;
+    cues=[]; currentCue=-1; selectedCue=-1; S.activeSceneId=timer.sceneId; selectedContentItemId=timer.id; renderCues();
+    const rundownSceneFlow=newEditorVisible && previewButtonSafe && cueCreated && rundownRowPreviewSafe && cueGoWorked && cueReordered && backPrepared;
     const slidesTab=document.getElementById('btnSidebarSlides');
     const slidesTabVisible=!!slidesTab && slidesTab.getClientRects().length>0;
     if(slidesTabVisible) slidesTab.click();
@@ -115,11 +146,19 @@ app.whenReady().then(async () => {
       duplicate:!!document.getElementById('btnSceneLibraryDuplicate')?.getClientRects().length,
       rename:!!document.getElementById('btnSceneLibraryRename')?.getClientRects().length,
       take:document.getElementById('btnSlideTake')?.textContent.trim(),
-      cut:document.getElementById('btnSlideClear')?.textContent.trim(),
+      cutRemoved:!document.getElementById('btnSlideClear') && !document.getElementById('btnCut'),
+      switcher:['btnTake','btnGo','btnBack','btnFadeBlack'].every(id=>document.getElementById(id)?.closest('.studio-switcher')),
+      sortable:sceneRows.every(row=>row.draggable),
       rundownCount:document.getElementById('rundownTabCount')?.textContent,
       sceneCount:document.getElementById('scenesTabCount')?.textContent
     };
-    const normalUi=slidesTabVisible && document.getElementById('sidebarSlidesPane').classList.contains('active') && sceneUi.tab==='SCENES' && sceneUi.rows===3 && sceneUi.thumbnails===3 && sceneUi.numbered && sceneUi.metadata && sceneUi.newScene && sceneUi.duplicate && sceneUi.rename && sceneUi.take==='TAKE' && sceneUi.cut==='CUT' && sceneUi.rundownCount==='0' && sceneUi.sceneCount==='3';
+    const programBeforeSceneReorder=programState.activeSceneId;
+    const deckRow=document.querySelector('#slidesList .slide-row[data-content-id="'+deck.id+'"]');
+    const timerRow=document.querySelector('#slidesList .slide-row[data-content-id="'+timer.id+'"]');
+    const sceneDragged=dragVisibleRow(deckRow,timerRow,false);
+    const sceneReordered=sceneDragged && contentItems.map(item=>item.id).join(',')===[deck.id,timer.id,holding.id].join(',') && S.scenes[0].id===deck.sceneId && programState.activeSceneId===programBeforeSceneReorder;
+    reorderContentItemById(deck.id,holding.id,true);
+    const normalUi=slidesTabVisible && document.getElementById('sidebarSlidesPane').classList.contains('active') && sceneUi.tab==='SCENES' && sceneUi.rows===3 && sceneUi.thumbnails===3 && sceneUi.numbered && sceneUi.metadata && sceneUi.newScene && sceneUi.duplicate && sceneUi.rename && sceneUi.take==='TAKE' && sceneUi.cutRemoved && sceneUi.switcher && sceneUi.sortable && sceneReordered && sceneUi.rundownCount==='0' && sceneUi.sceneCount==='3';
     selectContentItem(holding.id);
     const selectedSafe=programState.activeSceneId===timer.sceneId && S.activeSceneId===holding.sceneId && liveContentItemId===timer.id;
     await new Promise(resolve=>setTimeout(resolve,120));
@@ -137,6 +176,7 @@ app.whenReady().then(async () => {
     S.studioDirect=true; selectContentItem(timer.id);
     const directWorked=programState.activeSceneId===timer.sceneId && liveContentItemId===timer.id;
     renderContentItems();
+    await new Promise(resolve=>setTimeout(resolve,280));
     document.querySelector('#slidesList .slide-row[data-content-id="'+holding.id+'"]').click();
     const sceneCardPreviewSafe=programState.activeSceneId===timer.sceneId && liveContentItemId===timer.id && S.activeSceneId===holding.sceneId && selectedContentItemId===holding.id;
     S.studioDirect=false; selectContentItem(deck.id);
@@ -148,7 +188,7 @@ app.whenReady().then(async () => {
     renderStage('pg',programState,Date.now());
     const clearWorked=liveContentItemId==='' && programState.activeSceneId==='scene-content-clear' && document.getElementById('pgScene').textContent.trim()==='';
     const saved=await flushShowAutosave({reason:'screen-content-test',force:true});
-    return JSON.stringify({normalUi,sceneUi,rundownSceneFlow,selectedSafe,previewRendered,timerSafe,takeWorked,directWorked,sceneCardPreviewSafe,pageWorked,goWorked,clearWorked,saved,ids:{timer:timer.id,holding:holding.id,deck:deck.id}});
+    return JSON.stringify({normalUi,sceneUi,sceneReordered,rundownSceneFlow,cueReordered,backPrepared,selectedSafe,previewRendered,timerSafe,takeWorked,directWorked,sceneCardPreviewSafe,pageWorked,goWorked,clearWorked,saved,ids:{timer:timer.id,holding:holding.id,deck:deck.id}});
   })()`));
   win.webContents.reload();
   const reloadReady = await waitFor(() => win.webContents.executeJavaScript('showAutosaveReady===true && lastDisplays.length>0'));

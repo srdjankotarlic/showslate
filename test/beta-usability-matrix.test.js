@@ -216,10 +216,12 @@ app.whenReady().then(async () => {
       const programRect=__rect(document.querySelector('.studio-program'));
       const workspaceLayout={operator:{display:operatorStyle.display,rows:operatorStyle.gridTemplateRows,autoRows:operatorStyle.gridAutoRows,alignContent:operatorStyle.alignContent},studio:studioRect,studioDisplay:studioStyle.display,program:programRect,children:[...document.querySelector('.operator-main').children].map(node=>({id:node.id||'',className:node.className||'',display:getComputedStyle(node).display,position:getComputedStyle(node).position,rect:__rect(node)}))};
       const operatorUsesWidth=innerWidth>1100||operatorRect.w>=innerWidth-32;
-      const commandStrip=__rect(document.querySelector('.show-command-strip'));
-      const commandStripCompact=commandStrip.h<=52;
-      const timerNotInMain=!document.querySelector('.show-command-strip .transport')&&!document.querySelector('.show-command-strip #btnStart');
-      const goLaneFull=__inside(document.querySelector('.show-command-strip .golane'))&&Math.abs(__rect(document.querySelector('.show-command-strip .golane')).w-commandStrip.w)<=2;
+      const switcher=document.querySelector('.studio-switcher');
+      const switcherRect=__rect(switcher);
+      const switcherInside=__inside(switcher);
+      const switcherControls=['btnTake','btnGo','btnBack','btnFadeBlack'].map(id=>document.getElementById(id));
+      const switcherControlsInside=switcherControls.every(__inside);
+      const timerNotInMain=!document.querySelector('.operator-main > .transport')&&!document.querySelector('.studio #btnStart');
       document.getElementById('btnSettingsDrawer').click();
       const settingsOpened=await __waitVisual(()=>document.body.classList.contains('dr-setup')&&__inside(document.getElementById('setupWrap')));
       document.querySelector('#setupTabs button[data-pane="timer"]').click();
@@ -230,9 +232,9 @@ app.whenReady().then(async () => {
       const timerSettings={opened:settingsOpened,settled:timerSettled,inPane:document.getElementById('pane-timer').contains(timerTransport),panel:__inside(timerPanel),transport:__inside(timerTransport),start:__inside(document.getElementById('btnStart')),reset:__inside(document.getElementById('btnReset')),adjustments:adjustButtons.length===6&&adjustButtons.every(__inside),fits:[document.getElementById('btnStart'),document.getElementById('btnReset'),...adjustButtons].every(__fits),noDuplicateBlackout:!document.getElementById('btnBlackout'),programBlackout:__inside(document.getElementById('bdgBk'))&&__fits(document.getElementById('bdgBk'))};
       closeDrawers();
       const settingsClosed=await __waitVisual(()=>!document.body.classList.contains('dr-setup')&&!__visible(document.getElementById('setupWrap')));
-      return {...p,rundownAccess,rundownProbe,operatorRect,workspaceLayout,operatorUsesWidth,commandStrip,commandStripCompact,timerNotInMain,goLaneFull,timerSettings,settingsClosed,mode:document.getElementById('app-shell').classList.contains('mode-standard'),ghosts:[...document.querySelectorAll('.flow-overlay.open,.recovery-overlay.open')].length,studioGhost:document.getElementById('ltStudio').classList.contains('open')};
+      return {...p,rundownAccess,rundownProbe,operatorRect,workspaceLayout,operatorUsesWidth,switcherRect,switcherInside,switcherControlsInside,timerNotInMain,timerSettings,settingsClosed,mode:document.getElementById('app-shell').classList.contains('mode-standard'),ghosts:[...document.querySelectorAll('.flow-overlay.open,.recovery-overlay.open')].length,studioGhost:document.getElementById('ltStudio').classList.contains('open')};
     })()`);
-    check('BETA_STANDARD_' + size.name + '_OK', standard.mode && standard.inside.every(Boolean) && standard.rundownAccess && standard.operatorUsesWidth && standard.commandStripCompact && standard.timerNotInMain && standard.goLaneFull && standard.timerSettings.opened && standard.timerSettings.settled && standard.timerSettings.inPane && standard.timerSettings.panel && standard.timerSettings.transport && standard.timerSettings.start && standard.timerSettings.reset && standard.timerSettings.adjustments && standard.timerSettings.fits && standard.timerSettings.noDuplicateBlackout && standard.timerSettings.programBlackout && standard.settingsClosed && standard.bodyX <= 1 && standard.footer && standard.uniqueStart === 1 && standard.uniqueGo === 1 && standard.textFits.every(Boolean) && standard.ghosts === 0 && !standard.studioGhost, JSON.stringify(standard));
+    check('BETA_STANDARD_' + size.name + '_OK', standard.mode && standard.inside.every(Boolean) && standard.rundownAccess && standard.operatorUsesWidth && standard.switcherInside && standard.switcherControlsInside && standard.timerNotInMain && standard.timerSettings.opened && standard.timerSettings.settled && standard.timerSettings.inPane && standard.timerSettings.panel && standard.timerSettings.transport && standard.timerSettings.start && standard.timerSettings.reset && standard.timerSettings.adjustments && standard.timerSettings.fits && standard.timerSettings.noDuplicateBlackout && standard.timerSettings.programBlackout && standard.settingsClosed && standard.bodyX <= 1 && standard.footer && standard.uniqueStart === 1 && standard.uniqueGo === 1 && standard.textFits.every(Boolean) && standard.ghosts === 0 && !standard.studioGhost, JSON.stringify(standard));
     await capture(win, size.name + '-standard');
     if (size.name === '1280x800' || size.name === '900x600') {
       const timingArtifact = await json(win, `(async()=>{try{document.getElementById('btnSettingsDrawer').click();await __waitVisual(()=>document.body.classList.contains('dr-setup')&&__inside(document.getElementById('setupWrap')));document.querySelector('#setupTabs button[data-pane="timer"]').click();document.querySelector('[data-testid="timer-transport-panel"]').scrollIntoView({block:'start'});await __waitVisual(()=>__inside(document.querySelector('[data-testid="timer-transport-panel"]')));return {open:true};}catch(error){return {open:false,error:String(error),stack:error&&error.stack};}})()`);
@@ -273,7 +275,7 @@ app.whenReady().then(async () => {
       const p=__baseProbe(['#program','#btnGo']);
       return {...p,mode:document.getElementById('app-shell').classList.contains('mode-advanced'),monitorCount:monitors.length,overlap};
     })()`);
-    check('BETA_ADVANCED_' + size.name + '_OK', advanced.mode && advanced.inside.every(Boolean) && advanced.bodyX <= 1 && advanced.footer && advanced.monitorCount >= 1 && advanced.monitorCount <= 2 && !advanced.overlap, JSON.stringify(advanced));
+    check('BETA_ADVANCED_' + size.name + '_OK', advanced.mode && advanced.inside.every(Boolean) && advanced.bodyX <= 1 && advanced.footer && advanced.monitorCount === 2 && !advanced.overlap, JSON.stringify(advanced));
     if (size.name === '1440x900') await capture(win, size.name + '-advanced');
 
     const panels = await json(win, `(async()=>{

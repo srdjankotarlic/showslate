@@ -2455,8 +2455,8 @@ app.whenReady().then(async () => {
           fs.writeFileSync('/tmp/showslate_backstage.png', (await bw.webContents.capturePage()).toPNG());
           bw.destroy();
         }
-        // NAPREDNO prekidač: default = jednostavan mod (Preview/switcher sakriveni, Direct forsiran);
-        // uključivanje vraća PVW/PGM režiju — ostaje UKLJUČENO za ostatak smoke-a (drag/isolation testovi)
+        // NAPREDNO prekidač menja dubinu editovanja, ali Preview/Program i live komande
+        // ostaju vidljivi u oba režima. Direct je forsiran kada je Napredno isključeno.
         let advOK = false, advStr = '?';
         try {
           await controlWin.webContents.executeJavaScript(`(function(){
@@ -2471,17 +2471,17 @@ app.whenReady().then(async () => {
           advStr = await controlWin.webContents.executeJavaScript(`(function(){
             const pv=document.querySelector('.studio-preview'), sw=document.querySelector('.studio-switcher');
             const before={simple:document.getElementById('studio').classList.contains('simple'),
-              pvHidden:pv.offsetParent===null, swHidden:sw.offsetParent===null, direct:!!S.studioDirect,
+              pvVisible:pv.offsetParent!==null, swVisible:sw.offsetParent!==null, direct:!!S.studioDirect,
               chk:document.getElementById('chkAdvanced').checked};
             document.getElementById('chkAdvanced').checked=true;
             document.getElementById('chkAdvanced').dispatchEvent(new Event('change'));
             const after={simple:document.getElementById('studio').classList.contains('simple'),
-              pvVisible:pv.offsetParent!==null};
+              pvVisible:pv.offsetParent!==null, swVisible:sw.offsetParent!==null};
             return JSON.stringify({before,after});
           })()`);
           const A = JSON.parse(advStr);
-          advOK = A.before.simple && A.before.pvHidden && A.before.swHidden && A.before.direct && !A.before.chk
-            && !A.after.simple && A.after.pvVisible;
+          advOK = A.before.simple && A.before.pvVisible && A.before.swVisible && A.before.direct && !A.before.chk
+            && !A.after.simple && A.after.pvVisible && A.after.swVisible;
         } catch (e) { advStr = 'ERR ' + e; }
         smokeCheck('ADVANCED_TOGGLE_OK', advOK, advStr);
         // test mrežnog izlaza: HTML stranica
@@ -3098,7 +3098,10 @@ app.whenReady().then(async () => {
             if(typeof setSidebarView==='function') setSidebarView('rundown');
             const cueL=document.querySelector('.col-run #cueList');
             const studio=document.getElementById('studio');
-            const goBtn=document.querySelector('.left .golane #btnGo');
+            const goBtn=document.querySelector('.studio-switcher #btnGo');
+            const takeBtn=document.querySelector('.studio-switcher #btnTake');
+            const backBtn=document.querySelector('.studio-switcher #btnBack');
+            const blackBtn=document.querySelector('.studio-switcher #btnFadeBlack');
             const goNextBtn=document.getElementById('btnGoNext');
             const msg=document.querySelector('.right .panel-message #msgInput');
             const status=document.querySelector('.right .card-status #stStage');
@@ -3113,11 +3116,11 @@ app.whenReady().then(async () => {
             document.getElementById('btnCompositor').click();
             const srcShownAdv = !!srcP && srcP.offsetParent!==null;
             return JSON.stringify({cue:!!cueL && cueL.getBoundingClientRect().height>40, leftOfStudio,
-              go:!!goBtn, goNext:!!goNextBtn, msg:!!msg, status:!!status, noRdTab:!rdTab,
+              go:!!goBtn, take:!!takeBtn, back:!!backBtn, black:!!blackBtn, goNext:!!goNextBtn, msg:!!msg, status:!!status, noRdTab:!rdTab,
               srcHiddenSimple, srcShownAdv});
           })()`);
           const L = JSON.parse(layoutStr);
-          layoutOK = L.cue && L.leftOfStudio && L.go && L.goNext && L.msg && L.status && L.noRdTab
+          layoutOK = L.cue && L.leftOfStudio && L.go && L.take && L.back && L.black && L.goNext && L.msg && L.status && L.noRdTab
             && L.srcHiddenSimple && L.srcShownAdv;
           await controlWin.webContents.executeJavaScript(`(function(){
             if(document.body.classList.contains('compositor-open')) setCompositorOpen(false,{scroll:false,persist:false});
@@ -3154,11 +3157,17 @@ app.whenReady().then(async () => {
             // drag targets a layer in #preview — visible only in Advanced (Standard hides preview)
             var c=document.getElementById('chkCompact'); if(c && c.checked){ c.checked=false; c.dispatchEvent(new Event('change')); }
             if(typeof applyCompactMode==='function') applyCompactMode(false);
+            if(typeof setCompositorOpen==='function') setCompositorOpen(false,{persist:false,scroll:false});
             var a=document.getElementById('chkAdvanced'); if(a && !a.checked){ a.checked=true; a.dispatchEvent(new Event('change')); }
             if(typeof applyAdvancedMode==='function') applyAdvancedMode(true);
             S.scenes=[{id:'dg',name:'DG',layers:[{id:'dg-1',type:'text',name:'T',text:'DRAG',visible:true,x:10,y:10,w:30,h:20,opacity:1}]}];
             S.activeSceneId='dg'; selectedLayerId=null; stageKeys={pv:'',pg:''}; monitorSceneKeys={pv:'',pg:''};
             renderScenesUI(); if(typeof renderStage==='function') renderStage('pv', S, Date.now()); send(true);
+            window.__dragProbe=[];
+            var probeBox=document.getElementById('preview');
+            ['pointerdown','gotpointercapture','pointermove','pointerup','lostpointercapture','pointercancel'].forEach(function(type){
+              probeBox.addEventListener(type,function(event){window.__dragProbe.push({type:type,x:Math.round(event.clientX),y:Math.round(event.clientY),buttons:event.buttons,pointerId:event.pointerId,target:event.target&&event.target.className||''});},true);
+            });
             return 'seeded';
           })()`);
           let dragReady = false;
@@ -3189,19 +3198,28 @@ app.whenReady().then(async () => {
           })()`));
           if (dragPoints.ok) {
             const input = (type, x, y, extra) => controlWin.webContents.sendInputEvent({
-              type, x: Math.round(x), y: Math.round(y), button: 'left', ...(extra || {})
+              type, x: Math.round(x), y: Math.round(y), ...(extra || {})
             });
             input('mouseMove', dragPoints.sx, dragPoints.sy);
-            input('mouseDown', dragPoints.sx, dragPoints.sy, { clickCount: 1 });
-            await new Promise(r => setTimeout(r, 80));
-            input('mouseMove', dragPoints.ex, dragPoints.ey);
-            await new Promise(r => setTimeout(r, 100));
-            input('mouseUp', dragPoints.ex, dragPoints.ey, { clickCount: 1 });
-            await new Promise(r => setTimeout(r, 100));
+            input('mouseDown', dragPoints.sx, dragPoints.sy, { button: 'left', clickCount: 1 });
+            for (let step = 1; step <= 12; step++) {
+              const progress = step / 12;
+              const previous = (step - 1) / 12;
+              const fromX = dragPoints.sx + (dragPoints.ex - dragPoints.sx) * previous;
+              const fromY = dragPoints.sy + (dragPoints.ey - dragPoints.sy) * previous;
+              const toX = dragPoints.sx + (dragPoints.ex - dragPoints.sx) * progress;
+              const toY = dragPoints.sy + (dragPoints.ey - dragPoints.sy) * progress;
+              input('mouseMove',
+                toX,
+                toY,
+                { button: 'left', movementX: Math.round(toX - fromX), movementY: Math.round(toY - fromY) });
+            }
+            input('mouseUp', dragPoints.ex, dragPoints.ey, { button: 'left', clickCount: 1 });
+            await new Promise(r => setTimeout(r, 180));
           }
           dragStr = await controlWin.webContents.executeJavaScript(`(function(){
             const L=S.scenes[0].layers[0];
-            return JSON.stringify({sel:selectedLayerId, x:L.x, y:L.y});
+            return JSON.stringify({sel:selectedLayerId, x:L.x, y:L.y, events:(window.__dragProbe||[]).slice(-40)});
           })()`);
           dragStr = JSON.stringify({points:dragPoints,result:JSON.parse(dragStr)});
           const D = JSON.parse(dragStr);
@@ -5403,9 +5421,6 @@ app.whenReady().then(async () => {
         smokeCheck('FULL_VERTICAL_VISIBILITY_HELPER_OK', s900.probeFalse === true, 'probeFalse=' + s900.probeFalse);
         smokeCheck('PROGRAM_MONITOR_FULLY_VISIBLE_900x600_OK', s900.program.full, JSON.stringify(s900.program));
         smokeCheck('GO_FULLY_VISIBLE_900x600_OK', s900.go.full, JSON.stringify(s900.go));
-        smokeCheck('LIVE_CUE_VISIBLE_900x600_OK', s900.live.full, JSON.stringify(s900.live));
-        smokeCheck('NEXT_CUE_VISIBLE_900x600_OK', s900.next.full, JSON.stringify(s900.next));
-        smokeCheck('LOCK_LIVE_VISIBLE_900x600_OK', s900.lock.full, JSON.stringify(s900.lock));
         smokeCheck('FIXED_FOOTER_DOES_NOT_OVERLAP_OK',
           s900.go.b <= s900.footerTop + 1, 'goB=' + s900.go.b + ' footerTop=' + s900.footerTop);
         smokeCheck('BODY_NO_HORIZONTAL_SCROLL_900x600_OK', s900.overflowX <= 2 && s900.bodyScrollX <= 2, 'ovX=' + s900.overflowX + ' bodyX=' + s900.bodyScrollX);
@@ -5429,11 +5444,20 @@ app.whenReady().then(async () => {
             deadline=Date.now()+1800;
             while(Date.now()<deadline&&!(inside(panel)&&inside(document.getElementById('btnStart'))&&inside(document.getElementById('btnReset')))) await new Promise(function(resolve){setTimeout(resolve,25);});
             var adjust=[].slice.call(transport.querySelectorAll('.adjust button'));
-            var strip=document.querySelector('.show-command-strip'),lane=strip.querySelector('.golane'),sr=strip.getBoundingClientRect(),lr=lane.getBoundingClientRect();
-            return JSON.stringify({drawer:document.body.classList.contains('dr-setup')&&inside(document.getElementById('setupWrap')),inPane:document.getElementById('pane-timer').contains(transport),panel:inside(panel),start:inside(document.getElementById('btnStart')),reset:inside(document.getElementById('btnReset')),adjustCount:adjust.length,adjustInside:adjust.every(inside),fits:[document.getElementById('btnStart'),document.getElementById('btnReset')].concat(adjust).every(fits),timerInMain:!!strip.querySelector('.transport'),laneFull:Math.abs(sr.width-lr.width)<=2,legacyBlackout:!!document.getElementById('btnBlackout'),programBlackout:inside(document.getElementById('bdgBk'))&&fits(document.getElementById('bdgBk'))});
+            var studio=document.getElementById('studio'),switcher=document.querySelector('.studio-switcher');
+            var controls=['btnTake','btnGo','btnBack','btnFadeBlack'].map(function(id){return document.getElementById(id);});
+            var timerVisible={panel:inside(panel),start:inside(document.getElementById('btnStart')),reset:inside(document.getElementById('btnReset')),adjustInside:adjust.every(inside)};
+            var livePanel=document.querySelector('.panel-live-safety');
+            livePanel.scrollIntoView({block:'nearest'});
+            deadline=Date.now()+1800;
+            while(Date.now()<deadline&&!(inside(document.getElementById('liName'))&&inside(document.getElementById('liNext'))&&inside(document.querySelector('[data-testid="lock-live"]')))) await new Promise(function(resolve){setTimeout(resolve,25);});
+            return JSON.stringify({drawer:document.body.classList.contains('dr-setup')&&inside(document.getElementById('setupWrap')),inPane:document.getElementById('pane-timer').contains(transport),panel:timerVisible.panel,start:timerVisible.start,reset:timerVisible.reset,adjustCount:adjust.length,adjustInside:timerVisible.adjustInside,fits:[document.getElementById('btnStart'),document.getElementById('btnReset')].concat(adjust).every(fits),timerInMain:!!document.querySelector('.operator-main > .transport'),switcherInside:inside(switcher)&&controls.every(inside),legacyBlackout:!!document.getElementById('btnBlackout'),programBlackout:inside(document.getElementById('bdgBk'))&&fits(document.getElementById('bdgBk')),liveCue:inside(document.getElementById('liName')),nextCue:inside(document.getElementById('liNext')),lockLive:inside(document.querySelector('[data-testid="lock-live"]')),nextRow:inside(document.getElementById('btnGoNext'))});
           })()`));
         } catch (e) { timerSettings900 = { error:String(e) }; }
-        smokeCheck('TIMER_CONTROLS_IN_SETTINGS_900x600_OK', timerSettings900.drawer && timerSettings900.inPane && timerSettings900.panel && timerSettings900.start && timerSettings900.reset && timerSettings900.adjustCount===6 && timerSettings900.adjustInside && timerSettings900.fits && !timerSettings900.timerInMain && timerSettings900.laneFull && !timerSettings900.legacyBlackout && timerSettings900.programBlackout, JSON.stringify(timerSettings900));
+        smokeCheck('TIMER_CONTROLS_IN_SETTINGS_900x600_OK', timerSettings900.drawer && timerSettings900.inPane && timerSettings900.panel && timerSettings900.start && timerSettings900.reset && timerSettings900.adjustCount===6 && timerSettings900.adjustInside && timerSettings900.fits && !timerSettings900.timerInMain && timerSettings900.switcherInside && !timerSettings900.legacyBlackout && timerSettings900.programBlackout, JSON.stringify(timerSettings900));
+        smokeCheck('LIVE_CUE_VISIBLE_900x600_OK', timerSettings900.liveCue, JSON.stringify(timerSettings900));
+        smokeCheck('NEXT_CUE_VISIBLE_900x600_OK', timerSettings900.nextCue, JSON.stringify(timerSettings900));
+        smokeCheck('LOCK_LIVE_VISIBLE_900x600_OK', timerSettings900.lockLive && timerSettings900.nextRow, JSON.stringify(timerSettings900));
         try { fs.writeFileSync('/tmp/pts_timer_settings_900x600.png', (await controlWin.webContents.capturePage()).toPNG()); } catch(e){}
         try { await controlWin.webContents.executeJavaScript('closeDrawers()'); } catch(e){}
 
@@ -5951,19 +5975,19 @@ app.whenReady().then(async () => {
         })()`);
         await measureAt(1280, 800, { advanced:false });
 
-        // ===== Advanced: narrow single program + tabs + default/persist =====
+        // ===== Advanced: narrow Preview/Program + tabs + default/persist =====
         const adv = await jparse(`(function(){
           var pv=document.querySelector('.studio-preview'), pg=document.getElementById('program');
-          var previewHidden=getComputedStyle(pv).display==='none';
+          var pvr=pv.getBoundingClientRect(); var previewVisible=pvr.width>4 && pvr.height>4;
           var pr=pg.getBoundingClientRect(); var programVisible=pr.width>4 && pr.height>4;
           var tabs=document.querySelectorAll('#setupTabs button[data-pane]');
           tabs[1].click();
           var panes=document.querySelectorAll('.tabpane');
           var visCount=0; panes.forEach(function(p){ if(getComputedStyle(p).display!=='none') visCount++; });
           tabs[0].click();
-          return JSON.stringify({previewHidden:previewHidden,programVisible:programVisible,paneVisCount:visCount,tabCount:tabs.length});
+          return JSON.stringify({previewVisible:previewVisible,programVisible:programVisible,paneVisCount:visCount,tabCount:tabs.length});
         })()`);
-        smokeCheck('ADVANCED_NARROW_SINGLE_PROGRAM_OK', adv.previewHidden && adv.programVisible, JSON.stringify(adv));
+        smokeCheck('ADVANCED_NARROW_DUAL_MONITOR_OK', adv.previewVisible && adv.programVisible, JSON.stringify(adv));
         smokeCheck('ADVANCED_TABS_OK', adv.tabCount >= 4 && adv.paneVisCount === 1, 'tabs=' + adv.tabCount + ' visPanes=' + adv.paneVisCount);
         const advpref = await jparse(`(function(){
           localStorage.removeItem('pt_advanced');

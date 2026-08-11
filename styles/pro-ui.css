@@ -2937,3 +2937,262 @@ body #setupWrap .tabpane.active,
   overscroll-behavior: contain;
   scrollbar-gutter: stable;
 }
+
+/* Operator switcher: maximum monitor area with one unambiguous on-air path. */
+.shell-layout .operator-main {
+  grid-template-rows: minmax(280px, 1fr) minmax(0, clamp(188px, 31vh, 300px)) !important;
+}
+
+body:not(.compositor-open) .shell-layout .operator-main {
+  grid-template-rows: minmax(0, 1fr) !important;
+}
+
+body:not(.compositor-open) .shell-layout #panelSources {
+  display: none !important;
+  pointer-events: none !important;
+}
+
+.shell-layout .studio {
+  width: 100%;
+  height: 100% !important;
+  min-height: 0 !important;
+  grid-template-columns: minmax(0, 1fr) 128px minmax(0, 1fr) !important;
+  gap: 8px !important;
+}
+
+.shell-layout .studio-monitor {
+  min-height: 0 !important;
+}
+
+.shell-layout .studio-switcher {
+  min-width: 0;
+  display: flex !important;
+  flex-direction: column;
+  align-items: stretch;
+  justify-content: center;
+  gap: 7px !important;
+  padding: 7px !important;
+}
+
+/* Preview and Program are permanent operator references. "Standard" only changes
+   edit depth; it must never remove the Preview or the live controls. */
+body:not(.compact) .shell-layout .studio.simple {
+  grid-template-columns: minmax(0, 1fr) 128px minmax(0, 1fr) !important;
+}
+
+body:not(.compact) .shell-layout .studio.simple .studio-preview,
+body:not(.compact) .shell-layout .studio.simple .studio-switcher {
+  display: flex !important;
+}
+
+body:not(.compact) .shell-layout .studio .studio-preview,
+body:not(.compact) .shell-layout .studio .studio-switcher {
+  display: flex !important;
+}
+
+body.compact .shell-layout .studio.simple {
+  grid-template-columns: minmax(0, 1fr) !important;
+  grid-template-rows: minmax(0, 1fr) auto !important;
+}
+
+body.compact .shell-layout .studio.simple .studio-preview {
+  display: none !important;
+}
+
+body.compact .shell-layout .studio.simple .studio-program {
+  grid-row: 1;
+}
+
+body.compact .shell-layout .studio.simple .studio-switcher {
+  grid-row: 2;
+  display: grid !important;
+  grid-template-columns: minmax(96px, 1fr) minmax(116px, 1.15fr) minmax(124px, .9fr);
+  padding: 6px !important;
+}
+
+body.compact .shell-layout .studio-switcher .switcher-take,
+body.compact .shell-layout .studio-switcher .switcher-go,
+body.compact .shell-layout .studio-switcher .switcher-secondary button {
+  min-height: 44px !important;
+  height: 44px !important;
+}
+
+.shell-layout .studio-switcher .switcher-take {
+  min-height: 64px !important;
+  height: 64px;
+  background: #397dcc !important;
+  border-color: #5b9cf5 !important;
+  color: #fff !important;
+  font-size: 14px !important;
+  font-weight: 820 !important;
+  letter-spacing: 0 !important;
+}
+
+.shell-layout .studio-switcher .switcher-go {
+  width: 100% !important;
+  min-width: 0 !important;
+  min-height: 50px !important;
+  height: 50px !important;
+  padding: 6px 7px !important;
+  overflow: hidden;
+  background: #329a5b !important;
+  border-color: #4bb676 !important;
+  color: #07130b !important;
+  font-size: 9.5px !important;
+  font-weight: 800 !important;
+  line-height: 1.2;
+  letter-spacing: 0 !important;
+  text-overflow: clip;
+  white-space: nowrap !important;
+}
+
+body.live-locked .shell-layout .studio-switcher {
+  border-color: rgba(255, 196, 10, .45) !important;
+  background: rgba(255, 196, 10, .05) !important;
+}
+
+.shell-layout .studio-switcher.lock-flash {
+  animation: lockshake .18s ease 2;
+}
+
+.shell-layout .switcher-secondary {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 6px;
+}
+
+.shell-layout .switcher-secondary button {
+  min-width: 0;
+  min-height: 40px !important;
+  height: 40px;
+  padding: 0 4px !important;
+  font-size: 9px !important;
+  font-weight: 760;
+  letter-spacing: 0 !important;
+}
+
+.shell-layout .switcher-back {
+  border-color: var(--pro-line-strong) !important;
+  background: #202329 !important;
+  color: var(--pro-text-2) !important;
+}
+
+.shell-layout .switcher-black {
+  border-color: #7f3d3a !important;
+  background: #191718 !important;
+  color: #ef8d87 !important;
+}
+
+.shell-layout .switcher-black.on {
+  background: var(--pro-danger) !important;
+  border-color: #ef7670 !important;
+  color: #fff !important;
+}
+
+.shell-layout .monitor-head .monitor-blackout {
+  cursor: default !important;
+  pointer-events: none;
+}
+
+.shell-layout .panel-live-safety {
+  display: grid;
+  gap: 10px;
+}
+
+.shell-layout .settings-liveinfo {
+  min-height: 36px;
+  padding: 7px 8px;
+  border: 1px solid var(--pro-line);
+  border-radius: var(--pro-radius-sm);
+  background: #14171a;
+}
+
+.shell-layout .live-safety-actions {
+  display: grid;
+  grid-template-columns: minmax(92px, auto) minmax(0, 1fr) minmax(0, 1fr);
+  align-items: center;
+  gap: 8px;
+}
+
+.shell-layout .live-safety-actions > * {
+  min-width: 0;
+}
+
+.shell-layout .live-safety-actions label.chk {
+  min-height: 34px;
+  padding: 6px 8px;
+  border: 1px solid var(--pro-line);
+  border-radius: var(--pro-radius-sm);
+  white-space: normal;
+}
+
+.shell-layout .slide-actions {
+  grid-template-columns: minmax(0, 1fr) 38px !important;
+}
+
+.shell-layout .cue[draggable="true"],
+.shell-layout .slide-row[draggable="true"] {
+  cursor: grab;
+  position: relative;
+}
+
+body.sorting-list,
+body.sorting-list .cue[draggable="true"],
+body.sorting-list .slide-row[draggable="true"] {
+  cursor: grabbing !important;
+}
+
+.shell-layout .cue.dragging,
+.shell-layout .slide-row.dragging {
+  opacity: .42;
+}
+
+.shell-layout .cue.drop-before::before,
+.shell-layout .cue.drop-after::after,
+.shell-layout .slide-row.drop-before::before,
+.shell-layout .slide-row.drop-after::after {
+  content: "";
+  position: absolute;
+  z-index: 8;
+  right: 5px;
+  left: 5px;
+  height: 3px;
+  border-radius: 2px;
+  background: var(--pro-blue);
+  box-shadow: 0 0 0 1px #0c1016, 0 0 10px rgba(91, 156, 245, .4);
+  pointer-events: none;
+}
+
+.shell-layout .cue.drop-before::before,
+.shell-layout .slide-row.drop-before::before { top: -5px; }
+.shell-layout .cue.drop-after::after,
+.shell-layout .slide-row.drop-after::after { bottom: -5px; }
+
+@media (max-width: 1180px) {
+  body:not(.compact) .shell-layout .studio,
+  body:not(.compact) .shell-layout .studio.simple {
+    height: 100% !important;
+    grid-template-columns: minmax(0, 1fr) 116px minmax(0, 1fr) !important;
+  }
+}
+
+@media (max-height: 700px) {
+  .shell-layout .operator-main {
+    grid-template-rows: minmax(210px, 1fr) minmax(0, 250px) !important;
+  }
+  body:not(.compositor-open) .shell-layout .operator-main {
+    grid-template-rows: minmax(0, 1fr) !important;
+  }
+  .shell-layout .studio-switcher .switcher-take {
+    min-height: 50px !important;
+    height: 50px;
+  }
+  .shell-layout .studio-switcher .switcher-go {
+    min-height: 42px !important;
+    height: 42px !important;
+  }
+  .shell-layout .switcher-secondary button {
+    min-height: 34px !important;
+    height: 34px;
+  }
+}
