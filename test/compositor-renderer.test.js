@@ -519,6 +519,7 @@ app.whenReady().then(async () => {
     if (!await waitFor(() => win.webContents.executeJavaScript(`innerWidth===${viewport.width}&&innerHeight===${viewport.height}`))) throw new Error(`${viewport.width}x${viewport.height} viewport did not settle`);
     await win.webContents.executeJavaScript(`(()=>{
       document.body.classList.remove('sidebar-collapsed','dr-run','dr-right');
+      setSidebarView('slides');
       setSourceInspectorCollapsed(false,{persist:false});
       const panel=document.getElementById('panelSources');
       setSourceInspectorWidth(Number(panel.dataset.sourceInspectorPreferredWidth)||350,{persist:false,updatePreferred:false});
@@ -532,6 +533,7 @@ app.whenReady().then(async () => {
       const layerRow=document.querySelector('#layerList .layer-row'),layerRowRect=layerRow?rect(layerRow):null;
       const layerActionRects=layerRow?[...layerRow.querySelectorAll('.layer-row-actions button')].map(rect):[];
       const sceneCommands=[...document.querySelectorAll('.slides-tools button')];
+      const sceneCommandMetrics=sceneCommands.map(button=>{const style=getComputedStyle(button);const context=document.createElement('canvas').getContext('2d');context.font=style.font;return {text:button.textContent.trim(),required:context.measureText(button.textContent.trim()).width+parseFloat(style.paddingLeft)+parseFloat(style.paddingRight),available:button.clientWidth};});
       const close=(a,b,tolerance=2)=>Math.abs(a-b)<=tolerance;
       return {
         viewport:{width:innerWidth,height:innerHeight},app,workspace,sidebar,main,studio,preview,program,panel,docks,layers,inspector,audio,add,
@@ -544,14 +546,17 @@ app.whenReady().then(async () => {
         controlsVisible:add.width>0&&add.height>0&&add.left>=panel.left&&add.right<=panel.right+1,
         layerActionsVisible:!!layerRowRect&&layerActionRects.length===5&&layerActionRects.every(button=>button.width>0&&button.height>0&&button.left>=layerRowRect.left-1&&button.right<=layerRowRect.right+1&&button.top>=layerRowRect.top-1&&button.bottom<=layerRowRect.bottom+1),
         sceneCommandsFit:sceneCommands.length===3&&sceneCommands.every(button=>button.scrollWidth<=button.clientWidth),
+        sceneCommandLabelsVisible:sceneCommandMetrics.length===3&&sceneCommandMetrics.every(metric=>metric.required<=metric.available+.5),
+        sceneCommandMetrics,
         localScroll:[getComputedStyle(document.querySelector('.compositor-layers')).overflowY,getComputedStyle(document.querySelector('#inspector')).overflowY,getComputedStyle(document.querySelector('.compositor-audio')).overflowY]
       };
     })())`));
     stableLayouts.push(layout);
     fs.writeFileSync(path.join(artifactDirectory, `compositor-stable-${viewport.width}x${viewport.height}.png`), (await win.webContents.capturePage()).toPNG());
   }
-  check('COMPOSITOR_OBS_DOCK_LAYOUT_STABLE_OK', stableLayouts.every(layout => !layout.bodyOverflow && !layout.dockOverflow && layout.sidebarDocked && layout.monitorsStable && layout.panelBelow && layout.docksStable && layout.controlsVisible && layout.layerActionsVisible && layout.sceneCommandsFit && layout.localScroll.every(value => value === 'auto' || value === 'scroll')), JSON.stringify(stableLayouts));
+  check('COMPOSITOR_OBS_DOCK_LAYOUT_STABLE_OK', stableLayouts.every(layout => !layout.bodyOverflow && !layout.dockOverflow && layout.sidebarDocked && layout.monitorsStable && layout.panelBelow && layout.docksStable && layout.controlsVisible && layout.layerActionsVisible && layout.sceneCommandsFit && layout.sceneCommandLabelsVisible && layout.localScroll.every(value => value === 'auto' || value === 'scroll')), JSON.stringify(stableLayouts));
 
+  await win.webContents.executeJavaScript(`setSidebarView('rundown')`);
   win.setContentSize(1280, 800);
   if (!await waitFor(() => win.webContents.executeJavaScript('innerWidth===1280&&innerHeight===800'))) throw new Error('1280x800 viewport did not restore');
 
