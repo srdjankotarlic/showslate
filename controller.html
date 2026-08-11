@@ -3441,11 +3441,7 @@
   <div class="left operator-main">
 
     <div class="studio" id="studio">
-      <div class="studio-monitor studio-preview">
-        <div class="monitor-head">
-          <span class="monitor-title" data-i18n="studioPreview">Preview</span>
-          <span class="monitor-chip" id="bdgPreview" data-i18n="previewReady">Ready</span>
-        </div>
+      <div class="studio-monitor studio-preview" role="group" aria-label="Preview">
         <div class="preview monitor-screen preview-screen" id="preview">
           <div class="pv-checker" id="pvChecker"></div>
           <div class="pv-scene-root" id="pvScene"></div>
@@ -3468,12 +3464,7 @@
         </div>
       </div>
 
-      <div class="studio-monitor studio-program">
-        <div class="monitor-head">
-          <span class="monitor-title" data-i18n="studioProgram">Program</span>
-          <span class="monitor-chip on" id="bdgOut">EKRAN</span>
-          <span class="monitor-chip monitor-blackout" id="bdgBk" data-testid="program-blackout-status" data-i18n="programBlackStatus">BLACK</span>
-        </div>
+      <div class="studio-monitor studio-program" role="group" aria-label="Program">
         <div class="preview monitor-screen program-screen" id="program" data-testid="program-monitor">
           <div class="pv-checker" id="pgChecker"></div>
           <div class="pv-scene-root" id="pgScene"></div>
@@ -5228,9 +5219,6 @@ function render(){
   renderStage('pg', pg, now);
   syncLiveInputService();
 
-  $('bdgBk').classList.toggle('bk',!!pg.blackout);
-  $('bdgOut').classList.toggle('on',outputOpen);
-  $('bdgOut').textContent=outputOpen?t('outLive'):t('outClosed');
   updateStudioButtons();
 
   // over / under raspored
@@ -7765,9 +7753,8 @@ function stopAllOutputs(){
 function fitMonitorCanvas(element){
   if(!element||!element.getClientRects().length)return;
   const monitor=element.closest('.studio-monitor'); if(!monitor)return;
-  const head=monitor.querySelector('.monitor-head');
   const availableWidth=Math.max(1,monitor.clientWidth);
-  const availableHeight=Math.max(1,monitor.clientHeight-(head?head.offsetHeight:0));
+  const availableHeight=Math.max(1,monitor.clientHeight);
   const canvas=PTCOMP.normalizeCanvas(S.canvas||canvasFromLegacyAspect(S.canvasAspect));
   const ratio=canvas.width/canvas.height;
   const width=Math.max(1,Math.min(availableWidth,availableHeight*ratio));

@@ -149,6 +149,13 @@ app.whenReady().then(async () => {
       cutRemoved:!document.getElementById('btnSlideClear') && !document.getElementById('btnCut'),
       switcher:['btnTake','btnGo','btnBack','btnFadeBlack'].every(id=>document.getElementById(id)?.closest('.sidebar-live-controls .studio-switcher')),
       middleColumnRemoved:!document.querySelector('#studio > .studio-switcher'),
+      monitorHeadersRemoved:document.querySelectorAll('.studio-monitor .monitor-head').length===0,
+      screensFillMonitors:[...document.querySelectorAll('.studio-monitor')].every(monitor=>{
+        const screen=monitor.querySelector('.monitor-screen');
+        if(!screen)return false;
+        const mr=monitor.getBoundingClientRect(),sr=screen.getBoundingClientRect();
+        return Math.abs(mr.top-sr.top)<=2&&Math.abs(mr.bottom-sr.bottom)<=2;
+      }),
       sortable:sceneRows.every(row=>row.draggable),
       rundownCount:document.getElementById('rundownTabCount')?.textContent,
       sceneCount:document.getElementById('scenesTabCount')?.textContent
@@ -159,7 +166,7 @@ app.whenReady().then(async () => {
     const sceneDragged=dragVisibleRow(deckRow,timerRow,false);
     const sceneReordered=sceneDragged && contentItems.map(item=>item.id).join(',')===[deck.id,timer.id,holding.id].join(',') && S.scenes[0].id===deck.sceneId && programState.activeSceneId===programBeforeSceneReorder;
     reorderContentItemById(deck.id,holding.id,true);
-    const normalUi=slidesTabVisible && document.getElementById('sidebarSlidesPane').classList.contains('active') && sceneUi.tab==='SCENES' && sceneUi.rows===3 && sceneUi.thumbnails===3 && sceneUi.numbered && sceneUi.metadata && sceneUi.newScene && sceneUi.duplicate && sceneUi.rename && sceneUi.oneTake && sceneUi.cutRemoved && sceneUi.switcher && sceneUi.middleColumnRemoved && sceneUi.sortable && sceneReordered && sceneUi.rundownCount==='0' && sceneUi.sceneCount==='3';
+    const normalUi=slidesTabVisible && document.getElementById('sidebarSlidesPane').classList.contains('active') && sceneUi.tab==='SCENES' && sceneUi.rows===3 && sceneUi.thumbnails===3 && sceneUi.numbered && sceneUi.metadata && sceneUi.newScene && sceneUi.duplicate && sceneUi.rename && sceneUi.oneTake && sceneUi.cutRemoved && sceneUi.switcher && sceneUi.middleColumnRemoved && sceneUi.monitorHeadersRemoved && sceneUi.screensFillMonitors && sceneUi.sortable && sceneReordered && sceneUi.rundownCount==='0' && sceneUi.sceneCount==='3';
     selectContentItem(holding.id);
     const selectedSafe=programState.activeSceneId===timer.sceneId && S.activeSceneId===holding.sceneId && liveContentItemId===timer.id;
     await new Promise(resolve=>setTimeout(resolve,120));
