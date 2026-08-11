@@ -2707,22 +2707,35 @@ app.whenReady().then(async () => {
           stableLayoutStr = await controlWin.webContents.executeJavaScript(`(function(){
             const studio=document.getElementById('studio').getBoundingClientRect();
             const preview=document.querySelector('.studio-preview').getBoundingClientRect();
-            const sw=document.querySelector('.studio-switcher').getBoundingClientRect();
             const program=document.querySelector('.studio-program').getBoundingClientRect();
-            const right=document.querySelector('.right').getBoundingClientRect();
-            const left=document.querySelector('.left').getBoundingClientRect();
+            const middleSwitcher=document.querySelector('#studio > .studio-switcher');
+            const sidebarSwitcher=document.querySelector('.sidebar-live-controls .studio-switcher');
+            const controls=['btnTake','btnGo','btnBack','btnFadeBlack'].map(id=>document.getElementById(id));
             const cols=getComputedStyle(document.getElementById('studio')).gridTemplateColumns.trim().split(/\\s+/).length;
+            const controlsVisible=controls.every(el=>{
+              if(!el || !sidebarSwitcher || !sidebarSwitcher.contains(el)) return false;
+              const r=el.getBoundingClientRect();
+              return r.width>0 && r.height>0 && r.left>=0 && r.top>=0 && r.right<=innerWidth+1 && r.bottom<=innerHeight+1;
+            });
             return JSON.stringify({
               cols,
-              aligned:Math.abs(preview.top-program.top)<8,
-              switcherBetween:preview.right<=sw.left+2 && sw.right<=program.left+2,
-              rightSide:right.left>=left.right-2,
+              aligned:Math.abs(preview.top-program.top)<3 && Math.abs(preview.bottom-program.bottom)<3,
+              equalWidth:Math.abs(preview.width-program.width)<4,
+              separated:preview.right<=program.left+2,
+              largeMonitors:preview.width>=430 && program.width>=430 && preview.height>=200 && program.height>=200,
+              middleRemoved:!middleSwitcher,
+              sidebarSwitcher:!!sidebarSwitcher,
+              controlsVisible,
+              singleTake:document.querySelectorAll('#btnTake').length===1 && !document.getElementById('btnSlideTake'),
               w:Math.round(innerWidth),
-              studio:{x:Math.round(studio.x),w:Math.round(studio.width)}
+              studio:{x:Math.round(studio.x),w:Math.round(studio.width)},
+              preview:{w:Math.round(preview.width),h:Math.round(preview.height)},
+              program:{w:Math.round(program.width),h:Math.round(program.height)}
             });
           })()`);
           const sl = JSON.parse(stableLayoutStr);
-          stableLayoutOK = sl.cols === 3 && sl.aligned && sl.switcherBetween && sl.rightSide;
+          stableLayoutOK = sl.cols === 2 && sl.aligned && sl.equalWidth && sl.separated && sl.largeMonitors
+            && sl.middleRemoved && sl.sidebarSwitcher && sl.controlsVisible && sl.singleTake;
         } catch (e) { stableLayoutStr = 'ERR ' + e; }
         smokeCheck('STABLE_LAYOUT_OK', stableLayoutOK, stableLayoutStr);
         await controlWin.webContents.executeJavaScript(`(function(){
@@ -5420,15 +5433,48 @@ app.whenReady().then(async () => {
           })()`));
         };
 
+        const measureSidebarLiveControls = async () => {
+          return JSON.parse(await controlWin.webContents.executeJavaScript(`(async function(){
+            function info(el){
+              if(!el) return {found:false,full:false};
+              var s=getComputedStyle(el),r=el.getBoundingClientRect();
+              var full=s.display!=='none'&&s.visibility!=='hidden'&&parseFloat(s.opacity)!==0&&r.width>0&&r.height>0
+                &&r.left>=-1&&r.top>=-1&&r.right<=innerWidth+1&&r.bottom<=innerHeight+1;
+              return {found:true,full:full,t:Math.round(r.top),b:Math.round(r.bottom),l:Math.round(r.left),r:Math.round(r.right)};
+            }
+            closeDrawers();
+            document.getElementById('btnRundownDrawer').click();
+            var ids=['btnTake','btnGo','btnBack','btnFadeBlack'];
+            var deadline=Date.now()+1800;
+            while(Date.now()<deadline){
+              var ready=document.body.classList.contains('dr-run')&&ids.every(function(id){return info(document.getElementById(id)).full;});
+              if(ready) break;
+              await new Promise(function(resolve){setTimeout(resolve,25);});
+            }
+            var sidebar=document.querySelector('.sidebar-live-controls');
+            var controls=ids.map(function(id){return info(document.getElementById(id));});
+            var result={
+              drawer:document.body.classList.contains('dr-run'),
+              sidebar:info(sidebar),
+              take:controls[0],go:controls[1],back:controls[2],black:controls[3],
+              all:controls.every(function(item){return item.full;}),
+              singleTake:document.querySelectorAll('#btnTake').length===1&&!document.getElementById('btnSlideTake')
+            };
+            closeDrawers();
+            return JSON.stringify(result);
+          })()`));
+        };
+
         const s900 = await measureAt(900, 600, { advanced:false });
+        const liveControls900 = await measureSidebarLiveControls();
         smokeCheck('FULL_VERTICAL_VISIBILITY_HELPER_OK', s900.probeFalse === true, 'probeFalse=' + s900.probeFalse);
         smokeCheck('PROGRAM_MONITOR_FULLY_VISIBLE_900x600_OK', s900.program.full, JSON.stringify(s900.program));
-        smokeCheck('GO_FULLY_VISIBLE_900x600_OK', s900.go.full, JSON.stringify(s900.go));
+        smokeCheck('GO_FULLY_VISIBLE_900x600_OK', liveControls900.drawer && liveControls900.go.full && liveControls900.all && liveControls900.singleTake, JSON.stringify(liveControls900));
         smokeCheck('FIXED_FOOTER_DOES_NOT_OVERLAP_OK',
-          s900.go.b <= s900.footerTop + 1, 'goB=' + s900.go.b + ' footerTop=' + s900.footerTop);
+          liveControls900.go.b <= s900.footerTop + 1, 'goB=' + liveControls900.go.b + ' footerTop=' + s900.footerTop);
         smokeCheck('BODY_NO_HORIZONTAL_SCROLL_900x600_OK', s900.overflowX <= 2 && s900.bodyScrollX <= 2, 'ovX=' + s900.overflowX + ' bodyX=' + s900.bodyScrollX);
-        smokeCheck('BODY_NO_OPERATOR_VERTICAL_SCROLL_900x600_OK', s900.mainScrollY <= 420 && s900.go.full, 'mainScrollY=' + s900.mainScrollY);
-        smokeCheck('STANDARD_900x600_OK', s900.program.full && s900.go.full && s900.overflowX <= 2, 'ovX=' + s900.overflowX);
+        smokeCheck('BODY_NO_OPERATOR_VERTICAL_SCROLL_900x600_OK', s900.mainScrollY <= 420 && liveControls900.all, 'mainScrollY=' + s900.mainScrollY);
+        smokeCheck('STANDARD_900x600_OK', s900.program.full && liveControls900.all && s900.overflowX <= 2, 'ovX=' + s900.overflowX);
         try { fs.writeFileSync('/tmp/pts_standard_900x600.png', (await controlWin.webContents.capturePage()).toPNG()); } catch(e){}
 
         let timerSettings900 = {};
@@ -5447,17 +5493,17 @@ app.whenReady().then(async () => {
             deadline=Date.now()+1800;
             while(Date.now()<deadline&&!(inside(panel)&&inside(document.getElementById('btnStart'))&&inside(document.getElementById('btnReset')))) await new Promise(function(resolve){setTimeout(resolve,25);});
             var adjust=[].slice.call(transport.querySelectorAll('.adjust button'));
-            var studio=document.getElementById('studio'),switcher=document.querySelector('.studio-switcher');
             var controls=['btnTake','btnGo','btnBack','btnFadeBlack'].map(function(id){return document.getElementById(id);});
+            var switcher=document.querySelector('.sidebar-live-controls .studio-switcher');
             var timerVisible={panel:inside(panel),start:inside(document.getElementById('btnStart')),reset:inside(document.getElementById('btnReset')),adjustInside:adjust.every(inside)};
             var livePanel=document.querySelector('.panel-live-safety');
             livePanel.scrollIntoView({block:'nearest'});
             deadline=Date.now()+1800;
             while(Date.now()<deadline&&!(inside(document.getElementById('liName'))&&inside(document.getElementById('liNext'))&&inside(document.querySelector('[data-testid="lock-live"]')))) await new Promise(function(resolve){setTimeout(resolve,25);});
-            return JSON.stringify({drawer:document.body.classList.contains('dr-setup')&&inside(document.getElementById('setupWrap')),inPane:document.getElementById('pane-timer').contains(transport),panel:timerVisible.panel,start:timerVisible.start,reset:timerVisible.reset,adjustCount:adjust.length,adjustInside:timerVisible.adjustInside,fits:[document.getElementById('btnStart'),document.getElementById('btnReset')].concat(adjust).every(fits),timerInMain:!!document.querySelector('.operator-main > .transport'),switcherInside:inside(switcher)&&controls.every(inside),legacyBlackout:!!document.getElementById('btnBlackout'),programBlackout:inside(document.getElementById('bdgBk'))&&fits(document.getElementById('bdgBk')),liveCue:inside(document.getElementById('liName')),nextCue:inside(document.getElementById('liNext')),lockLive:inside(document.querySelector('[data-testid="lock-live"]')),nextRow:inside(document.getElementById('btnGoNext'))});
+            return JSON.stringify({drawer:document.body.classList.contains('dr-setup')&&inside(document.getElementById('setupWrap')),inPane:document.getElementById('pane-timer').contains(transport),panel:timerVisible.panel,start:timerVisible.start,reset:timerVisible.reset,adjustCount:adjust.length,adjustInside:timerVisible.adjustInside,fits:[document.getElementById('btnStart'),document.getElementById('btnReset')].concat(adjust).every(fits),timerInMain:!!document.querySelector('.operator-main > .transport'),switcherInSidebar:!!switcher&&controls.every(function(el){return switcher.contains(el);})&&!document.querySelector('#studio > .studio-switcher'),legacyBlackout:!!document.getElementById('btnBlackout'),programBlackout:inside(document.getElementById('bdgBk'))&&fits(document.getElementById('bdgBk')),liveCue:inside(document.getElementById('liName')),nextCue:inside(document.getElementById('liNext')),lockLive:inside(document.querySelector('[data-testid="lock-live"]')),nextRow:inside(document.getElementById('btnGoNext'))});
           })()`));
         } catch (e) { timerSettings900 = { error:String(e) }; }
-        smokeCheck('TIMER_CONTROLS_IN_SETTINGS_900x600_OK', timerSettings900.drawer && timerSettings900.inPane && timerSettings900.panel && timerSettings900.start && timerSettings900.reset && timerSettings900.adjustCount===6 && timerSettings900.adjustInside && timerSettings900.fits && !timerSettings900.timerInMain && timerSettings900.switcherInside && !timerSettings900.legacyBlackout && timerSettings900.programBlackout, JSON.stringify(timerSettings900));
+        smokeCheck('TIMER_CONTROLS_IN_SETTINGS_900x600_OK', timerSettings900.drawer && timerSettings900.inPane && timerSettings900.panel && timerSettings900.start && timerSettings900.reset && timerSettings900.adjustCount===6 && timerSettings900.adjustInside && timerSettings900.fits && !timerSettings900.timerInMain && timerSettings900.switcherInSidebar && !timerSettings900.legacyBlackout && timerSettings900.programBlackout, JSON.stringify(timerSettings900));
         smokeCheck('LIVE_CUE_VISIBLE_900x600_OK', timerSettings900.liveCue, JSON.stringify(timerSettings900));
         smokeCheck('NEXT_CUE_VISIBLE_900x600_OK', timerSettings900.nextCue, JSON.stringify(timerSettings900));
         smokeCheck('LOCK_LIVE_VISIBLE_900x600_OK', timerSettings900.lockLive && timerSettings900.nextRow, JSON.stringify(timerSettings900));
@@ -5565,6 +5611,7 @@ app.whenReady().then(async () => {
 
         // ===== COMPACT operater =====
         const c900 = await measureAt(900, 600, { compact:true });
+        const compactLiveControls = await measureSidebarLiveControls();
         let compactTimerSettings = {};
         try {
           compactTimerSettings = await jparse(`(async function(){
@@ -5585,8 +5632,8 @@ app.whenReady().then(async () => {
           })()`);
         } catch (e) { compactTimerSettings = { error:String(e) }; }
         smokeCheck('COMPACT_MODE_OK',
-          c900.program.full && c900.go.full && !c900.start.full && compactTimerSettings.drawer && compactTimerSettings.start && compactTimerSettings.reset && compactTimerSettings.adjustCount===6 && compactTimerSettings.adjustInside && c900.overflowX <= 2 && c900.mainScrollY <= 420,
-          'program=' + c900.program.full + ' startInMain=' + c900.start.full + ' go=' + c900.go.full + ' settings=' + JSON.stringify(compactTimerSettings) + ' ovX=' + c900.overflowX + ' scrollY=' + c900.mainScrollY);
+          c900.program.full && compactLiveControls.drawer && compactLiveControls.all && compactLiveControls.singleTake && !c900.start.full && compactTimerSettings.drawer && compactTimerSettings.start && compactTimerSettings.reset && compactTimerSettings.adjustCount===6 && compactTimerSettings.adjustInside && c900.overflowX <= 2 && c900.mainScrollY <= 420,
+          'program=' + c900.program.full + ' startInMain=' + c900.start.full + ' liveControls=' + JSON.stringify(compactLiveControls) + ' settings=' + JSON.stringify(compactTimerSettings) + ' ovX=' + c900.overflowX + ' scrollY=' + c900.mainScrollY);
         try { fs.writeFileSync('/tmp/pts_compact_900x600.png', (await controlWin.webContents.capturePage()).toPNG()); } catch(e){}
         const drun = await jparse(`(function(){
           var el=document.querySelector('.col-run');

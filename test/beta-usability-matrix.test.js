@@ -206,7 +206,7 @@ app.whenReady().then(async () => {
     const standard = await json(win, `(async()=>{
       closeDrawers(); setCompositorOpen(false,{persist:false}); closeLtStudio({returnFocus:false}); closeNewShowWizard(); closePreflight(); closePostShowReport(); closeRecoveryDialog();
       applyCompactMode(false); applyAdvancedMode(false); setSidebarView('rundown'); setCueEditorOpen(false);
-      const p=__baseProbe(['#program','#btnGo']);
+      const p=__baseProbe(['#program']);
       let rundownAccess=__inside(document.getElementById('cueList'));
       const rundownButton=__inside(document.getElementById('btnRundownDrawer'));
       let rundownProbe={button:rundownButton,display:getComputedStyle(document.getElementById('btnRundownDrawer')).display,buttonRect:__rect(document.getElementById('btnRundownDrawer'))};
@@ -219,11 +219,16 @@ app.whenReady().then(async () => {
       const workspaceLayout={operator:{display:operatorStyle.display,rows:operatorStyle.gridTemplateRows,autoRows:operatorStyle.gridAutoRows,alignContent:operatorStyle.alignContent},studio:studioRect,studioDisplay:studioStyle.display,program:programRect,children:[...document.querySelector('.operator-main').children].map(node=>({id:node.id||'',className:node.className||'',display:getComputedStyle(node).display,position:getComputedStyle(node).position,rect:__rect(node)}))};
       const operatorUsesWidth=innerWidth>1100||operatorRect.w>=innerWidth-32;
       const switcher=document.querySelector('.studio-switcher');
+      if(innerWidth<=1100&&!document.body.classList.contains('dr-run')){
+        document.getElementById('btnRundownDrawer').click();
+        await __waitVisual(()=>document.body.classList.contains('dr-run')&&__inside(switcher));
+      }
       const switcherRect=__rect(switcher);
       const switcherInside=__inside(switcher);
       const switcherControls=['btnTake','btnGo','btnBack','btnFadeBlack'].map(id=>document.getElementById(id));
       const switcherControlsInside=switcherControls.every(__inside);
       const timerNotInMain=!document.querySelector('.operator-main > .transport')&&!document.querySelector('.studio #btnStart');
+      closeDrawers();
       document.getElementById('btnSettingsDrawer').click();
       const settingsOpened=await __waitVisual(()=>document.body.classList.contains('dr-setup')&&__inside(document.getElementById('setupWrap')));
       document.querySelector('#setupTabs button[data-pane="timer"]').click();
@@ -248,10 +253,10 @@ app.whenReady().then(async () => {
     const compact = await json(win, `(async()=>{
       setCompositorOpen(false,{persist:false}); applyCompactMode(true); applyAdvancedMode(false); closeDrawers();
       await __waitVisual(()=>document.getElementById('app-shell').classList.contains('mode-compact')&&__rect(document.querySelector('.operator-main')).w<=642);
-      const closed=__baseProbe(['#program','#btnGo','#compactMsg','#btnRundownDrawer','#btnSettingsDrawer']);
+      const closed=__baseProbe(['#program','#compactMsg','#btnRundownDrawer','#btnSettingsDrawer']);
       document.getElementById('btnRundownDrawer').click();
-      await __waitVisual(()=>document.body.classList.contains('dr-run')&&__inside(document.getElementById('cueList')));
-      const drawer={open:document.body.classList.contains('dr-run'),cueList:__inside(document.getElementById('cueList'))};
+      await __waitVisual(()=>document.body.classList.contains('dr-run')&&__inside(document.getElementById('cueList'))&&__inside(document.getElementById('btnGo')));
+      const drawer={open:document.body.classList.contains('dr-run'),cueList:__inside(document.getElementById('cueList')),liveControls:__inside(document.getElementById('btnGo'))&&__inside(document.getElementById('btnTake'))};
       closeDrawers();
       await __waitVisual(()=>!document.body.classList.contains('dr-run')&&__rect(document.querySelector('.primary-sidebar')).right<=1);
       document.getElementById('btnSettingsDrawer').click();
@@ -266,18 +271,24 @@ app.whenReady().then(async () => {
       return {closed,drawer,timerSettings,mode:document.getElementById('app-shell').classList.contains('mode-compact'),operator,drawersFixed:sidebarStyle.position==='fixed'&&utilityStyle.position==='fixed',rects:{rundown:__rect(document.getElementById('btnRundownDrawer')),go:__rect(document.getElementById('btnGo'))},styles:{rundown:getComputedStyle(document.getElementById('btnRundownDrawer')).display}};
     })()`);
     if (size.name === '1024x700') await capture(win, size.name + '-compact-diagnostic');
-    check('BETA_COMPACT_' + size.name + '_OK', compact.mode && compact.closed.inside.every(Boolean) && compact.closed.bodyX <= 1 && compact.closed.footer && compact.drawer.open && compact.drawer.cueList && compact.timerSettings.open && compact.timerSettings.start && compact.timerSettings.reset && compact.timerSettings.adjustments && compact.drawersFixed && compact.operator.w <= 642 && compact.operator.w >= Math.min(600, size.width - 24), JSON.stringify(compact));
+    check('BETA_COMPACT_' + size.name + '_OK', compact.mode && compact.closed.inside.every(Boolean) && compact.closed.bodyX <= 1 && compact.closed.footer && compact.drawer.open && compact.drawer.cueList && compact.drawer.liveControls && compact.timerSettings.open && compact.timerSettings.start && compact.timerSettings.reset && compact.timerSettings.adjustments && compact.drawersFixed && compact.operator.w <= 642 && compact.operator.w >= Math.min(600, size.width - 24), JSON.stringify(compact));
     if (size.name === '1280x800') await capture(win, size.name + '-compact');
 
     const advanced = await json(win, `(async()=>{
       setCompositorOpen(false,{persist:false}); applyCompactMode(false); applyAdvancedMode(true); closeDrawers();
       await __waitVisual(()=>document.getElementById('app-shell').classList.contains('mode-advanced')&&__inside(document.getElementById('program')));
+      let liveControlsInside=await __waitVisual(()=>__inside(document.getElementById('btnGo')),500);
+      if(!liveControlsInside&&innerWidth<=1100){
+        document.getElementById('btnRundownDrawer').click();
+        liveControlsInside=await __waitVisual(()=>document.body.classList.contains('dr-run')&&__inside(document.getElementById('btnGo')));
+      }
       const monitors=[...document.querySelectorAll('.studio-monitor')].filter(__visible),rects=monitors.map(__rect);
       const overlap=rects.length===2&&!(rects[0].right<=rects[1].x||rects[1].right<=rects[0].x||rects[0].bottom<=rects[1].y||rects[1].bottom<=rects[0].y);
-      const p=__baseProbe(['#program','#btnGo']);
-      return {...p,mode:document.getElementById('app-shell').classList.contains('mode-advanced'),monitorCount:monitors.length,overlap};
+      const p=__baseProbe(['#program']);
+      closeDrawers();
+      return {...p,liveControlsInside,mode:document.getElementById('app-shell').classList.contains('mode-advanced'),monitorCount:monitors.length,overlap};
     })()`);
-    check('BETA_ADVANCED_' + size.name + '_OK', advanced.mode && advanced.inside.every(Boolean) && advanced.bodyX <= 1 && advanced.footer && advanced.monitorCount === 2 && !advanced.overlap, JSON.stringify(advanced));
+    check('BETA_ADVANCED_' + size.name + '_OK', advanced.mode && advanced.inside.every(Boolean) && advanced.liveControlsInside && advanced.bodyX <= 1 && advanced.footer && advanced.monitorCount === 2 && !advanced.overlap, JSON.stringify(advanced));
     if (size.name === '1440x900') await capture(win, size.name + '-advanced');
 
     const panels = await json(win, `(async()=>{

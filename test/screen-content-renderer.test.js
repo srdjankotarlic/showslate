@@ -145,9 +145,10 @@ app.whenReady().then(async () => {
       newScene:!!document.getElementById('btnSceneLibraryNew')?.getClientRects().length,
       duplicate:!!document.getElementById('btnSceneLibraryDuplicate')?.getClientRects().length,
       rename:!!document.getElementById('btnSceneLibraryRename')?.getClientRects().length,
-      take:document.getElementById('btnSlideTake')?.textContent.trim(),
+      oneTake:document.querySelectorAll('#btnTake').length===1&&!document.getElementById('btnSlideTake'),
       cutRemoved:!document.getElementById('btnSlideClear') && !document.getElementById('btnCut'),
-      switcher:['btnTake','btnGo','btnBack','btnFadeBlack'].every(id=>document.getElementById(id)?.closest('.studio-switcher')),
+      switcher:['btnTake','btnGo','btnBack','btnFadeBlack'].every(id=>document.getElementById(id)?.closest('.sidebar-live-controls .studio-switcher')),
+      middleColumnRemoved:!document.querySelector('#studio > .studio-switcher'),
       sortable:sceneRows.every(row=>row.draggable),
       rundownCount:document.getElementById('rundownTabCount')?.textContent,
       sceneCount:document.getElementById('scenesTabCount')?.textContent
@@ -158,7 +159,7 @@ app.whenReady().then(async () => {
     const sceneDragged=dragVisibleRow(deckRow,timerRow,false);
     const sceneReordered=sceneDragged && contentItems.map(item=>item.id).join(',')===[deck.id,timer.id,holding.id].join(',') && S.scenes[0].id===deck.sceneId && programState.activeSceneId===programBeforeSceneReorder;
     reorderContentItemById(deck.id,holding.id,true);
-    const normalUi=slidesTabVisible && document.getElementById('sidebarSlidesPane').classList.contains('active') && sceneUi.tab==='SCENES' && sceneUi.rows===3 && sceneUi.thumbnails===3 && sceneUi.numbered && sceneUi.metadata && sceneUi.newScene && sceneUi.duplicate && sceneUi.rename && sceneUi.take==='TAKE' && sceneUi.cutRemoved && sceneUi.switcher && sceneUi.sortable && sceneReordered && sceneUi.rundownCount==='0' && sceneUi.sceneCount==='3';
+    const normalUi=slidesTabVisible && document.getElementById('sidebarSlidesPane').classList.contains('active') && sceneUi.tab==='SCENES' && sceneUi.rows===3 && sceneUi.thumbnails===3 && sceneUi.numbered && sceneUi.metadata && sceneUi.newScene && sceneUi.duplicate && sceneUi.rename && sceneUi.oneTake && sceneUi.cutRemoved && sceneUi.switcher && sceneUi.middleColumnRemoved && sceneUi.sortable && sceneReordered && sceneUi.rundownCount==='0' && sceneUi.sceneCount==='3';
     selectContentItem(holding.id);
     const selectedSafe=programState.activeSceneId===timer.sceneId && S.activeSceneId===holding.sceneId && liveContentItemId===timer.id;
     await new Promise(resolve=>setTimeout(resolve,120));

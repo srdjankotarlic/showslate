@@ -3419,9 +3419,21 @@
         </div>
         <div class="slides-list" id="slidesList" tabindex="0" data-i18n-aria="sceneListAria" aria-label="Scenes in this rundown"></div>
         <div class="slides-foot">
-          <div class="slides-selection"><span data-i18n="slideSelected">Selected</span><strong id="slideSelectedName">—</strong></div>
+          <div class="slides-selection-row">
+            <div class="slides-selection"><span data-i18n="slideSelected">Selected</span><strong id="slideSelectedName">—</strong></div>
+            <button id="btnSlideDelete" class="ghost slide-delete" data-i18n-aria="sceneDelete" aria-label="Delete scene">✕</button>
+          </div>
           <div class="slide-deck-nav" id="slideDeckNav"><button id="btnSlidePrev" aria-label="Previous page">‹</button><span class="slide-page" id="slidePage">1</span><button id="btnSlideNext" aria-label="Next page">›</button></div>
-          <div class="slide-actions"><button id="btnSlideTake" class="primary" data-i18n="slideTake" data-i18n-title="sceneTakeTitle" title="Transition Preview to Program">TAKE</button><button id="btnSlideDelete" class="ghost slide-delete" data-i18n-aria="sceneDelete" aria-label="Delete scene">✕</button></div>
+        </div>
+      </div>
+    </div>
+    <div class="sidebar-live-controls" aria-label="Live program controls">
+      <div class="studio-switcher sidebar-switcher" data-testid="program-switcher" aria-label="Program controls">
+        <button id="btnTake" class="primary switcher-take" data-i18n="slideTake" data-i18n-title="sceneTakeTitle" title="Transition Preview to Program">TAKE</button>
+        <button id="btnGo" class="primary switcher-go" style="font-weight:800" data-testid="go-next-button" data-i18n="goNext">GO NEXT</button>
+        <div class="switcher-secondary">
+          <button id="btnBack" class="switcher-back" type="button" data-i18n="operatorBack" data-i18n-title="operatorBackTitle" title="Prepare the previous rundown item in Preview">BACK</button>
+          <button id="btnFadeBlack" class="danger switcher-black" type="button" data-i18n="programBlack" data-i18n-title="programBlackoutTitle" title="Toggle black on the Program output">BLACK</button>
         </div>
       </div>
     </div>
@@ -3453,15 +3465,6 @@
           <div class="pv-msg" id="pvMsg"></div>
           <div class="pv-prog" id="pvProg"></div>
           <div class="pv-blackout" id="pvBlackout"></div>
-        </div>
-      </div>
-
-      <div class="studio-switcher" data-testid="program-switcher" aria-label="Program controls">
-        <button id="btnTake" class="primary switcher-take" data-i18n="slideTake" data-i18n-title="sceneTakeTitle" title="Transition Preview to Program">TAKE</button>
-        <button id="btnGo" class="primary switcher-go" style="font-weight:800" data-testid="go-next-button" data-i18n="goNext">GO NEXT</button>
-        <div class="switcher-secondary">
-          <button id="btnBack" class="switcher-back" type="button" data-i18n="operatorBack" data-i18n-title="operatorBackTitle" title="Prepare the previous rundown item in Preview">BACK</button>
-          <button id="btnFadeBlack" class="danger switcher-black" type="button" data-i18n="programBlack" data-i18n-title="programBlackoutTitle" title="Toggle black on the Program output">BLACK</button>
         </div>
       </div>
 
@@ -6626,7 +6629,6 @@ function renderContentItems(){
   $('slideSelectedName').textContent=selected?selected.name:'—';
   $('slideDeckNav').classList.toggle('open',!!selected&&selected.type==='pdf');
   $('slidePage').textContent=selected?textVars(t('slidePage'),{n:selected.page||1}):'—';
-  $('btnSlideTake').disabled=!selected;
   const selectedIsLive=!!selected&&!!programState&&selected.sceneId===programState.activeSceneId;
   $('btnSlideDelete').disabled=!selected||selectedIsLive||S.scenes.filter(scene=>!scene.internal).length<=1;
   $('btnSlideDelete').title=selectedIsLive?t('sceneDeleteLive'):t('sceneDelete');
@@ -6652,7 +6654,6 @@ $('btnSceneLibraryRename')?.addEventListener('click',async()=>{
   const value=await askText(t('sceneNamePrompt'),scene.name);
   if(value!==null){ scene.name=value.trim()||scene.name; sceneDirty(); }
 });
-$('btnSlideTake')?.addEventListener('click',()=>takeSelectedContent('transition'));
 $('btnSlideDelete')?.addEventListener('click',deleteSelectedContent);
 $('btnSlidePrev')?.addEventListener('click',()=>changeSelectedPdfPage(-1));
 $('btnSlideNext')?.addEventListener('click',()=>changeSelectedPdfPage(1));
