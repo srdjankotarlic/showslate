@@ -44,8 +44,22 @@ check('OUTPUT_MODEL_GRID_BOUNDS_OK', grid.x === -640 && grid.y === 720 && grid.w
 
 const projected = routing.normalizeConfig({
   id: 'route-projected', displayId: 3, mode: 'fullscreen', compositionId: 'composition-led', mappingId: 'mapping-left',
-  projection: { id: 'mapping-left', name: 'Left projector', compositionId: 'composition-led', x: 0, y: 0, width: 2688, height: 768, canvasWidth: 5376, canvasHeight: 768, blend: { right: 96 } }
+  outputCanvas: { width: 1920, height: 1080, fps: 50, fit: 'contain' },
+  projection: {
+    id: 'mapping-left', name: 'Left projector', compositionId: 'composition-led', x: 0, y: 0, width: 2688, height: 768,
+    canvasWidth: 5376, canvasHeight: 768, blend: { right: 96 },
+    warp: {
+      enabled: true,
+      corners: { topLeft: { x: 3, y: 5 }, topRight: { x: 98, y: 1 }, bottomRight: { x: 94, y: 96 }, bottomLeft: { x: 7, y: 99 } },
+      grid: { visible: true, columns: 10, rows: 8 }
+    }
+  }
 }, 1, { displays, controlDisplayId: 1 });
-check('OUTPUT_MODEL_PROJECTOR_MAPPING_PRESERVED_OK', projected.compositionId === 'composition-led' && projected.mappingId === 'mapping-left' && projected.projection.width === 2688 && projected.projection.canvasWidth === 5376 && projected.projection.blend.right === 96);
+check('OUTPUT_MODEL_PROJECTOR_MAPPING_PRESERVED_OK', projected.compositionId === 'composition-led' && projected.mappingId === 'mapping-left' && projected.projection.width === 2688 && projected.projection.canvasWidth === 5376 && projected.projection.blend.right === 96 && projected.projection.warp.enabled && projected.projection.warp.grid.columns === 10);
+
+const square = routing.normalizeConfig({
+  id: 'route-square', displayId: 3, mode: 'window', outputCanvas: { width: 1000, height: 1000, fps: 30, fit: 'cover' }
+}, 2, { displays, controlDisplayId: 1 });
+check('OUTPUT_MODEL_INDEPENDENT_DESTINATION_CANVASES_OK', projected.outputCanvas.width === 1920 && projected.outputCanvas.height === 1080 && projected.outputCanvas.fit === 'contain' && square.outputCanvas.width === 1000 && square.outputCanvas.height === 1000 && square.outputCanvas.fit === 'cover');
 
 console.log(`OUTPUT_ROUTING_MODEL_TESTS_OK count=${checks}`);

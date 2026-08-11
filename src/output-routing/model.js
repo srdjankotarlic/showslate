@@ -1,9 +1,11 @@
 'use strict';
 
 const conference = require('../conference-desk/model.js');
+const compositor = require('../compositor/model.js');
 
 const OUTPUT_MODES = new Set(['fullscreen', 'window', 'custom', 'grid']);
 const PLACEMENTS = new Set(['center', 'top-left', 'top-right', 'bottom-left', 'bottom-right', 'custom']);
+const CANVAS_FITS = new Set(['contain', 'cover', 'fill']);
 
 function numberInRange(value, fallback, min, max) {
   const parsed = parseInt(value, 10);
@@ -36,7 +38,24 @@ function normalizeProjection(raw) {
       right: numberInRange(blend.right, 0, 0, Math.min(512, Math.floor(width / 2))),
       top: numberInRange(blend.top, 0, 0, Math.min(512, Math.floor(height / 2))),
       bottom: numberInRange(blend.bottom, 0, 0, Math.min(512, Math.floor(height / 2)))
-    }
+    },
+    warp: compositor.normalizeProjectorWarp(raw.warp)
+  };
+}
+
+function normalizeOutputCanvas(raw) {
+  const source = raw && typeof raw === 'object' ? raw : {};
+  const canvas = compositor.normalizeCanvas({
+    width: source.width,
+    height: source.height,
+    fps: source.fps,
+    background: source.background,
+    transparent: source.transparent
+  });
+  return {
+    ...canvas,
+    preset: compositor.canvasPreset(canvas),
+    fit: CANVAS_FITS.has(source.fit) ? source.fit : 'contain'
   };
 }
 
@@ -83,6 +102,7 @@ function normalizeConfig(config, index = 0, context = {}) {
     compositionId: String(source.compositionId || ''),
     mappingId: String(source.mappingId || ''),
     projection: normalizeProjection(source.projection),
+    outputCanvas: normalizeOutputCanvas(source.outputCanvas),
     frameless: mode === 'fullscreen' || mode === 'custom' || mode === 'grid' || !!source.frameless
   };
   const exact = displays.find(display => display.id === displayId);
@@ -149,4 +169,4 @@ function gridBounds(area, gridSize, gridCell) {
   return { x: area.x + column * width, y: area.y + row * height, width, height };
 }
 
-module.exports = { normalizeConfig, normalizeProjection, rememberDisplay, resolveDisplay, placedBounds, gridBounds };
+module.exports = { normalizeConfig, normalizeProjection, normalizeOutputCanvas, rememberDisplay, resolveDisplay, placedBounds, gridBounds };

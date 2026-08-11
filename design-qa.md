@@ -80,4 +80,59 @@
 - [x] Verify wide and compact operator layouts.
 - [x] Compare the reference and rendered implementation in one artifact.
 
+## Multi-Output Canvas And Projector Mapping
+
+**Comparison Target**
+
+- Source visual truth: `/Users/srdjankotarlic/Desktop/Screenshot 2026-08-11 at 14.39.34.png`.
+- Rendered implementation: `/Users/srdjankotarlic/Documents/New project/protimer-studio-release/artifacts/generated/compositor/output-routing-1159x745.png`.
+- Combined comparison: `/Users/srdjankotarlic/Documents/New project/protimer-studio-release/artifacts/generated/compositor/output-routing-reference-comparison.png`.
+- Projector editor evidence: `/Users/srdjankotarlic/Documents/New project/protimer-studio-release/artifacts/generated/compositor/composition-workspace-1280x800.png`.
+- Mapped Program evidence: `/Users/srdjankotarlic/Documents/New project/protimer-studio-release/artifacts/generated/compositor/projector-mapped-output-1280x720.png`.
+- Source pixels: 1147 x 745. Implementation pixels: 1159 x 745. Combined pixels: 2306 x 745. Both routing views use the same desktop-height state at device scale factor 1; the 12 px width difference is visible in the combined artifact and does not affect layout judgment.
+- State: Output Routing open. The reference shows one unconfigured destination; the implementation intentionally shows two configured destinations to expose the requested independent canvases and mapping entry point.
+
+**Full-View Comparison Evidence**
+
+- The original modal hierarchy, dark palette, compact destination rows, sticky actions, and local vertical scrolling are preserved.
+- The first destination shows its complete 1920 x 1080 Output canvas and active projector mapping without pushing Apply routing off screen.
+- A second destination remains independently editable and reachable through the same local scroll area.
+
+**Focused Region Comparison Evidence**
+
+- The first destination is readable at original pixel size: display, role, mode, Program audio, format, canvas dimensions, scaling, mapping state, and Map projector are visually separated.
+- The projector editor shows the selected surface, four visible corner handles, a calibration grid, numeric point controls, canvas coordinates, and its assigned output in one view.
+- The mapped-output capture shows the complete Program surface transformed by the four points, with the calibration grid drawn above the content.
+
+**Findings**
+
+- No actionable P0, P1, or P2 visual or interaction issue remains for this scope.
+- Fonts and typography: ShowSlate's existing system font, uppercase utility labels, weights, line heights, and zero letter-spacing convention remain consistent; no field label or action is clipped.
+- Spacing and layout rhythm: the new Output canvas block follows the existing destination-card grid, uses the established 8 px-or-less radii, and preserves a stable sticky footer. The mapping inspector remains locally scrollable.
+- Colors and visual tokens: existing blue action, green live/assigned, neutral pending, and red destructive semantics are retained; mapping controls do not introduce a competing palette.
+- Image quality and assets: no raster or brand asset is added or degraded. The Program renderer remains sharp at its selected canvas size before the final display transform.
+- Copy and content: labels distinguish physical destination mode from per-output canvas format and scaling. Mapping status and the visible Map projector action make the workflow discoverable.
+- Accessibility and interaction: corner points support pointer dragging and numeric entry; destination controls remain keyboard-operable; the modal keeps local scroll rather than hiding controls below the viewport.
+
+**Comparison History**
+
+- Initial issue: every destination only exposed display placement, so operators could not see or set independent render canvases and there was no visible route into projector geometry.
+- First implementation: added independent format, dimensions, scaling, mapping status, and a projector editor with draggable points and grid.
+- Polish fix: strengthened the Map projector button contrast and width so it reads as an action rather than passive status text.
+- Post-fix evidence: `output-routing-1159x745.png`, `composition-workspace-1280x800.png`, and `projector-mapped-output-1280x720.png`; no actionable P0/P1/P2 findings remain.
+
+**Implementation Checklist**
+
+- [x] Support multiple simultaneous display/window destinations.
+- [x] Give every destination an independent resolution, format, frame rate, and scaling mode.
+- [x] Open projector mapping from the selected destination.
+- [x] Support four-corner point adjustment by drag and numeric entry.
+- [x] Add configurable calibration-grid columns, rows, and opacity.
+- [x] Apply mapping, blend, and scaling to the complete Program surface.
+- [x] Verify independent canvases and mapped output in real Electron output windows.
+
+**Follow-up Polish**
+
+- P3: a future dedicated calibration view could temporarily hide all non-mapping controls when an operator is standing at the projection surface. It is not needed for the requested workflow.
+
 final result: passed

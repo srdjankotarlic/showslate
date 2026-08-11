@@ -627,7 +627,8 @@ function outputPayload(state, routeId, role, revision = stateRevision, routeConf
       audioOutputDeviceId: String(routeConfig.audioOutputDeviceId || state && state.programAudioDeviceId || ''),
       compositionId: String(routeConfig.compositionId || ''),
       mappingId: String(routeConfig.mappingId || ''),
-      projection: routeConfig.projection && typeof routeConfig.projection === 'object' ? routeConfig.projection : null
+      projection: routeConfig.projection && typeof routeConfig.projection === 'object' ? routeConfig.projection : null,
+      outputCanvas: routeConfig.outputCanvas && typeof routeConfig.outputCanvas === 'object' ? routeConfig.outputCanvas : null
     },
     _dispatch: {
       revision: Math.max(0, Number(revision) || 0),
@@ -695,6 +696,8 @@ function outputRuntimeSnapshot() {
         ackCueId: rec ? String(rec.ackCueId || '') : '',
         ackTransactionId: rec ? String(rec.ackTransactionId || '') : '',
         mode: cfg.mode,
+        outputCanvas: cfg.outputCanvas,
+        projection: cfg.projection,
         bounds: open ? rec.win.getBounds() : null,
         fullscreen: open ? cfg.mode === 'fullscreen' : false,
         nativeFullscreen: open ? rec.win.isFullScreen() : false,
@@ -1853,6 +1856,20 @@ async function waitForAuxOutputBounds(records, expected, timeoutMs = 2400) {
   return { stable: false, bounds };
 }
 
+async function waitForAuxOutputAcknowledgements(ids, timeoutMs = 2400) {
+  const deadline = Date.now() + timeoutMs;
+  let runtime = outputRuntimeSnapshot();
+  while (Date.now() < deadline) {
+    runtime = outputRuntimeSnapshot();
+    const routes = ids.map(id => runtime.routes.find(route => route.id === id));
+    if (routes.every(route => route && route.open && route.acknowledged && route.status === 'live')) {
+      return { runtime, stable: true };
+    }
+    await new Promise(resolve => setTimeout(resolve, 40));
+  }
+  return { runtime, stable: false };
+}
+
 async function runLiveInputSmoke(waitLoad) {
   const inputId = 'smoke-live-input';
   const sceneId = 'smoke-live-scene';
@@ -1964,7 +1981,8 @@ async function runLiveInputSmoke(waitLoad) {
 
 async function runOutputRoutingSmoke() {
   let multiOutOK = false, routingDisabledOK = false, routingPositionOK = false;
-  let multiOutStateOK = false, missingDisplaySafeOK = false, missingDisplayUiOK = false, fingerprintReconnectOK = false;
+  let multiOutStateOK = false, independentCanvasMappingOK = false;
+  let missingDisplaySafeOK = false, missingDisplayUiOK = false, fingerprintReconnectOK = false;
   let detail = '?';
   try {
     const did = controlDisplayId();
@@ -1982,8 +2000,24 @@ async function runOutputRoutingSmoke() {
     ];
     await controlWin.webContents.executeJavaScript(`(function(){S.bgColor='#164e63';S.message={text:'ROUTE SYNC',flash:false};send(true);})()`);
     applyOutputConfigs([
-      {id:'smoke-out-a',name:'Smoke Output A',enabled:true,displayId:did,displayLabel:disp.label,displayWidth:disp.bounds.width,displayHeight:disp.bounds.height,mode:'custom',width:320,height:180,placement:'custom',x:routeAX,y:routeY,gridSize:3,gridCell:0},
-      {id:'smoke-out-b',name:'Smoke Output B',enabled:true,displayId:did,displayLabel:disp.label,displayWidth:disp.bounds.width,displayHeight:disp.bounds.height,mode:'custom',width:280,height:180,placement:'custom',x:routeBX,y:routeY,gridSize:3,gridCell:0},
+      {
+        id:'smoke-out-a',name:'Smoke Output A',enabled:true,displayId:did,displayLabel:disp.label,
+        displayWidth:disp.bounds.width,displayHeight:disp.bounds.height,mode:'custom',width:320,height:180,
+        placement:'custom',x:routeAX,y:routeY,gridSize:3,gridCell:0,
+        outputCanvas:{width:1920,height:1080,fps:50,fit:'contain'},
+        projection:{
+          id:'smoke-projection',name:'Smoke projector surface',compositionId:'smoke-composition',enabled:true,
+          x:0,y:0,width:960,height:1080,canvasWidth:1920,canvasHeight:1080,
+          blend:{left:0,right:24,top:0,bottom:0},
+          warp:{enabled:true,corners:{topLeft:{x:3,y:4},topRight:{x:97,y:1},bottomRight:{x:94,y:96},bottomLeft:{x:6,y:99}},grid:{visible:true,columns:8,rows:6,opacity:.68}}
+        }
+      },
+      {
+        id:'smoke-out-b',name:'Smoke Output B',enabled:true,displayId:did,displayLabel:disp.label,
+        displayWidth:disp.bounds.width,displayHeight:disp.bounds.height,mode:'custom',width:280,height:180,
+        placement:'custom',x:routeBX,y:routeY,gridSize:3,gridCell:0,
+        outputCanvas:{width:1000,height:1000,fps:25,fit:'cover'}
+      },
       {id:'smoke-disabled',name:'Disabled Output',enabled:false,displayId:did,mode:'fullscreen'}
     ]);
     const [recA, recB] = await waitForAuxOutputRoutes(['smoke-out-a','smoke-out-b']);
@@ -1993,14 +2027,29 @@ async function runOutputRoutingSmoke() {
     multiOutOK = auxOutputs.size === 2 && Math.abs((b.width||0)-320) < 8 && Math.abs((b.height||0)-180) < 8
       && Math.abs((b2.width||0)-280) < 8 && Math.abs((b2.height||0)-180) < 8 && noOverlap;
     const target = targetDisplayForConfig(outputConfigs[0]);
-    const runtime = outputRuntimeSnapshot();
-    routingDisabledOK = outputConfigs.length === 3 && !auxOutputs.has('smoke-disabled') && runtime.routes.length === 3
-      && runtime.routes.some(route => route.id === 'smoke-disabled' && !route.open && route.status === 'disabled');
     routingPositionOK = !!target && positionWait.stable;
     const states = await Promise.all([recA,recB].map(rec => rec.win.webContents.executeJavaScript(`JSON.stringify({bg:S&&S.bgColor,message:S&&S.message&&S.message.text,scene:S&&S.activeSceneId})`)));
     const parsedStates = states.map(JSON.parse);
-    multiOutStateOK = parsedStates.length === 2 && parsedStates.every(state => state.bg === '#164e63' && state.message === 'ROUTE SYNC' && state.scene === parsedStates[0].scene);
-    detail = JSON.stringify({count:auxOutputs.size,configs:outputConfigs.length,bounds:[b,b2],expectedBounds,positionStable:positionWait.stable,states:parsedStates,runtime});
+    const deliveryWait = await waitForAuxOutputAcknowledgements(['smoke-out-a','smoke-out-b']);
+    const runtime = deliveryWait.runtime;
+    routingDisabledOK = outputConfigs.length === 3 && !auxOutputs.has('smoke-disabled') && runtime.routes.length === 3
+      && runtime.routes.some(route => route.id === 'smoke-disabled' && !route.open && route.status === 'disabled');
+    multiOutStateOK = deliveryWait.stable && parsedStates.length === 2 && parsedStates.every(state => state.bg === '#164e63' && state.message === 'ROUTE SYNC' && state.scene === parsedStates[0].scene);
+    const rendererGeometry = await Promise.all([recA,recB].map(rec => rec.win.webContents.executeJavaScript(`JSON.stringify((function(){
+      const surface=document.getElementById('programSurface');
+      const grid=document.getElementById('projectionCalibration');
+      return {canvasWidth:Number(surface&&surface.dataset.canvasWidth||0),canvasHeight:Number(surface&&surface.dataset.canvasHeight||0),fit:String(surface&&surface.dataset.canvasFit||''),warp:String(surface&&surface.dataset.warp||''),transform:String(surface&&surface.style.transform||''),grid:String(grid&&grid.style.display||'')};
+    })())`))).then(values => values.map(JSON.parse));
+    const runtimeA = runtime.routes.find(route => route.id === 'smoke-out-a');
+    const runtimeB = runtime.routes.find(route => route.id === 'smoke-out-b');
+    independentCanvasMappingOK = !!(runtimeA && runtimeB
+      && runtimeA.outputCanvas.width === 1920 && runtimeA.outputCanvas.height === 1080 && runtimeA.outputCanvas.fit === 'contain'
+      && runtimeA.projection && runtimeA.projection.warp && runtimeA.projection.warp.enabled
+      && runtimeA.projection.warp.grid && runtimeA.projection.warp.grid.visible
+      && runtimeB.outputCanvas.width === 1000 && runtimeB.outputCanvas.height === 1000 && runtimeB.outputCanvas.fit === 'cover'
+      && rendererGeometry[0] && rendererGeometry[0].warp === 'on' && rendererGeometry[0].grid === 'block' && rendererGeometry[0].transform.includes('matrix3d')
+      && rendererGeometry[1] && rendererGeometry[1].canvasWidth === 1000 && rendererGeometry[1].canvasHeight === 1000 && rendererGeometry[1].fit === 'cover' && rendererGeometry[1].warp === 'off');
+    detail = JSON.stringify({count:auxOutputs.size,configs:outputConfigs.length,bounds:[b,b2],expectedBounds,positionStable:positionWait.stable,deliveryStable:deliveryWait.stable,states:parsedStates,rendererGeometry,runtime});
     applyOutputConfigs([]);
     await new Promise(resolve => setTimeout(resolve, 250));
 
@@ -2035,7 +2084,7 @@ async function runOutputRoutingSmoke() {
   } finally {
     applyOutputConfigs([]);
   }
-  return { multiOutOK, multiOutStateOK, routingDisabledOK, routingPositionOK, fingerprintReconnectOK, missingDisplaySafeOK, missingDisplayUiOK, detail };
+  return { multiOutOK, multiOutStateOK, independentCanvasMappingOK, routingDisabledOK, routingPositionOK, fingerprintReconnectOK, missingDisplaySafeOK, missingDisplayUiOK, detail };
 }
 
 // ---------------- START ----------------
@@ -2198,6 +2247,7 @@ app.whenReady().then(async () => {
           const routing = await runOutputRoutingSmoke();
           smokeCheck('MULTI_OUTPUT_OK', routing.multiOutOK, routing.detail);
           smokeCheck('MULTI_OUTPUT_SIMULTANEOUS_PROGRAM_STATE_OK', routing.multiOutStateOK, routing.detail);
+          smokeCheck('OUTPUT_ROUTING_INDEPENDENT_CANVAS_AND_MAPPING_OK', routing.independentCanvasMappingOK, routing.detail);
           smokeCheck('OUTPUT_ROUTING_DISABLED_PERSISTS_OK', routing.routingDisabledOK, routing.detail);
           smokeCheck('OUTPUT_ROUTING_CUSTOM_POSITION_OK', routing.routingPositionOK, routing.detail);
           smokeCheck('OUTPUT_ROUTING_FINGERPRINT_RECONNECT_OK', routing.fingerprintReconnectOK, routing.detail);
@@ -2947,6 +2997,7 @@ app.whenReady().then(async () => {
         const routingSmoke = await runOutputRoutingSmoke();
         smokeCheck('MULTI_OUTPUT_OK', routingSmoke.multiOutOK, routingSmoke.detail);
         smokeCheck('MULTI_OUTPUT_SIMULTANEOUS_PROGRAM_STATE_OK', routingSmoke.multiOutStateOK, routingSmoke.detail);
+        smokeCheck('OUTPUT_ROUTING_INDEPENDENT_CANVAS_AND_MAPPING_OK', routingSmoke.independentCanvasMappingOK, routingSmoke.detail);
         smokeCheck('OUTPUT_ROUTING_DISABLED_PERSISTS_OK', routingSmoke.routingDisabledOK, routingSmoke.detail);
         smokeCheck('OUTPUT_ROUTING_CUSTOM_POSITION_OK', routingSmoke.routingPositionOK, routingSmoke.detail);
         smokeCheck('OUTPUT_ROUTING_FINGERPRINT_RECONNECT_OK', routingSmoke.fingerprintReconnectOK, routingSmoke.detail);

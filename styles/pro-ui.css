@@ -1801,6 +1801,84 @@ kbd {
   padding-top: 10px;
 }
 
+.output-route-canvas {
+  display: grid;
+  gap: 9px;
+  margin-top: 10px;
+  padding: 10px;
+  border: 1px solid color-mix(in srgb, var(--pro-line-strong) 72%, transparent);
+  border-radius: var(--pro-radius-sm);
+  background: #15181c;
+}
+
+.output-route-canvas-head {
+  min-width: 0;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: 10px;
+}
+
+.output-route-canvas-head > div {
+  min-width: 0;
+  display: grid;
+  gap: 2px;
+}
+
+.output-route-canvas-head strong {
+  color: var(--pro-text-2);
+  font-size: 9px;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+
+.output-route-canvas-head > div > span {
+  min-width: 0;
+  overflow: hidden;
+  color: var(--pro-text-3);
+  font-size: 9px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.output-mapping-state {
+  padding: 3px 7px;
+  border: 1px solid var(--pro-line-strong);
+  border-radius: 4px;
+  color: var(--pro-text-3);
+  font-size: 8px;
+  font-weight: 760;
+  letter-spacing: .05em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.output-route-canvas .output-mapping-state {
+  max-width: 150px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.output-route-canvas-fields {
+  display: grid;
+  grid-template-columns: minmax(150px, .8fr) minmax(220px, 1.2fr) minmax(150px, .8fr);
+  gap: 9px;
+}
+
+.output-route-canvas .out-map {
+  min-width: 118px;
+  border-color: #414a56 !important;
+  background: #1a1e24 !important;
+  color: var(--pro-text-2) !important;
+  font-weight: 720 !important;
+}
+
+.output-route-canvas .out-map:hover {
+  border-color: #647181 !important;
+  background: #222831 !important;
+  color: var(--pro-text) !important;
+}
+
 .route-field,
 .route-field-group {
   min-width: 0;
@@ -1993,7 +2071,25 @@ kbd {
     grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
   }
 
+  .output-route-canvas-fields {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
   .output-router-head p { display: none; }
+}
+
+@media (max-width: 700px) {
+  .output-route-canvas-head {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+
+  .output-route-canvas-head .out-map {
+    grid-column: 1 / -1;
+  }
+
+  .output-route-canvas-fields {
+    grid-template-columns: 1fr;
+  }
 }
 
 @media (max-width: 1100px) {

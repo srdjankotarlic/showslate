@@ -4186,6 +4186,24 @@
                 <label class="composition-field"><span data-i18n="canvasWidth">Width</span><input id="mappingWidth" type="number" min="1" max="8192"></label>
                 <label class="composition-field"><span data-i18n="canvasHeight">Height</span><input id="mappingHeight" type="number" min="1" max="8192"></label>
               </div>
+              <section class="mapping-warp-settings">
+                <div class="mapping-warp-head">
+                  <div><span data-i18n="mappingWarp">Corner pin</span><small data-i18n="mappingWarpHint">Move four key points to match an irregular projection surface.</small></div>
+                  <label class="route-check"><input id="mappingWarpEnabled" type="checkbox"> <span data-i18n="mappingWarpEnabled">Enable warp</span></label>
+                </div>
+                <div class="mapping-warp-corners" id="mappingWarpCorners">
+                  <fieldset><legend data-i18n="mappingTopLeft">Top left</legend><label><span>X %</span><input id="mappingWarpTlX" type="number" min="-25" max="125" step="0.1"></label><label><span>Y %</span><input id="mappingWarpTlY" type="number" min="-25" max="125" step="0.1"></label></fieldset>
+                  <fieldset><legend data-i18n="mappingTopRight">Top right</legend><label><span>X %</span><input id="mappingWarpTrX" type="number" min="-25" max="125" step="0.1"></label><label><span>Y %</span><input id="mappingWarpTrY" type="number" min="-25" max="125" step="0.1"></label></fieldset>
+                  <fieldset><legend data-i18n="mappingBottomLeft">Bottom left</legend><label><span>X %</span><input id="mappingWarpBlX" type="number" min="-25" max="125" step="0.1"></label><label><span>Y %</span><input id="mappingWarpBlY" type="number" min="-25" max="125" step="0.1"></label></fieldset>
+                  <fieldset><legend data-i18n="mappingBottomRight">Bottom right</legend><label><span>X %</span><input id="mappingWarpBrX" type="number" min="-25" max="125" step="0.1"></label><label><span>Y %</span><input id="mappingWarpBrY" type="number" min="-25" max="125" step="0.1"></label></fieldset>
+                </div>
+                <div class="mapping-grid-controls">
+                  <label class="route-check"><input id="mappingGridVisible" type="checkbox"> <span data-i18n="mappingGridLive">Show calibration grid on output</span></label>
+                  <label class="composition-field"><span data-i18n="mappingColumns">Columns</span><input id="mappingGridColumns" type="number" min="2" max="32"></label>
+                  <label class="composition-field"><span data-i18n="mappingRows">Rows</span><input id="mappingGridRows" type="number" min="2" max="32"></label>
+                  <button id="btnMappingWarpReset" class="ghost" type="button" data-i18n="mappingResetWarp">Reset corners</button>
+                </div>
+              </section>
               <details class="mapping-blend-details">
                 <summary data-i18n="mappingBlend">Soft-edge overlap</summary>
                 <div class="mapping-geometry-grid">
@@ -4385,7 +4403,7 @@ const I18N = {
     outLabel:'Izlaz na', displayTitle:'Monitor za izlazni ekran', sendScreen:'Pošalji na ekran', outputRouting:'Izlazi',
     outputRouterEyebrow:'DISTRIBUCIJA PROGRAMA', outputRouterTitle:'Usmeravanje izlaza', outputRouterBody:'Pošaljite Program na jedan ili više ekrana, prozora ili precizno pozicioniranih oblasti.',
     outputLiveDestinations:'aktivnih destinacija', outputProgramFeed:'PROGRAM signal', outputExplicitApply:'Izmene ne idu uživo dok ne izaberete Primeni usmeravanje.', outputAddDestination:'Dodaj destinaciju', outputManage:'Upravljaj', outputStopAll:'Zaustavi sve', outputApplyRouting:'Primeni usmeravanje', outputReady:'Usmeravanje je spremno.',
-    outputName:'Naziv', outputDisplay:'Ekran', outputRole:'Uloga', outputRole_audience:'Publika', outputRole_confidence:'Govornik / confidence', outputRole_timer:'Samo tajmer', outputRole_stream:'Stream grafika', outputRole_door:'Agenda na vratima', outputMode:'Režim', outputPlacement:'Pozicija', outputResolution:'Rezolucija', outputCoordinates:'Koordinate', outputGrid:'Grid', outputCell:'Polje', outputEnabled:'Aktivan', outputLiveState:'PRIKAZ POTVRĐEN', outputSyncingState:'SINHRONIZACIJA', outputOffState:'ISKLJUČENO', outputPendingState:'ČEKA PRIMENU', outputUnavailableState:'EKRAN NIJE DOSTUPAN', outputAmbiguousState:'EKRAN NIJE JEDINSTVEN', outputUnavailableDisplay:'Nedostupan ekran', outputNoDestinations:'Nema podešenih izlaza. Dodajte destinaciju za publiku, govornika, stream ili agendu na vratima.', outputRouteApplied:'Usmeravanje je primenjeno.', outputAllStopped:'Svi izlazi su zaustavljeni.', outputRemove:'Ukloni izlaz', outputFixUnavailable:'Izaberi dostupan ekran za svaku aktivnu destinaciju pre primene.', outputFixAmbiguous:'Izaberi tačan ekran za svaku aktivnu destinaciju pre primene.',
+    outputName:'Naziv', outputDisplay:'Ekran', outputRole:'Uloga', outputRole_audience:'Publika', outputRole_confidence:'Govornik / confidence', outputRole_timer:'Samo tajmer', outputRole_stream:'Stream grafika', outputRole_door:'Agenda na vratima', outputMode:'Režim', outputPlacement:'Pozicija', outputResolution:'Veličina prozora', outputCoordinates:'Koordinate', outputGrid:'Grid', outputCell:'Polje', outputEnabled:'Aktivan', outputLiveState:'PRIKAZ POTVRĐEN', outputSyncingState:'SINHRONIZACIJA', outputOffState:'ISKLJUČENO', outputPendingState:'ČEKA PRIMENU', outputUnavailableState:'EKRAN NIJE DOSTUPAN', outputAmbiguousState:'EKRAN NIJE JEDINSTVEN', outputUnavailableDisplay:'Nedostupan ekran', outputNoDestinations:'Nema podešenih izlaza. Dodajte destinaciju za publiku, govornika, stream ili agendu na vratima.', outputRouteApplied:'Usmeravanje je primenjeno.', outputAllStopped:'Svi izlazi su zaustavljeni.', outputRemove:'Ukloni izlaz', outputFixUnavailable:'Izaberi dostupan ekran za svaku aktivnu destinaciju pre primene.', outputFixAmbiguous:'Izaberi tačan ekran za svaku aktivnu destinaciju pre primene.', outputCanvas:'Output canvas', outputCanvasHint:'Nezavisan format i rezolucija ovog izlaza', outputCanvasPreset:'Format', outputCanvasSize:'Canvas rezolucija', outputCanvasFit:'Prilagođavanje', outputCanvasMatch:'Kao Program', outputMapProjector:'Mapiraj projektor', outputMappingActive:'Mapiranje aktivno', outputMappingNone:'Bez mapiranja',
     outputFullscreen:'Ceo ekran', outputWindow:'Prozor', outputCustom:'Tačna veličina', outputGridMode:'Grid polje', outputCenter:'Centar', outputTopLeft:'Gore levo', outputTopRight:'Gore desno', outputBottomLeft:'Dole levo', outputBottomRight:'Dole desno', outputCustomPosition:'X / Y',
     fsTitle:'Pun ekran (F)', closeTitle:'Zatvori izlazni prozor', onTop:'Na vrhu',
     sources:'Izvori', tabRundown:'Rundown', sceneNamePrompt:'Naziv scene:', rename:'Preimenuj',
@@ -4398,7 +4416,7 @@ const I18N = {
     goSelectedBtn:'KRENI ▶ {name}', goSelectedShort:'GO IZABRANO &nbsp;(N)', goAutoStart:'Auto-start na GO', goAutoTitle:'GO odmah pokreće tajmer novog reda',
     advanced:'Preview / Program', advancedTitle:'Preview/Program režija (Cut/Transition). Isključeno: sve ide direktno na Program.',
     compositionClose:'Zatvori',
-    rundownBtn:'Rundown', sidebarToggle:'Prikaži ili sakrij navigaciju', utilityToggle:'Prikaži ili sakrij poruke, status i izlaze', msgOutBtn:'Poruke', settingsBtn:'Podešavanja', compositionButton:'Kompozicija', compositionOpen:'Otvori podešavanja kompozicije', compositionEyebrow:'CANVAS I MAPIRANJE PROJEKTORA', compositionTitle:'Kompozicija', compositionBody:'Napravite nezavisne canvase za LED zidove i mapirajte tačne delove canvasa na projektorske izlaze.', compositions:'Kompozicije', compositionNew:'Nova', compositionScenes:'Scene u ovoj kompoziciji', compositionSceneHint:'Nove scene napravljene u Composer-u pripadaju aktivnoj kompoziciji.', mappingCanvas:'Canvas za mapiranje', mappingSelected:'Izabrana površina', mappingAssigned:'Dodeljen izlaz', canvasSettings:'Canvas', canvasSettingsHint:'Izvorni piksel prostor ove kompozicije', canvasWidth:'Širina', canvasHeight:'Visina', canvasCustomHint:'Za LED zid izaberite Custom i unesite tačne piksel dimenzije procesora.', projectorMapping:'Mapiranje projektora', mappingAdd:'Dodaj površinu', mappingName:'Naziv površine', mappingOutput:'Izlazna destinacija', mappingBlend:'Soft-edge preklapanje', mappingLeft:'Levo', mappingRight:'Desno', mappingTop:'Gore', mappingBottom:'Dole', mappingEmpty:'Dodajte projektorsku površinu, pa je dodelite jednom Output-u.', compositionSaved:'Podešavanja kompozicije čuvaju se sa show-om.', mappingApply:'Primeni mapiranje na izlaze', save:'Sačuvaj', compactMode:'Kompaktan režim', compactTitle:'Fokusirani operater: Program, GO i poruka; kontrole tajmera su u Podešavanjima.', fsMenu:'⛶ Pun ekran', closeMenu:'✕ Zatvori izlaz',
+    rundownBtn:'Rundown', sidebarToggle:'Prikaži ili sakrij navigaciju', utilityToggle:'Prikaži ili sakrij poruke, status i izlaze', msgOutBtn:'Poruke', settingsBtn:'Podešavanja', compositionButton:'Kompozicija', compositionOpen:'Otvori podešavanja kompozicije', compositionEyebrow:'CANVAS I MAPIRANJE PROJEKTORA', compositionTitle:'Kompozicija', compositionBody:'Napravite nezavisne canvase za LED zidove i mapirajte tačne delove canvasa na projektorske izlaze.', compositions:'Kompozicije', compositionNew:'Nova', compositionScenes:'Scene u ovoj kompoziciji', compositionSceneHint:'Nove scene napravljene u Composer-u pripadaju aktivnoj kompoziciji.', mappingCanvas:'Canvas za mapiranje', mappingSelected:'Izabrana površina', mappingAssigned:'Dodeljen izlaz', canvasSettings:'Canvas', canvasSettingsHint:'Izvorni piksel prostor ove kompozicije', canvasWidth:'Širina', canvasHeight:'Visina', canvasCustomHint:'Za LED zid izaberite Custom i unesite tačne piksel dimenzije procesora.', projectorMapping:'Mapiranje projektora', mappingAdd:'Dodaj površinu', mappingName:'Naziv površine', mappingOutput:'Izlazna destinacija', mappingBlend:'Soft-edge preklapanje', mappingLeft:'Levo', mappingRight:'Desno', mappingTop:'Gore', mappingBottom:'Dole', mappingEmpty:'Dodajte projektorsku površinu, pa je dodelite jednom Output-u.', mappingWarp:'Corner pin', mappingWarpHint:'Pomerite četiri ključne tačke da slika legne na nepravilnu površinu.', mappingWarpEnabled:'Uključi deformaciju', mappingTopLeft:'Gore levo', mappingTopRight:'Gore desno', mappingBottomLeft:'Dole levo', mappingBottomRight:'Dole desno', mappingGridLive:'Prikaži kalibracionu mrežu na izlazu', mappingColumns:'Kolone', mappingRows:'Redovi', mappingResetWarp:'Vrati uglove', compositionSaved:'Podešavanja kompozicije čuvaju se sa show-om.', mappingApply:'Primeni mapiranje na izlaze', save:'Sačuvaj', compactMode:'Kompaktan režim', compactTitle:'Fokusirani operater: Program, GO i poruka; kontrole tajmera su u Podešavanjima.', fsMenu:'⛶ Pun ekran', closeMenu:'✕ Zatvori izlaz',
     inspTitle:'Izvor', inspOpacity:'Prozirnost', inspFitTitle:'Kako medij popunjava kutiju',
     programLayer:'PROGRAM LEJER', layerNoneSelected:'Izaberite lejer', takeLayer:'PUSTI LEJER', hideLayer:'SKLONI', takeLayerShort:'PUSTI', hideLayerShort:'SKLONI',
     layerPreviewOnly:'SAMO PREVIEW', layerLive:'U PROGRAMU', layerChanged:'IZMENJEN', layerHidden:'SKLONJEN', layerDirect:'DIREKTNO', layerLivePreviewHidden:'U PROGRAMU · PREVIEW SKRIVEN',
@@ -4486,7 +4504,7 @@ const I18N = {
     outLabel:'Output to', displayTitle:'Monitor for the output screen', sendScreen:'Send to screen', outputRouting:'Outputs',
     outputRouterEyebrow:'PROGRAM DISTRIBUTION', outputRouterTitle:'Output Routing', outputRouterBody:'Send Program to one or more displays, windows or precisely positioned regions.',
     outputLiveDestinations:'live destinations', outputProgramFeed:'PROGRAM feed', outputExplicitApply:'Changes stay off-air until Apply Routing.', outputAddDestination:'Add destination', outputManage:'Manage', outputStopAll:'Stop all', outputApplyRouting:'Apply routing', outputReady:'Routing ready.',
-    outputName:'Name', outputDisplay:'Display', outputRole:'Role', outputRole_audience:'Audience', outputRole_confidence:'Confidence', outputRole_timer:'Timer only', outputRole_stream:'Stream graphics', outputRole_door:'Door agenda', outputMode:'Mode', outputPlacement:'Placement', outputResolution:'Resolution', outputCoordinates:'Coordinates', outputGrid:'Grid', outputCell:'Cell', outputEnabled:'Enabled', outputLiveState:'RENDER CONFIRMED', outputSyncingState:'SYNCING', outputOffState:'OFF', outputPendingState:'PENDING APPLY', outputUnavailableState:'DISPLAY UNAVAILABLE', outputAmbiguousState:'DISPLAY NOT UNIQUE', outputUnavailableDisplay:'Unavailable display', outputNoDestinations:'No outputs configured. Add a destination for the audience, confidence, stream or door agenda.', outputRouteApplied:'Routing applied.', outputAllStopped:'All outputs stopped.', outputRemove:'Remove output', outputFixUnavailable:'Choose an available display for every enabled destination before applying.', outputFixAmbiguous:'Choose the exact display for every enabled destination before applying.',
+    outputName:'Name', outputDisplay:'Display', outputRole:'Role', outputRole_audience:'Audience', outputRole_confidence:'Confidence', outputRole_timer:'Timer only', outputRole_stream:'Stream graphics', outputRole_door:'Door agenda', outputMode:'Mode', outputPlacement:'Placement', outputResolution:'Window size', outputCoordinates:'Coordinates', outputGrid:'Grid', outputCell:'Cell', outputEnabled:'Enabled', outputLiveState:'RENDER CONFIRMED', outputSyncingState:'SYNCING', outputOffState:'OFF', outputPendingState:'PENDING APPLY', outputUnavailableState:'DISPLAY UNAVAILABLE', outputAmbiguousState:'DISPLAY NOT UNIQUE', outputUnavailableDisplay:'Unavailable display', outputNoDestinations:'No outputs configured. Add a destination for the audience, confidence, stream or door agenda.', outputRouteApplied:'Routing applied.', outputAllStopped:'All outputs stopped.', outputRemove:'Remove output', outputFixUnavailable:'Choose an available display for every enabled destination before applying.', outputFixAmbiguous:'Choose the exact display for every enabled destination before applying.', outputCanvas:'Output canvas', outputCanvasHint:'Independent format and resolution for this destination', outputCanvasPreset:'Format', outputCanvasSize:'Canvas resolution', outputCanvasFit:'Scaling', outputCanvasMatch:'Match Program', outputMapProjector:'Map projector', outputMappingActive:'Mapping active', outputMappingNone:'No mapping',
     outputFullscreen:'Fullscreen', outputWindow:'Window', outputCustom:'Custom size', outputGridMode:'Grid cell', outputCenter:'Center', outputTopLeft:'Top left', outputTopRight:'Top right', outputBottomLeft:'Bottom left', outputBottomRight:'Bottom right', outputCustomPosition:'X / Y',
     fsTitle:'Fullscreen (F)', closeTitle:'Close output window', onTop:'On top',
     sources:'Sources', tabRundown:'Rundown', sceneNamePrompt:'Scene name:', rename:'Rename',
@@ -4499,7 +4517,7 @@ const I18N = {
     goSelectedBtn:'GO ▶ {name}', goSelectedShort:'GO SELECTED &nbsp;(N)', goAutoStart:'Auto-start on GO', goAutoTitle:'GO immediately starts the new item timer',
     advanced:'Preview / Program', advancedTitle:'Preview/Program workflow (Cut/Transition). Off: everything goes straight to Program.',
     compositionClose:'Close',
-    rundownBtn:'Rundown', sidebarToggle:'Show or hide navigation', utilityToggle:'Show or hide messages, status and outputs', msgOutBtn:'Message', settingsBtn:'Settings', compositionButton:'Composition', compositionOpen:'Open composition settings', compositionEyebrow:'CANVAS & PROJECTOR MAPPING', compositionTitle:'Composition', compositionBody:'Build independent canvases for LED walls and map exact canvas regions to projector outputs.', compositions:'Compositions', compositionNew:'New', compositionScenes:'Scenes in this composition', compositionSceneHint:'New scenes created in Composer belong to the active composition.', mappingCanvas:'Mapping canvas', mappingSelected:'Selected surface', mappingAssigned:'Assigned output', canvasSettings:'Canvas', canvasSettingsHint:'Native pixel space for this composition', canvasWidth:'Width', canvasHeight:'Height', canvasCustomHint:'Use Custom for the exact processor or LED wall pixel dimensions.', projectorMapping:'Projector mapping', mappingAdd:'Add surface', mappingName:'Surface name', mappingOutput:'Output destination', mappingBlend:'Soft-edge overlap', mappingLeft:'Left', mappingRight:'Right', mappingTop:'Top', mappingBottom:'Bottom', mappingEmpty:'Add a projector surface, then assign it to an Output.', compositionSaved:'Composition settings are saved with this show.', mappingApply:'Apply mapping to outputs', save:'Save', compactMode:'Compact mode', compactTitle:'Focused operator: Program, GO and message; timer controls are in Settings.', fsMenu:'⛶ Fullscreen', closeMenu:'✕ Close output',
+    rundownBtn:'Rundown', sidebarToggle:'Show or hide navigation', utilityToggle:'Show or hide messages, status and outputs', msgOutBtn:'Message', settingsBtn:'Settings', compositionButton:'Composition', compositionOpen:'Open composition settings', compositionEyebrow:'CANVAS & PROJECTOR MAPPING', compositionTitle:'Composition', compositionBody:'Build independent canvases for LED walls and map exact canvas regions to projector outputs.', compositions:'Compositions', compositionNew:'New', compositionScenes:'Scenes in this composition', compositionSceneHint:'New scenes created in Composer belong to the active composition.', mappingCanvas:'Mapping canvas', mappingSelected:'Selected surface', mappingAssigned:'Assigned output', canvasSettings:'Canvas', canvasSettingsHint:'Native pixel space for this composition', canvasWidth:'Width', canvasHeight:'Height', canvasCustomHint:'Use Custom for the exact processor or LED wall pixel dimensions.', projectorMapping:'Projector mapping', mappingAdd:'Add surface', mappingName:'Surface name', mappingOutput:'Output destination', mappingBlend:'Soft-edge overlap', mappingLeft:'Left', mappingRight:'Right', mappingTop:'Top', mappingBottom:'Bottom', mappingEmpty:'Add a projector surface, then assign it to an Output.', mappingWarp:'Corner pin', mappingWarpHint:'Move four key points to fit an irregular projection surface.', mappingWarpEnabled:'Enable warp', mappingTopLeft:'Top left', mappingTopRight:'Top right', mappingBottomLeft:'Bottom left', mappingBottomRight:'Bottom right', mappingGridLive:'Show calibration grid on output', mappingColumns:'Columns', mappingRows:'Rows', mappingResetWarp:'Reset corners', compositionSaved:'Composition settings are saved with this show.', mappingApply:'Apply mapping to outputs', save:'Save', compactMode:'Compact mode', compactTitle:'Focused operator: Program, GO and message; timer controls are in Settings.', fsMenu:'⛶ Fullscreen', closeMenu:'✕ Close output',
     inspTitle:'Source', inspOpacity:'Opacity', inspFitTitle:'How media fills the box',
     programLayer:'PROGRAM LAYER', layerNoneSelected:'Select a layer', takeLayer:'TAKE LAYER', hideLayer:'HIDE', takeLayerShort:'TAKE', hideLayerShort:'HIDE',
     layerPreviewOnly:'PREVIEW ONLY', layerLive:'LIVE', layerChanged:'CHANGED', layerHidden:'HIDDEN', layerDirect:'DIRECT', layerLivePreviewHidden:'LIVE · PREVIEW HIDDEN',
@@ -7124,6 +7142,19 @@ function updateMappingSurfaceElement(element,mapping,canvas){
   element.style.left=`${mapping.x/canvas.width*100}%`; element.style.top=`${mapping.y/canvas.height*100}%`;
   element.style.width=`${mapping.width/canvas.width*100}%`; element.style.height=`${mapping.height/canvas.height*100}%`;
   const detail=element.querySelector('.mapping-surface-copy span'); if(detail) detail.textContent=`${mapping.x}, ${mapping.y} · ${mapping.width} x ${mapping.height}`;
+  const warp=PTCOMP.normalizeProjectorWarp(mapping.warp);
+  mapping.warp=warp;
+  element.classList.toggle('warp-enabled',warp.enabled);
+  const shape=element.querySelector('.mapping-warp-shape');
+  const c=warp.corners;
+  if(shape){
+    shape.style.clipPath=`polygon(${c.topLeft.x}% ${c.topLeft.y}%,${c.topRight.x}% ${c.topRight.y}%,${c.bottomRight.x}% ${c.bottomRight.y}%,${c.bottomLeft.x}% ${c.bottomLeft.y}%)`;
+    shape.style.backgroundSize=`${100/warp.grid.columns}% ${100/warp.grid.rows}%`;
+  }
+  element.querySelectorAll('.mapping-corner-handle').forEach(handle=>{
+    const point=c[handle.dataset.corner]; if(!point) return;
+    handle.style.left=`${point.x}%`; handle.style.top=`${point.y}%`;
+  });
 }
 function fillMappingInspector(mapping){
   const inspector=$('mappingInspector'),empty=$('mappingEmpty');
@@ -7131,6 +7162,11 @@ function fillMappingInspector(mapping){
   inspector.hidden=false; empty.hidden=true;
   $('mappingName').value=mapping.name; $('mappingX').value=mapping.x; $('mappingY').value=mapping.y; $('mappingWidth').value=mapping.width; $('mappingHeight').value=mapping.height;
   $('mappingBlendLeft').value=mapping.blend.left; $('mappingBlendRight').value=mapping.blend.right; $('mappingBlendTop').value=mapping.blend.top; $('mappingBlendBottom').value=mapping.blend.bottom;
+  const warp=PTCOMP.normalizeProjectorWarp(mapping.warp); mapping.warp=warp;
+  $('mappingWarpEnabled').checked=warp.enabled; $('mappingGridVisible').checked=warp.grid.visible;
+  $('mappingGridColumns').value=warp.grid.columns; $('mappingGridRows').value=warp.grid.rows;
+  const cornerInputs={topLeft:['mappingWarpTlX','mappingWarpTlY'],topRight:['mappingWarpTrX','mappingWarpTrY'],bottomLeft:['mappingWarpBlX','mappingWarpBlY'],bottomRight:['mappingWarpBrX','mappingWarpBrY']};
+  Object.entries(cornerInputs).forEach(([name,[xId,yId]])=>{$(xId).value=warp.corners[name].x;$(yId).value=warp.corners[name].y;$(xId).disabled=!warp.enabled;$(yId).disabled=!warp.enabled;});
   const output=$('mappingOutput'); output.innerHTML='';
   const none=document.createElement('option'); none.value=''; none.textContent=lang==='sr'?'Nije dodeljeno':'Not assigned'; output.appendChild(none);
   outputConfigs.forEach(config=>{ const option=document.createElement('option'); option.value=config.id; option.textContent=`${config.name} · ${outputDisplayName(config.displayId,config)}`; output.appendChild(option); });
@@ -7143,12 +7179,18 @@ function beginMappingGesture(event,mapping,element){
   document.querySelectorAll('.mapping-surface').forEach(node=>node.classList.toggle('selected',node===element));
   document.querySelectorAll('.projector-mapping-tab').forEach(node=>node.classList.toggle('active',node.dataset.mappingId===mapping.id));
   fillMappingInspector(mapping);
-  const canvas=activeComposition().canvas,stage=$('compositionMapStage'),rect=stage.getBoundingClientRect(),start={x:event.clientX,y:event.clientY,mapping:cloneState(mapping)},resize=!!event.target.closest('.mapping-resize-handle');
+  const canvas=activeComposition().canvas,stage=$('compositionMapStage'),rect=stage.getBoundingClientRect(),surfaceRect=element.getBoundingClientRect(),start={x:event.clientX,y:event.clientY,mapping:cloneState(mapping)},resize=!!event.target.closest('.mapping-resize-handle'),corner=event.target.closest('.mapping-corner-handle')?.dataset.corner||'';
   const move=moveEvent=>{
-    const dx=(moveEvent.clientX-start.x)/Math.max(1,rect.width)*canvas.width,dy=(moveEvent.clientY-start.y)/Math.max(1,rect.height)*canvas.height;
-    if(resize){ mapping.width=start.mapping.width+dx; mapping.height=start.mapping.height+dy; }
-    else { mapping.x=start.mapping.x+dx; mapping.y=start.mapping.y+dy; }
-    Object.assign(mapping,PTCOMP.normalizeProjectorMapping(mapping,0,canvas));
+    if(corner){
+      const warp=cloneState(start.mapping.warp||{}); warp.enabled=true; warp.corners=warp.corners||{};
+      warp.corners[corner]={x:(moveEvent.clientX-surfaceRect.left)/Math.max(1,surfaceRect.width)*100,y:(moveEvent.clientY-surfaceRect.top)/Math.max(1,surfaceRect.height)*100};
+      mapping.warp=PTCOMP.normalizeProjectorWarp(warp);
+    }else{
+      const dx=(moveEvent.clientX-start.x)/Math.max(1,rect.width)*canvas.width,dy=(moveEvent.clientY-start.y)/Math.max(1,rect.height)*canvas.height;
+      if(resize){ mapping.width=start.mapping.width+dx; mapping.height=start.mapping.height+dy; }
+      else { mapping.x=start.mapping.x+dx; mapping.y=start.mapping.y+dy; }
+      Object.assign(mapping,PTCOMP.normalizeProjectorMapping(mapping,0,canvas));
+    }
     updateMappingSurfaceElement(element,mapping,canvas); fillMappingInspector(mapping);
     $('mappingPixelReadout').textContent=`${mapping.x}, ${mapping.y} · ${mapping.width} x ${mapping.height}`;
   };
@@ -7177,7 +7219,9 @@ function renderCompositionWorkspace(){
   active.mappings.forEach(mapping=>{
     const tab=document.createElement('button'); tab.type='button'; tab.dataset.mappingId=mapping.id; tab.className='projector-mapping-tab'+(mapping.id===selectedProjectorMappingId?' active':'')+(mapping.outputId?' assigned':''); tab.textContent=mapping.name; tab.addEventListener('click',()=>{selectedProjectorMappingId=mapping.id;renderCompositionWorkspace();}); tabs.appendChild(tab);
     const surface=document.createElement('button'); surface.type='button'; surface.className='mapping-surface'+(mapping.id===selectedProjectorMappingId?' selected':'')+(mapping.outputId?' assigned':''); surface.setAttribute('aria-label',mapping.name);
-    const copy=document.createElement('span'); copy.className='mapping-surface-copy'; const name=document.createElement('strong'); name.textContent=mapping.name; const detail=document.createElement('span'); copy.append(name,detail); const handle=document.createElement('span'); handle.className='mapping-resize-handle'; handle.setAttribute('aria-hidden','true'); surface.append(copy,handle);
+    const shape=document.createElement('span'); shape.className='mapping-warp-shape'; shape.setAttribute('aria-hidden','true');
+    const copy=document.createElement('span'); copy.className='mapping-surface-copy'; const name=document.createElement('strong'); name.textContent=mapping.name; const detail=document.createElement('span'); copy.append(name,detail); const handle=document.createElement('span'); handle.className='mapping-resize-handle'; handle.setAttribute('aria-hidden','true'); surface.append(shape,copy,handle);
+    ['topLeft','topRight','bottomRight','bottomLeft'].forEach(corner=>{const point=document.createElement('span');point.className='mapping-corner-handle';point.dataset.corner=corner;point.setAttribute('aria-hidden','true');surface.appendChild(point);});
     updateMappingSurfaceElement(surface,mapping,active.canvas); surface.addEventListener('pointerdown',event=>beginMappingGesture(event,mapping,surface)); surfaces.appendChild(surface);
   });
   const selected=selectedProjectorMapping(); fillMappingInspector(selected);
@@ -7190,7 +7234,8 @@ function updateSelectedMappingFromInspector(){
   const composition=activeComposition(),mapping=selectedProjectorMapping(); if(!mapping) return;
   const nextOutput=String($('mappingOutput').value||'');
   if(nextOutput) S.compositions.forEach(row=>(row.mappings||[]).forEach(item=>{ if(item.id!==mapping.id&&item.outputId===nextOutput) item.outputId=''; }));
-  Object.assign(mapping,PTCOMP.normalizeProjectorMapping({...mapping,name:$('mappingName').value,outputId:nextOutput,x:+$('mappingX').value,y:+$('mappingY').value,width:+$('mappingWidth').value,height:+$('mappingHeight').value,blend:{left:+$('mappingBlendLeft').value,right:+$('mappingBlendRight').value,top:+$('mappingBlendTop').value,bottom:+$('mappingBlendBottom').value}},composition.mappings.indexOf(mapping),composition.canvas));
+  const warp={enabled:$('mappingWarpEnabled').checked,corners:{topLeft:{x:+$('mappingWarpTlX').value,y:+$('mappingWarpTlY').value},topRight:{x:+$('mappingWarpTrX').value,y:+$('mappingWarpTrY').value},bottomLeft:{x:+$('mappingWarpBlX').value,y:+$('mappingWarpBlY').value},bottomRight:{x:+$('mappingWarpBrX').value,y:+$('mappingWarpBrY').value}},grid:{visible:$('mappingGridVisible').checked,columns:+$('mappingGridColumns').value,rows:+$('mappingGridRows').value}};
+  Object.assign(mapping,PTCOMP.normalizeProjectorMapping({...mapping,name:$('mappingName').value,outputId:nextOutput,x:+$('mappingX').value,y:+$('mappingY').value,width:+$('mappingWidth').value,height:+$('mappingHeight').value,blend:{left:+$('mappingBlendLeft').value,right:+$('mappingBlendRight').value,top:+$('mappingBlendTop').value,bottom:+$('mappingBlendBottom').value},warp},composition.mappings.indexOf(mapping),composition.canvas));
   compositionDirty();
 }
 $('btnCompositionWorkspace')?.addEventListener('click',openCompositionWorkspace);
@@ -7204,7 +7249,8 @@ $('btnCompositionDelete')?.addEventListener('click',deleteComposition);
 $('btnMappingAdd')?.addEventListener('click',addProjectorMapping);
 $('btnMappingDuplicate')?.addEventListener('click',duplicateProjectorMapping);
 $('btnMappingDelete')?.addEventListener('click',deleteProjectorMapping);
-['mappingName','mappingOutput','mappingX','mappingY','mappingWidth','mappingHeight','mappingBlendLeft','mappingBlendRight','mappingBlendTop','mappingBlendBottom'].forEach(id=>$(id)?.addEventListener('change',updateSelectedMappingFromInspector));
+['mappingName','mappingOutput','mappingX','mappingY','mappingWidth','mappingHeight','mappingBlendLeft','mappingBlendRight','mappingBlendTop','mappingBlendBottom','mappingWarpEnabled','mappingWarpTlX','mappingWarpTlY','mappingWarpTrX','mappingWarpTrY','mappingWarpBlX','mappingWarpBlY','mappingWarpBrX','mappingWarpBrY','mappingGridVisible','mappingGridColumns','mappingGridRows'].forEach(id=>$(id)?.addEventListener('change',updateSelectedMappingFromInspector));
+$('btnMappingWarpReset')?.addEventListener('click',()=>{const mapping=selectedProjectorMapping();if(!mapping)return;mapping.warp=PTCOMP.normalizeProjectorWarp({enabled:mapping.warp&&mapping.warp.enabled,grid:mapping.warp&&mapping.warp.grid});compositionDirty();});
 $('btnCompositionSave')?.addEventListener('click',()=>{ saveSettings(); scheduleShowAutosave('composition',80); setCompositionSaveStatus('saved'); });
 $('btnCompositionApply')?.addEventListener('click',()=>{
   const applied=applyOutputConfigs();
@@ -7506,6 +7552,9 @@ function outputFallbackDisplay(){
 }
 function normalizeOutputConfigUI(cfg={}, i=0){
   const placement=['center','top-left','top-right','bottom-left','bottom-right','custom'].includes(cfg.placement)?cfg.placement:'center';
+  const fallbackCanvas=PTCOMP.normalizeCanvas(S&&S.canvas||canvasFromLegacyAspect(S&&S.canvasAspect||'16:9'));
+  const routeCanvas=PTCOMP.normalizeCanvas(cfg.outputCanvas||fallbackCanvas);
+  routeCanvas.fit=['contain','cover','fill'].includes(cfg.outputCanvas&&cfg.outputCanvas.fit)?cfg.outputCanvas.fit:'contain';
   const normalized={
     id:String(cfg.id||makeId('out')),
     name:String(cfg.name||`Output ${i+1}`),
@@ -7527,7 +7576,8 @@ function normalizeOutputConfigUI(cfg={}, i=0){
     gridCell:Math.max(0, parseInt(cfg.gridCell,10)||0),
     compositionId:String(cfg.compositionId||''),
     mappingId:String(cfg.mappingId||''),
-    projection:cfg.projection&&typeof cfg.projection==='object'?jsonCopy(cfg.projection,null):null
+    projection:cfg.projection&&typeof cfg.projection==='object'?jsonCopy(cfg.projection,null):null,
+    outputCanvas:routeCanvas
   };
   const display=lastDisplays.find(item=>Number(item.id)===normalized.displayId);
   if(display&&!normalized.displayLabel){ normalized.displayLabel=display.label||''; normalized.displayWidth=display.width||0; normalized.displayHeight=display.height||0; }
@@ -7608,7 +7658,16 @@ function outputRuntimeDescription(cfg){
   const runtime=outputRuntimeRoute(cfg.id);
   if(!runtime||!runtime.open) return outputRouteStateText(cfg,runtime);
   const bounds=runtime.bounds;
-  return bounds?`${bounds.width}×${bounds.height} · ${outputModeName(cfg.mode)}`:outputModeName(cfg.mode);
+  const canvas=PTCOMP.normalizeCanvas(cfg.outputCanvas||S.canvas);
+  return bounds?`${bounds.width}×${bounds.height} · ${canvas.width}×${canvas.height} canvas · ${outputModeName(cfg.mode)}`:`${canvas.width}×${canvas.height} canvas · ${outputModeName(cfg.mode)}`;
+}
+function outputMappingForRoute(routeId){
+  ensureCompositions();
+  for(const composition of S.compositions){
+    const mapping=(composition.mappings||[]).find(row=>row.enabled!==false&&String(row.outputId||'')===String(routeId||''));
+    if(mapping) return {composition,mapping};
+  }
+  return null;
 }
 function updateOutputRoutingStatus(){
   const live=outputLiveCount();
@@ -7693,6 +7752,18 @@ function renderOutputRouterRows(){
         <div class="route-field-group route-coordinates"><span>${t('outputCoordinates')}</span><div><input class="out-x" type="number" min="0" max="8192" aria-label="X"><span>×</span><input class="out-y" type="number" min="0" max="8192" aria-label="Y"></div></div>
         <div class="route-field-group route-grid-fields"><span>${t('outputGrid')}</span><div><input class="out-grid" type="number" min="1" max="12" aria-label="${t('outputGrid')}"><span>/</span><input class="out-cell" type="number" min="0" aria-label="${t('outputCell')}"></div></div>
       </div>
+      <section class="output-route-canvas">
+        <div class="output-route-canvas-head">
+          <div><strong>${t('outputCanvas')}</strong><span>${t('outputCanvasHint')}</span></div>
+          <span class="output-mapping-state">${outputMappingForRoute(cfg.id)?t('outputMappingActive'):t('outputMappingNone')}</span>
+          <button class="ghost out-map" type="button">${t('outputMapProjector')}</button>
+        </div>
+        <div class="output-route-canvas-fields">
+          <label class="route-field"><span>${t('outputCanvasPreset')}</span><select class="out-canvas-preset"></select></label>
+          <div class="route-field-group"><span>${t('outputCanvasSize')}</span><div><input class="out-canvas-w" type="number" min="320" max="8192" aria-label="${t('canvasWidth')}"><span>×</span><input class="out-canvas-h" type="number" min="180" max="8192" aria-label="${t('canvasHeight')}"></div></div>
+          <label class="route-field"><span>${t('outputCanvasFit')}</span><select class="out-canvas-fit"></select></label>
+        </div>
+      </section>
       <div class="output-route-runtime">${outputDisplayName(cfg.displayId,cfg)} · ${outputRuntimeDescription(cfg)}</div>`;
     const enabled=row.querySelector('.out-enabled'); enabled.checked=cfg.enabled;
     const liveAudio=row.querySelector('.out-audio'); liveAudio.checked=cfg.liveAudio;
@@ -7722,6 +7793,15 @@ function renderOutputRouterRows(){
     row.querySelector('.out-w').value=cfg.width; row.querySelector('.out-h').value=cfg.height;
     row.querySelector('.out-x').value=cfg.x; row.querySelector('.out-y').value=cfg.y;
     row.querySelector('.out-grid').value=cfg.gridSize; row.querySelector('.out-cell').value=cfg.gridCell;
+    const canvasPreset=row.querySelector('.out-canvas-preset');
+    PTCOMP.CANVAS_PRESETS.forEach(preset=>{const option=document.createElement('option');option.value=preset.id;option.textContent=preset.label;canvasPreset.appendChild(option);});
+    const customCanvasOption=document.createElement('option');customCanvasOption.value='custom';customCanvasOption.textContent='Custom / LED';canvasPreset.appendChild(customCanvasOption);
+    canvasPreset.value=PTCOMP.canvasPreset(cfg.outputCanvas);
+    row.querySelector('.out-canvas-w').value=cfg.outputCanvas.width;
+    row.querySelector('.out-canvas-h').value=cfg.outputCanvas.height;
+    const canvasFit=row.querySelector('.out-canvas-fit');
+    [['contain','fitContain'],['cover','fitCover'],['fill','fitFill']].forEach(([value,key])=>{const option=document.createElement('option');option.value=value;option.textContent=t(key);canvasFit.appendChild(option);});
+    canvasFit.value=cfg.outputCanvas.fit||'contain';
     const sync=()=>{
       cfg.enabled=enabled.checked;
       cfg.liveAudio=liveAudio.checked;
@@ -7737,6 +7817,8 @@ function renderOutputRouterRows(){
       cfg.x=Math.max(0,+row.querySelector('.out-x').value||0); cfg.y=Math.max(0,+row.querySelector('.out-y').value||0);
       cfg.gridSize=Math.max(1,Math.min(12,+row.querySelector('.out-grid').value||cfg.gridSize));
       cfg.gridCell=Math.max(0,Math.min(cfg.gridSize*cfg.gridSize-1,+row.querySelector('.out-cell').value||0));
+      cfg.outputCanvas=PTCOMP.normalizeCanvas({width:+row.querySelector('.out-canvas-w').value,height:+row.querySelector('.out-canvas-h').value,fps:cfg.outputCanvas.fps||30,background:cfg.outputCanvas.background||'#000000',transparent:cfg.outputCanvas.transparent===true});
+      cfg.outputCanvas.fit=canvasFit.value;
       row.querySelector('.out-cell').max=String(cfg.gridSize*cfg.gridSize-1);
       row.classList.toggle('disabled',!cfg.enabled);
       const issue=outputConfigIssue(cfg);
@@ -7749,7 +7831,14 @@ function renderOutputRouterRows(){
       if(routeState) routeState.textContent=pendingText;
       if(routeRuntime) routeRuntime.textContent=`${outputDisplayName(cfg.displayId,cfg)} · ${pendingText}`;
     };
+    canvasPreset.addEventListener('change',()=>{
+      const preset=PTCOMP.CANVAS_PRESETS.find(item=>item.id===canvasPreset.value);
+      if(preset){row.querySelector('.out-canvas-w').value=preset.width;row.querySelector('.out-canvas-h').value=preset.height;}
+      sync();
+    });
+    ['.out-canvas-w','.out-canvas-h'].forEach(selector=>row.querySelector(selector).addEventListener('change',()=>{canvasPreset.value=PTCOMP.canvasPreset({width:+row.querySelector('.out-canvas-w').value,height:+row.querySelector('.out-canvas-h').value});sync();}));
     row.querySelectorAll('input,select').forEach(el=>el.addEventListener('change',sync));
+    row.querySelector('.out-map').addEventListener('click',()=>openProjectorMappingForOutput(cfg.id));
     row.querySelector('.out-del').addEventListener('click',()=>{
       outputConfigs.splice(i,1); saveOutputConfigsLocal(); outputRoutingDirty=false; applyOutputConfigs(); renderOutputRows();
     });
@@ -7779,17 +7868,38 @@ function addOutputConfig(options={}){
   const canvas=PTCOMP.normalizeCanvas(S.canvas||canvasFromLegacyAspect(S.canvasAspect));
   outputConfigs.push(normalizeOutputConfigUI({
     id:makeId('out'), name:`Output ${outputConfigs.length+1}`,
-    role:'audience', displayId:outputFallbackDisplay(), mode:'fullscreen', width:canvas.width, height:canvas.height, placement:'center', x:0, y:0, gridSize:S.gridSize||3, gridCell:S.gridCell||0, liveAudio:false
+    role:'audience', displayId:outputFallbackDisplay(), mode:'fullscreen', width:canvas.width, height:canvas.height, placement:'center', x:0, y:0, gridSize:S.gridSize||3, gridCell:S.gridCell||0, liveAudio:false,
+    outputCanvas:{...canvas,fit:'contain'}
   }, outputConfigs.length));
   saveOutputConfigsLocal(); markOutputRoutingDirty(); renderOutputRows();
   if(options.open!==false) openOutputRouter();
+}
+function openProjectorMappingForOutput(routeId){
+  ensureCompositions();
+  let assignment=outputMappingForRoute(routeId);
+  if(!assignment){
+    const composition=activeComposition(),canvas=composition.canvas;
+    const mapping=PTCOMP.normalizeProjectorMapping({
+      id:makeId('mapping'),name:`${outputConfigs.find(config=>config.id===routeId)?.name||'Projector'} mapping`,outputId:routeId,
+      x:0,y:0,width:canvas.width,height:canvas.height,
+      warp:{enabled:false,grid:{visible:true,columns:8,rows:6}}
+    },composition.mappings.length,canvas);
+    composition.mappings.push(mapping);
+    assignment={composition,mapping};
+    compositionDirty();
+  }
+  closeOutputRouter();
+  selectComposition(assignment.composition.id,{save:false});
+  selectedProjectorMappingId=assignment.mapping.id;
+  renderCompositionWorkspace();
+  openCompositionWorkspace();
 }
 function projectedOutputConfig(config){
   ensureCompositions();
   for(const composition of S.compositions){
     const mapping=(composition.mappings||[]).find(row=>row.enabled!==false&&String(row.outputId||'')===String(config.id||''));
     if(!mapping) continue;
-    return {...config,compositionId:composition.id,mappingId:mapping.id,projection:{id:mapping.id,name:mapping.name,compositionId:composition.id,enabled:true,x:mapping.x,y:mapping.y,width:mapping.width,height:mapping.height,canvasWidth:composition.canvas.width,canvasHeight:composition.canvas.height,blend:cloneState(mapping.blend||{})}};
+    return {...config,compositionId:composition.id,mappingId:mapping.id,projection:{id:mapping.id,name:mapping.name,compositionId:composition.id,enabled:true,x:mapping.x,y:mapping.y,width:mapping.width,height:mapping.height,canvasWidth:composition.canvas.width,canvasHeight:composition.canvas.height,blend:cloneState(mapping.blend||{}),warp:cloneState(mapping.warp||{})}};
   }
   return {...config,compositionId:'',mappingId:'',projection:null};
 }

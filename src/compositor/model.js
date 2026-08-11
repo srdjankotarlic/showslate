@@ -15,6 +15,7 @@
   const FONT_FAMILIES = new Set(['system', 'mono', 'serif', 'display']);
   const TEXT_ALIGNS = new Set(['left', 'center', 'right']);
   const VERTICAL_ALIGNS = new Set(['top', 'center', 'bottom']);
+  const WARP_CORNERS = Object.freeze(['topLeft', 'topRight', 'bottomRight', 'bottomLeft']);
   const CANVAS_PRESETS = Object.freeze([
     { id: '1080p', label: 'HD 1080p', width: 1920, height: 1080 },
     { id: '720p', label: 'HD 720p', width: 1280, height: 720 },
@@ -87,6 +88,77 @@
     return `${clean.width} / ${clean.height}`;
   }
 
+  function normalizeWarpPoint(raw, fallback) {
+    const source = raw && typeof raw === 'object' ? raw : {};
+    return {
+      x: finite(source.x, fallback.x, -25, 125),
+      y: finite(source.y, fallback.y, -25, 125)
+    };
+  }
+
+  function normalizeProjectorWarp(raw = {}) {
+    const source = raw && typeof raw === 'object' ? raw : {};
+    const corners = source.corners && typeof source.corners === 'object' ? source.corners : {};
+    const defaults = {
+      topLeft: { x: 0, y: 0 },
+      topRight: { x: 100, y: 0 },
+      bottomRight: { x: 100, y: 100 },
+      bottomLeft: { x: 0, y: 100 }
+    };
+    const clean = {};
+    WARP_CORNERS.forEach(name => { clean[name] = normalizeWarpPoint(corners[name], defaults[name]); });
+
+    // Keep the four points in a predictable clockwise order. This prevents a
+    // crossed surface from turning the live renderer inside out while still
+    // allowing generous keystone and overscan adjustment.
+    const gap = 1;
+    const leftLimit = Math.min(clean.topRight.x, clean.bottomRight.x) - gap;
+    clean.topLeft.x = Math.min(clean.topLeft.x, leftLimit);
+    clean.bottomLeft.x = Math.min(clean.bottomLeft.x, leftLimit);
+    const rightLimit = Math.max(clean.topLeft.x, clean.bottomLeft.x) + gap;
+    clean.topRight.x = Math.max(clean.topRight.x, rightLimit);
+    clean.bottomRight.x = Math.max(clean.bottomRight.x, rightLimit);
+    const topLimit = Math.min(clean.bottomLeft.y, clean.bottomRight.y) - gap;
+    clean.topLeft.y = Math.min(clean.topLeft.y, topLimit);
+    clean.topRight.y = Math.min(clean.topRight.y, topLimit);
+    const bottomLimit = Math.max(clean.topLeft.y, clean.topRight.y) + gap;
+    clean.bottomLeft.y = Math.max(clean.bottomLeft.y, bottomLimit);
+    clean.bottomRight.y = Math.max(clean.bottomRight.y, bottomLimit);
+    WARP_CORNERS.forEach(name => {
+      clean[name].x = finite(clean[name].x, defaults[name].x, -25, 125);
+      clean[name].y = finite(clean[name].y, defaults[name].y, -25, 125);
+    });
+
+    const grid = source.grid && typeof source.grid === 'object' ? source.grid : {};
+    return {
+      enabled: source.enabled === true,
+      corners: clean,
+      grid: {
+        visible: grid.visible === true,
+        columns: integer(grid.columns, 8, 2, 32),
+        rows: integer(grid.rows, 6, 2, 32),
+        opacity: finite(grid.opacity, 0.72, 0.1, 1)
+      }
+    };
+  }
+
+  function projectorWarpIsValid(raw = {}) {
+    const warp = normalizeProjectorWarp(raw);
+    const points = WARP_CORNERS.map(name => warp.corners[name]);
+    const crosses = points.map((point, index) => {
+      const next = points[(index + 1) % points.length];
+      const after = points[(index + 2) % points.length];
+      return (next.x - point.x) * (after.y - next.y) - (next.y - point.y) * (after.x - next.x);
+    });
+    const area = Math.abs(points.reduce((sum, point, index) => {
+      const next = points[(index + 1) % points.length];
+      return sum + point.x * next.y - next.x * point.y;
+    }, 0) / 2);
+    const clockwise = crosses.every(value => value > 0.01);
+    const counterClockwise = crosses.every(value => value < -0.01);
+    return area >= 100 && (clockwise || counterClockwise);
+  }
+
   function normalizeProjectorMapping(raw = {}, index = 0, rawCanvas = {}) {
     const source = raw && typeof raw === 'object' ? raw : {};
     const canvas = normalizeCanvas(rawCanvas);
@@ -110,7 +182,8 @@
         right: integer(blend.right, 0, 0, Math.min(512, Math.floor(width / 2))),
         top: integer(blend.top, 0, 0, Math.min(512, Math.floor(height / 2))),
         bottom: integer(blend.bottom, 0, 0, Math.min(512, Math.floor(height / 2)))
-      }
+      },
+      warp: normalizeProjectorWarp(source.warp)
     };
   }
 
@@ -364,6 +437,8 @@
     normalizeCanvas,
     canvasPreset,
     canvasAspect,
+    normalizeProjectorWarp,
+    projectorWarpIsValid,
     normalizeProjectorMapping,
     normalizeComposition,
     normalizeCompositions,

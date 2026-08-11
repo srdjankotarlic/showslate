@@ -14,6 +14,8 @@
     z-index:50; animation:zflash .4s steps(2,start) 6; pointer-events:none;}
   @keyframes zflash{50%{opacity:0;}}
 
+  #programSurface{position:absolute;left:0;top:0;width:100%;height:100%;overflow:hidden;isolation:isolate;transform-origin:0 0;will-change:transform;backface-visibility:hidden;}
+  #programContent{position:absolute;inset:0;width:100%;height:100%;overflow:visible;transform-origin:0 0;will-change:transform;}
   #sceneRoot{position:absolute; inset:0; z-index:auto; overflow:hidden; pointer-events:none; isolation:isolate;}
   .scene-layer{position:absolute; overflow:visible; display:flex; align-items:center; justify-content:center;
     opacity:var(--layerOpacity,1); transform:translateZ(0);}
@@ -61,6 +63,10 @@
 
   #blackout{position:absolute; inset:0; background:#000; z-index:500; display:block; opacity:0; pointer-events:none; transition:opacity .28s ease;}
   #blackout.on{opacity:1; pointer-events:auto;}
+  #projectionCalibration{position:absolute;inset:0;z-index:490;display:none;pointer-events:none;border:2px solid rgba(255,255,255,.95);background-image:linear-gradient(rgba(255,255,255,.72) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.72) 1px,transparent 1px);box-shadow:inset 0 0 0 1px rgba(0,0,0,.85);}
+  #projectionCalibration::before,#projectionCalibration::after{content:'';position:absolute;background:rgba(255,70,70,.95);box-shadow:0 0 0 1px rgba(0,0,0,.8)}
+  #projectionCalibration::before{left:50%;top:0;bottom:0;width:2px;transform:translateX(-1px)}
+  #projectionCalibration::after{left:0;right:0;top:50%;height:2px;transform:translateY(-1px)}
   #lowerThird{position:fixed; z-index:200; display:none; align-items:center; gap:2.2vh; min-width:34vw; max-width:72vw;
     padding:2.1vh 2.8vh; color:#fff; border-radius:1.2vh; pointer-events:none;
     background:linear-gradient(180deg,rgba(18,19,23,.9),rgba(8,9,12,.88));
@@ -142,36 +148,41 @@
 </style>
 </head>
 <body>
-  <div id="sceneRoot"></div>
-  <div id="stage">
-    <div id="text"></div>
-    <div id="timer">--:--</div>
+  <div id="programSurface">
+    <div id="programContent">
+      <div id="sceneRoot"></div>
+      <div id="stage">
+        <div id="text"></div>
+        <div id="timer">--:--</div>
+      </div>
+      <div id="msg"></div>
+      <div id="nownext"></div>
+      <div id="prog"></div>
+      <div id="paused" style="display:none; position:fixed; top:12px; right:14px; z-index:60;
+        font:700 2.2vh/1 -apple-system,system-ui,sans-serif; letter-spacing:.12em; color:rgba(255,255,255,.85);
+        background:rgba(0,0,0,.5); padding:1vh 1.6vh; border-radius:1.2vh; pointer-events:none;">⏸ PAUZA</div>
+      <img id="logo" alt="" style="display:none; position:fixed; z-index:5; pointer-events:none; max-width:40vw; object-fit:contain;">
+      <div id="lowerThird">
+        <img id="ltImg" alt="">
+        <div id="ltCopy">
+          <div id="ltName"></div>
+          <div id="ltTitle"></div>
+          <div id="ltMeta"></div>
+        </div>
+      </div>
+      <div id="ltCanvas" aria-hidden="true"></div>
+      <div id="roleView" aria-live="polite">
+        <div class="role-head">
+          <div><div class="role-kicker" id="roleRoomLabel">ROOM</div><div class="role-show" id="roleShowName">ShowSlate</div></div>
+          <div class="role-clock" id="roleClock">--:--</div>
+        </div>
+        <div class="role-current"><div class="role-kicker" id="roleCurrentLabel">NOW</div><strong id="roleCurrent">Waiting for first cue</strong><span id="roleCurrentMeta"></span></div>
+        <div class="role-next"><div class="role-kicker" id="roleNextLabel">NEXT</div><strong id="roleNext">—</strong><span id="roleNextMeta"></span></div>
+      </div>
+    </div>
+    <div id="projectionCalibration" aria-hidden="true"></div>
   </div>
-  <div id="msg"></div>
-  <div id="nownext"></div>
-  <div id="prog"></div>
   <div id="blackout"></div>
-  <div id="paused" style="display:none; position:fixed; top:12px; right:14px; z-index:60;
-    font:700 2.2vh/1 -apple-system,system-ui,sans-serif; letter-spacing:.12em; color:rgba(255,255,255,.85);
-    background:rgba(0,0,0,.5); padding:1vh 1.6vh; border-radius:1.2vh; pointer-events:none;">⏸ PAUZA</div>
-  <img id="logo" alt="" style="display:none; position:fixed; z-index:5; pointer-events:none; max-width:40vw; object-fit:contain;">
-  <div id="lowerThird">
-    <img id="ltImg" alt="">
-    <div id="ltCopy">
-      <div id="ltName"></div>
-      <div id="ltTitle"></div>
-      <div id="ltMeta"></div>
-    </div>
-  </div>
-  <div id="ltCanvas" aria-hidden="true"></div>
-  <div id="roleView" aria-live="polite">
-    <div class="role-head">
-      <div><div class="role-kicker" id="roleRoomLabel">ROOM</div><div class="role-show" id="roleShowName">ShowSlate</div></div>
-      <div class="role-clock" id="roleClock">--:--</div>
-    </div>
-    <div class="role-current"><div class="role-kicker" id="roleCurrentLabel">NOW</div><strong id="roleCurrent">Waiting for first cue</strong><span id="roleCurrentMeta"></span></div>
-    <div class="role-next"><div class="role-kicker" id="roleNextLabel">NEXT</div><strong id="roleNext">—</strong><span id="roleNextMeta"></span></div>
-  </div>
 
 <script src="src/compositor/model.js"></script>
 <script src="src/live-input/consumer.js"></script>
@@ -240,6 +251,7 @@ function applyState(s){
   const meta = langUtil.langMeta(outLang());
   document.documentElement.lang = outLang();
   document.documentElement.dir = meta.dir || 'ltr';
+  applyOutputGeometry();
   // PRO: logo na ekranu
   const lg = $('logo');
   if (s.logo){
@@ -390,6 +402,71 @@ function routeProjection(){
   const height=Math.max(1,Math.min(canvasHeight-y,Number(raw.height)||canvasHeight-y));
   return {...raw,x,y,width,height,canvasWidth,canvasHeight,blend:raw.blend||{}};
 }
+function routeOutputCanvas(){
+  const raw=S&&S._outputRoute&&S._outputRoute.outputCanvas;
+  const fallback=PTCOMP.normalizeCanvas(S&&S.canvas||{});
+  if(!raw||typeof raw!=='object') return {...fallback,fit:'fill'};
+  const canvas=PTCOMP.normalizeCanvas(raw);
+  return {...canvas,fit:['contain','cover','fill'].includes(raw.fit)?raw.fit:'contain'};
+}
+function solveLinearSystem(matrix,vector){
+  const rows=matrix.map((row,index)=>[...row,vector[index]]),size=rows.length;
+  for(let column=0;column<size;column++){
+    let pivot=column;
+    for(let row=column+1;row<size;row++) if(Math.abs(rows[row][column])>Math.abs(rows[pivot][column])) pivot=row;
+    if(Math.abs(rows[pivot][column])<1e-9) return null;
+    [rows[column],rows[pivot]]=[rows[pivot],rows[column]];
+    const divisor=rows[column][column];
+    for(let item=column;item<=size;item++) rows[column][item]/=divisor;
+    for(let row=0;row<size;row++){
+      if(row===column) continue;
+      const factor=rows[row][column];
+      for(let item=column;item<=size;item++) rows[row][item]-=factor*rows[column][item];
+    }
+  }
+  return rows.map(row=>row[size]);
+}
+function homographyMatrix(width,height,destinations){
+  const sources=[[0,0],[width,0],[width,height],[0,height]],matrix=[],vector=[];
+  sources.forEach(([x,y],index)=>{
+    const [u,v]=destinations[index];
+    matrix.push([x,y,1,0,0,0,-u*x,-u*y]); vector.push(u);
+    matrix.push([0,0,0,x,y,1,-v*x,-v*y]); vector.push(v);
+  });
+  const h=solveLinearSystem(matrix,vector);
+  if(!h) return `matrix3d(1,0,0,0,0,1,0,0,0,0,1,0,0,0,0,1)`;
+  const [a,b,c,d,e,f,g,k]=h;
+  return `matrix3d(${a},${d},0,${g},${b},${e},0,${k},0,0,1,0,${c},${f},0,1)`;
+}
+function applyOutputGeometry(){
+  const surface=$('programSurface'),content=$('programContent'),calibration=$('projectionCalibration');
+  if(!surface||!content||!calibration) return;
+  const canvas=routeOutputCanvas(),viewportWidth=Math.max(1,innerWidth),viewportHeight=Math.max(1,innerHeight),aspect=canvas.width/canvas.height,viewportAspect=viewportWidth/viewportHeight;
+  let width=viewportWidth,height=viewportHeight,left=0,top=0;
+  if(canvas.fit==='contain'){
+    if(viewportAspect>aspect){height=viewportHeight;width=height*aspect;left=(viewportWidth-width)/2;}
+    else{width=viewportWidth;height=width/aspect;top=(viewportHeight-height)/2;}
+  }else if(canvas.fit==='cover'){
+    if(viewportAspect>aspect){width=viewportWidth;height=width/aspect;top=(viewportHeight-height)/2;}
+    else{height=viewportHeight;width=height*aspect;left=(viewportWidth-width)/2;}
+  }
+  const projection=routeProjection(),activeProjection=projection&&!projectionIsInactive(projection)?projection:null;
+  const warp=projection&&projection.warp?PTCOMP.normalizeProjectorWarp(projection.warp):PTCOMP.normalizeProjectorWarp();
+  const corners=warp.enabled&&PTCOMP.projectorWarpIsValid(warp)?warp.corners:PTCOMP.normalizeProjectorWarp().corners;
+  const destinations=[corners.topLeft,corners.topRight,corners.bottomRight,corners.bottomLeft].map(point=>[left+width*point.x/100,top+height*point.y/100]);
+  surface.style.width=`${width}px`; surface.style.height=`${height}px`;
+  surface.style.transform=homographyMatrix(width,height,destinations);
+  if(activeProjection){
+    const scaleX=activeProjection.canvasWidth/activeProjection.width,scaleY=activeProjection.canvasHeight/activeProjection.height;
+    const translateX=-activeProjection.x/activeProjection.width*width,translateY=-activeProjection.y/activeProjection.height*height;
+    content.style.transform=`matrix(${scaleX},0,0,${scaleY},${translateX},${translateY})`;
+  }else content.style.transform='matrix(1,0,0,1,0,0)';
+  applyProjectionMask(surface,activeProjection);
+  surface.dataset.canvasWidth=String(canvas.width); surface.dataset.canvasHeight=String(canvas.height); surface.dataset.canvasFit=canvas.fit; surface.dataset.warp=warp.enabled?'on':'off';
+  calibration.style.display=warp.grid.visible?'block':'none';
+  calibration.style.backgroundSize=`${100/warp.grid.columns}% ${100/warp.grid.rows}%`;
+  calibration.style.opacity=String(warp.grid.opacity);
+}
 function projectionIsInactive(projection){
   return !!projection&&!!projection.compositionId&&String(projection.compositionId)!==String(S&&S.activeCompositionId||'composition-main');
 }
@@ -463,8 +540,8 @@ function renderScene(){
   const oldFrames=[...root.children];
   const frame=document.createElement('div');
   frame.className='scene-frame';
-  applyProjectionFrame(frame,projection);
-  applyProjectionMask(root,projectionInactive?null:projection);
+  applyProjectionFrame(frame,null);
+  applyProjectionMask(root,null);
   if(fadeMs>0 && oldFrames.length){
     frame.style.opacity='0';
     frame.style.transition=`opacity ${fadeMs}ms ease`;
@@ -562,12 +639,6 @@ function applyTimerLayerStage(){
   let key, css;
   if (tl){
     let x = pct(tl.x, 0), y = pct(tl.y, 0), w = Math.max(1, pct(tl.w, 100)), h = Math.max(1, pct(tl.h, 100));
-    if(projection){
-      x=(x/100*projection.canvasWidth-projection.x)/projection.width*100;
-      y=(y/100*projection.canvasHeight-projection.y)/projection.height*100;
-      w=w/100*projection.canvasWidth/projection.width*100;
-      h=h/100*projection.canvasHeight/projection.height*100;
-    }
     const stack = layers.indexOf(tl) + 1;
     const visual=PTCOMP.layerVisualStyle(tl);
     key = `tl|${x}|${y}|${w}|${h}|${tl.opacity ?? 1}|${stack}|${JSON.stringify(visual)}|${JSON.stringify(projection)}`;
@@ -575,7 +646,7 @@ function applyTimerLayerStage(){
       stage.style.zIndex = String(stack);
       stage.style.left = x + '%'; stage.style.top = y + '%';
       stage.style.width = w + '%'; stage.style.height = h + '%';
-      stage.style.opacity = String(Math.max(0, Math.min(1, Number(tl.opacity ?? 1)))); applyProjectionMask(stage,projection);
+      stage.style.opacity = String(Math.max(0, Math.min(1, Number(tl.opacity ?? 1)))); applyProjectionMask(stage,null);
       stage.style.transform=visual.transform; stage.style.transformOrigin=visual.transformOrigin; stage.style.filter=visual.filter; stage.style.mixBlendMode=visual.mixBlendMode; stage.style.clipPath=visual.clipPath; stage.style.borderRadius=visual.borderRadius; };
   } else {
     key = 'none';
@@ -702,8 +773,9 @@ function runtimeCanvas(rt){
 }
 function runtimeScaleSpec(rt){
   const c=runtimeCanvas(rt);
-  const scale=Math.min(innerWidth / c.width, innerHeight / c.height);
-  return {canvas:c, scale, left:(innerWidth - c.width * scale) / 2, top:(innerHeight - c.height * scale) / 2};
+  const surface=$('programSurface'),width=surface&&surface.clientWidth||innerWidth,height=surface&&surface.clientHeight||innerHeight;
+  const scale=Math.min(width / c.width, height / c.height);
+  return {canvas:c, scale, left:(width - c.width * scale) / 2, top:(height - c.height * scale) / 2};
 }
 function anchorOffset(anchor,w,h){
   const a=anchor || 'tl';
@@ -1027,7 +1099,8 @@ function renderRuntimeLowerThird(lt){
   }
   const rt=eff.runtime;
   const scaleSpec=runtimeScaleSpec(rt);
-  const key=innerWidth+'x'+innerHeight+'|'+JSON.stringify(rt);
+  const surface=$('programSurface');
+  const key=(surface&&surface.clientWidth||innerWidth)+'x'+(surface&&surface.clientHeight||innerHeight)+'|'+JSON.stringify(rt);
   if(canvas.dataset.templateId!==(rt.templateId || '') || canvas.dataset.instanceId!==(rt.instanceId || '')){
     canvas.dataset.lastError='';
   }
@@ -1179,7 +1252,7 @@ if (IS_ELECTRON){
   document.addEventListener('dblclick', () => api.toggleFullscreen());
 }
 
-window.addEventListener('resize', () => { lastKey=''; lastLtRuntimeKey=''; renderLowerThird(); });
+window.addEventListener('resize', () => { lastKey=''; lastLtRuntimeKey=''; applyOutputGeometry(); renderLowerThird(); });
 requestAnimationFrame(render);
 </script>
 </body>

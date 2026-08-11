@@ -34,6 +34,27 @@ check('COMPOSITOR_MULTIPLE_COMPOSITIONS_AND_PROJECTOR_MAPPING_OK', () => {
   );
 });
 
+check('COMPOSITOR_PROJECTOR_CORNER_PIN_AND_GRID_OK', () => {
+  const warp = compositor.normalizeProjectorWarp({
+    enabled: true,
+    corners: {
+      topLeft: { x: 4, y: 7 }, topRight: { x: 97, y: 2 },
+      bottomRight: { x: 92, y: 95 }, bottomLeft: { x: 8, y: 98 }
+    },
+    grid: { visible: true, columns: 12, rows: 9, opacity: 0.8 }
+  });
+  assert.strictEqual(compositor.projectorWarpIsValid(warp), true);
+  assert.deepStrictEqual(warp.corners.topLeft, { x: 4, y: 7 });
+  assert.deepStrictEqual(warp.corners.bottomRight, { x: 92, y: 95 });
+  assert.deepStrictEqual(warp.grid, { visible: true, columns: 12, rows: 9, opacity: 0.8 });
+  const guarded = compositor.normalizeProjectorWarp({
+    enabled: true,
+    corners: { topLeft: { x: 120, y: 120 }, topRight: { x: -20, y: -20 } }
+  });
+  assert.strictEqual(compositor.projectorWarpIsValid(guarded), true);
+  assert.ok(guarded.corners.topLeft.x < guarded.corners.topRight.x);
+});
+
 check('COMPOSITOR_LAYER_TYPES_AND_TRANSFORMS_OK', () => {
   const layer = compositor.normalizeLayer({ type: 'capture-card', inputId: 'card-1', x: -150, y: 250, w: 400, h: 0, rotation: 45, opacity: 2 });
   assert.strictEqual(layer.type, 'capture');

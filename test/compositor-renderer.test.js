@@ -144,7 +144,10 @@ app.whenReady().then(async () => {
     change(document.getElementById('canvasHeight'));
     document.getElementById('canvasFps').value='50';
     change(document.getElementById('canvasFps'));
-    outputConfigs=[normalizeOutputConfigUI({id:'projection-test',name:'Left projector',enabled:true,displayId:lastDisplays[0].id,mode:'fullscreen'},0)];
+    outputConfigs=[
+      normalizeOutputConfigUI({id:'projection-test',name:'Left projector',enabled:true,displayId:lastDisplays[0].id,mode:'fullscreen',outputCanvas:{width:1920,height:1080,fps:50,fit:'contain'}},0),
+      normalizeOutputConfigUI({id:'projection-square',name:'Square LED relay',enabled:true,displayId:lastDisplays[0].id,mode:'window',outputCanvas:{width:1000,height:1000,fps:30,fit:'cover'}},1)
+    ];
     renderOutputRows();
     document.getElementById('btnMappingAdd').click();
     const inspectorVisible=await wait(()=>!document.getElementById('mappingInspector').hidden);
@@ -155,6 +158,18 @@ app.whenReady().then(async () => {
     document.getElementById('mappingWidth').value='2688';
     document.getElementById('mappingHeight').value='768';
     document.getElementById('mappingBlendRight').value='96';
+    document.getElementById('mappingWarpEnabled').checked=true;
+    document.getElementById('mappingGridVisible').checked=true;
+    document.getElementById('mappingGridColumns').value='10';
+    document.getElementById('mappingGridRows').value='8';
+    document.getElementById('mappingWarpTlX').value='4';
+    document.getElementById('mappingWarpTlY').value='6';
+    document.getElementById('mappingWarpTrX').value='97';
+    document.getElementById('mappingWarpTrY').value='2';
+    document.getElementById('mappingWarpBrX').value='93';
+    document.getElementById('mappingWarpBrY').value='95';
+    document.getElementById('mappingWarpBlX').value='8';
+    document.getElementById('mappingWarpBlY').value='98';
     change(document.getElementById('mappingName'));
     const composition=cloneState(activeComposition());
     const mapping=cloneState(composition.mappings[0]);
@@ -163,16 +178,78 @@ app.whenReady().then(async () => {
     button.click();
     const reopened=await wait(()=>document.getElementById('compositionWorkspace').classList.contains('open'));
     const persisted=activeComposition().id===composition.id&&activeComposition().canvas.width===5376&&activeComposition().mappings[0]?.outputId==='projection-test';
-    return JSON.stringify({topButtonVisible,singleTopEntry,opened,panes,modalOpened,inspectorVisible,reopened,persisted,compositionId:composition.id,compositionCount:S.compositions.length,sceneCount:scenesForComposition(composition.id).length,canvas:composition.canvas,mapping,projected,overlayInside:document.querySelector('.composition-workspace-dialog').getBoundingClientRect().right<=innerWidth+1});
+    document.getElementById('btnCompositionClose').click();
+    document.getElementById('btnOpenOut').click();
+    const routerVisible=await wait(()=>document.getElementById('outputRouterOverlay').classList.contains('open'));
+    const routeCanvases=[...document.querySelectorAll('.output-route-editor')].map(row=>({
+      id:row.dataset.routeId,
+      width:Number(row.querySelector('.out-canvas-w').value),
+      height:Number(row.querySelector('.out-canvas-h').value),
+      fit:row.querySelector('.out-canvas-fit').value,
+      mapping:row.querySelector('.output-mapping-state').textContent.trim(),
+      mapVisible:row.querySelector('.out-map').getClientRects().length>0
+    }));
+    document.querySelector('.output-route-editor[data-route-id="projection-test"] .out-map').click();
+    const mapEntryOpened=await wait(()=>document.getElementById('compositionWorkspace').classList.contains('open')&&selectedProjectorMappingId===mapping.id);
+    const cornerHandles=[...document.querySelectorAll('.mapping-surface.selected .mapping-corner-handle')].filter(node=>getComputedStyle(node).display!=='none').length;
+    return JSON.stringify({topButtonVisible,singleTopEntry,opened,panes,modalOpened,inspectorVisible,reopened,persisted,routerVisible,routeCanvases,mapEntryOpened,cornerHandles,compositionId:composition.id,compositionCount:S.compositions.length,sceneCount:scenesForComposition(composition.id).length,canvas:composition.canvas,mapping,projected,overlayInside:document.querySelector('.composition-workspace-dialog').getBoundingClientRect().right<=innerWidth+1});
   })()`));
   check('COMPOSITION_WORKSPACE_VISIBLE_FROM_TOP_NAV_OK', compositionWorkflow.topButtonVisible && compositionWorkflow.singleTopEntry && compositionWorkflow.opened && compositionWorkflow.panes && compositionWorkflow.modalOpened && compositionWorkflow.inspectorVisible && compositionWorkflow.reopened && compositionWorkflow.overlayInside, JSON.stringify(compositionWorkflow));
-  check('COMPOSITION_CUSTOM_LED_MULTI_PROJECTOR_MAPPING_OK', compositionWorkflow.persisted && compositionWorkflow.compositionCount >= 2 && compositionWorkflow.sceneCount >= 1 && compositionWorkflow.canvas.width === 5376 && compositionWorkflow.canvas.height === 768 && compositionWorkflow.canvas.fps === 50 && compositionWorkflow.mapping.width === 2688 && compositionWorkflow.mapping.height === 768 && compositionWorkflow.mapping.blend.right === 96 && compositionWorkflow.projected.compositionId === compositionWorkflow.compositionId && compositionWorkflow.projected.projection.width === 2688, JSON.stringify(compositionWorkflow));
+  check('COMPOSITION_CUSTOM_LED_MULTI_PROJECTOR_MAPPING_OK', compositionWorkflow.persisted && compositionWorkflow.compositionCount >= 2 && compositionWorkflow.sceneCount >= 1 && compositionWorkflow.canvas.width === 5376 && compositionWorkflow.canvas.height === 768 && compositionWorkflow.canvas.fps === 50 && compositionWorkflow.mapping.width === 2688 && compositionWorkflow.mapping.height === 768 && compositionWorkflow.mapping.blend.right === 96 && compositionWorkflow.mapping.warp.enabled && compositionWorkflow.mapping.warp.grid.visible && compositionWorkflow.mapping.warp.grid.columns === 10 && compositionWorkflow.mapping.warp.corners.topLeft.x === 4 && compositionWorkflow.projected.compositionId === compositionWorkflow.compositionId && compositionWorkflow.projected.projection.width === 2688 && compositionWorkflow.projected.projection.warp.enabled && compositionWorkflow.cornerHandles === 4, JSON.stringify(compositionWorkflow));
+  check('OUTPUT_ROUTER_MULTI_CANVAS_AND_MAPPING_ENTRY_OK', compositionWorkflow.routerVisible && compositionWorkflow.mapEntryOpened && compositionWorkflow.routeCanvases.length === 2 && compositionWorkflow.routeCanvases[0].width === 1920 && compositionWorkflow.routeCanvases[0].height === 1080 && compositionWorkflow.routeCanvases[0].fit === 'contain' && compositionWorkflow.routeCanvases[0].mapping === 'Mapping active' && compositionWorkflow.routeCanvases[1].width === 1000 && compositionWorkflow.routeCanvases[1].height === 1000 && compositionWorkflow.routeCanvases[1].fit === 'cover' && compositionWorkflow.routeCanvases.every(route=>route.mapVisible), JSON.stringify(compositionWorkflow.routeCanvases));
   await new Promise(resolve => setTimeout(resolve, 180));
   fs.writeFileSync(path.join(artifactDirectory, 'composition-workspace-1280x800.png'), (await win.webContents.capturePage()).toPNG());
   win.webContents.sendInputEvent({ type: 'keyDown', keyCode: 'Escape' });
   win.webContents.sendInputEvent({ type: 'keyUp', keyCode: 'Escape' });
   if (!await waitFor(() => win.webContents.executeJavaScript(`!document.getElementById('compositionWorkspace').classList.contains('open')`))) throw new Error('Composition workspace did not close with Escape');
+  win.setContentSize(1159, 745);
+  if (!await waitFor(() => win.webContents.executeJavaScript('innerWidth===1159&&innerHeight===745'))) throw new Error('Output Routing reference viewport did not settle');
+  await win.webContents.executeJavaScript(`document.getElementById('btnOpenOut').click()`);
+  if (!await waitFor(() => win.webContents.executeJavaScript(`document.getElementById('outputRouterOverlay').classList.contains('open')`))) throw new Error('Output Routing did not open for visual evidence');
+  await new Promise(resolve => setTimeout(resolve, 120));
+  fs.writeFileSync(path.join(artifactDirectory, 'output-routing-1159x745.png'), (await win.webContents.capturePage()).toPNG());
+  await win.webContents.executeJavaScript(`document.getElementById('btnOutputRouterCloseX').click()`);
+  win.setContentSize(1280, 800);
+  if (!await waitFor(() => win.webContents.executeJavaScript('innerWidth===1280&&innerHeight===800'))) throw new Error('Controller viewport did not restore after Output Routing evidence');
   await win.webContents.executeJavaScript(`(()=>{const prior=window.__compositionTestRestore;outputConfigs=prior.outputs;selectComposition(prior.compositionId,{save:false});renderOutputRows();delete window.__compositionTestRestore;})()`);
+
+  const outputRendererWin = new BrowserWindow({
+    width: 1280, height: 720, show: false, backgroundColor: '#000000',
+    webPreferences: { preload: path.join(root, 'preload.js'), contextIsolation: true, nodeIntegration: false, backgroundThrottling: false }
+  });
+  await outputRendererWin.loadFile(path.join(root, 'output.html'));
+  if (!await waitFor(() => outputRendererWin.webContents.executeJavaScript(`typeof applyState==='function'&&!!document.getElementById('programContent')`))) throw new Error('output renderer did not initialize');
+  const outputGeometry = JSON.parse(await outputRendererWin.webContents.executeJavaScript(`(async()=>{
+    const state={
+      activeCompositionId:'composition-main',activeSceneId:'scene-main',
+      canvas:{width:5376,height:768,fps:50,background:'#000000',transparent:false},
+      scenes:[{id:'scene-main',name:'Mapped Program',compositionId:'composition-main',layers:[
+        {id:'background',type:'color',name:'Background',visible:true,color:'#16324d',x:0,y:0,w:100,h:100,opacity:1},
+        {id:'title',type:'text',name:'Mapped Program',visible:true,text:'MAPPED PROGRAM',color:'#ffffff',bg:'transparent',x:8,y:36,w:84,h:28,opacity:1,fontSize:9},
+        {id:'timer',type:'timer',name:'Timer',visible:true,x:68,y:5,w:27,h:18,opacity:1}
+      ]}],
+      mode:'countdown',running:false,durationMs:600000,remMs:600000,endAt:0,startAt:0,elapsedMs:0,overtime:true,
+      bgColor:'#000000',fgColor:'#ffffff',message:{text:'',flash:false},blackout:false,showProgress:false,transparent:false,lang:'en',cues:[],currentCue:-1,
+      _outputRoute:{id:'projection-test',role:'audience',liveAudio:false,outputCanvas:{width:1000,height:1000,fps:30,fit:'contain'},projection:{
+        id:'mapping-left',compositionId:'composition-main',enabled:true,x:2688,y:0,width:2688,height:768,canvasWidth:5376,canvasHeight:768,
+        blend:{left:64,right:0,top:0,bottom:0},warp:{enabled:true,corners:{topLeft:{x:4,y:6},topRight:{x:97,y:2},bottomRight:{x:93,y:95},bottomLeft:{x:8,y:98}},grid:{visible:true,columns:10,rows:8,opacity:.78}}
+      }}
+    };
+    applyState(state);
+    await new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)));
+    const surface=document.getElementById('programSurface'),content=document.getElementById('programContent'),grid=document.getElementById('projectionCalibration');
+    const style=getComputedStyle(surface),contentStyle=getComputedStyle(content),gridStyle=getComputedStyle(grid),rect=surface.getBoundingClientRect();
+    const contentMatrix=new DOMMatrix(contentStyle.transform);
+    return JSON.stringify({
+      surface:{width:parseFloat(surface.style.width),height:parseFloat(surface.style.height),boundsWidth:rect.width,boundsHeight:rect.height,transform:style.transform,mask:style.webkitMaskImage||style.maskImage},
+      content:{transform:contentStyle.transform,scaleX:contentMatrix.a,scaleY:contentMatrix.d,translateX:contentMatrix.e,translateY:contentMatrix.f,children:content.children.length,containsLowerThird:content.contains(document.getElementById('lowerThird'))},
+      grid:{display:gridStyle.display,size:gridStyle.backgroundSize,opacity:gridStyle.opacity,parent:grid.parentElement.id},
+      canvas:{width:surface.dataset.canvasWidth,height:surface.dataset.canvasHeight,fit:surface.dataset.canvasFit,warp:surface.dataset.warp}
+    });
+  })()`));
+  check('OUTPUT_RENDERER_FULL_PROGRAM_WARP_AND_CALIBRATION_GRID_OK', outputGeometry.surface.width === outputGeometry.surface.height && outputGeometry.surface.width >= 600 && outputGeometry.surface.transform !== 'none' && outputGeometry.surface.mask !== 'none' && outputGeometry.content.scaleX === 2 && outputGeometry.content.scaleY === 1 && Math.abs(outputGeometry.content.translateX + outputGeometry.surface.width) < 0.5 && outputGeometry.content.translateY === 0 && outputGeometry.content.containsLowerThird && outputGeometry.grid.display === 'block' && outputGeometry.grid.size.includes('10%') && outputGeometry.grid.parent === 'programSurface' && outputGeometry.canvas.width === '1000' && outputGeometry.canvas.height === '1000' && outputGeometry.canvas.fit === 'contain' && outputGeometry.canvas.warp === 'on', JSON.stringify(outputGeometry));
+  fs.writeFileSync(path.join(artifactDirectory, 'projector-mapped-output-1280x720.png'), (await outputRendererWin.webContents.capturePage()).toPNG());
+  outputRendererWin.destroy();
 
   const picturePath = path.join(profile, 'picture.svg');
   fs.writeFileSync(picturePath, '<svg xmlns="http://www.w3.org/2000/svg" width="640" height="360"><rect width="640" height="360" fill="#d9dde2"/><circle cx="320" cy="180" r="90" fill="#3b6d94"/></svg>');
@@ -616,7 +693,7 @@ app.whenReady().then(async () => {
   await new Promise(resolve => setTimeout(resolve, 160));
   fs.writeFileSync(path.join(artifactDirectory, 'compositor-demo-1600x900.png'), (await win.webContents.capturePage()).toPNG());
 
-  console.log(`COMPOSITOR_RENDERER_TESTS_OK ${checks}/40`);
+  console.log(`COMPOSITOR_RENDERER_TESTS_OK ${checks}/42`);
   win.destroy();
   fs.rmSync(profile, { recursive: true, force: true });
   app.quit();
