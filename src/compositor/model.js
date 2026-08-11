@@ -18,9 +18,13 @@
   const CANVAS_PRESETS = Object.freeze([
     { id: '1080p', label: 'HD 1080p', width: 1920, height: 1080 },
     { id: '720p', label: 'HD 720p', width: 1280, height: 720 },
+    { id: 'ultrawide', label: 'Ultrawide 2560', width: 2560, height: 1080 },
+    { id: 'dual-1080p', label: 'Dual wide 3840', width: 3840, height: 1080 },
+    { id: 'led-wide', label: 'LED wide 3840 x 960', width: 3840, height: 960 },
     { id: 'vertical', label: 'Vertical 1080', width: 1080, height: 1920 },
     { id: 'square', label: 'Square 1080', width: 1080, height: 1080 },
-    { id: 'uhd', label: 'UHD 4K', width: 3840, height: 2160 }
+    { id: 'uhd', label: 'UHD 4K', width: 3840, height: 2160 },
+    { id: 'dci-4k', label: 'DCI 4K', width: 4096, height: 2160 }
   ]);
 
   function finite(value, fallback, min, max) {
@@ -81,6 +85,55 @@
   function canvasAspect(canvas) {
     const clean = normalizeCanvas(canvas);
     return `${clean.width} / ${clean.height}`;
+  }
+
+  function normalizeProjectorMapping(raw = {}, index = 0, rawCanvas = {}) {
+    const source = raw && typeof raw === 'object' ? raw : {};
+    const canvas = normalizeCanvas(rawCanvas);
+    const x = integer(source.x, 0, 0, Math.max(0, canvas.width - 1));
+    const y = integer(source.y, 0, 0, Math.max(0, canvas.height - 1));
+    const width = integer(source.width, canvas.width - x, 1, Math.max(1, canvas.width - x));
+    const height = integer(source.height, canvas.height - y, 1, Math.max(1, canvas.height - y));
+    const blend = source.blend && typeof source.blend === 'object' ? source.blend : {};
+    return {
+      schemaVersion: SCHEMA_VERSION,
+      id: id(source.id, `mapping-${index + 1}`),
+      name: cleanName(source.name, `Projector ${index + 1}`),
+      enabled: source.enabled !== false,
+      outputId: id(source.outputId, ''),
+      x,
+      y,
+      width,
+      height,
+      blend: {
+        left: integer(blend.left, 0, 0, Math.min(512, Math.floor(width / 2))),
+        right: integer(blend.right, 0, 0, Math.min(512, Math.floor(width / 2))),
+        top: integer(blend.top, 0, 0, Math.min(512, Math.floor(height / 2))),
+        bottom: integer(blend.bottom, 0, 0, Math.min(512, Math.floor(height / 2)))
+      }
+    };
+  }
+
+  function normalizeComposition(raw = {}, index = 0, fallbackCanvas = {}) {
+    const source = raw && typeof raw === 'object' ? raw : {};
+    const canvas = normalizeCanvas(source.canvas || fallbackCanvas);
+    return {
+      schemaVersion: SCHEMA_VERSION,
+      id: id(source.id, `composition-${index + 1}`),
+      name: cleanName(source.name, index === 0 ? 'Main Composition' : `Composition ${index + 1}`),
+      canvas,
+      mappings: (Array.isArray(source.mappings) ? source.mappings : []).map((mapping, mappingIndex) => normalizeProjectorMapping(mapping, mappingIndex, canvas))
+    };
+  }
+
+  function normalizeCompositions(raw, fallbackCanvas = {}) {
+    const rows = Array.isArray(raw) && raw.length ? raw : [{ id: 'composition-main', name: 'Main Composition', canvas: fallbackCanvas }];
+    const seen = new Set();
+    return rows.map((row, index) => normalizeComposition(row, index, fallbackCanvas)).filter(row => {
+      if (seen.has(row.id)) return false;
+      seen.add(row.id);
+      return true;
+    });
   }
 
   function captureQuality(rawStatus = {}, rawCanvas = {}, fit = 'contain') {
@@ -311,6 +364,9 @@
     normalizeCanvas,
     canvasPreset,
     canvasAspect,
+    normalizeProjectorMapping,
+    normalizeComposition,
+    normalizeCompositions,
     captureQuality,
     normalizeLiveInput,
     normalizeLiveInputs,

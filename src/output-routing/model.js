@@ -11,6 +11,35 @@ function numberInRange(value, fallback, min, max) {
   return Math.max(min, Math.min(max, resolved));
 }
 
+function normalizeProjection(raw) {
+  if (!raw || typeof raw !== 'object' || raw.enabled === false) return null;
+  const canvasWidth = numberInRange(raw.canvasWidth, 1920, 1, 8192);
+  const canvasHeight = numberInRange(raw.canvasHeight, 1080, 1, 8192);
+  const x = numberInRange(raw.x, 0, 0, Math.max(0, canvasWidth - 1));
+  const y = numberInRange(raw.y, 0, 0, Math.max(0, canvasHeight - 1));
+  const width = numberInRange(raw.width, canvasWidth - x, 1, Math.max(1, canvasWidth - x));
+  const height = numberInRange(raw.height, canvasHeight - y, 1, Math.max(1, canvasHeight - y));
+  const blend = raw.blend && typeof raw.blend === 'object' ? raw.blend : {};
+  return {
+    id: String(raw.id || ''),
+    name: String(raw.name || 'Projector surface').slice(0, 160),
+    compositionId: String(raw.compositionId || ''),
+    enabled: true,
+    x,
+    y,
+    width,
+    height,
+    canvasWidth,
+    canvasHeight,
+    blend: {
+      left: numberInRange(blend.left, 0, 0, Math.min(512, Math.floor(width / 2))),
+      right: numberInRange(blend.right, 0, 0, Math.min(512, Math.floor(width / 2))),
+      top: numberInRange(blend.top, 0, 0, Math.min(512, Math.floor(height / 2))),
+      bottom: numberInRange(blend.bottom, 0, 0, Math.min(512, Math.floor(height / 2)))
+    }
+  };
+}
+
 function rememberDisplay(config, display) {
   if (!config || !display || !display.bounds) return config;
   config.displayId = display.id;
@@ -51,6 +80,9 @@ function normalizeConfig(config, index = 0, context = {}) {
     y: Number.isFinite(Number(source.y)) ? Number(source.y) : null,
     gridSize,
     gridCell,
+    compositionId: String(source.compositionId || ''),
+    mappingId: String(source.mappingId || ''),
+    projection: normalizeProjection(source.projection),
     frameless: mode === 'fullscreen' || mode === 'custom' || mode === 'grid' || !!source.frameless
   };
   const exact = displays.find(display => display.id === displayId);
@@ -117,4 +149,4 @@ function gridBounds(area, gridSize, gridCell) {
   return { x: area.x + column * width, y: area.y + row * height, width, height };
 }
 
-module.exports = { normalizeConfig, rememberDisplay, resolveDisplay, placedBounds, gridBounds };
+module.exports = { normalizeConfig, normalizeProjection, rememberDisplay, resolveDisplay, placedBounds, gridBounds };

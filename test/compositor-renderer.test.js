@@ -119,6 +119,61 @@ app.whenReady().then(async () => {
   const sceneControls = JSON.parse(await win.webContents.executeJavaScript(`JSON.stringify((()=>{const ids=['canvasSceneSelect','btnCanvasSceneAdd','btnCanvasSceneDuplicate','btnCanvasSceneDelete'];return {visible:ids.every(id=>document.getElementById(id).getClientRects().length>0),options:document.getElementById('canvasSceneSelect').options.length,duplicateTitle:document.getElementById('btnCanvasSceneDuplicate').title};})())`));
   check('COMPOSITOR_SCENE_CONTROLS_VISIBLE_OK', sceneControls.visible && sceneControls.options >= 1 && sceneControls.duplicateTitle.length > 0, JSON.stringify(sceneControls));
 
+  const compositionWorkflow = JSON.parse(await win.webContents.executeJavaScript(`(async()=>{
+    const wait=async fn=>{const started=Date.now();while(Date.now()-started<1800){if(fn())return true;await new Promise(resolve=>setTimeout(resolve,25));}return false;};
+    window.__compositionTestRestore={compositionId:S.activeCompositionId,outputs:cloneState(outputConfigs)};
+    const button=document.getElementById('btnCompositionWorkspace');
+    const topButtonVisible=button.getClientRects().length>0&&button.closest('.workspace-nav')!==null;
+    const singleTopEntry=document.querySelectorAll('#btnCompositionWorkspace').length===1&&!document.getElementById('btnOpenCompositionFromComposer')&&!document.querySelector('.compositor-title-copy');
+    button.click();
+    const opened=await wait(()=>document.getElementById('compositionWorkspace').classList.contains('open'));
+    const panes=['compositionList','compositionMapViewport','canvasPresetSel','projectorMappingList'].every(id=>document.getElementById(id).getClientRects().length>0);
+    document.getElementById('btnCompositionNew').click();
+    const modalOpened=await wait(()=>document.getElementById('modalOverlay').classList.contains('open'));
+    document.getElementById('modalInput').value='LED Wall 5376';
+    document.getElementById('modalOk').click();
+    await wait(()=>activeComposition().name==='LED Wall 5376');
+    const change=element=>element.dispatchEvent(new Event('change',{bubbles:true}));
+    document.getElementById('canvasPresetSel').value='custom'; change(document.getElementById('canvasPresetSel'));
+    document.getElementById('canvasWidth').value='5376';
+    document.getElementById('canvasHeight').value='768';
+    document.getElementById('canvasFps').value='50';
+    change(document.getElementById('canvasWidth'));
+    document.getElementById('canvasHeight').value='768';
+    document.getElementById('canvasFps').value='50';
+    change(document.getElementById('canvasHeight'));
+    document.getElementById('canvasFps').value='50';
+    change(document.getElementById('canvasFps'));
+    outputConfigs=[normalizeOutputConfigUI({id:'projection-test',name:'Left projector',enabled:true,displayId:lastDisplays[0].id,mode:'fullscreen'},0)];
+    renderOutputRows();
+    document.getElementById('btnMappingAdd').click();
+    const inspectorVisible=await wait(()=>!document.getElementById('mappingInspector').hidden);
+    document.getElementById('mappingName').value='Left LED processor';
+    document.getElementById('mappingOutput').value='projection-test';
+    document.getElementById('mappingX').value='0';
+    document.getElementById('mappingY').value='0';
+    document.getElementById('mappingWidth').value='2688';
+    document.getElementById('mappingHeight').value='768';
+    document.getElementById('mappingBlendRight').value='96';
+    change(document.getElementById('mappingName'));
+    const composition=cloneState(activeComposition());
+    const mapping=cloneState(composition.mappings[0]);
+    const projected=projectedOutputConfig(outputConfigs[0]);
+    document.getElementById('btnCompositionClose').click();
+    button.click();
+    const reopened=await wait(()=>document.getElementById('compositionWorkspace').classList.contains('open'));
+    const persisted=activeComposition().id===composition.id&&activeComposition().canvas.width===5376&&activeComposition().mappings[0]?.outputId==='projection-test';
+    return JSON.stringify({topButtonVisible,singleTopEntry,opened,panes,modalOpened,inspectorVisible,reopened,persisted,compositionId:composition.id,compositionCount:S.compositions.length,sceneCount:scenesForComposition(composition.id).length,canvas:composition.canvas,mapping,projected,overlayInside:document.querySelector('.composition-workspace-dialog').getBoundingClientRect().right<=innerWidth+1});
+  })()`));
+  check('COMPOSITION_WORKSPACE_VISIBLE_FROM_TOP_NAV_OK', compositionWorkflow.topButtonVisible && compositionWorkflow.singleTopEntry && compositionWorkflow.opened && compositionWorkflow.panes && compositionWorkflow.modalOpened && compositionWorkflow.inspectorVisible && compositionWorkflow.reopened && compositionWorkflow.overlayInside, JSON.stringify(compositionWorkflow));
+  check('COMPOSITION_CUSTOM_LED_MULTI_PROJECTOR_MAPPING_OK', compositionWorkflow.persisted && compositionWorkflow.compositionCount >= 2 && compositionWorkflow.sceneCount >= 1 && compositionWorkflow.canvas.width === 5376 && compositionWorkflow.canvas.height === 768 && compositionWorkflow.canvas.fps === 50 && compositionWorkflow.mapping.width === 2688 && compositionWorkflow.mapping.height === 768 && compositionWorkflow.mapping.blend.right === 96 && compositionWorkflow.projected.compositionId === compositionWorkflow.compositionId && compositionWorkflow.projected.projection.width === 2688, JSON.stringify(compositionWorkflow));
+  await new Promise(resolve => setTimeout(resolve, 180));
+  fs.writeFileSync(path.join(artifactDirectory, 'composition-workspace-1280x800.png'), (await win.webContents.capturePage()).toPNG());
+  win.webContents.sendInputEvent({ type: 'keyDown', keyCode: 'Escape' });
+  win.webContents.sendInputEvent({ type: 'keyUp', keyCode: 'Escape' });
+  if (!await waitFor(() => win.webContents.executeJavaScript(`!document.getElementById('compositionWorkspace').classList.contains('open')`))) throw new Error('Composition workspace did not close with Escape');
+  await win.webContents.executeJavaScript(`(()=>{const prior=window.__compositionTestRestore;outputConfigs=prior.outputs;selectComposition(prior.compositionId,{save:false});renderOutputRows();delete window.__compositionTestRestore;})()`);
+
   const picturePath = path.join(profile, 'picture.svg');
   fs.writeFileSync(picturePath, '<svg xmlns="http://www.w3.org/2000/svg" width="640" height="360"><rect width="640" height="360" fill="#d9dde2"/><circle cx="320" cy="180" r="90" fill="#3b6d94"/></svg>');
   const replacementPath = path.join(profile, 'replacement.svg');
@@ -450,6 +505,19 @@ app.whenReady().then(async () => {
 
   win.setBounds(smokeDisplay.clampToWorkArea({ width: 900, height: 600 }, target.workArea));
   if (!await waitFor(() => win.webContents.executeJavaScript('innerWidth===900 && innerHeight>=560'))) throw new Error('900x600 viewport did not settle');
+  const compactComposition = JSON.parse(await win.webContents.executeJavaScript(`(async()=>{
+    document.getElementById('btnCompositionWorkspace').click();
+    const started=Date.now();while(Date.now()-started<1200&&!document.getElementById('compositionWorkspace').classList.contains('open'))await new Promise(resolve=>setTimeout(resolve,25));
+    const grid=document.querySelector('.composition-workspace-grid'),dialog=document.querySelector('.composition-workspace-dialog'),settings=document.querySelector('.composition-settings-pane');
+    grid.scrollTop=grid.scrollHeight;
+    await new Promise(resolve=>setTimeout(resolve,80));
+    const dr=dialog.getBoundingClientRect(),sr=settings.getBoundingClientRect();
+    return JSON.stringify({open:document.getElementById('compositionWorkspace').classList.contains('open'),dialogInside:dr.left>=0&&dr.right<=innerWidth&&dr.top>=0&&dr.bottom<=innerHeight,horizontalFit:grid.scrollWidth<=grid.clientWidth+2,verticalScroll:grid.scrollHeight>grid.clientHeight,settingsReachable:sr.left>=dr.left&&sr.right<=dr.right+1&&sr.top<dr.bottom&&sr.bottom>dr.top,closeVisible:document.getElementById('btnCompositionClose').getClientRects().length>0,dialog:{left:dr.left,right:dr.right,top:dr.top,bottom:dr.bottom},settings:{left:sr.left,right:sr.right,top:sr.top,bottom:sr.bottom},scroll:{top:grid.scrollTop,height:grid.clientHeight,full:grid.scrollHeight}});
+  })()`));
+  check('COMPOSITION_900X600_WORKSPACE_REACHABLE_OK', compactComposition.open && compactComposition.dialogInside && compactComposition.horizontalFit && compactComposition.verticalScroll && compactComposition.settingsReachable && compactComposition.closeVisible, JSON.stringify(compactComposition));
+  await new Promise(resolve => setTimeout(resolve, 120));
+  fs.writeFileSync(path.join(artifactDirectory, 'composition-workspace-900x600.png'), (await win.webContents.capturePage()).toPNG());
+  await win.webContents.executeJavaScript(`document.getElementById('btnCompositionClose').click()`);
   const compact = JSON.parse(await win.webContents.executeJavaScript(`JSON.stringify((()=>{
     const root=document.getElementById('panelSources'); const actionElement=document.getElementById('inspDelete'); actionElement.scrollIntoView({block:'center'});
     const panel=root.getBoundingClientRect(); const add=document.getElementById('btnAddSource').getBoundingClientRect(); const action=actionElement.getBoundingClientRect(); const preview=document.getElementById('preview').getBoundingClientRect(); const program=document.getElementById('program').getBoundingClientRect();
@@ -475,7 +543,7 @@ app.whenReady().then(async () => {
   })())`));
   check('COMPOSITOR_DEMO_STARTS_PREVIEW_PROGRAM_IN_SYNC_OK', demoBaseline.visible && demoBaseline.direct === false && demoBaseline.selectedStatus === 'LIVE' && demoBaseline.statuses.length > 0 && demoBaseline.statuses.every(status=>status === 'LIVE') && demoBaseline.preview === demoBaseline.program, JSON.stringify(demoBaseline));
 
-  console.log(`COMPOSITOR_RENDERER_TESTS_OK ${checks}/35`);
+  console.log(`COMPOSITOR_RENDERER_TESTS_OK ${checks}/38`);
   win.destroy();
   fs.rmSync(profile, { recursive: true, force: true });
   app.quit();

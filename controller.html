@@ -3317,6 +3317,7 @@
   </button>
   <div class="workspace-nav" role="group" aria-label="Workspace">
     <button id="btnCompositor" class="ghost tb-drawerbtn compositor-button" type="button" aria-controls="panelSources" aria-expanded="false" data-i18n="compositorButton">Composer</button>
+    <button id="btnCompositionWorkspace" class="ghost tb-drawerbtn composition-button" type="button" aria-controls="compositionWorkspace" aria-expanded="false" data-i18n="compositionButton">Composition</button>
     <button id="btnSettingsDrawer" class="ghost tb-drawerbtn" aria-label="Settings" data-i18n="settingsBtn" data-i18n-aria="settingsBtn" data-i18n-title="settingsBtn" title="Settings">Settings</button>
   </div>
   <div class="legacy-output-picker" aria-hidden="true">
@@ -3503,19 +3504,12 @@
     <div class="panel panel-sources" id="panelSources" data-testid="compositor-panel">
       <div class="compositor-head">
         <div class="compositor-title">
-          <div class="compositor-title-copy"><span data-i18n="compositorEyebrow">Scene compositor</span></div>
           <label class="compositor-scene-select"><span data-i18n="canvasScene">Scene</span><select id="canvasSceneSelect" aria-label="Scene"></select></label>
           <div class="compositor-scene-actions">
             <button id="btnCanvasSceneAdd" class="ghost mini" type="button" data-i18n-title="newScene" title="New scene" aria-label="New scene">+</button>
             <button id="btnCanvasSceneDuplicate" class="ghost mini" type="button" data-i18n-title="duplicate" title="Duplicate" aria-label="Duplicate scene">⧉</button>
             <button id="btnCanvasSceneDelete" class="ghost mini danger" type="button" data-i18n-title="delete" title="Delete" aria-label="Delete scene">✕</button>
           </div>
-        </div>
-        <div class="canvas-controls" aria-label="Canvas settings">
-          <label><span data-i18n="canvasPreset">Preset</span><select id="canvasPresetSel"><option value="1080p">HD 1080p</option><option value="720p">HD 720p</option><option value="vertical">Vertical 1080</option><option value="square">Square 1080</option><option value="uhd">UHD 4K</option><option value="custom" data-i18n="canvasCustom">Custom</option></select></label>
-          <label><span>Width</span><input id="canvasWidth" type="number" min="320" max="8192" step="1" value="1920"></label><span class="canvas-times">×</span>
-          <label><span>Height</span><input id="canvasHeight" type="number" min="180" max="8192" step="1" value="1080"></label>
-          <label><span>FPS</span><input id="canvasFps" type="number" min="1" max="60" step="1" value="30"></label>
         </div>
         <div class="compositor-head-actions"><button id="btnAddSource" class="primary" data-i18n="addSource">Add source</button><button id="btnCompositorClose" class="ghost mini" type="button" aria-label="Close canvas" title="Close canvas">✕</button></div>
         <input type="file" id="sceneMediaFile" accept="image/*,video/*,application/pdf,.pdf" multiple hidden>
@@ -4131,6 +4125,95 @@
       <footer class="flow-foot"><span class="preflight-detail" id="reportFootStatus"></span><span class="grow"></span><button id="btnReportClose" class="ghost" data-i18n="reportClose">Close</button><button id="btnReportExport" class="primary" data-i18n="reportExport">Export CSV</button></footer>
     </section>
   </div>
+  <div class="flow-overlay composition-workspace-overlay" id="compositionWorkspace" role="dialog" aria-modal="true" aria-labelledby="compositionWorkspaceTitle" aria-hidden="true" data-testid="composition-workspace">
+    <section class="flow-dialog composition-workspace-dialog">
+      <header class="flow-head composition-workspace-head">
+        <div class="flow-head-copy">
+          <div class="flow-eyebrow" data-i18n="compositionEyebrow">CANVAS &amp; PROJECTOR MAPPING</div>
+          <h2 id="compositionWorkspaceTitle" data-i18n="compositionTitle">Composition</h2>
+          <p data-i18n="compositionBody">Build independent canvases for LED walls and map exact canvas regions to projector outputs.</p>
+        </div>
+        <div class="composition-head-summary"><strong id="compositionHeadName">Main Composition</strong><span id="compositionHeadSize">1920 x 1080 · 30 fps</span></div>
+        <button id="btnCompositionCloseX" class="ghost flow-close" aria-label="Close">✕</button>
+      </header>
+      <main class="composition-workspace-grid">
+        <aside class="composition-list-pane">
+          <div class="composition-pane-head"><div><span data-i18n="compositions">Compositions</span><strong id="compositionCount">1</strong></div></div>
+          <div class="composition-list-actions">
+            <button id="btnCompositionNew" class="primary" type="button" data-i18n="compositionNew">New</button>
+            <button id="btnCompositionDuplicate" class="ghost" type="button" data-i18n="duplicate">Duplicate</button>
+            <button id="btnCompositionRename" class="ghost" type="button" data-i18n="rename">Rename</button>
+            <button id="btnCompositionDelete" class="ghost danger" type="button" data-i18n="delete">Delete</button>
+          </div>
+          <div class="composition-list" id="compositionList" role="listbox" aria-label="Compositions"></div>
+          <div class="composition-scenes-summary">
+            <span data-i18n="compositionScenes">Scenes in this composition</span>
+            <strong id="compositionSceneCount">0</strong>
+            <p data-i18n="compositionSceneHint">New scenes created in Composer belong to the active composition.</p>
+          </div>
+        </aside>
+        <section class="composition-map-pane">
+          <div class="composition-map-toolbar">
+            <div><span data-i18n="mappingCanvas">Mapping canvas</span><strong id="mappingCanvasLabel">Main Composition</strong></div>
+            <div class="mapping-legend"><span><i class="mapping-swatch active"></i><span data-i18n="mappingSelected">Selected surface</span></span><span><i class="mapping-swatch assigned"></i><span data-i18n="mappingAssigned">Assigned output</span></span></div>
+          </div>
+          <div class="composition-map-viewport" id="compositionMapViewport">
+            <div class="composition-map-stage" id="compositionMapStage" aria-label="Projector mapping canvas">
+              <div class="composition-map-grid" aria-hidden="true"></div>
+              <div class="composition-safe-area" aria-hidden="true"></div>
+              <div id="projectorMappingSurfaces"></div>
+            </div>
+          </div>
+          <div class="composition-map-footer"><span id="mappingSelectionStatus" data-i18n="mappingEmpty">Add a projector surface, then assign it to an Output.</span><span id="mappingPixelReadout">0, 0 · 1920 x 1080</span></div>
+        </section>
+        <aside class="composition-settings-pane">
+          <section class="composition-settings-section canvas-settings-section">
+            <div class="composition-pane-head"><div><span data-i18n="canvasSettings">Canvas</span><small data-i18n="canvasSettingsHint">Native pixel space for this composition</small></div></div>
+            <label class="composition-field full"><span data-i18n="canvasPreset">Preset</span><select id="canvasPresetSel"></select></label>
+            <div class="composition-dimension-row">
+              <label class="composition-field"><span data-i18n="canvasWidth">Width</span><input id="canvasWidth" type="number" min="320" max="8192" step="1" value="1920"></label>
+              <span class="canvas-times">×</span>
+              <label class="composition-field"><span data-i18n="canvasHeight">Height</span><input id="canvasHeight" type="number" min="180" max="8192" step="1" value="1080"></label>
+              <label class="composition-field fps"><span>FPS</span><input id="canvasFps" type="number" min="1" max="60" step="1" value="30"></label>
+            </div>
+            <p class="composition-field-note" data-i18n="canvasCustomHint">Use Custom for the exact processor or LED wall pixel dimensions.</p>
+          </section>
+          <section class="composition-settings-section mapping-settings-section">
+            <div class="composition-pane-head"><div><span data-i18n="projectorMapping">Projector mapping</span><strong id="mappingCount">0</strong></div><button id="btnMappingAdd" class="primary" type="button" data-i18n="mappingAdd">Add surface</button></div>
+            <div class="projector-mapping-list" id="projectorMappingList"></div>
+            <div class="mapping-inspector" id="mappingInspector" hidden>
+              <label class="composition-field full"><span data-i18n="mappingName">Surface name</span><input id="mappingName" type="text" maxlength="160"></label>
+              <label class="composition-field full"><span data-i18n="mappingOutput">Output destination</span><select id="mappingOutput"></select></label>
+              <div class="mapping-geometry-grid">
+                <label class="composition-field"><span>X</span><input id="mappingX" type="number" min="0" max="8191"></label>
+                <label class="composition-field"><span>Y</span><input id="mappingY" type="number" min="0" max="8191"></label>
+                <label class="composition-field"><span data-i18n="canvasWidth">Width</span><input id="mappingWidth" type="number" min="1" max="8192"></label>
+                <label class="composition-field"><span data-i18n="canvasHeight">Height</span><input id="mappingHeight" type="number" min="1" max="8192"></label>
+              </div>
+              <details class="mapping-blend-details">
+                <summary data-i18n="mappingBlend">Soft-edge overlap</summary>
+                <div class="mapping-geometry-grid">
+                  <label class="composition-field"><span data-i18n="mappingLeft">Left</span><input id="mappingBlendLeft" type="number" min="0" max="512"></label>
+                  <label class="composition-field"><span data-i18n="mappingRight">Right</span><input id="mappingBlendRight" type="number" min="0" max="512"></label>
+                  <label class="composition-field"><span data-i18n="mappingTop">Top</span><input id="mappingBlendTop" type="number" min="0" max="512"></label>
+                  <label class="composition-field"><span data-i18n="mappingBottom">Bottom</span><input id="mappingBlendBottom" type="number" min="0" max="512"></label>
+                </div>
+              </details>
+              <div class="mapping-inspector-actions"><button id="btnMappingDuplicate" class="ghost" type="button" data-i18n="duplicate">Duplicate</button><button id="btnMappingDelete" class="ghost danger" type="button" data-i18n="delete">Delete</button></div>
+            </div>
+            <div class="mapping-empty" id="mappingEmpty" data-i18n="mappingEmpty">Add a projector surface, then assign it to an Output.</div>
+          </section>
+        </aside>
+      </main>
+      <footer class="flow-foot composition-workspace-foot">
+        <span class="composition-save-status" id="compositionSaveStatus" data-i18n="compositionSaved">Composition settings are saved with this show.</span>
+        <span class="grow"></span>
+        <button id="btnCompositionClose" class="ghost" data-i18n="compositionClose">Close</button>
+        <button id="btnCompositionSave" class="ghost" data-i18n="save">Save</button>
+        <button id="btnCompositionApply" class="primary" data-i18n="mappingApply">Apply mapping to outputs</button>
+      </footer>
+    </section>
+  </div>
   <div class="flow-overlay output-router-overlay" id="outputRouterOverlay" role="dialog" aria-modal="true" aria-labelledby="outputRouterTitle" aria-hidden="true" data-testid="output-router">
     <section class="flow-dialog output-router-dialog">
       <header class="flow-head output-router-head">
@@ -4318,7 +4401,8 @@ const I18N = {
     badgeLive:'U PROGRAMU', badgeSelected:'IZABRANO', badgeNext:'SLEDI', badgeSkipped:'PRESKOČENO',
     goSelectedBtn:'KRENI ▶ {name}', goSelectedShort:'GO IZABRANO &nbsp;(N)', goAutoStart:'Auto-start na GO', goAutoTitle:'GO odmah pokreće tajmer novog reda',
     advanced:'Preview / Program', advancedTitle:'Preview/Program režija (Cut/Transition). Isključeno: sve ide direktno na Program.',
-    rundownBtn:'Rundown', sidebarToggle:'Prikaži ili sakrij navigaciju', utilityToggle:'Prikaži ili sakrij poruke, status i izlaze', msgOutBtn:'Poruke', settingsBtn:'Podešavanja', compactMode:'Kompaktan režim', compactTitle:'Fokusirani operater: Program, GO i poruka; kontrole tajmera su u Podešavanjima.', fsMenu:'⛶ Pun ekran', closeMenu:'✕ Zatvori izlaz',
+    compositionClose:'Zatvori',
+    rundownBtn:'Rundown', sidebarToggle:'Prikaži ili sakrij navigaciju', utilityToggle:'Prikaži ili sakrij poruke, status i izlaze', msgOutBtn:'Poruke', settingsBtn:'Podešavanja', compositionButton:'Kompozicija', compositionOpen:'Otvori podešavanja kompozicije', compositionEyebrow:'CANVAS I MAPIRANJE PROJEKTORA', compositionTitle:'Kompozicija', compositionBody:'Napravite nezavisne canvase za LED zidove i mapirajte tačne delove canvasa na projektorske izlaze.', compositions:'Kompozicije', compositionNew:'Nova', compositionScenes:'Scene u ovoj kompoziciji', compositionSceneHint:'Nove scene napravljene u Composer-u pripadaju aktivnoj kompoziciji.', mappingCanvas:'Canvas za mapiranje', mappingSelected:'Izabrana površina', mappingAssigned:'Dodeljen izlaz', canvasSettings:'Canvas', canvasSettingsHint:'Izvorni piksel prostor ove kompozicije', canvasWidth:'Širina', canvasHeight:'Visina', canvasCustomHint:'Za LED zid izaberite Custom i unesite tačne piksel dimenzije procesora.', projectorMapping:'Mapiranje projektora', mappingAdd:'Dodaj površinu', mappingName:'Naziv površine', mappingOutput:'Izlazna destinacija', mappingBlend:'Soft-edge preklapanje', mappingLeft:'Levo', mappingRight:'Desno', mappingTop:'Gore', mappingBottom:'Dole', mappingEmpty:'Dodajte projektorsku površinu, pa je dodelite jednom Output-u.', compositionSaved:'Podešavanja kompozicije čuvaju se sa show-om.', mappingApply:'Primeni mapiranje na izlaze', save:'Sačuvaj', compactMode:'Kompaktan režim', compactTitle:'Fokusirani operater: Program, GO i poruka; kontrole tajmera su u Podešavanjima.', fsMenu:'⛶ Pun ekran', closeMenu:'✕ Zatvori izlaz',
     inspTitle:'Izvor', inspOpacity:'Prozirnost', inspFitTitle:'Kako medij popunjava kutiju',
     programLayer:'PROGRAM LEJER', layerNoneSelected:'Izaberite lejer', takeLayer:'PUSTI LEJER', hideLayer:'SKLONI', takeLayerShort:'PUSTI', hideLayerShort:'SKLONI',
     layerPreviewOnly:'SAMO PREVIEW', layerLive:'U PROGRAMU', layerChanged:'IZMENJEN', layerHidden:'SKLONJEN', layerDirect:'DIREKTNO', layerLivePreviewHidden:'U PROGRAMU · PREVIEW SKRIVEN',
@@ -4418,7 +4502,8 @@ const I18N = {
     badgeLive:'LIVE', badgeSelected:'SELECTED', badgeNext:'NEXT', badgeSkipped:'SKIPPED',
     goSelectedBtn:'GO ▶ {name}', goSelectedShort:'GO SELECTED &nbsp;(N)', goAutoStart:'Auto-start on GO', goAutoTitle:'GO immediately starts the new item timer',
     advanced:'Preview / Program', advancedTitle:'Preview/Program workflow (Cut/Transition). Off: everything goes straight to Program.',
-    rundownBtn:'Rundown', sidebarToggle:'Show or hide navigation', utilityToggle:'Show or hide messages, status and outputs', msgOutBtn:'Message', settingsBtn:'Settings', compactMode:'Compact mode', compactTitle:'Focused operator: Program, GO and message; timer controls are in Settings.', fsMenu:'⛶ Fullscreen', closeMenu:'✕ Close output',
+    compositionClose:'Close',
+    rundownBtn:'Rundown', sidebarToggle:'Show or hide navigation', utilityToggle:'Show or hide messages, status and outputs', msgOutBtn:'Message', settingsBtn:'Settings', compositionButton:'Composition', compositionOpen:'Open composition settings', compositionEyebrow:'CANVAS & PROJECTOR MAPPING', compositionTitle:'Composition', compositionBody:'Build independent canvases for LED walls and map exact canvas regions to projector outputs.', compositions:'Compositions', compositionNew:'New', compositionScenes:'Scenes in this composition', compositionSceneHint:'New scenes created in Composer belong to the active composition.', mappingCanvas:'Mapping canvas', mappingSelected:'Selected surface', mappingAssigned:'Assigned output', canvasSettings:'Canvas', canvasSettingsHint:'Native pixel space for this composition', canvasWidth:'Width', canvasHeight:'Height', canvasCustomHint:'Use Custom for the exact processor or LED wall pixel dimensions.', projectorMapping:'Projector mapping', mappingAdd:'Add surface', mappingName:'Surface name', mappingOutput:'Output destination', mappingBlend:'Soft-edge overlap', mappingLeft:'Left', mappingRight:'Right', mappingTop:'Top', mappingBottom:'Bottom', mappingEmpty:'Add a projector surface, then assign it to an Output.', compositionSaved:'Composition settings are saved with this show.', mappingApply:'Apply mapping to outputs', save:'Save', compactMode:'Compact mode', compactTitle:'Focused operator: Program, GO and message; timer controls are in Settings.', fsMenu:'⛶ Fullscreen', closeMenu:'✕ Close output',
     inspTitle:'Source', inspOpacity:'Opacity', inspFitTitle:'How media fills the box',
     programLayer:'PROGRAM LAYER', layerNoneSelected:'Select a layer', takeLayer:'TAKE LAYER', hideLayer:'HIDE', takeLayerShort:'TAKE', hideLayerShort:'HIDE',
     layerPreviewOnly:'PREVIEW ONLY', layerLive:'LIVE', layerChanged:'CHANGED', layerHidden:'HIDDEN', layerDirect:'DIRECT', layerLivePreviewHidden:'LIVE · PREVIEW HIDDEN',
@@ -4569,7 +4654,9 @@ let S = {
   lowerThird:{visible:false,name:'',title:'',meta:'',style:'clean',pos:'bl',durationSec:8,graphic:'',until:0,size:'m',accent:'#30d158'},
   lowerThirdAutoCue:false,
   font:'mono', clock12:false, goAutoStart:true,
-  canvasAspect:'16:9', canvas:{schemaVersion:1,width:1920,height:1080,fps:30,background:'#000000',transparent:false}, sceneFadeMs:300,
+  canvasAspect:'16:9', canvas:{schemaVersion:1,width:1920,height:1080,fps:30,background:'#000000',transparent:false},
+  compositions:[{schemaVersion:1,id:'composition-main',name:'Main Composition',canvas:{schemaVersion:1,width:1920,height:1080,fps:30,background:'#000000',transparent:false},mappings:[]}],
+  activeCompositionId:'composition-main', sceneFadeMs:300,
   liveInputs:[], primaryLiveAudio:false,programAudioDeviceId:'',monitorAudioDeviceId:'',
   studioDirect:false,
   scenes:[{id:'scene-default', name:'Scene 1', layers:[]}],
@@ -4662,6 +4749,7 @@ function cloneState(st){
   return JSON.parse(JSON.stringify(st || {}));
 }
 function outputSnapshot(st=S){
+  if(st===S&&typeof ensureScenes==='function') ensureScenes();
   const out=cloneState(st);
   out.cues=cues;
   out.currentCue=currentCue;
@@ -5650,6 +5738,8 @@ function collectShowDocument(){
         scenes:jsonCopy(compactScenesForSave(),[]),
         activeSceneId:String(S.activeSceneId||''),
         canvas:jsonCopy(PTCOMP.normalizeCanvas(S.canvas),{}),
+        compositions:jsonCopy(PTCOMP.normalizeCompositions(S.compositions,S.canvas),[]),
+        activeCompositionId:String(S.activeCompositionId||''),
         liveInputs:jsonCopy(PTCOMP.normalizeLiveInputs(S.liveInputs),[]),
         items:jsonCopy(contentItems,[]),
         selectedContentItemId:String(selectedContentItemId||''),
@@ -6072,6 +6162,8 @@ function applyShowDocument(document,{source='current',announce=true}={}){
       text:String(content.text||''),textOnly:!!content.textOnly,transparent:!!content.transparent,
       scenes:Array.isArray(content.scenes)&&content.scenes.length?jsonCopy(content.scenes,[]):S.scenes,activeSceneId:content.activeSceneId||S.activeSceneId,
       canvas:PTCOMP.normalizeCanvas(content.canvas||canvasFromLegacyAspect(outputs.canvasAspect||S.canvasAspect)),
+      compositions:PTCOMP.normalizeCompositions(content.compositions,content.canvas||canvasFromLegacyAspect(outputs.canvasAspect||S.canvasAspect)),
+      activeCompositionId:String(content.activeCompositionId||S.activeCompositionId||'composition-main'),
       liveInputs:PTCOMP.normalizeLiveInputs(content.liveInputs||[]),
       canvasAspect:outputs.canvasAspect||S.canvasAspect,sceneFadeMs:Number.isFinite(Number(outputs.sceneFadeMs))?Number(outputs.sceneFadeMs):S.sceneFadeMs,primaryLiveAudio:!!outputs.primaryLiveAudio,programAudioDeviceId:String(outputs.programAudioDeviceId||''),monitorAudioDeviceId:String(outputs.monitorAudioDeviceId||''),
       gridOn:!!outputs.gridOn,gridSize:Number(outputs.gridSize)||S.gridSize,gridCell:Number(outputs.gridCell)||0,fitWindow:!!outputs.fitWindow,
@@ -6199,7 +6291,7 @@ function saveSettings(){
     gridOn:S.gridOn,gridSize:S.gridSize,gridCell:S.gridCell,fitWindow:S.fitWindow,
     chimes:S.chimes,schedOn:S.schedOn,schedAt:S.schedAt,logo:S.logo,logoPos:S.logoPos,logoSize:S.logoSize,
     lowerThird:snapshotLowerThirdForSave(S.lowerThird),lowerThirdAutoCue:S.lowerThirdAutoCue,
-    font:S.font,clock12:S.clock12,goAutoStart:S.goAutoStart,studioDirect:S.studioDirect,canvasAspect:S.canvasAspect,canvas:PTCOMP.normalizeCanvas(S.canvas),sceneFadeMs:S.sceneFadeMs,
+    font:S.font,clock12:S.clock12,goAutoStart:S.goAutoStart,studioDirect:S.studioDirect,canvasAspect:S.canvasAspect,canvas:PTCOMP.normalizeCanvas(S.canvas),compositions:PTCOMP.normalizeCompositions(S.compositions,S.canvas),activeCompositionId:String(S.activeCompositionId||''),sceneFadeMs:S.sceneFadeMs,
     liveInputs:PTCOMP.normalizeLiveInputs(S.liveInputs),primaryLiveAudio:!!S.primaryLiveAudio,programAudioDeviceId:String(S.programAudioDeviceId||''),monitorAudioDeviceId:String(S.monitorAudioDeviceId||''),
     scenes:compactScenesForSave(),activeSceneId:S.activeSceneId,
     screenContentModel:{items:jsonCopy(contentItems,[]),selectedContentItemId,liveContentItemId}
@@ -6240,7 +6332,7 @@ function load(){
       lowerThird:{...S.lowerThird, ...(st.lowerThird||{}), visible:false, until:0},
       lowerThirdAutoCue:st.lowerThirdAutoCue??S.lowerThirdAutoCue,
       font:st.font??S.font, clock12:st.clock12??S.clock12, goAutoStart:st.goAutoStart??S.goAutoStart,
-      canvasAspect:st.canvasAspect??S.canvasAspect, canvas:PTCOMP.normalizeCanvas(st.canvas||canvasFromLegacyAspect(st.canvasAspect||S.canvasAspect)), sceneFadeMs:st.sceneFadeMs??S.sceneFadeMs,
+      canvasAspect:st.canvasAspect??S.canvasAspect, canvas:PTCOMP.normalizeCanvas(st.canvas||canvasFromLegacyAspect(st.canvasAspect||S.canvasAspect)), compositions:PTCOMP.normalizeCompositions(st.compositions,st.canvas||canvasFromLegacyAspect(st.canvasAspect||S.canvasAspect)), activeCompositionId:String(st.activeCompositionId||S.activeCompositionId||'composition-main'), sceneFadeMs:st.sceneFadeMs??S.sceneFadeMs,
       liveInputs:PTCOMP.normalizeLiveInputs(st.liveInputs||S.liveInputs),primaryLiveAudio:st.primaryLiveAudio??S.primaryLiveAudio,programAudioDeviceId:String(st.programAudioDeviceId??S.programAudioDeviceId??''),monitorAudioDeviceId:String(st.monitorAudioDeviceId??S.monitorAudioDeviceId??''),
       studioDirect:st.studioDirect??S.studioDirect,
       scenes:Array.isArray(st.scenes)&&st.scenes.length?st.scenes:S.scenes,
@@ -6312,15 +6404,36 @@ function legacyAspectForCanvas(canvas){
   if(Math.abs(ratio-1)<.015) return '1:1';
   return `${c.width}:${c.height}`;
 }
+function ensureCompositions(){
+  const fallback=PTCOMP.normalizeCanvas(S.canvas||canvasFromLegacyAspect(S.canvasAspect));
+  S.compositions=PTCOMP.normalizeCompositions(S.compositions,fallback);
+  if(!S.compositions.some(composition=>composition.id===S.activeCompositionId)) S.activeCompositionId=S.compositions[0].id;
+  return S.compositions.find(composition=>composition.id===S.activeCompositionId)||S.compositions[0];
+}
+function activeComposition(){ return ensureCompositions(); }
+function compositionForScene(scene){
+  const fallback=activeComposition();
+  return S.compositions.find(composition=>composition.id===String(scene&&scene.compositionId||''))||fallback;
+}
+function scenesForComposition(compositionId=S.activeCompositionId){
+  return (S.scenes||[]).filter(scene=>!scene.internal&&String(scene.compositionId||'')===String(compositionId||''));
+}
 function ensureScenes(){
-  S.canvas=PTCOMP.normalizeCanvas(S.canvas||canvasFromLegacyAspect(S.canvasAspect));
-  S.canvasAspect=legacyAspectForCanvas(S.canvas);
+  let composition=ensureCompositions();
   S.liveInputs=PTCOMP.normalizeLiveInputs(S.liveInputs);
-  if(!Array.isArray(S.scenes) || !S.scenes.length) S.scenes=[{id:'scene-default', name:'Scene 1', layers:[]}];
+  if(!Array.isArray(S.scenes) || !S.scenes.length) S.scenes=[{id:'scene-default', name:'Scene 1', compositionId:composition.id, layers:[]}];
   // Legacy ShowSlate projects used an empty scene named Timer as the timer canvas.
   S.scenes.forEach(sc=>{ if(Array.isArray(sc.layers) && !sc.layers.length && sc.id==='scene-default' && sc.name==='Timer') sc.layers.push(makeTimerLayer()); });
-  S.scenes=S.scenes.map((scene,index)=>PTCOMP.normalizeScene(scene,index));
-  if(!S.scenes.find(sc=>sc.id===S.activeSceneId)) S.activeSceneId=S.scenes[0].id;
+  S.scenes=S.scenes.map((scene,index)=>PTCOMP.normalizeScene({...scene,compositionId:String(scene.compositionId||composition.id)},index));
+  let active=S.scenes.find(scene=>scene.id===S.activeSceneId);
+  if(!active){ active=scenesForComposition(composition.id)[0]||S.scenes[0]; S.activeSceneId=active.id; }
+  if(active&&!active.internal){
+    const sceneComposition=S.compositions.find(row=>row.id===active.compositionId);
+    if(sceneComposition){ S.activeCompositionId=sceneComposition.id; composition=sceneComposition; }
+  }
+  S.canvas=PTCOMP.normalizeCanvas(composition.canvas);
+  composition.canvas=cloneState(S.canvas);
+  S.canvasAspect=legacyAspectForCanvas(S.canvas);
 }
 function normalizeContentWorkflow(raw={}){
   ensureScenes();
@@ -6354,6 +6467,7 @@ function selectContentItem(id,{previewOnly=false,reveal=true}={}){
   const item=contentItemById(id); if(!item) return false;
   selectedContentItemId=item.id;
   S.activeSceneId=item.sceneId;
+  ensureScenes(); applyCanvasAspect();
   monitorSceneKeys.pv=''; stageKeys.pv=''; lastKey='';
   if(S.studioDirect&&!previewOnly){ liveContentItemId=item.id; send(true,{takeContent:true}); }
   else saveSettings();
@@ -6386,7 +6500,7 @@ function clearLiveContent(){
   publishControlStatus();
 }
 function addContentScene(name,type,layers,extra={}){
-  const scene={id:makeId('scene'),name:String(name||'Content').slice(0,160),layers:Array.isArray(layers)?layers:[]};
+  const scene={id:makeId('scene'),name:String(name||'Content').slice(0,160),compositionId:activeComposition().id,layers:Array.isArray(layers)?layers:[]};
   S.scenes.push(scene);
   const item={id:makeId('content'),name:scene.name,type,sceneId:scene.id,assetId:String(extra.assetId||''),page:Math.max(1,Number(extra.page)||1)};
   contentItems.push(item);
@@ -6493,7 +6607,7 @@ function renderContentItems(){
     const name=document.createElement('div'); name.className='slide-name'; name.textContent=scene.name;
     const layerCount=(scene.layers||[]).length;
     const layerLabel=layerCount===1?t('sceneLayerOne'):textVars(t('sceneLayerCount'),{n:layerCount});
-    const sceneCanvas=PTCOMP.normalizeCanvas(scene.canvas||S.canvas||canvasFromLegacyAspect(S.canvasAspect));
+    const sceneCanvas=PTCOMP.normalizeCanvas(scene.canvas||compositionForScene(scene).canvas||S.canvas||canvasFromLegacyAspect(S.canvasAspect));
     const canvasLabel=scene.canvas?t('sceneCanvasCustom'):t('sceneCanvasShow');
     const meta=document.createElement('div'); meta.className='slide-meta';
     meta.textContent=`${layerLabel} · ${sceneCanvas.width}×${sceneCanvas.height}${scene.canvas?` · ${canvasLabel}`:''}`;
@@ -6554,6 +6668,7 @@ function sceneDirty(){
   lastKey='';
   liveInputConfigKey='';
   renderScenesUI();
+  applyCanvasAspect();
   renderContentItems();
   send();
 }
@@ -6581,7 +6696,8 @@ function renderScenesUI(){
   const sceneBox=$('sceneList'), layerBox=$('layerList');
   if(!sceneBox || !layerBox) return;
   sceneBox.innerHTML='';
-  S.scenes.forEach((sc,i)=>{
+  const compositionScenes=scenesForComposition();
+  compositionScenes.forEach((sc,i)=>{
     const row=document.createElement('div');
     row.className='scene-row'+(sc.id===S.activeSceneId?' active':'');
     row.innerHTML='<span class="scene-n"></span><div class="scene-name"></div><button class="mini rename" title="Preimenuj">✎</button>';
@@ -6598,7 +6714,7 @@ function renderScenesUI(){
   const canvasSceneSelect=$('canvasSceneSelect');
   if(canvasSceneSelect){
     canvasSceneSelect.innerHTML='';
-    S.scenes.forEach(scene=>{const option=document.createElement('option');option.value=scene.id;option.textContent=scene.name;canvasSceneSelect.appendChild(option);});
+    compositionScenes.forEach(scene=>{const option=document.createElement('option');option.value=scene.id;option.textContent=scene.name;canvasSceneSelect.appendChild(option);});
     canvasSceneSelect.value=sc.id;
   }
   layerBox.innerHTML='';
@@ -6676,7 +6792,7 @@ async function addScene(){
   ensureScenes();
   const name=await askText(t('sceneNamePrompt'), `Scene ${S.scenes.length+1}`);
   if(name===null) return;
-  const sc={id:makeId('scene'), name:name.trim()||`Scene ${S.scenes.length+1}`, layers:[]};
+  const sc={id:makeId('scene'), name:name.trim()||`Scene ${S.scenes.length+1}`, compositionId:activeComposition().id, layers:[]};
   S.scenes.push(sc); S.activeSceneId=sc.id; sceneDirty();
   const item=contentItems.find(row=>row.sceneId===sc.id); if(item) revealListRow($('slidesList'),document.querySelector(`#slidesList .slide-row[data-content-id="${CSS.escape(item.id)}"]`));
 }
@@ -6690,7 +6806,7 @@ function duplicateScene(){
 }
 function deleteScene(){
   ensureScenes();
-  if(S.scenes.length<=1) return;
+  if(scenesForComposition().length<=1) return;
   const idx=S.scenes.findIndex(sc=>sc.id===S.activeSceneId);
   if(idx<0) return;
   S.scenes.splice(idx,1);
@@ -6801,6 +6917,232 @@ function setCompositorOpen(flag,options={}){
 }
 $('btnCompositor')?.addEventListener('click',()=>setCompositorOpen(!document.body.classList.contains('compositor-open')));
 $('btnCompositorClose')?.addEventListener('click',()=>setCompositorOpen(false));
+
+let selectedProjectorMappingId='';
+function compositionById(id){
+  ensureCompositions();
+  return S.compositions.find(composition=>composition.id===String(id||''))||null;
+}
+function setCompositionSaveStatus(state='saved',message=''){
+  const status=$('compositionSaveStatus'); if(!status) return;
+  status.classList.toggle('pending',state==='pending');
+  status.classList.toggle('live',state==='live');
+  status.textContent=message||t(state==='pending'?'outputPendingState':'compositionSaved');
+}
+function compositionUsesLiveProgram(compositionId){
+  const liveScene=programState&&Array.isArray(programState.scenes)?programState.scenes.find(scene=>scene.id===programState.activeSceneId):null;
+  return !!liveScene&&String(liveScene.compositionId||'composition-main')===String(compositionId||'');
+}
+function selectComposition(compositionId,{save=true}={}){
+  ensureScenes();
+  const composition=compositionById(compositionId); if(!composition) return false;
+  S.activeCompositionId=composition.id;
+  S.canvas=PTCOMP.normalizeCanvas(composition.canvas);
+  let scene=(S.scenes||[]).find(row=>row.id===S.activeSceneId&&row.compositionId===composition.id&&!row.internal);
+  if(!scene) scene=scenesForComposition(composition.id)[0];
+  if(!scene){
+    scene={id:makeId('scene'),name:'Scene 1',compositionId:composition.id,layers:[]};
+    S.scenes.push(scene);
+  }
+  S.activeSceneId=scene.id;
+  selectedLayerId=(scene.layers||[]).at(-1)?.id||null;
+  monitorSceneKeys={pv:'',pg:''}; stageKeys={pv:'',pg:''}; lastKey='';
+  normalizeContentWorkflow();
+  applyCanvasAspect();
+  renderScenesUI(); renderContentItems(); renderCompositionWorkspace();
+  if(save) saveSettings();
+  return true;
+}
+function compositionDirty({routing=true}={}){
+  const composition=compositionById(S.activeCompositionId); if(!composition) return;
+  composition.canvas=PTCOMP.normalizeCanvas(S.canvas||composition.canvas);
+  S.canvas=cloneState(composition.canvas);
+  monitorSceneKeys={pv:'',pg:''}; stageKeys={pv:'',pg:''}; lastKey='';
+  applyCanvasAspect();
+  renderCompositionWorkspace(); renderScenesUI(); renderContentItems();
+  if(routing&&composition.mappings.some(mapping=>mapping.outputId)) markOutputRoutingDirty();
+  setCompositionSaveStatus(routing?'pending':'saved');
+  saveSettings();
+}
+function openCompositionWorkspace(){
+  closeTopbarMenu(); closeDrawers();
+  ensureScenes(); renderCompositionWorkspace();
+  const overlay=$('compositionWorkspace'); if(!overlay) return;
+  overlay.classList.add('open'); overlay.setAttribute('aria-hidden','false');
+  $('btnCompositionWorkspace')?.classList.add('active');
+  $('btnCompositionWorkspace')?.setAttribute('aria-expanded','true');
+  requestAnimationFrame(()=>{ fitCompositionMapStage(); $('btnCompositionCloseX')?.focus(); });
+}
+function closeCompositionWorkspace(){
+  const overlay=$('compositionWorkspace'); if(!overlay) return;
+  overlay.classList.remove('open'); overlay.setAttribute('aria-hidden','true');
+  $('btnCompositionWorkspace')?.classList.remove('active');
+  $('btnCompositionWorkspace')?.setAttribute('aria-expanded','false');
+}
+async function createComposition(){
+  const name=await askText(t('compositionTitle'),`Composition ${S.compositions.length+1}`); if(name===null) return;
+  const composition=PTCOMP.normalizeComposition({id:makeId('composition'),name:name.trim(),canvas:activeComposition().canvas,mappings:[]},S.compositions.length,S.canvas);
+  S.compositions.push(composition);
+  const scene={id:makeId('scene'),name:'Scene 1',compositionId:composition.id,layers:[]};
+  S.scenes.push(scene); S.activeSceneId=scene.id; S.activeCompositionId=composition.id;
+  selectedProjectorMappingId=''; selectComposition(composition.id);
+}
+function duplicateComposition(){
+  ensureScenes();
+  const source=activeComposition();
+  const composition=PTCOMP.normalizeComposition({...cloneState(source),id:makeId('composition'),name:`${source.name} copy`,mappings:(source.mappings||[]).map(mapping=>({...mapping,id:makeId('mapping'),outputId:''}))},S.compositions.length,source.canvas);
+  S.compositions.push(composition);
+  const sceneIds=new Map();
+  scenesForComposition(source.id).forEach(scene=>{
+    const copy=cloneState(scene); copy.id=makeId('scene'); copy.compositionId=composition.id; copy.layers=(copy.layers||[]).map(layer=>({...layer,id:makeId('layer')}));
+    sceneIds.set(scene.id,copy.id); S.scenes.push(copy);
+  });
+  const copiedItems=[];
+  contentItems.forEach(item=>{ const sceneId=sceneIds.get(item.sceneId); if(sceneId) copiedItems.push({...cloneState(item),id:makeId('content'),sceneId}); });
+  contentItems.push(...copiedItems);
+  S.activeCompositionId=composition.id; S.activeSceneId=[...sceneIds.values()][0]||S.activeSceneId;
+  selectedProjectorMappingId=''; selectComposition(composition.id);
+}
+async function renameComposition(){
+  const composition=activeComposition();
+  const name=await askText(t('compositionTitle'),composition.name); if(name===null) return;
+  composition.name=name.trim()||composition.name; compositionDirty({routing:false});
+}
+function deleteComposition(){
+  ensureScenes();
+  const composition=activeComposition();
+  if(S.compositions.length<=1) return;
+  if(compositionUsesLiveProgram(composition.id)){ alert(lang==='sr'?'Kompozicija koja je trenutno u Programu ne može da se obriše.':'The composition currently in Program cannot be deleted.'); return; }
+  if(!confirm(lang==='sr'?`Obrisati kompoziciju „${composition.name}” i njene scene?`:`Delete “${composition.name}” and its scenes?`)) return;
+  const removedSceneIds=new Set(scenesForComposition(composition.id).map(scene=>scene.id));
+  const removedItemIds=new Set(contentItems.filter(item=>removedSceneIds.has(item.sceneId)).map(item=>item.id));
+  S.scenes=S.scenes.filter(scene=>!removedSceneIds.has(scene.id));
+  contentItems=contentItems.filter(item=>!removedItemIds.has(item.id));
+  cues.forEach(cue=>{ if(removedItemIds.has(cue.contentItemId)){ cue.contentItemId=''; cue.autoTakeContentOnGo=false; } });
+  const index=S.compositions.findIndex(row=>row.id===composition.id);
+  S.compositions.splice(index,1);
+  selectedProjectorMappingId='';
+  selectComposition(S.compositions[Math.max(0,index-1)].id);
+  saveCues();
+}
+function selectedProjectorMapping(){
+  const composition=activeComposition();
+  return (composition.mappings||[]).find(mapping=>mapping.id===selectedProjectorMappingId)||null;
+}
+function addProjectorMapping(){
+  const composition=activeComposition(),canvas=composition.canvas,index=composition.mappings.length;
+  const split=index===0?1:2, width=Math.floor(canvas.width/split), x=index===0?0:(index%2)*width;
+  const mapping=PTCOMP.normalizeProjectorMapping({id:makeId('mapping'),name:`Projector ${index+1}`,x,y:0,width,height:canvas.height,outputId:''},index,canvas);
+  composition.mappings.push(mapping); selectedProjectorMappingId=mapping.id; compositionDirty();
+}
+function duplicateProjectorMapping(){
+  const composition=activeComposition(),source=selectedProjectorMapping(); if(!source) return;
+  const mapping=PTCOMP.normalizeProjectorMapping({...cloneState(source),id:makeId('mapping'),name:`${source.name} copy`,outputId:'',x:Math.min(composition.canvas.width-1,source.x+32),y:Math.min(composition.canvas.height-1,source.y+32)},composition.mappings.length,composition.canvas);
+  composition.mappings.push(mapping); selectedProjectorMappingId=mapping.id; compositionDirty();
+}
+function deleteProjectorMapping(){
+  const composition=activeComposition(),index=composition.mappings.findIndex(mapping=>mapping.id===selectedProjectorMappingId); if(index<0) return;
+  composition.mappings.splice(index,1); selectedProjectorMappingId=(composition.mappings[Math.min(index,composition.mappings.length-1)]||{}).id||''; compositionDirty();
+}
+function fitCompositionMapStage(){
+  const viewport=$('compositionMapViewport'),stage=$('compositionMapStage'); if(!viewport||!stage||!viewport.getClientRects().length) return;
+  const canvas=activeComposition().canvas,availableWidth=Math.max(1,viewport.clientWidth-28),availableHeight=Math.max(1,viewport.clientHeight-28),ratio=canvas.width/canvas.height;
+  let width=Math.min(availableWidth,availableHeight*ratio),height=width/ratio;
+  if(height>availableHeight){ height=availableHeight; width=height*ratio; }
+  stage.style.width=`${Math.max(1,width)}px`; stage.style.height=`${Math.max(1,height)}px`; stage.style.aspectRatio=`${canvas.width} / ${canvas.height}`;
+}
+function updateMappingSurfaceElement(element,mapping,canvas){
+  element.style.left=`${mapping.x/canvas.width*100}%`; element.style.top=`${mapping.y/canvas.height*100}%`;
+  element.style.width=`${mapping.width/canvas.width*100}%`; element.style.height=`${mapping.height/canvas.height*100}%`;
+  const detail=element.querySelector('.mapping-surface-copy span'); if(detail) detail.textContent=`${mapping.x}, ${mapping.y} · ${mapping.width} x ${mapping.height}`;
+}
+function fillMappingInspector(mapping){
+  const inspector=$('mappingInspector'),empty=$('mappingEmpty');
+  if(!mapping){ inspector.hidden=true; empty.hidden=false; return; }
+  inspector.hidden=false; empty.hidden=true;
+  $('mappingName').value=mapping.name; $('mappingX').value=mapping.x; $('mappingY').value=mapping.y; $('mappingWidth').value=mapping.width; $('mappingHeight').value=mapping.height;
+  $('mappingBlendLeft').value=mapping.blend.left; $('mappingBlendRight').value=mapping.blend.right; $('mappingBlendTop').value=mapping.blend.top; $('mappingBlendBottom').value=mapping.blend.bottom;
+  const output=$('mappingOutput'); output.innerHTML='';
+  const none=document.createElement('option'); none.value=''; none.textContent=lang==='sr'?'Nije dodeljeno':'Not assigned'; output.appendChild(none);
+  outputConfigs.forEach(config=>{ const option=document.createElement('option'); option.value=config.id; option.textContent=`${config.name} · ${outputDisplayName(config.displayId,config)}`; output.appendChild(option); });
+  if(mapping.outputId&&!outputConfigs.some(config=>config.id===mapping.outputId)){ const option=document.createElement('option'); option.value=mapping.outputId; option.textContent=lang==='sr'?'Nedostupan izlaz':'Unavailable output'; output.appendChild(option); }
+  output.value=mapping.outputId||'';
+}
+function beginMappingGesture(event,mapping,element){
+  if(event.button!==0) return;
+  event.preventDefault(); selectedProjectorMappingId=mapping.id;
+  document.querySelectorAll('.mapping-surface').forEach(node=>node.classList.toggle('selected',node===element));
+  document.querySelectorAll('.projector-mapping-tab').forEach(node=>node.classList.toggle('active',node.dataset.mappingId===mapping.id));
+  fillMappingInspector(mapping);
+  const canvas=activeComposition().canvas,stage=$('compositionMapStage'),rect=stage.getBoundingClientRect(),start={x:event.clientX,y:event.clientY,mapping:cloneState(mapping)},resize=!!event.target.closest('.mapping-resize-handle');
+  const move=moveEvent=>{
+    const dx=(moveEvent.clientX-start.x)/Math.max(1,rect.width)*canvas.width,dy=(moveEvent.clientY-start.y)/Math.max(1,rect.height)*canvas.height;
+    if(resize){ mapping.width=start.mapping.width+dx; mapping.height=start.mapping.height+dy; }
+    else { mapping.x=start.mapping.x+dx; mapping.y=start.mapping.y+dy; }
+    Object.assign(mapping,PTCOMP.normalizeProjectorMapping(mapping,0,canvas));
+    updateMappingSurfaceElement(element,mapping,canvas); fillMappingInspector(mapping);
+    $('mappingPixelReadout').textContent=`${mapping.x}, ${mapping.y} · ${mapping.width} x ${mapping.height}`;
+  };
+  const end=()=>{ document.removeEventListener('pointermove',move); document.removeEventListener('pointerup',end); compositionDirty(); };
+  document.addEventListener('pointermove',move); document.addEventListener('pointerup',end,{once:true});
+}
+function renderCompositionWorkspace(){
+  ensureScenes();
+  const composition=activeComposition(),index=S.compositions.findIndex(row=>row.id===composition.id);
+  S.compositions[index]=PTCOMP.normalizeComposition(composition,index,S.canvas);
+  const active=S.compositions[index]; S.canvas=cloneState(active.canvas);
+  if(!active.mappings.some(mapping=>mapping.id===selectedProjectorMappingId)) selectedProjectorMappingId=(active.mappings[0]||{}).id||'';
+  $('compositionHeadName').textContent=active.name; $('compositionHeadSize').textContent=`${active.canvas.width} x ${active.canvas.height} · ${active.canvas.fps} fps`;
+  $('mappingCanvasLabel').textContent=active.name; $('compositionCount').textContent=String(S.compositions.length); $('compositionSceneCount').textContent=String(scenesForComposition(active.id).length);
+  const list=$('compositionList'); list.innerHTML='';
+  S.compositions.forEach(compositionRow=>{
+    const button=document.createElement('button'); button.type='button'; button.className='composition-row'+(compositionRow.id===active.id?' active':''); button.setAttribute('role','option'); button.setAttribute('aria-selected',compositionRow.id===active.id?'true':'false');
+    const name=document.createElement('strong'); name.textContent=compositionRow.name; const size=document.createElement('span'); size.textContent=`${compositionRow.canvas.width} x ${compositionRow.canvas.height} · ${compositionRow.canvas.fps} fps`; const count=document.createElement('em'); count.textContent=`${scenesForComposition(compositionRow.id).length} ${lang==='sr'?'scena':'scenes'}`;
+    button.append(name,size,count); button.addEventListener('click',()=>selectComposition(compositionRow.id)); list.appendChild(button);
+  });
+  const preset=$('canvasPresetSel');
+  if(preset&&!preset.options.length){ PTCOMP.CANVAS_PRESETS.forEach(row=>{ const option=document.createElement('option'); option.value=row.id; option.textContent=row.label; preset.appendChild(option); }); const custom=document.createElement('option'); custom.value='custom'; custom.textContent=lang==='sr'?'Custom / LED':'Custom / LED'; preset.appendChild(custom); }
+  preset.value=PTCOMP.canvasPreset(active.canvas); $('canvasWidth').value=String(active.canvas.width); $('canvasHeight').value=String(active.canvas.height); $('canvasFps').value=String(active.canvas.fps);
+  $('mappingCount').textContent=String(active.mappings.length);
+  const tabs=$('projectorMappingList'),surfaces=$('projectorMappingSurfaces'); tabs.innerHTML=''; surfaces.innerHTML='';
+  active.mappings.forEach(mapping=>{
+    const tab=document.createElement('button'); tab.type='button'; tab.dataset.mappingId=mapping.id; tab.className='projector-mapping-tab'+(mapping.id===selectedProjectorMappingId?' active':'')+(mapping.outputId?' assigned':''); tab.textContent=mapping.name; tab.addEventListener('click',()=>{selectedProjectorMappingId=mapping.id;renderCompositionWorkspace();}); tabs.appendChild(tab);
+    const surface=document.createElement('button'); surface.type='button'; surface.className='mapping-surface'+(mapping.id===selectedProjectorMappingId?' selected':'')+(mapping.outputId?' assigned':''); surface.setAttribute('aria-label',mapping.name);
+    const copy=document.createElement('span'); copy.className='mapping-surface-copy'; const name=document.createElement('strong'); name.textContent=mapping.name; const detail=document.createElement('span'); copy.append(name,detail); const handle=document.createElement('span'); handle.className='mapping-resize-handle'; handle.setAttribute('aria-hidden','true'); surface.append(copy,handle);
+    updateMappingSurfaceElement(surface,mapping,active.canvas); surface.addEventListener('pointerdown',event=>beginMappingGesture(event,mapping,surface)); surfaces.appendChild(surface);
+  });
+  const selected=selectedProjectorMapping(); fillMappingInspector(selected);
+  $('mappingSelectionStatus').textContent=selected?(selected.outputId?(lang==='sr'?'Površina je dodeljena izlazu.':'Surface assigned to an output.'):(lang==='sr'?'Površina još nije dodeljena izlazu.':'Surface is not assigned to an output.')):t('mappingEmpty');
+  $('mappingPixelReadout').textContent=selected?`${selected.x}, ${selected.y} · ${selected.width} x ${selected.height}`:`0, 0 · ${active.canvas.width} x ${active.canvas.height}`;
+  $('btnCompositionDelete').disabled=S.compositions.length<=1||compositionUsesLiveProgram(active.id);
+  requestAnimationFrame(fitCompositionMapStage);
+}
+function updateSelectedMappingFromInspector(){
+  const composition=activeComposition(),mapping=selectedProjectorMapping(); if(!mapping) return;
+  const nextOutput=String($('mappingOutput').value||'');
+  if(nextOutput) S.compositions.forEach(row=>(row.mappings||[]).forEach(item=>{ if(item.id!==mapping.id&&item.outputId===nextOutput) item.outputId=''; }));
+  Object.assign(mapping,PTCOMP.normalizeProjectorMapping({...mapping,name:$('mappingName').value,outputId:nextOutput,x:+$('mappingX').value,y:+$('mappingY').value,width:+$('mappingWidth').value,height:+$('mappingHeight').value,blend:{left:+$('mappingBlendLeft').value,right:+$('mappingBlendRight').value,top:+$('mappingBlendTop').value,bottom:+$('mappingBlendBottom').value}},composition.mappings.indexOf(mapping),composition.canvas));
+  compositionDirty();
+}
+$('btnCompositionWorkspace')?.addEventListener('click',openCompositionWorkspace);
+$('btnCompositionCloseX')?.addEventListener('click',closeCompositionWorkspace);
+$('btnCompositionClose')?.addEventListener('click',closeCompositionWorkspace);
+$('compositionWorkspace')?.addEventListener('click',event=>{ if(event.target===$('compositionWorkspace')) closeCompositionWorkspace(); });
+$('btnCompositionNew')?.addEventListener('click',createComposition);
+$('btnCompositionDuplicate')?.addEventListener('click',duplicateComposition);
+$('btnCompositionRename')?.addEventListener('click',renameComposition);
+$('btnCompositionDelete')?.addEventListener('click',deleteComposition);
+$('btnMappingAdd')?.addEventListener('click',addProjectorMapping);
+$('btnMappingDuplicate')?.addEventListener('click',duplicateProjectorMapping);
+$('btnMappingDelete')?.addEventListener('click',deleteProjectorMapping);
+['mappingName','mappingOutput','mappingX','mappingY','mappingWidth','mappingHeight','mappingBlendLeft','mappingBlendRight','mappingBlendTop','mappingBlendBottom'].forEach(id=>$(id)?.addEventListener('change',updateSelectedMappingFromInspector));
+$('btnCompositionSave')?.addEventListener('click',()=>{ saveSettings(); scheduleShowAutosave('composition',80); setCompositionSaveStatus('saved'); });
+$('btnCompositionApply')?.addEventListener('click',()=>{
+  const applied=applyOutputConfigs();
+  if(applied) setCompositionSaveStatus('live',lang==='sr'?'Mapiranje je primenjeno na izlaze.':'Mapping applied to outputs.');
+  else setCompositionSaveStatus('pending',$('outputRouterStatus')?.textContent||(lang==='sr'?'Proverite izlazne destinacije pre primene.':'Check output destinations before applying.'));
+});
+window.addEventListener('resize',fitCompositionMapStage);
 
 let sourceReplaceLayerId='';
 let sourceDesktopKind='all';
@@ -7113,7 +7455,10 @@ function normalizeOutputConfigUI(cfg={}, i=0){
     x:Number.isFinite(Number(cfg.x))?Number(cfg.x):0,
     y:Number.isFinite(Number(cfg.y))?Number(cfg.y):0,
     gridSize:Math.max(1, Math.min(12, parseInt(cfg.gridSize,10)||3)),
-    gridCell:Math.max(0, parseInt(cfg.gridCell,10)||0)
+    gridCell:Math.max(0, parseInt(cfg.gridCell,10)||0),
+    compositionId:String(cfg.compositionId||''),
+    mappingId:String(cfg.mappingId||''),
+    projection:cfg.projection&&typeof cfg.projection==='object'?jsonCopy(cfg.projection,null):null
   };
   const display=lastDisplays.find(item=>Number(item.id)===normalized.displayId);
   if(display&&!normalized.displayLabel){ normalized.displayLabel=display.label||''; normalized.displayWidth=display.width||0; normalized.displayHeight=display.height||0; }
@@ -7370,6 +7715,15 @@ function addOutputConfig(options={}){
   saveOutputConfigsLocal(); markOutputRoutingDirty(); renderOutputRows();
   if(options.open!==false) openOutputRouter();
 }
+function projectedOutputConfig(config){
+  ensureCompositions();
+  for(const composition of S.compositions){
+    const mapping=(composition.mappings||[]).find(row=>row.enabled!==false&&String(row.outputId||'')===String(config.id||''));
+    if(!mapping) continue;
+    return {...config,compositionId:composition.id,mappingId:mapping.id,projection:{id:mapping.id,name:mapping.name,compositionId:composition.id,enabled:true,x:mapping.x,y:mapping.y,width:mapping.width,height:mapping.height,canvasWidth:composition.canvas.width,canvasHeight:composition.canvas.height,blend:cloneState(mapping.blend||{})}};
+  }
+  return {...config,compositionId:'',mappingId:'',projection:null};
+}
 function applyOutputConfigs(){
   outputConfigs=outputConfigs.map(normalizeOutputConfigUI);
   outputConfigs.forEach(reconcileOutputDisplayUI);
@@ -7385,7 +7739,7 @@ function applyOutputConfigs(){
     renderOutputRows(); return false;
   }
   saveOutputConfigsLocal();
-  api.setOutputConfigs(outputConfigs);
+  api.setOutputConfigs(outputConfigs.map(projectedOutputConfig));
   outputRoutingDirty=false;
   const status=$('outputRouterStatus'); if(status) status.textContent=t('outputRouteApplied');
   renderOutputRows();
@@ -7431,6 +7785,8 @@ if(typeof ResizeObserver!=='undefined'){
 window.addEventListener('resize',fitMonitorCanvases);
 function applyCanvasAspect(){
   S.canvas=PTCOMP.normalizeCanvas({...S.canvas,...(!S.canvas?canvasFromLegacyAspect(S.canvasAspect):{}),background:S.bgColor,transparent:!!S.transparent});
+  const composition=compositionById(S.activeCompositionId);
+  if(composition) composition.canvas=cloneState(S.canvas);
   const aw=S.canvas.width, ah=S.canvas.height;
   S.canvasAspect=legacyAspectForCanvas(S.canvas);
   document.documentElement.style.setProperty('--canvas-ar',aw+' / '+ah);
@@ -7444,15 +7800,16 @@ function applyCanvasAspect(){
   if($('canvasPresetSel')) $('canvasPresetSel').value=PTCOMP.canvasPreset(S.canvas);
   if($('canvasAspectSel')&&[...$('canvasAspectSel').options].some(option=>option.value===S.canvasAspect)) $('canvasAspectSel').value=S.canvasAspect;
 }
-$('canvasAspectSel').addEventListener('change',e=>{ S.canvasAspect=e.target.value; S.canvas=PTCOMP.normalizeCanvas(canvasFromLegacyAspect(e.target.value)); applyCanvasAspect(); lastKey=''; stageKeys={pv:'',pg:''}; send(); });
+$('canvasAspectSel').addEventListener('change',e=>{ S.canvasAspect=e.target.value; S.canvas=PTCOMP.normalizeCanvas(canvasFromLegacyAspect(e.target.value)); applyCanvasAspect(); lastKey=''; stageKeys={pv:'',pg:''}; compositionDirty(); send(); });
 $('canvasPresetSel')?.addEventListener('change',event=>{
+  if(event.target.value==='custom') return;
   const preset=PTCOMP.CANVAS_PRESETS.find(row=>row.id===event.target.value);
   if(preset) S.canvas=PTCOMP.normalizeCanvas({...S.canvas,width:preset.width,height:preset.height});
-  applyCanvasAspect(); monitorSceneKeys={pv:'',pg:''}; stageKeys={pv:'',pg:''}; send();
+  compositionDirty();
 });
 function applyCustomCanvas(){
   S.canvas=PTCOMP.normalizeCanvas({...S.canvas,width:+$('canvasWidth').value,height:+$('canvasHeight').value,fps:+$('canvasFps').value});
-  applyCanvasAspect(); monitorSceneKeys={pv:'',pg:''}; stageKeys={pv:'',pg:''}; send();
+  compositionDirty();
 }
 $('canvasWidth')?.addEventListener('change',applyCustomCanvas); $('canvasHeight')?.addEventListener('change',applyCustomCanvas); $('canvasFps')?.addEventListener('change',applyCustomCanvas);
 $('sceneFadeSel').addEventListener('change',e=>{ S.sceneFadeMs=+e.target.value||0; send(); });
@@ -9965,6 +10322,7 @@ window.addEventListener('resize',()=>{ if(document.body.classList.contains('tb-o
 document.addEventListener('keydown',e=>{
   if(e.key!=='Escape') return;
   if($('sourceOverlay')?.classList.contains('open')){ e.preventDefault(); closeSourceDialog(); return; }
+  if($('compositionWorkspace')?.classList.contains('open')){ e.preventDefault(); closeCompositionWorkspace(); return; }
   if($('outputRouterOverlay')?.classList.contains('open')){ e.preventDefault(); closeOutputRouter(); return; }
   if($('newShowOverlay')?.classList.contains('open')){ e.preventDefault(); closeNewShowWizard(); return; }
   if($('preflightOverlay')?.classList.contains('open')){ e.preventDefault(); closePreflight(); return; }

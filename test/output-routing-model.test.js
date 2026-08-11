@@ -42,4 +42,10 @@ check('OUTPUT_MODEL_CUSTOM_BOUNDS_CLAMPED_OK', clamped.x === -320 && clamped.y =
 const grid = routing.gridBounds(philips.bounds, 3, 8);
 check('OUTPUT_MODEL_GRID_BOUNDS_OK', grid.x === -640 && grid.y === 720 && grid.width === 640 && grid.height === 360);
 
+const projected = routing.normalizeConfig({
+  id: 'route-projected', displayId: 3, mode: 'fullscreen', compositionId: 'composition-led', mappingId: 'mapping-left',
+  projection: { id: 'mapping-left', name: 'Left projector', compositionId: 'composition-led', x: 0, y: 0, width: 2688, height: 768, canvasWidth: 5376, canvasHeight: 768, blend: { right: 96 } }
+}, 1, { displays, controlDisplayId: 1 });
+check('OUTPUT_MODEL_PROJECTOR_MAPPING_PRESERVED_OK', projected.compositionId === 'composition-led' && projected.mappingId === 'mapping-left' && projected.projection.width === 2688 && projected.projection.canvasWidth === 5376 && projected.projection.blend.right === 96);
+
 console.log(`OUTPUT_ROUTING_MODEL_TESTS_OK count=${checks}`);

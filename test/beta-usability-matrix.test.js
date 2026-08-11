@@ -174,12 +174,14 @@ app.whenReady().then(async () => {
     panel:__visible(document.getElementById('panelSources')),
     settingsHidden:!__visible(document.getElementById('setupWrap')),
     headInside:__inside(document.querySelector('.compositor-head')),
-    titleFits:__fits(document.querySelector('.compositor-title-copy span')),
+    inlineCompositionRemoved:!document.querySelector('.compositor-title-copy'),
     addSourceInside:__inside(document.getElementById('btnAddSource')),
-    canvasControlsInside:__insideX(document.querySelector('.canvas-controls')),
+    compositionButton:__inside(document.getElementById('btnCompositionWorkspace')),
+    canvasControlsInWorkspace:document.getElementById('canvasPresetSel')?.closest('#compositionWorkspace')===document.getElementById('compositionWorkspace'),
+    canvasControlsRemovedFromComposer:!document.getElementById('panelSources').querySelector('#canvasPresetSel'),
     panelOverflowX:document.getElementById('panelSources').scrollWidth-document.getElementById('panelSources').clientWidth
   }))()`);
-  check('BETA_LIVE_COMPOSITOR_IDENTITY_OK', compositorIdentity.title==='ShowSlate — Live Compositor' && compositorIdentity.descriptor==='LIVE COMPOSITOR' && compositorIdentity.button && compositorIdentity.open && compositorIdentity.advanced && compositorIdentity.panel && compositorIdentity.settingsHidden && compositorIdentity.headInside && compositorIdentity.titleFits && compositorIdentity.addSourceInside && compositorIdentity.canvasControlsInside && compositorIdentity.panelOverflowX<=1, JSON.stringify(compositorIdentity));
+  check('BETA_LIVE_COMPOSITOR_IDENTITY_OK', compositorIdentity.title==='ShowSlate — Live Compositor' && compositorIdentity.descriptor==='LIVE COMPOSITOR' && compositorIdentity.button && compositorIdentity.open && compositorIdentity.advanced && compositorIdentity.panel && compositorIdentity.settingsHidden && compositorIdentity.headInside && compositorIdentity.inlineCompositionRemoved && compositorIdentity.addSourceInside && compositorIdentity.compositionButton && compositorIdentity.canvasControlsInWorkspace && compositorIdentity.canvasControlsRemovedFromComposer && compositorIdentity.panelOverflowX<=1, JSON.stringify(compositorIdentity));
   await capture(win, '1440x900-composer-default');
   await win.webContents.executeJavaScript(`setCompositorOpen(false,{persist:false})`);
 

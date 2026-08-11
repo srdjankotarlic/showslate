@@ -11,6 +11,27 @@ check('COMPOSITOR_CANVAS_PRESETS_AND_LIMITS_OK', () => {
   const canvas = compositor.normalizeCanvas({ width: 99999, height: 2, fps: 120, background: '#123456' });
   assert.deepStrictEqual({ width: canvas.width, height: canvas.height, fps: canvas.fps }, { width: 8192, height: 180, fps: 60 });
   assert.strictEqual(compositor.canvasPreset({ width: 1920, height: 1080 }), '1080p');
+  assert.strictEqual(compositor.canvasPreset({ width: 3840, height: 960 }), 'led-wide');
+  assert.strictEqual(compositor.canvasPreset({ width: 5376, height: 768 }), 'custom');
+});
+
+check('COMPOSITOR_MULTIPLE_COMPOSITIONS_AND_PROJECTOR_MAPPING_OK', () => {
+  const compositions = compositor.normalizeCompositions([
+    { id: 'main', name: 'Main', canvas: { width: 1920, height: 1080 } },
+    { id: 'led', name: 'LED Wall', canvas: { width: 5376, height: 768, fps: 50 }, mappings: [
+      { id: 'left', name: 'Left projector', outputId: 'output-left', x: 0, y: 0, width: 2688, height: 768, blend: { right: 96 } },
+      { id: 'right', name: 'Right projector', outputId: 'output-right', x: 2688, y: 0, width: 99999, height: 99999, blend: { left: 96 } }
+    ] }
+  ]);
+  assert.strictEqual(compositions.length, 2);
+  assert.deepStrictEqual(compositions[1].canvas, { schemaVersion: 1, width: 5376, height: 768, fps: 50, background: '#000000', transparent: false });
+  assert.deepStrictEqual(
+    compositions[1].mappings.map(mapping => ({ id: mapping.id, outputId: mapping.outputId, x: mapping.x, width: mapping.width, height: mapping.height })),
+    [
+      { id: 'left', outputId: 'output-left', x: 0, width: 2688, height: 768 },
+      { id: 'right', outputId: 'output-right', x: 2688, width: 2688, height: 768 }
+    ]
+  );
 });
 
 check('COMPOSITOR_LAYER_TYPES_AND_TRANSFORMS_OK', () => {

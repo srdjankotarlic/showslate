@@ -379,6 +379,44 @@ function activeScene(){
   return scenes.find(sc => sc.id === S.activeSceneId) || scenes[0] || null;
 }
 
+function routeProjection(){
+  const raw=S&&S._outputRoute&&S._outputRoute.projection;
+  if(!raw||raw.enabled===false) return null;
+  const canvasWidth=Math.max(1,Number(raw.canvasWidth)||Number(S.canvas&&S.canvas.width)||1920);
+  const canvasHeight=Math.max(1,Number(raw.canvasHeight)||Number(S.canvas&&S.canvas.height)||1080);
+  const x=Math.max(0,Math.min(canvasWidth-1,Number(raw.x)||0));
+  const y=Math.max(0,Math.min(canvasHeight-1,Number(raw.y)||0));
+  const width=Math.max(1,Math.min(canvasWidth-x,Number(raw.width)||canvasWidth-x));
+  const height=Math.max(1,Math.min(canvasHeight-y,Number(raw.height)||canvasHeight-y));
+  return {...raw,x,y,width,height,canvasWidth,canvasHeight,blend:raw.blend||{}};
+}
+function projectionIsInactive(projection){
+  return !!projection&&!!projection.compositionId&&String(projection.compositionId)!==String(S&&S.activeCompositionId||'composition-main');
+}
+function applyProjectionMask(element,projection){
+  if(!element) return;
+  const blend=projection&&projection.blend||{};
+  const left=projection?Math.max(0,Math.min(49,(Number(blend.left)||0)/projection.width*100)):0;
+  const right=projection?Math.max(0,Math.min(49,(Number(blend.right)||0)/projection.width*100)):0;
+  const top=projection?Math.max(0,Math.min(49,(Number(blend.top)||0)/projection.height*100)):0;
+  const bottom=projection?Math.max(0,Math.min(49,(Number(blend.bottom)||0)/projection.height*100)):0;
+  if(!projection||(!left&&!right&&!top&&!bottom)){
+    element.style.maskImage=''; element.style.webkitMaskImage=''; element.style.maskComposite=''; element.style.webkitMaskComposite=''; return;
+  }
+  const horizontal=`linear-gradient(to right,transparent 0%,#000 ${left}%,#000 ${100-right}%,transparent 100%)`;
+  const vertical=`linear-gradient(to bottom,transparent 0%,#000 ${top}%,#000 ${100-bottom}%,transparent 100%)`;
+  element.style.maskImage=`${horizontal},${vertical}`; element.style.webkitMaskImage=`${horizontal},${vertical}`;
+  element.style.maskComposite='intersect'; element.style.webkitMaskComposite='source-in';
+}
+function applyProjectionFrame(frame,projection){
+  if(!projection){ frame.style.inset='0'; frame.style.left=''; frame.style.top=''; frame.style.width=''; frame.style.height=''; return; }
+  frame.style.inset='auto';
+  frame.style.left=`${-projection.x/projection.width*100}%`;
+  frame.style.top=`${-projection.y/projection.height*100}%`;
+  frame.style.width=`${projection.canvasWidth/projection.width*100}%`;
+  frame.style.height=`${projection.canvasHeight/projection.height*100}%`;
+}
+
 function pct(v, fallback){
   const n = Number(v);
   return Number.isFinite(n) ? Math.max(-100, Math.min(200, n)) : fallback;
@@ -409,7 +447,8 @@ function renderScene(){
   const root=$('sceneRoot');
   if(!root || !S) return;
   const scene=activeScene();
-  const layers=(scene && Array.isArray(scene.layers)) ? scene.layers.filter(l=>l && l.visible!==false) : [];
+  const projection=routeProjection(),projectionInactive=projectionIsInactive(projection);
+  const layers=!projectionInactive&&(scene && Array.isArray(scene.layers)) ? scene.layers.filter(l=>l && l.visible!==false) : [];
   const key=(S._mediaBase||'')+'|'+JSON.stringify(layers.map(l=>({
     id:l.id,type:l.type,name:l.name,src:l.src,inputId:l.inputId,sourceId:l.sourceId,sourceName:l.sourceName,
     x:l.x,y:l.y,w:l.w,h:l.h,rotation:l.rotation,opacity:l.opacity,fit:l.fit,text:l.text,color:l.color,bg:l.bg,page:l.page,
@@ -417,13 +456,15 @@ function renderScene(){
     blendMode:l.blendMode,cornerRadius:l.cornerRadius,brightness:l.brightness,contrast:l.contrast,saturation:l.saturation,hue:l.hue,blur:l.blur,
     fontSize:l.fontSize,fontFamily:l.fontFamily,fontWeight:l.fontWeight,textAlign:l.textAlign,verticalAlign:l.verticalAlign,italic:l.italic,underline:l.underline,
     audioEnabled:l.audioEnabled,audioMonitoring:l.audioMonitoring,volume:l.volume,loop:l.loop,muted:l.muted,playbackRate:l.playbackRate
-  })))+'|audio:'+(S._outputRoute&&S._outputRoute.liveAudio===true)+'|sink:'+String(S._outputRoute&&S._outputRoute.audioOutputDeviceId||'');
+  })))+'|projection:'+JSON.stringify(projection)+'|inactive:'+projectionInactive+'|audio:'+(S._outputRoute&&S._outputRoute.liveAudio===true)+'|sink:'+String(S._outputRoute&&S._outputRoute.audioOutputDeviceId||'');
   if(key===lastSceneKey) return;
   lastSceneKey=key;
   const fadeMs = Math.max(0, Math.min(2000, Number(S.sceneFadeMs ?? 0)));
   const oldFrames=[...root.children];
   const frame=document.createElement('div');
   frame.className='scene-frame';
+  applyProjectionFrame(frame,projection);
+  applyProjectionMask(root,projectionInactive?null:projection);
   if(fadeMs>0 && oldFrames.length){
     frame.style.opacity='0';
     frame.style.transition=`opacity ${fadeMs}ms ease`;
@@ -516,22 +557,29 @@ function applyTimerLayerStage(){
   if (!stage) return;
   const scene = S ? activeScene() : null;
   const layers = (scene && Array.isArray(scene.layers)) ? scene.layers.filter(l => l && l.visible !== false) : [];
-  const tl = layers.find(l => l.type === 'timer');
+  const projection=routeProjection(),projectionInactive=projectionIsInactive(projection);
+  const tl = projectionInactive ? null : layers.find(l => l.type === 'timer');
   let key, css;
   if (tl){
-    const x = pct(tl.x, 0), y = pct(tl.y, 0), w = Math.max(1, pct(tl.w, 100)), h = Math.max(1, pct(tl.h, 100));
+    let x = pct(tl.x, 0), y = pct(tl.y, 0), w = Math.max(1, pct(tl.w, 100)), h = Math.max(1, pct(tl.h, 100));
+    if(projection){
+      x=(x/100*projection.canvasWidth-projection.x)/projection.width*100;
+      y=(y/100*projection.canvasHeight-projection.y)/projection.height*100;
+      w=w/100*projection.canvasWidth/projection.width*100;
+      h=h/100*projection.canvasHeight/projection.height*100;
+    }
     const stack = layers.indexOf(tl) + 1;
     const visual=PTCOMP.layerVisualStyle(tl);
-    key = `tl|${x}|${y}|${w}|${h}|${tl.opacity ?? 1}|${stack}|${JSON.stringify(visual)}`;
+    key = `tl|${x}|${y}|${w}|${h}|${tl.opacity ?? 1}|${stack}|${JSON.stringify(visual)}|${JSON.stringify(projection)}`;
     css = () => { stage.style.display = 'flex'; stage.style.inset = 'auto';
       stage.style.zIndex = String(stack);
       stage.style.left = x + '%'; stage.style.top = y + '%';
       stage.style.width = w + '%'; stage.style.height = h + '%';
-      stage.style.opacity = String(Math.max(0, Math.min(1, Number(tl.opacity ?? 1))));
+      stage.style.opacity = String(Math.max(0, Math.min(1, Number(tl.opacity ?? 1)))); applyProjectionMask(stage,projection);
       stage.style.transform=visual.transform; stage.style.transformOrigin=visual.transformOrigin; stage.style.filter=visual.filter; stage.style.mixBlendMode=visual.mixBlendMode; stage.style.clipPath=visual.clipPath; stage.style.borderRadius=visual.borderRadius; };
   } else {
     key = 'none';
-    css = () => { stage.style.display = 'none'; stage.style.zIndex = ''; stage.style.transform=''; stage.style.transformOrigin=''; stage.style.filter=''; stage.style.mixBlendMode=''; stage.style.clipPath=''; stage.style.borderRadius=''; };
+    css = () => { stage.style.display = 'none'; stage.style.zIndex = ''; stage.style.transform=''; stage.style.transformOrigin=''; stage.style.filter=''; stage.style.mixBlendMode=''; stage.style.clipPath=''; stage.style.borderRadius=''; applyProjectionMask(stage,null); };
   }
   if (key !== lastStageKey){ lastStageKey = key; css(); lastKey=''; }
 }

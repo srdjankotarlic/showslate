@@ -624,7 +624,10 @@ function outputPayload(state, routeId, role, revision = stateRevision, routeConf
       id: String(routeId || 'primary'),
       role: normalizedRole,
       liveAudio: routeConfig.liveAudio === true,
-      audioOutputDeviceId: String(routeConfig.audioOutputDeviceId || state && state.programAudioDeviceId || '')
+      audioOutputDeviceId: String(routeConfig.audioOutputDeviceId || state && state.programAudioDeviceId || ''),
+      compositionId: String(routeConfig.compositionId || ''),
+      mappingId: String(routeConfig.mappingId || ''),
+      projection: routeConfig.projection && typeof routeConfig.projection === 'object' ? routeConfig.projection : null
     },
     _dispatch: {
       revision: Math.max(0, Number(revision) || 0),
