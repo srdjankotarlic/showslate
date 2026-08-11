@@ -43,9 +43,11 @@ Select **Outputs** from the header.
 2. Give each route a recognizable name.
 3. Choose its role and exact physical display.
 4. Choose **Fullscreen**, **Window**, **Custom size** or **Grid cell**.
-5. For Custom size, enter width, height and coordinates.
-6. Enable **Program audio** on no more than one local desktop route when a scene really needs source audio.
-7. Enable the route and select **Apply routing**.
+5. Choose a standard or custom output Canvas resolution and frame rate for that destination, then choose **Fit**, **Cover** or **Fill** scaling.
+6. For Custom size, enter width, height and coordinates.
+7. For a projector or LED processor, select **Map projector**. Assign the Canvas region, enable four-corner warp, move the corner handles and use the calibration grid to align the surface.
+8. Enable **Program audio** on no more than one local desktop route when a scene really needs source audio.
+9. Enable the route and select **Apply routing**.
 
 Available roles:
 
@@ -56,6 +58,8 @@ Available roles:
 - **Door Agenda** shows room, current session, next session and clock.
 
 Routes do not silently move to a different monitor if a display disappears. An unavailable or ambiguous route remains blocked until the intended display returns or the operator explicitly changes it.
+
+Every enabled route receives the same Program revision but keeps its own Canvas, scaling and optional projector mapping. Mapping transforms the complete Program. The beta mapper is intended for simple four-corner correction; it is not a full mesh-warping or automatic projector-calibration system.
 
 ## Preflight
 

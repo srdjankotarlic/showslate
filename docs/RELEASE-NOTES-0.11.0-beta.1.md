@@ -2,6 +2,8 @@
 
 This beta establishes ShowSlate as a local-first live compositor. New installations open with Composer, Preview and Program ready for scene work, while the previous rundown, timer, lower-third, GO transaction and role-based Conference Desk workflow remain available when a production needs them.
 
+> **Work in progress:** this is an evaluation build for off-air testing. Expect bugs and unfinished hardware-specific behavior. It is not production-certified; always test the exact show computer and signal chain and keep a fallback.
+
 ## Download
 
 | Platform | Recommended package |
@@ -28,9 +30,13 @@ GitHub's automatic **Source code** ZIP and TAR.GZ files are developer archives a
 
 The application now uses a layered-canvas icon and a neutral compositor interface. Timing remains available as an optional scene source and under **Settings > Timing**, while the permanent live workspace is reserved for Preview, Program, transitions, GO and scene composition.
 
-## Output and audio safety
+## Multi-output, projector mapping and audio safety
 
-Every desktop route can still be fullscreen, windowed, an exact pixel size or a grid cell. New routes start with the active Canvas dimensions. Preflight warns when a destination and Canvas use different aspect ratios.
+Every desktop route can be fullscreen, windowed, an exact pixel size or a grid cell. Multiple routes can receive the same Program at once while keeping independent standard or custom output Canvas dimensions, frame rate and Fit/Cover/Fill scaling.
+
+For a projector or LED processor, **Map projector** opens the Composition workspace for that destination. The operator can move four corner points, enable an adjustable calibration grid and set soft-edge values for a simple irregular surface. The transform is applied to the complete Program, including scene media, timer, text, logos and lower thirds.
+
+New routes start with the active Canvas dimensions. Preflight warns when a destination and Canvas use different aspect ratios. A route is not reported as live until its renderer acknowledges the current Program revision.
 
 Preview is always muted. Program audio is off by default and can be enabled on only one local desktop output. This prevents accidental echo and feedback; ShowSlate is not an audio mixer.
 
@@ -41,12 +47,13 @@ Preview is always muted. Program audio is off by default and can be enabled on o
 - Canvas imports are limited to 200 MB per file.
 - Capture cards must appear as standard operating-system video/UVC devices. Real compatibility depends on the device, driver, source format and HDCP status.
 - ShowSlate does not encode or stream, route NDI, provide multibus audio mixing, control PTZ/DMX or synchronize multiple rooms.
+- Projector mapping currently provides four-corner correction and a calibration grid. It does not provide arbitrary mesh warping, masks, automatic camera calibration or projector color matching.
 - External OBS/vMix alpha capture remains uncertified. Test the exact show computer, displays, capture devices and downstream path off-air.
 
 ## Public beta warning
 
 The Mac package is not Apple Developer ID signed or notarized, and the Windows package is not Authenticode signed. Operating systems can show an unknown-developer warning. Download only from this repository and verify `SHA256SUMS.txt` when needed.
 
-This build passed automated source and packaged checks plus native Mac and Windows package construction. Real window/display frames were not manually verified with macOS Screen Recording enabled, physical UVC capture-card video/audio was not tested, and the Windows GUI was not exercised on a physical Windows computer. These are evaluation features in this beta, not certified hardware workflows.
+This build passed automated source and packaged checks plus native Mac and Windows package construction. Targeted source and packaged routing checks confirmed two simultaneous acknowledged Program destinations with independent 1920x1080 and 1000x1000 canvases; the first used four-corner mapping and a visible calibration grid. Physical projector geometry, physical UVC capture-card video/audio and the Windows GUI were not certified across venue hardware. These remain evaluation features in this beta.
 
 This is an evaluation beta, not a production-certified release. Keep a fallback rundown/timer and test every live source and destination before doors open.

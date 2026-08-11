@@ -2,7 +2,7 @@
   "name": "showslate",
   "productName": "ShowSlate",
   "version": "0.11.0-beta.1",
-  "description": "Offline show control and live scene composition for rundowns, speaker timing, media, lower thirds and room displays",
+  "description": "Open-source live compositor with layered scenes, Preview/Program switching, multi-display canvases and projector mapping",
   "main": "main.js",
   "author": "Srdjan Kotarlic",
   "license": "MIT",
@@ -15,6 +15,10 @@
     "url": "https://github.com/srdjankotarlic/showslate/issues"
   },
   "keywords": [
+    "live-compositor",
+    "projector-mapping",
+    "projection-mapping",
+    "led-wall",
     "stage-timer",
     "event-production",
     "live-production",

@@ -1,7 +1,7 @@
 {
   "name": "ShowSlate Live Compositor",
   "short_name": "ShowSlate",
-  "description": "Free local-first live compositor with layered scenes, Preview and Program, live inputs, show control and multi-display output.",
+  "description": "Free open-source live compositor with layered scenes, Preview and Program, independent multi-display canvases and projector mapping. Public beta.",
   "start_url": "/showslate/",
   "display": "standalone",
   "background_color": "#0b0e12",

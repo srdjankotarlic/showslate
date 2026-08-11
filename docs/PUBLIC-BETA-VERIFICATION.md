@@ -1,6 +1,18 @@
 # Public Beta Verification
 
-Verified for the `0.11.0-beta.1` release candidate on 2026-08-09. This page separates what was exercised on the tested Mac from what was only automated, built or structurally inspected.
+Verified for the `0.11.0-beta.1` release candidate through 2026-08-11. This page separates what was exercised on the tested Mac from what was only automated, built or structurally inspected.
+
+## 2026-08-11 multi-output mapping update
+
+Targeted source and freshly packaged Apple Silicon checks passed on the explicitly selected `PHL 243V7` display from clean commit `11489f9c3dcbb21cdf8dd90d4beb70704f81e27d`.
+
+- Two output windows received and acknowledged the same Program revision simultaneously.
+- The first route used a 1920x1080 Canvas with Fit scaling, four-corner projector warp and a visible 8x6 calibration grid.
+- The second route independently used a 1000x1000 Canvas with Cover scaling and no projector warp.
+- Both routes reached the real `live` acknowledgement state; the check does not pass on merely open or still-syncing windows.
+- Missing-display and exact-display reconnection behavior remained fail-closed.
+
+This proves ShowSlate's per-route configuration, full-Program renderer transform and delivery acknowledgement on the tested Mac. It does not certify alignment, brightness, focus, lens geometry, processor behavior or color on every physical projector or LED installation.
 
 ## Physical Mac verification
 

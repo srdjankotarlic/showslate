@@ -5,8 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="google-site-verification" content="8XQrjWTrPu_H5qRAX91drrvps-Gkw1Ywux-kTV5GHx0">
   <title>ShowSlate Live Compositor | Layered Scenes and Multi-Display Show Control</title>
-  <meta name="description" content="Free local-first live compositor for layered scenes, media, window and capture-card inputs, Preview/Program switching, show control and multi-display outputs.">
-  <meta name="keywords" content="live compositor software, live scene compositor, multi display output software, window capture software, capture card display software, preview program switcher, event show control, conference room control software, speaker timer, lower third software, run of show software, offline show control">
+  <meta name="description" content="Free open-source live compositor for layered scenes, Preview/Program switching, multi-display canvases and four-corner projector mapping. Public beta.">
+  <meta name="keywords" content="live compositor software, projector mapping software, projection mapping beta, LED wall canvas software, multi display output software, window capture software, capture card display software, preview program switcher, event show control, conference room control software, speaker timer, lower third software, run of show software, offline show control">
   <meta name="author" content="Srdjan Kotarlic">
   <meta name="robots" content="index,follow,max-image-preview:large,max-snippet:-1,max-video-preview:-1">
   <meta name="theme-color" content="#101419">
@@ -23,7 +23,7 @@
   <meta property="og:site_name" content="ShowSlate">
   <meta property="og:locale" content="en_US">
   <meta property="og:title" content="ShowSlate Live Compositor | Layered Scenes and Multi-Display Control">
-  <meta property="og:description" content="Build layered scenes from media, windows and capture devices, prepare them in Preview and send Program to local displays.">
+  <meta property="og:description" content="Build layered scenes, prepare Preview, TAKE to Program and route independent canvases with optional four-corner projector mapping. Public beta and work in progress.">
   <meta property="og:url" content="https://srdjankotarlic.github.io/showslate/">
   <meta property="og:image" content="https://srdjankotarlic.github.io/showslate/assets/social-preview.png">
   <meta property="og:image:width" content="1600">
@@ -31,7 +31,7 @@
   <meta property="og:image:alt" content="ShowSlate Live Compositor operator workspace">
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:title" content="ShowSlate Live Compositor | Layered Scenes and Multi-Display Control">
-  <meta name="twitter:description" content="Compose media and live inputs in layers, prepare Preview, TAKE to Program and route local displays.">
+  <meta name="twitter:description" content="Compose media and live inputs, TAKE to Program and route independent display canvases with four-corner projector mapping. Public beta.">
   <meta name="twitter:image" content="https://srdjankotarlic.github.io/showslate/assets/social-preview.png">
 
   <script type="application/ld+json">
@@ -44,7 +44,7 @@
     "applicationSubCategory": "Local-first live compositor and show control software",
     "operatingSystem": "macOS, Windows 10, Windows 11",
     "softwareVersion": "0.11.0-beta.1",
-    "description": "Free local-first live compositor with reusable layered scenes, window and capture-device inputs, Preview and Program switching, show control and multi-display outputs.",
+    "description": "Free open-source live compositor with layered scenes, Preview and Program switching, independent multi-display canvases and four-corner projector mapping. Public beta and work in progress.",
     "url": "https://srdjankotarlic.github.io/showslate/",
     "sameAs": "https://github.com/srdjankotarlic/showslate",
     "softwareHelp": "https://github.com/srdjankotarlic/showslate/discussions",
@@ -57,7 +57,8 @@
       "Custom-resolution Canvas with reusable layered scenes",
       "Window, display, camera and UVC capture-card sources",
       "Preview and Program scene switching with local source audio safeguards",
-      "Explicit multi-display Program routing",
+      "Simultaneous multi-display Program routing with an independent Canvas for every destination",
+      "Four-corner projector mapping with an adjustable calibration grid",
       "Conference show-folder import with schedule and media matching",
       "Atomic NEXT, LIVE and GO workflow",
       "Audience, Confidence, Timer, Stream Graphics and Door Agenda outputs",
@@ -80,6 +81,7 @@
     "screenshot": [
       "https://srdjankotarlic.github.io/showslate/assets/live-compositor-workspace.png",
       "https://srdjankotarlic.github.io/showslate/assets/output-routing.png",
+      "https://srdjankotarlic.github.io/showslate/assets/projector-mapping.png",
       "https://srdjankotarlic.github.io/showslate/assets/lower-third-studio.png"
     ]
   }
@@ -163,7 +165,9 @@
           <span>Works offline</span>
           <span>No account</span>
           <span>MIT License</span>
+          <span>Public beta / WIP</span>
         </div>
+        <p class="hero-beta-note"><strong>Actively developed:</strong> expect bugs and unfinished hardware workflows. Evaluate it off-air, test the exact signal chain and keep a fallback for live events.</p>
         <p class="edition-link">Need only a simple countdown and OBS timer overlay? <a href="https://srdjankotarlic.github.io/protimer/">Use ProTimer instead.</a></p>
       </div>
     </section>
@@ -196,7 +200,7 @@
           <article>
             <span>03</span>
             <h3>TAKE and route</h3>
-            <p>Send the complete scene to Program, then route it to explicit fullscreen, windowed, pixel-sized or grid destinations.</p>
+            <p>Send the complete scene to Program, route independent output canvases and align a projector with four-corner mapping when needed.</p>
           </article>
         </div>
       </div>
@@ -244,8 +248,8 @@
 
     <section class="features" id="outputs" aria-labelledby="outputs-title">
       <div class="section-inner">
-        <p class="eyebrow">Purpose-built destinations</p>
-        <h2 id="outputs-title">The right information on each room display</h2>
+        <p class="eyebrow">Multi-display Program routing</p>
+        <h2 id="outputs-title">One Program, independently configured destinations</h2>
         <div class="feature-grid">
           <article>
             <span class="feature-number">01</span>
@@ -274,10 +278,11 @@
           </article>
           <article>
             <span class="feature-number">06</span>
-            <h3>Operator safeguards</h3>
-            <p>Explicit display identity, render acknowledgement, autosave, recovery, preflight and a focused Live Mode.</p>
+            <h3>Projector mapping</h3>
+            <p>Give each route its own Canvas and scaling, then align four corner points over an adjustable calibration grid.</p>
           </article>
         </div>
+        <p class="download-guidance"><strong>Beta scope:</strong> the mapper handles practical four-corner correction for simple irregular surfaces. Complex masks, arbitrary meshes, automatic camera calibration and projector color matching are not included yet.</p>
       </div>
     </section>
 
@@ -286,13 +291,17 @@
         <p class="eyebrow">Real product screens</p>
         <h2 id="screens-title">See the actual operator workflow</h2>
         <figure class="screen-feature">
-          <img src="assets/live-compositor-workspace.png" width="1440" height="868" loading="eager" alt="ShowSlate Live Compositor with Preview, Program, scenes, layers and outputs">
+          <img src="assets/live-compositor-workspace.png" width="1280" height="802" loading="eager" alt="ShowSlate Live Compositor with Preview, Program, rundown, scenes, layers and audio mixer">
           <figcaption><strong>Live operator workspace</strong><span>Preview, Program, scene composition and output status stay connected.</span></figcaption>
+        </figure>
+        <figure class="screen-feature">
+          <img src="assets/projector-mapping.png" width="1280" height="800" loading="lazy" alt="ShowSlate projector mapping workspace with a custom LED canvas, corner points and calibration grid">
+          <figcaption><strong>Projector mapping</strong><span>Assign a Canvas region to an output, align four corner points and calibrate with a visible grid.</span></figcaption>
         </figure>
         <div class="screen-pair">
           <figure class="screen-feature">
-            <img src="assets/output-routing.png" width="1280" height="768" loading="lazy" alt="Output Routing with explicit display, role and placement controls">
-            <figcaption><strong>Output Routing</strong><span>Every destination keeps an explicit role and display identity.</span></figcaption>
+            <img src="assets/output-routing.png" width="1159" height="745" loading="lazy" alt="Output Routing with two destinations, independent canvases and projector mapping">
+            <figcaption><strong>Output Routing</strong><span>Every destination keeps its display identity, Canvas resolution, scaling and optional projector map.</span></figcaption>
           </figure>
           <figure class="screen-feature">
             <img src="assets/lower-third-studio.png" width="1440" height="900" loading="lazy" alt="Lower Third Studio with templates, layers, canvas and inspector">
@@ -382,6 +391,10 @@
           <details>
             <summary>Can it capture a window, camera or video capture card?</summary>
             <p>Yes in the desktop app. Add a chosen window, display, camera or standard UVC capture card as a Canvas layer. Local live streams appear in ShowSlate desktop output windows, not in browser or OBS URL outputs.</p>
+          </details>
+          <details>
+            <summary>Can it map Program to an irregular projector surface?</summary>
+            <p>Yes for simple four-corner correction. Each output can use its own Canvas and scaling, and Map projector provides four movable corners plus an adjustable calibration grid. Advanced mesh warping, masking and automatic calibration are not included in this beta.</p>
           </details>
           <details>
             <summary>Is Stream Graphics certified with OBS or vMix?</summary>

@@ -26,9 +26,12 @@
   <a href="docs/USER-GUIDE.md"><strong>User guide</strong></a>
 </p>
 
+> [!WARNING]
+> **Public beta / work in progress.** ShowSlate is actively developed and still has known bugs and unfinished hardware workflows. It is interesting and usable for evaluation, demos and off-air testing, but it is not production-certified. Test the exact computer, displays, media, capture devices and fallback plan before using it at a live event.
+
 ![ShowSlate Live Compositor operator workspace](docs/images/live-compositor-workspace.png)
 
-ShowSlate builds a visual Program from reusable layered scenes on one Mac or Windows PC. Combine pictures, video, PDF pages, colors, text, a timer, application windows, displays, cameras and UVC capture devices; prepare the result in **Preview**, use **TAKE** to send it to **Program**, then route Program to one or more local displays.
+ShowSlate builds a visual Program from reusable layered scenes on one Mac or Windows PC. Combine pictures, video, PDF pages, colors, text, a timer, application windows, displays, cameras and UVC capture devices; prepare the result in **Preview**, use **TAKE** to send it to **Program**, then route Program to one or more local displays. Every destination can use its own output Canvas, resolution and scaling mode, with optional four-corner projector mapping for irregular surfaces.
 
 The included **Conference Desk** workflow adds a rundown, LIVE/NEXT/GO, speaker timing, cue-driven lower thirds, show-folder import and role-based room displays. It is intended for conferences, corporate events, education, community venues, houses of worship and small AV teams that need more structure than a media player but less complexity than a broadcast switcher.
 
@@ -39,8 +42,9 @@ The included **Conference Desk** workflow adds a rundown, LIVE/NEXT/GO, speaker 
 1. Open **Composer**, choose the Canvas resolution and create a scene.
 2. Add and arrange media, color, text, timing or a local live input as ordered layers.
 3. Prepare the scene in Preview, verify it, then use **TAKE** or **Cut** to send it to Program.
-4. Open **Outputs**, assign each destination to an explicit display and choose fullscreen, window, exact pixel size or grid placement.
-5. Enable Program audio on at most one local output when a video or capture source needs sound.
+4. Open **Outputs**, assign each destination to an explicit display, choose fullscreen/window placement and set its independent output Canvas, resolution and scaling.
+5. For a projector or LED processor, open **Map projector**, align the four corner points and use the calibration grid before applying the route.
+6. Enable Program audio on at most one local output when a video or capture source needs sound.
 
 ## The room workflow
 
@@ -63,6 +67,21 @@ Selecting a row prepares NEXT and never changes LIVE. GO creates one transaction
 | **Door Agenda** | display outside the room | Room name, current session, next session and clock |
 
 Each role can be fullscreen, windowed, an exact pixel size or a grid region. ShowSlate does not silently move a route to another monitor when a display disappears.
+
+## Multi-output and projector mapping
+
+![ShowSlate Output Routing with independent canvases](docs/images/output-routing.png)
+
+- Send the same live Program to multiple displays at the same time.
+- Give every destination its own standard or custom Canvas resolution, frame rate and **Fit / Cover / Fill** scaling.
+- Assign a fullscreen, windowed, exact-size or grid destination without changing the source scene.
+- Use **Map projector** to move four corner points, show an adjustable calibration grid and compensate for a simple irregular projection surface.
+- Apply mapping to the complete Program, not only to one media layer. Scene media, timer, text, logos and lower thirds stay together.
+- Keep unavailable displays fail-closed: a missing projector is reported instead of silently moving the output elsewhere.
+
+The current mapper is a practical four-corner beta tool, not a replacement for specialist multi-projector warping software. Complex masks, arbitrary mesh warping, automatic camera calibration and projector color matching are not included yet.
+
+![ShowSlate projector mapping workspace](docs/images/projector-mapping.png)
 
 ## Composer and live sources
 
@@ -122,7 +141,8 @@ Supported folder media includes PNG, JPEG, WebP, GIF, SVG, MP4, WebM, MOV, M4V a
 - Custom-resolution Composer with reusable scenes, ordered layers, Preview/Program switching and drag/resize editing.
 - Window/display capture and camera/UVC capture-card layers with optional local Program audio.
 - Lower Third Studio with cue-driven dynamic fields, shapes, logos, images and muted video.
-- Explicit multi-display routing with render acknowledgements and unavailable-display blocking.
+- Explicit multi-display routing with per-destination Canvas settings, render acknowledgements and unavailable-display blocking.
+- Four-corner projector mapping with a calibration grid and soft-edge controls for simple irregular surfaces.
 - Autosave, crash recovery and portable `.showslate-show` and `.showslate-lt` packages.
 - Local phone remote, backstage view, Signal Light, HTTP and OSC control.
 - English default UI, full Serbian UI and 35 core language packs with English fallback.

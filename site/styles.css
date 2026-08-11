@@ -49,6 +49,8 @@ h1{margin:0;font-size:70px;line-height:1;max-width:980px}
 .hero-facts{display:flex;flex-wrap:wrap;gap:8px 20px;margin-top:28px;color:#d0d7dd;font-size:13px}
 .hero-facts span{display:flex;align-items:center;gap:8px}
 .hero-facts span::before{content:"";width:6px;height:6px;border-radius:50%;background:var(--green)}
+.hero-beta-note{max-width:720px;margin:18px 0 0;padding:12px 14px;border-left:3px solid #d09a3a;background:rgba(8,11,14,.72);color:#d7dde2;font-size:14px;line-height:1.55}
+.hero-beta-note strong{color:#f0c879}
 .edition-link{margin-top:18px;color:#b9c2ca;font-size:14px}
 .edition-link a{font-weight:750}
 

@@ -4,7 +4,7 @@ All notable changes to ShowSlate are documented here.
 
 ## Unreleased
 
-## 0.11.0-beta.1 - 2026-08-08
+## 0.11.0-beta.1 - 2026-08-11
 
 ### Added
 
@@ -14,6 +14,9 @@ All notable changes to ShowSlate are documented here.
 - Added optional capture-device audio, muted Preview monitoring and a single-Program-audio-route safety guard.
 - Added visible scene controls, exact layer inspector fields, drag/resize handles, source replacement and live input status.
 - Added Canvas/output aspect-ratio preflight warnings and targeted compositor, live-input and multi-output checks.
+- Added independent output Canvas settings so simultaneous destinations can use different resolutions, frame rates and Fit/Cover/Fill scaling.
+- Added four-corner projector mapping, adjustable calibration grids and soft-edge controls for simple irregular projection surfaces.
+- Added a direct **Map projector** action from every eligible output route and applied mapping to the complete Program renderer.
 
 ### Changed
 
@@ -23,6 +26,7 @@ All notable changes to ShowSlate are documented here.
 - Updated the website, README, release documentation and primary product image around the compositor workflow.
 - Canvas media now uses the same 200 MB per-file safety limit as show-folder assets.
 - New output routes default to the active Canvas dimensions.
+- Multiple output routes now keep independent Canvas and projector-mapping configuration while receiving the same acknowledged Program revision.
 - Preview and Program monitors now follow square, vertical and custom Canvas aspect ratios reliably at every supported controller size.
 - Preview and Program text-layer padding now scales with the rendered canvas so narrow text layers remain visually consistent.
 - Live-input smoke waits for actual media-time progression instead of relying on a fixed delay.
