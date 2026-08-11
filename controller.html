@@ -3524,7 +3524,7 @@
           </div>
           <div class="layer-list" id="layerList"></div>
         </section>
-        <div class="compositor-inspector-resizer" id="compositorInspectorResizer" role="separator" aria-orientation="vertical" aria-controls="inspector" aria-valuemin="300" aria-valuemax="620" aria-valuenow="350" tabindex="0" data-i18n-title="sourceInspectorResize" title="Drag to resize the Source inspector"></div>
+        <div class="compositor-inspector-resizer" id="compositorInspectorResizer" role="separator" aria-orientation="vertical" aria-controls="inspector" aria-valuemin="220" aria-valuemax="620" aria-valuenow="350" tabindex="0" data-i18n-title="sourceInspectorResize" title="Drag to resize the Source inspector"></div>
         <div class="inspector compositor-inspector" id="inspector">
           <button id="btnInspectorToggle" class="ghost mini inspector-panel-toggle" type="button" aria-expanded="true" data-i18n-title="sourceInspectorCollapse" title="Collapse Source inspector"><span aria-hidden="true">›</span></button>
           <div class="inspector-source-head">
@@ -6905,6 +6905,7 @@ function setCompositorOpen(flag,options={}){
   $('btnCompositor')?.setAttribute('aria-expanded',open?'true':'false');
   if(options.persist!==false) localStorage.setItem('pt_compositor_open',open?'1':'0');
   if(open) closeDrawers();
+  else{updateSidebarToggle();updateUtilityToggle();}
   if(open&&options.scroll!==false) requestAnimationFrame(()=>$('panelSources')?.scrollIntoView({behavior:'smooth',block:'start'}));
 }
 $('btnCompositor')?.addEventListener('click',()=>setCompositorOpen(!document.body.classList.contains('compositor-open')));
@@ -6915,8 +6916,8 @@ const SOURCE_INSPECTOR_COLLAPSED_KEY='showslate_source_inspector_collapsed_v1';
 const SOURCE_INSPECTOR_DEFAULT_WIDTH=350;
 function sourceInspectorWidthLimits(){
   const workspace=$('panelSources')?.querySelector('.compositor-workspace');
-  const workspaceWidth=Math.max(640,workspace?.clientWidth||1000);
-  return {min:300,max:Math.max(300,Math.min(620,Math.floor(workspaceWidth*.56)))};
+  const workspaceWidth=Math.max(688,workspace?.clientWidth||1000);
+  return {min:220,max:Math.max(220,Math.min(620,Math.floor(workspaceWidth-448)))};
 }
 function setSourceInspectorWidth(value,options={}){
   const panel=$('panelSources'),resizer=$('compositorInspectorResizer');if(!panel)return SOURCE_INSPECTOR_DEFAULT_WIDTH;
@@ -6925,8 +6926,9 @@ function setSourceInspectorWidth(value,options={}){
   const width=Math.round(Math.max(limits.min,Math.min(limits.max,Number.isFinite(requested)?requested:SOURCE_INSPECTOR_DEFAULT_WIDTH)));
   panel.style.setProperty('--source-inspector-width',`${width}px`);
   panel.dataset.sourceInspectorWidth=String(width);
+  if(options.updatePreferred!==false)panel.dataset.sourceInspectorPreferredWidth=String(Number.isFinite(requested)?requested:SOURCE_INSPECTOR_DEFAULT_WIDTH);
   if(resizer){resizer.setAttribute('aria-valuemin',String(limits.min));resizer.setAttribute('aria-valuemax',String(limits.max));resizer.setAttribute('aria-valuenow',String(width));}
-  if(options.persist!==false)try{localStorage.setItem(SOURCE_INSPECTOR_WIDTH_KEY,String(width));}catch(_){}
+  if(options.persist!==false)try{localStorage.setItem(SOURCE_INSPECTOR_WIDTH_KEY,panel.dataset.sourceInspectorPreferredWidth||String(width));}catch(_){}
   return width;
 }
 function updateSourceInspectorToggle(){
@@ -6966,7 +6968,7 @@ function initSourceInspectorLayout(){
   });
   resizer.addEventListener('pointermove',event=>{
     if(!drag||event.pointerId!==drag.pointerId)return;
-    setSourceInspectorWidth(drag.startWidth-(event.clientX-drag.startX),{persist:false});
+    setSourceInspectorWidth(drag.startWidth-(event.clientX-drag.startX),{persist:false,updatePreferred:false});
   });
   const finishResize=event=>{
     if(!drag||event.pointerId!==drag.pointerId)return;
@@ -10309,8 +10311,8 @@ $('chkCompact').addEventListener('change',e=>{
   localStorage.setItem('pt_compact', e.target.checked?'1':'');
   applyCompactMode(e.target.checked);
 });
-function sidebarUsesDrawer(){ return document.body.classList.contains('compact') || window.matchMedia('(max-width:1100px)').matches; }
-function utilityUsesDrawer(){ return document.body.classList.contains('compact') || window.matchMedia('(max-width:1319px)').matches; }
+function sidebarUsesDrawer(){ return !document.body.classList.contains('compositor-open')&&(document.body.classList.contains('compact')||window.matchMedia('(max-width:1100px)').matches); }
+function utilityUsesDrawer(){ return document.body.classList.contains('compositor-open')||document.body.classList.contains('compact')||window.matchMedia('(max-width:1319px)').matches; }
 function updateSidebarToggle(){
   const btn=$('btnRundownDrawer'); if(!btn) return;
   const expanded=sidebarUsesDrawer() ? document.body.classList.contains('dr-run') : !document.body.classList.contains('sidebar-collapsed');
@@ -10669,7 +10671,7 @@ document.addEventListener('keydown',e=>{
     case 'ArrowLeft': e.preventDefault(); adjust(-10); break;
   }
 });
-window.addEventListener('resize',()=>{ lastKey=''; ltApplyCanvasZoom(); setSourceInspectorWidth(Number($('panelSources')?.dataset.sourceInspectorWidth)||SOURCE_INSPECTOR_DEFAULT_WIDTH,{persist:false}); });
+window.addEventListener('resize',()=>{ lastKey=''; ltApplyCanvasZoom(); const panel=$('panelSources');setSourceInspectorWidth(Number(panel?.dataset.sourceInspectorPreferredWidth)||SOURCE_INSPECTOR_DEFAULT_WIDTH,{persist:false,updatePreferred:false}); });
 
 $('langSel').addEventListener('change',e=>{
   lang=langUtil.normalizeLang(e.target.value);

@@ -335,7 +335,7 @@ app.whenReady().then(async () => {
     setSourceInspectorWidth(350,{persist:false});
     return {initial,collapsed,restored,resized,stored,collapsedState:panel.classList.contains('inspector-collapsed'),resizerRole:resizer.getAttribute('role')};
   })())`));
-  check('COMPOSITOR_SOURCE_INSPECTOR_COMPACT_RESIZABLE_OK', inspectorLayout.initial.inspector >= 340 && inspectorLayout.initial.inspector <= 360 && inspectorLayout.initial.toggleVisible && inspectorLayout.initial.resizerVisible && !inspectorLayout.initial.transformOpen && inspectorLayout.collapsed.inspector <= 46 && inspectorLayout.collapsed.layers > inspectorLayout.initial.layers + 250 && !inspectorLayout.collapsed.inputVisible && inspectorLayout.collapsed.toggleVisible && inspectorLayout.collapsed.ariaExpanded === 'false' && Math.abs(inspectorLayout.restored - inspectorLayout.initial.inspector) <= 2 && inspectorLayout.resized >= inspectorLayout.restored + 20 && inspectorLayout.stored >= 370 && !inspectorLayout.collapsedState && inspectorLayout.resizerRole === 'separator', JSON.stringify(inspectorLayout));
+  check('COMPOSITOR_SOURCE_INSPECTOR_COMPACT_RESIZABLE_OK', inspectorLayout.initial.inspector >= 340 && inspectorLayout.initial.inspector <= 360 && inspectorLayout.initial.toggleVisible && inspectorLayout.initial.resizerVisible && !inspectorLayout.initial.transformOpen && inspectorLayout.collapsed.inspector <= 46 && inspectorLayout.collapsed.layers > inspectorLayout.initial.layers + 140 && !inspectorLayout.collapsed.inputVisible && inspectorLayout.collapsed.toggleVisible && inspectorLayout.collapsed.ariaExpanded === 'false' && Math.abs(inspectorLayout.restored - inspectorLayout.initial.inspector) <= 2 && inspectorLayout.resized >= inspectorLayout.restored + 20 && inspectorLayout.stored >= 370 && !inspectorLayout.collapsedState && inspectorLayout.resizerRole === 'separator', JSON.stringify(inspectorLayout));
 
   const layerRowActions=JSON.parse(await win.webContents.executeJavaScript(`JSON.stringify((()=>{
     const scene=currentScene(), original=cloneState(scene.layers), source=scene.layers[1]||scene.layers[0];
@@ -508,6 +508,51 @@ app.whenReady().then(async () => {
   await new Promise(resolve => setTimeout(resolve, 160));
   fs.writeFileSync(path.join(artifactDirectory, 'compositor-1280x800.png'), (await win.webContents.capturePage()).toPNG());
 
+  const stableLayouts = [];
+  for (const viewport of [
+    { width: 1600, height: 900 },
+    { width: 1280, height: 800 },
+    { width: 1024, height: 700 },
+    { width: 900, height: 600 }
+  ]) {
+    win.setContentSize(viewport.width, viewport.height);
+    if (!await waitFor(() => win.webContents.executeJavaScript(`innerWidth===${viewport.width}&&innerHeight===${viewport.height}`))) throw new Error(`${viewport.width}x${viewport.height} viewport did not settle`);
+    await win.webContents.executeJavaScript(`(()=>{
+      document.body.classList.remove('sidebar-collapsed','dr-run','dr-right');
+      setSourceInspectorCollapsed(false,{persist:false});
+      const panel=document.getElementById('panelSources');
+      setSourceInspectorWidth(Number(panel.dataset.sourceInspectorPreferredWidth)||350,{persist:false,updatePreferred:false});
+    })()`);
+    await new Promise(resolve => setTimeout(resolve, 140));
+    const layout = JSON.parse(await win.webContents.executeJavaScript(`JSON.stringify((()=>{
+      const rect=value=>{const node=typeof value==='string'?document.querySelector(value):value;const box=node.getBoundingClientRect();return {left:box.left,right:box.right,top:box.top,bottom:box.bottom,width:box.width,height:box.height};};
+      const app=rect('#app-shell'),workspace=rect('.main.operator-workspace'),sidebar=rect('#primarySidebar'),main=rect('.operator-main'),studio=rect('#studio');
+      const preview=rect('#preview'),program=rect('#program'),panel=rect('#panelSources'),docks=rect('.compositor-workspace');
+      const layers=rect('.compositor-layers'),inspector=rect('#inspector'),audio=rect('.compositor-audio'),add=rect('#btnAddSource');
+      const layerRow=document.querySelector('#layerList .layer-row'),layerRowRect=layerRow?rect(layerRow):null;
+      const layerActionRects=layerRow?[...layerRow.querySelectorAll('.layer-row-actions button')].map(rect):[];
+      const close=(a,b,tolerance=2)=>Math.abs(a-b)<=tolerance;
+      return {
+        viewport:{width:innerWidth,height:innerHeight},app,workspace,sidebar,main,studio,preview,program,panel,docks,layers,inspector,audio,add,
+        bodyOverflow:document.documentElement.scrollWidth>innerWidth+1,
+        dockOverflow:document.querySelector('.compositor-workspace').scrollWidth>document.querySelector('.compositor-workspace').clientWidth+1,
+        sidebarDocked:sidebar.width>=178&&sidebar.left>=workspace.left-1&&sidebar.right<=main.left-4,
+        monitorsStable:preview.width>100&&program.width>100&&close(preview.top,program.top)&&close(preview.bottom,program.bottom)&&close(preview.width,program.width,4)&&preview.right<program.left,
+        panelBelow:panel.top>=Math.max(preview.bottom,program.bottom)+4&&panel.bottom<=main.bottom+1,
+        docksStable:layers.width>=215&&inspector.width>=215&&audio.width>=215&&close(layers.top,inspector.top)&&close(inspector.top,audio.top)&&close(layers.bottom,inspector.bottom)&&close(inspector.bottom,audio.bottom)&&layers.right<inspector.left&&inspector.right<=audio.left+1,
+        controlsVisible:add.width>0&&add.height>0&&add.left>=panel.left&&add.right<=panel.right+1,
+        layerActionsVisible:!!layerRowRect&&layerActionRects.length===5&&layerActionRects.every(button=>button.width>0&&button.height>0&&button.left>=layerRowRect.left-1&&button.right<=layerRowRect.right+1&&button.top>=layerRowRect.top-1&&button.bottom<=layerRowRect.bottom+1),
+        localScroll:[getComputedStyle(document.querySelector('.compositor-layers')).overflowY,getComputedStyle(document.querySelector('#inspector')).overflowY,getComputedStyle(document.querySelector('.compositor-audio')).overflowY]
+      };
+    })())`));
+    stableLayouts.push(layout);
+    fs.writeFileSync(path.join(artifactDirectory, `compositor-stable-${viewport.width}x${viewport.height}.png`), (await win.webContents.capturePage()).toPNG());
+  }
+  check('COMPOSITOR_OBS_DOCK_LAYOUT_STABLE_OK', stableLayouts.every(layout => !layout.bodyOverflow && !layout.dockOverflow && layout.sidebarDocked && layout.monitorsStable && layout.panelBelow && layout.docksStable && layout.controlsVisible && layout.layerActionsVisible && layout.localScroll.every(value => value === 'auto' || value === 'scroll')), JSON.stringify(stableLayouts));
+
+  win.setContentSize(1280, 800);
+  if (!await waitFor(() => win.webContents.executeJavaScript('innerWidth===1280&&innerHeight===800'))) throw new Error('1280x800 viewport did not restore');
+
   const saved = await win.webContents.executeJavaScript(`flushShowAutosave({reason:'compositor-renderer-test',force:true})`);
   const disk = await repository.loadCurrent();
   const roundtripDetail = disk.ok ? {
@@ -534,11 +579,11 @@ app.whenReady().then(async () => {
   fs.writeFileSync(path.join(artifactDirectory, 'composition-workspace-900x600.png'), (await win.webContents.capturePage()).toPNG());
   await win.webContents.executeJavaScript(`document.getElementById('btnCompositionClose').click()`);
   const compact = JSON.parse(await win.webContents.executeJavaScript(`JSON.stringify((()=>{
-    const root=document.getElementById('panelSources'); const actionElement=document.getElementById('inspDelete'); actionElement.scrollIntoView({block:'center'});
-    const panel=root.getBoundingClientRect(); const add=document.getElementById('btnAddSource').getBoundingClientRect(); const action=actionElement.getBoundingClientRect(); const preview=document.getElementById('preview').getBoundingClientRect(); const program=document.getElementById('program').getBoundingClientRect();
-    return {vw:innerWidth,vh:innerHeight,panel:{left:panel.left,right:panel.right,top:panel.top,bottom:panel.bottom},add:{left:add.left,right:add.right,top:add.top,bottom:add.bottom},action:{left:action.left,right:action.right,top:action.top,bottom:action.bottom},preview:{left:preview.left,right:preview.right,top:preview.top,bottom:preview.bottom},program:{left:program.left,right:program.right,top:program.top,bottom:program.bottom},scrollTop:root.scrollTop,scrollable:root.scrollHeight>root.clientHeight};
+    const root=document.getElementById('panelSources'); const inspector=document.getElementById('inspector'); const actionElement=document.getElementById('inspDelete'); actionElement.scrollIntoView({block:'center'});
+    const panel=root.getBoundingClientRect(); const add=document.getElementById('btnAddSource').getBoundingClientRect(); const action=actionElement.getBoundingClientRect(); const preview=document.getElementById('preview').getBoundingClientRect(); const program=document.getElementById('program').getBoundingClientRect(); const inspectorRect=inspector.getBoundingClientRect();
+    return {vw:innerWidth,vh:innerHeight,panel:{left:panel.left,right:panel.right,top:panel.top,bottom:panel.bottom},add:{left:add.left,right:add.right,top:add.top,bottom:add.bottom},action:{left:action.left,right:action.right,top:action.top,bottom:action.bottom},preview:{left:preview.left,right:preview.right,top:preview.top,bottom:preview.bottom},program:{left:program.left,right:program.right,top:program.top,bottom:program.bottom},inspector:{left:inspectorRect.left,right:inspectorRect.right,top:inspectorRect.top,bottom:inspectorRect.bottom,scrollTop:inspector.scrollTop,scrollable:inspector.scrollHeight>inspector.clientHeight}};
   })())`));
-  check('COMPOSITOR_900X600_CONTROLS_REACHABLE_OK', compact.panel.left >= 0 && compact.panel.right <= compact.vw + 1 && compact.add.left >= 0 && compact.add.right <= compact.vw + 1 && compact.preview.right > compact.preview.left && compact.preview.bottom > compact.preview.top && compact.program.right > compact.program.left && compact.program.bottom > compact.program.top && compact.scrollable && compact.scrollTop > 0 && compact.action.left >= 0 && compact.action.right <= compact.vw + 1 && compact.action.top >= compact.panel.top && compact.action.bottom <= compact.panel.bottom + 1, JSON.stringify(compact));
+  check('COMPOSITOR_900X600_CONTROLS_REACHABLE_OK', compact.panel.left >= 0 && compact.panel.right <= compact.vw + 1 && compact.add.left >= 0 && compact.add.right <= compact.vw + 1 && compact.preview.right > compact.preview.left && compact.preview.bottom > compact.preview.top && compact.program.right > compact.program.left && compact.program.bottom > compact.program.top && compact.inspector.scrollable && compact.inspector.scrollTop > 0 && compact.action.left >= compact.inspector.left && compact.action.right <= compact.inspector.right + 1 && compact.action.top >= compact.inspector.top && compact.action.bottom <= compact.inspector.bottom + 1, JSON.stringify(compact));
   const compactUtility = JSON.parse(await win.webContents.executeJavaScript(`JSON.stringify((()=>{
     document.body.classList.add('dr-right'); const utility=document.getElementById('utilitySidebar'); utility.scrollTop=0;
     const status=document.querySelector('.card-status').getBoundingClientRect(); const scenes=document.querySelector('.card-scenes').getBoundingClientRect(); const rows=[...document.querySelectorAll('.card-status .strow')].map(row=>row.getBoundingClientRect());
@@ -558,7 +603,13 @@ app.whenReady().then(async () => {
   })())`));
   check('COMPOSITOR_DEMO_STARTS_PREVIEW_PROGRAM_IN_SYNC_OK', demoBaseline.visible && demoBaseline.direct === false && demoBaseline.selectedStatus === 'LIVE' && demoBaseline.statuses.length > 0 && demoBaseline.statuses.every(status=>status === 'LIVE') && demoBaseline.preview === demoBaseline.program, JSON.stringify(demoBaseline));
 
-  console.log(`COMPOSITOR_RENDERER_TESTS_OK ${checks}/39`);
+  win.setContentSize(1600, 900);
+  if (!await waitFor(() => win.webContents.executeJavaScript('innerWidth===1600&&innerHeight===900'))) throw new Error('1600x900 demo viewport did not settle');
+  await win.webContents.executeJavaScript(`setSidebarView('slides');`);
+  await new Promise(resolve => setTimeout(resolve, 160));
+  fs.writeFileSync(path.join(artifactDirectory, 'compositor-demo-1600x900.png'), (await win.webContents.capturePage()).toPNG());
+
+  console.log(`COMPOSITOR_RENDERER_TESTS_OK ${checks}/40`);
   win.destroy();
   fs.rmSync(profile, { recursive: true, force: true });
   app.quit();
