@@ -143,6 +143,7 @@ body.compositor-open .shell-layout .drawer-scrim{display:none!important}
 body.compositor-open.dr-right .shell-layout .drawer-scrim{display:block!important;top:64px!important;bottom:32px!important}
 .compositor-inspector.inspector.open{overflow-x:hidden!important;overflow-y:auto!important}
 .compositor-audio{grid-column:auto!important;grid-row:auto!important;overflow-x:hidden!important;overflow-y:auto!important;border-top:0!important;border-left:1px solid var(--border)!important}
+@media(max-width:1050px){body.compositor-open .shell-layout .slides-tools button{padding:5px 1px!important;font-size:8px!important}}
 @container compositor-panel (max-width:900px){
   .compositor-head{padding:9px 10px}
   .compositor-scene-select{min-width:120px;max-width:none}

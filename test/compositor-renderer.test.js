@@ -531,6 +531,7 @@ app.whenReady().then(async () => {
       const layers=rect('.compositor-layers'),inspector=rect('#inspector'),audio=rect('.compositor-audio'),add=rect('#btnAddSource');
       const layerRow=document.querySelector('#layerList .layer-row'),layerRowRect=layerRow?rect(layerRow):null;
       const layerActionRects=layerRow?[...layerRow.querySelectorAll('.layer-row-actions button')].map(rect):[];
+      const sceneCommands=[...document.querySelectorAll('.slides-tools button')];
       const close=(a,b,tolerance=2)=>Math.abs(a-b)<=tolerance;
       return {
         viewport:{width:innerWidth,height:innerHeight},app,workspace,sidebar,main,studio,preview,program,panel,docks,layers,inspector,audio,add,
@@ -542,13 +543,14 @@ app.whenReady().then(async () => {
         docksStable:layers.width>=215&&inspector.width>=215&&audio.width>=215&&close(layers.top,inspector.top)&&close(inspector.top,audio.top)&&close(layers.bottom,inspector.bottom)&&close(inspector.bottom,audio.bottom)&&layers.right<inspector.left&&inspector.right<=audio.left+1,
         controlsVisible:add.width>0&&add.height>0&&add.left>=panel.left&&add.right<=panel.right+1,
         layerActionsVisible:!!layerRowRect&&layerActionRects.length===5&&layerActionRects.every(button=>button.width>0&&button.height>0&&button.left>=layerRowRect.left-1&&button.right<=layerRowRect.right+1&&button.top>=layerRowRect.top-1&&button.bottom<=layerRowRect.bottom+1),
+        sceneCommandsFit:sceneCommands.length===3&&sceneCommands.every(button=>button.scrollWidth<=button.clientWidth),
         localScroll:[getComputedStyle(document.querySelector('.compositor-layers')).overflowY,getComputedStyle(document.querySelector('#inspector')).overflowY,getComputedStyle(document.querySelector('.compositor-audio')).overflowY]
       };
     })())`));
     stableLayouts.push(layout);
     fs.writeFileSync(path.join(artifactDirectory, `compositor-stable-${viewport.width}x${viewport.height}.png`), (await win.webContents.capturePage()).toPNG());
   }
-  check('COMPOSITOR_OBS_DOCK_LAYOUT_STABLE_OK', stableLayouts.every(layout => !layout.bodyOverflow && !layout.dockOverflow && layout.sidebarDocked && layout.monitorsStable && layout.panelBelow && layout.docksStable && layout.controlsVisible && layout.layerActionsVisible && layout.localScroll.every(value => value === 'auto' || value === 'scroll')), JSON.stringify(stableLayouts));
+  check('COMPOSITOR_OBS_DOCK_LAYOUT_STABLE_OK', stableLayouts.every(layout => !layout.bodyOverflow && !layout.dockOverflow && layout.sidebarDocked && layout.monitorsStable && layout.panelBelow && layout.docksStable && layout.controlsVisible && layout.layerActionsVisible && layout.sceneCommandsFit && layout.localScroll.every(value => value === 'auto' || value === 'scroll')), JSON.stringify(stableLayouts));
 
   win.setContentSize(1280, 800);
   if (!await waitFor(() => win.webContents.executeJavaScript('innerWidth===1280&&innerHeight===800'))) throw new Error('1280x800 viewport did not restore');
