@@ -3524,7 +3524,9 @@
           </div>
           <div class="layer-list" id="layerList"></div>
         </section>
+        <div class="compositor-inspector-resizer" id="compositorInspectorResizer" role="separator" aria-orientation="vertical" aria-controls="inspector" aria-valuemin="300" aria-valuemax="620" aria-valuenow="350" tabindex="0" data-i18n-title="sourceInspectorResize" title="Drag to resize the Source inspector"></div>
         <div class="inspector compositor-inspector" id="inspector">
+          <button id="btnInspectorToggle" class="ghost mini inspector-panel-toggle" type="button" aria-expanded="true" data-i18n-title="sourceInspectorCollapse" title="Collapse Source inspector"><span aria-hidden="true">›</span></button>
           <div class="inspector-source-head">
             <div><span class="glabel" data-i18n="inspTitle">Source</span><strong id="inspTypeBadge">—</strong></div>
             <label class="inspector-toggle"><input type="checkbox" id="inspVisible"><span data-i18n="sourceVisible">Visible</span></label>
@@ -3532,7 +3534,7 @@
           </div>
           <label class="insp-f insp-name"><span data-i18n="sourceName">Source name</span><input type="text" id="inspName" maxlength="160"></label>
 
-          <details class="inspector-section" id="inspTransformSection" open>
+          <details class="inspector-section" id="inspTransformSection">
             <summary><span data-i18n="inspTransform">Transform</span><small data-i18n="inspTransformHint">Position, size and alignment</small></summary>
             <div class="inspector-section-body inspector-grid">
               <label class="insp-f"><span>X %</span><input type="number" id="inspX" min="-100" max="200" step="0.5"></label>
@@ -4621,6 +4623,7 @@ function applyLang(){
   document.querySelectorAll('[data-i18n-html]').forEach(el => el.innerHTML = t(el.dataset.i18nHtml));
   buildLanguageSelect();
   if(typeof setConferenceLiveMode==='function') setConferenceLiveMode(!!conferenceLiveMode);
+  if(typeof updateSourceInspectorToggle==='function') updateSourceInspectorToggle();
   updateUtilityToggle();
   updateButtons(); renderCues(); renderScenesUI(); renderContentItems(); renderOutputRows(); showNet(lastNetInfo); fillDisplays(lastDisplays);
   if($('ltStudio')?.classList.contains('open')) renderLtStudio();
@@ -6906,6 +6909,81 @@ function setCompositorOpen(flag,options={}){
 }
 $('btnCompositor')?.addEventListener('click',()=>setCompositorOpen(!document.body.classList.contains('compositor-open')));
 $('btnCompositorClose')?.addEventListener('click',()=>setCompositorOpen(false));
+
+const SOURCE_INSPECTOR_WIDTH_KEY='showslate_source_inspector_width_v1';
+const SOURCE_INSPECTOR_COLLAPSED_KEY='showslate_source_inspector_collapsed_v1';
+const SOURCE_INSPECTOR_DEFAULT_WIDTH=350;
+function sourceInspectorWidthLimits(){
+  const workspace=$('panelSources')?.querySelector('.compositor-workspace');
+  const workspaceWidth=Math.max(640,workspace?.clientWidth||1000);
+  return {min:300,max:Math.max(300,Math.min(620,Math.floor(workspaceWidth*.56)))};
+}
+function setSourceInspectorWidth(value,options={}){
+  const panel=$('panelSources'),resizer=$('compositorInspectorResizer');if(!panel)return SOURCE_INSPECTOR_DEFAULT_WIDTH;
+  const limits=sourceInspectorWidthLimits();
+  const requested=Number(value);
+  const width=Math.round(Math.max(limits.min,Math.min(limits.max,Number.isFinite(requested)?requested:SOURCE_INSPECTOR_DEFAULT_WIDTH)));
+  panel.style.setProperty('--source-inspector-width',`${width}px`);
+  panel.dataset.sourceInspectorWidth=String(width);
+  if(resizer){resizer.setAttribute('aria-valuemin',String(limits.min));resizer.setAttribute('aria-valuemax',String(limits.max));resizer.setAttribute('aria-valuenow',String(width));}
+  if(options.persist!==false)try{localStorage.setItem(SOURCE_INSPECTOR_WIDTH_KEY,String(width));}catch(_){}
+  return width;
+}
+function updateSourceInspectorToggle(){
+  const panel=$('panelSources'),button=$('btnInspectorToggle'),resizer=$('compositorInspectorResizer');if(!panel||!button)return;
+  const collapsed=panel.classList.contains('inspector-collapsed');
+  const key=collapsed?'sourceInspectorExpand':'sourceInspectorCollapse';
+  button.dataset.i18nTitle=key;
+  button.title=t(key);
+  button.setAttribute('aria-label',t(key));
+  button.setAttribute('aria-expanded',collapsed?'false':'true');
+  const icon=button.querySelector('span');if(icon)icon.textContent=collapsed?'‹':'›';
+  if(resizer)resizer.setAttribute('aria-disabled',collapsed?'true':'false');
+}
+function setSourceInspectorCollapsed(flag,options={}){
+  const panel=$('panelSources');if(!panel)return;
+  panel.classList.toggle('inspector-collapsed',!!flag);
+  if(options.persist!==false)try{localStorage.setItem(SOURCE_INSPECTOR_COLLAPSED_KEY,flag?'1':'0');}catch(_){}
+  updateSourceInspectorToggle();
+}
+function initSourceInspectorLayout(){
+  const panel=$('panelSources'),button=$('btnInspectorToggle'),resizer=$('compositorInspectorResizer');if(!panel||!button||!resizer)return;
+  let storedWidth=SOURCE_INSPECTOR_DEFAULT_WIDTH;
+  try{storedWidth=Number(localStorage.getItem(SOURCE_INSPECTOR_WIDTH_KEY))||SOURCE_INSPECTOR_DEFAULT_WIDTH;}catch(_){}
+  setSourceInspectorWidth(storedWidth,{persist:false});
+  let collapsed=false;
+  try{collapsed=localStorage.getItem(SOURCE_INSPECTOR_COLLAPSED_KEY)==='1';}catch(_){}
+  setSourceInspectorCollapsed(collapsed,{persist:false});
+  button.addEventListener('click',()=>setSourceInspectorCollapsed(!panel.classList.contains('inspector-collapsed')));
+  button.addEventListener('keydown',event=>event.stopPropagation());
+  let drag=null;
+  resizer.addEventListener('pointerdown',event=>{
+    if(event.button!==0||panel.classList.contains('inspector-collapsed')||panel.classList.contains('inspector-empty'))return;
+    drag={pointerId:event.pointerId,startX:event.clientX,startWidth:Number(panel.dataset.sourceInspectorWidth)||SOURCE_INSPECTOR_DEFAULT_WIDTH};
+    document.body.classList.add('resizing-source-inspector');
+    try{resizer.setPointerCapture(event.pointerId);}catch(_){}
+    event.preventDefault();
+  });
+  resizer.addEventListener('pointermove',event=>{
+    if(!drag||event.pointerId!==drag.pointerId)return;
+    setSourceInspectorWidth(drag.startWidth-(event.clientX-drag.startX),{persist:false});
+  });
+  const finishResize=event=>{
+    if(!drag||event.pointerId!==drag.pointerId)return;
+    drag=null;document.body.classList.remove('resizing-source-inspector');
+    setSourceInspectorWidth(Number(panel.dataset.sourceInspectorWidth)||SOURCE_INSPECTOR_DEFAULT_WIDTH);
+  };
+  resizer.addEventListener('pointerup',finishResize);
+  resizer.addEventListener('pointercancel',finishResize);
+  resizer.addEventListener('dblclick',()=>setSourceInspectorWidth(SOURCE_INSPECTOR_DEFAULT_WIDTH));
+  resizer.addEventListener('keydown',event=>{
+    if(panel.classList.contains('inspector-collapsed'))return;
+    const current=Number(panel.dataset.sourceInspectorWidth)||SOURCE_INSPECTOR_DEFAULT_WIDTH;
+    if(event.key==='ArrowLeft'){event.preventDefault();event.stopPropagation();setSourceInspectorWidth(current+24);}
+    else if(event.key==='ArrowRight'){event.preventDefault();event.stopPropagation();setSourceInspectorWidth(current-24);}
+    else if(event.key==='Home'){event.preventDefault();event.stopPropagation();setSourceInspectorWidth(SOURCE_INSPECTOR_DEFAULT_WIDTH);}
+  });
+}
 
 let selectedProjectorMappingId='';
 function compositionById(id){
@@ -10591,7 +10669,7 @@ document.addEventListener('keydown',e=>{
     case 'ArrowLeft': e.preventDefault(); adjust(-10); break;
   }
 });
-window.addEventListener('resize',()=>{ lastKey=''; ltApplyCanvasZoom(); });
+window.addEventListener('resize',()=>{ lastKey=''; ltApplyCanvasZoom(); setSourceInspectorWidth(Number($('panelSources')?.dataset.sourceInspectorWidth)||SOURCE_INSPECTOR_DEFAULT_WIDTH,{persist:false}); });
 
 $('langSel').addEventListener('change',e=>{
   lang=langUtil.normalizeLang(e.target.value);
@@ -10602,7 +10680,7 @@ $('langSel').addEventListener('change',e=>{
 });
 
 // ---------- START ----------
-buildLanguageSelect(); buildGridSizeControl(); arrangeOperatorLayout(); load();
+buildLanguageSelect(); buildGridSizeControl(); initSourceInspectorLayout(); arrangeOperatorLayout(); load();
 {
   const identityKey='showslate_live_compositor_identity_v1';
   const firstIdentityLaunch=localStorage.getItem(identityKey)!=='1';
@@ -10708,6 +10786,7 @@ function renderInspector(){
   const box=$('inspector'); if(!box) return;
   const L=selectedLayer();
   box.classList.toggle('open', !!L);
+  $('panelSources')?.classList.toggle('inspector-empty',!L);
   if(!L) return;
   const normalized=PTCOMP.normalizeLayer(L);
   inspBinding=true;

@@ -52,4 +52,32 @@
 
 - None required for this scoped handoff.
 
+## Source Inspector Compaction And Resizing
+
+**Comparison Target**
+
+- Source visual truth: `/Users/srdjankotarlic/Desktop/Screenshot 2026-08-11 at 13.01.58.png`.
+- Rendered implementation: `/Users/srdjankotarlic/Documents/New project/protimer-studio-release/artifacts/generated/compositor/compositor-1280x800.png`.
+- Combined comparison: `/Users/srdjankotarlic/Documents/New project/protimer-studio-release/artifacts/generated/compositor/source-inspector-comparison.png`.
+- Viewport: 1280 x 768 CSS px for the wide operator state; 900 x 568 CSS px for the compact state.
+
+**Findings**
+
+- The Source inspector now opens at 350 px instead of owning a large flexible center track.
+- Transform is summarized by default; Crop & Framing and Appearance retain the same progressive disclosure pattern.
+- A visible edge control collapses the inspector to a 44 px rail and restores the selected source without losing state.
+- The divider supports pointer resizing, Left/Right keyboard adjustment, and Home to return to the 350 px default.
+- The chosen expanded width and collapsed state persist between launches.
+- The narrow layout removes the horizontal divider and keeps the full inspector reachable through the existing vertical workspace scroll.
+- No clipped labels, overlapping controls, horizontal overflow, or hidden destructive actions were found in the 1280 or 900 px states.
+
+**Implementation Checklist**
+
+- [x] Reduce the default Source inspector footprint.
+- [x] Add full-panel collapse and expand.
+- [x] Add pointer and keyboard resizing.
+- [x] Preserve every existing source control and selected-layer state.
+- [x] Verify wide and compact operator layouts.
+- [x] Compare the reference and rendered implementation in one artifact.
+
 final result: passed

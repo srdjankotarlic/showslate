@@ -322,6 +322,21 @@ app.whenReady().then(async () => {
   })())`));
   check('COMPOSITOR_LAYER_SELECT_USER_CONTROL_OK', layerSelection.button === 'BUTTON' && layerSelection.aria.includes('Slides capture') && layerSelection.targetId === layerSelection.selectedFromFocus && layerSelection.targetId === layerSelection.selectedId && layerSelection.current === layerSelection.targetId && layerSelection.inspectorOpen && layerSelection.inspectorName === 'Slides capture' && layerSelection.takeEnabled && layerSelection.rowTakeVisible && layerSelection.rowHideVisible && layerSelection.disabledOpacity < 0.6, JSON.stringify(layerSelection));
 
+  const inspectorLayout = JSON.parse(await win.webContents.executeJavaScript(`JSON.stringify((()=>{
+    const panel=document.getElementById('panelSources'),inspector=document.getElementById('inspector'),layers=document.querySelector('.compositor-layers'),toggle=document.getElementById('btnInspectorToggle'),resizer=document.getElementById('compositorInspectorResizer');
+    setSourceInspectorCollapsed(false,{persist:false});setSourceInspectorWidth(350,{persist:false});
+    const initial={inspector:inspector.getBoundingClientRect().width,layers:layers.getBoundingClientRect().width,toggleVisible:toggle.getClientRects().length>0,resizerVisible:resizer.getClientRects().length>0,transformOpen:document.getElementById('inspTransformSection').open};
+    toggle.click();
+    const collapsed={inspector:inspector.getBoundingClientRect().width,layers:layers.getBoundingClientRect().width,inputVisible:document.getElementById('inspName').getClientRects().length>0,toggleVisible:toggle.getClientRects().length>0,ariaExpanded:toggle.getAttribute('aria-expanded')};
+    toggle.click();
+    const restored=inspector.getBoundingClientRect().width;
+    resizer.dispatchEvent(new KeyboardEvent('keydown',{key:'ArrowLeft',bubbles:true}));
+    const resized=inspector.getBoundingClientRect().width,stored=Number(localStorage.getItem(SOURCE_INSPECTOR_WIDTH_KEY));
+    setSourceInspectorWidth(350,{persist:false});
+    return {initial,collapsed,restored,resized,stored,collapsedState:panel.classList.contains('inspector-collapsed'),resizerRole:resizer.getAttribute('role')};
+  })())`));
+  check('COMPOSITOR_SOURCE_INSPECTOR_COMPACT_RESIZABLE_OK', inspectorLayout.initial.inspector >= 340 && inspectorLayout.initial.inspector <= 360 && inspectorLayout.initial.toggleVisible && inspectorLayout.initial.resizerVisible && !inspectorLayout.initial.transformOpen && inspectorLayout.collapsed.inspector <= 46 && inspectorLayout.collapsed.layers > inspectorLayout.initial.layers + 250 && !inspectorLayout.collapsed.inputVisible && inspectorLayout.collapsed.toggleVisible && inspectorLayout.collapsed.ariaExpanded === 'false' && Math.abs(inspectorLayout.restored - inspectorLayout.initial.inspector) <= 2 && inspectorLayout.resized >= inspectorLayout.restored + 20 && inspectorLayout.stored >= 370 && !inspectorLayout.collapsedState && inspectorLayout.resizerRole === 'separator', JSON.stringify(inspectorLayout));
+
   const layerRowActions=JSON.parse(await win.webContents.executeJavaScript(`JSON.stringify((()=>{
     const scene=currentScene(), original=cloneState(scene.layers), source=scene.layers[1]||scene.layers[0];
     const probe={...cloneState(source),id:'layer-action-probe',name:'Layer action probe'};
@@ -543,7 +558,7 @@ app.whenReady().then(async () => {
   })())`));
   check('COMPOSITOR_DEMO_STARTS_PREVIEW_PROGRAM_IN_SYNC_OK', demoBaseline.visible && demoBaseline.direct === false && demoBaseline.selectedStatus === 'LIVE' && demoBaseline.statuses.length > 0 && demoBaseline.statuses.every(status=>status === 'LIVE') && demoBaseline.preview === demoBaseline.program, JSON.stringify(demoBaseline));
 
-  console.log(`COMPOSITOR_RENDERER_TESTS_OK ${checks}/38`);
+  console.log(`COMPOSITOR_RENDERER_TESTS_OK ${checks}/39`);
   win.destroy();
   fs.rmSync(profile, { recursive: true, force: true });
   app.quit();
