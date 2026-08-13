@@ -222,7 +222,7 @@ check('COMPOSITOR_VIDEO_TRANSPORT_IN_OUT_LOOP_AND_AUDIO_OK', () => {
     id: 'clip', type: 'video', inPoint: 10, outPoint: 14, playbackState: 'playing',
     playbackPosition: 10, playbackUpdatedAt: 1000, playbackRate: 1,
     endBehavior: 'loop', restartOnTake: true, audioEnabled: true,
-    audioMonitoring: 'monitor-and-output', muted: false, volume: 0.72
+    videoAudioConfigured: true, audioMonitoring: 'monitor-and-output', muted: false, volume: 0.72
   });
   const looped = compositor.resolveMediaPlayback(layer, 6500, 30);
   assert.strictEqual(looped.state, 'playing');
@@ -236,6 +236,15 @@ check('COMPOSITOR_VIDEO_TRANSPORT_IN_OUT_LOOP_AND_AUDIO_OK', () => {
     { monitoring: layer.audioMonitoring, enabled: layer.audioEnabled, muted: layer.muted, volume: layer.volume, restartOnTake: layer.restartOnTake },
     { monitoring: 'monitor-and-output', enabled: true, muted: false, volume: 0.72, restartOnTake: true }
   );
+});
+
+check('COMPOSITOR_LEGACY_VIDEO_AUDIO_MIGRATES_AUDIBLE_OK', () => {
+  const legacy = compositor.normalizeLayer({ id: 'legacy-clip', type: 'video', audioEnabled: false, muted: true });
+  const intentional = compositor.normalizeLayer({ id: 'silent-clip', type: 'video', videoAudioConfigured: true, audioEnabled: false, muted: true });
+  assert.strictEqual(legacy.audioEnabled, true);
+  assert.strictEqual(legacy.muted, false);
+  assert.strictEqual(intentional.audioEnabled, false);
+  assert.strictEqual(intentional.muted, true);
 });
 
 console.log('COMPOSITOR_MODEL_TESTS_OK count=' + passed);

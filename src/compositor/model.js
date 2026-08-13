@@ -523,8 +523,9 @@
       const transport = normalizeMediaTransport(source);
       Object.assign(layer, transport);
       layer.loop = transport.endBehavior === 'loop';
-      layer.audioEnabled = source.audioEnabled !== false;
-      layer.muted = source.muted !== false;
+      layer.videoAudioConfigured = source.videoAudioConfigured === true;
+      layer.audioEnabled = layer.videoAudioConfigured ? source.audioEnabled !== false : true;
+      layer.muted = layer.videoAudioConfigured ? source.muted === true : false;
       layer.volume = finite(source.volume, 1, 0, 1);
       layer.audioMonitoring = AUDIO_MONITORING_MODES.has(source.audioMonitoring) ? source.audioMonitoring : 'off';
     }

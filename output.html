@@ -664,7 +664,8 @@ function applySceneLayerVisual(box,content,layer){
 }
 function routeMediaAudio(element,layer,enabled){
   const monitoring=String(layer.audioMonitoring||'off');
-  const programAllowed=enabled&&monitoring!=='monitor-only'&&layer.audioEnabled!==false&&layer.muted!==true;
+  const controllerOwnsAudio=layer.type==='video'&&!!(S&&S._outputRoute&&S._outputRoute.audioOwnedByController);
+  const programAllowed=enabled&&!controllerOwnsAudio&&monitoring!=='monitor-only'&&layer.audioEnabled!==false&&layer.muted!==true;
   element.muted=!programAllowed;
   element.defaultMuted=element.muted;
   element.volume=Math.max(0,Math.min(1,Number(layer.volume??1)));
@@ -678,6 +679,7 @@ function outputMediaRuntimeSignature(layer){
     rate:layer.playbackRate,inPoint:layer.inPoint,outPoint:layer.outPoint,endBehavior:layer.endBehavior,
     audioEnabled:layer.audioEnabled,audioMonitoring:layer.audioMonitoring,muted:layer.muted,volume:layer.volume,
     routeAudio:!!(S&&S._outputRoute&&S._outputRoute.liveAudio===true),
+    controllerOwnsAudio:!!(S&&S._outputRoute&&S._outputRoute.audioOwnedByController),
     sink:String(S&&S._outputRoute&&S._outputRoute.audioOutputDeviceId||'')
   });
 }

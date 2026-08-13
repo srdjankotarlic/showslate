@@ -655,6 +655,7 @@ function outputPayload(state, routeId, role, revision = stateRevision, routeConf
       id: String(routeId || 'primary'),
       role: normalizedRole,
       liveAudio: routeConfig.liveAudio === true,
+      audioOwnedByController: true,
       audioOutputDeviceId: String(routeConfig.audioOutputDeviceId || state && state.programAudioDeviceId || ''),
       compositionId: String(routeConfig.compositionId || ''),
       mappingId: String(routeConfig.mappingId || ''),
