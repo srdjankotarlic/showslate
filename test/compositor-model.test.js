@@ -217,4 +217,25 @@ check('COMPOSITOR_AUDIO_ROUTE_CONFLICT_OK', () => {
   assert.deepStrictEqual(compositor.outputAudioConflicts([{ id: 'a', liveAudio: true }]), []);
 });
 
+check('COMPOSITOR_VIDEO_TRANSPORT_IN_OUT_LOOP_AND_AUDIO_OK', () => {
+  const layer = compositor.normalizeLayer({
+    id: 'clip', type: 'video', inPoint: 10, outPoint: 14, playbackState: 'playing',
+    playbackPosition: 10, playbackUpdatedAt: 1000, playbackRate: 1,
+    endBehavior: 'loop', restartOnTake: true, audioEnabled: true,
+    audioMonitoring: 'monitor-and-output', muted: false, volume: 0.72
+  });
+  const looped = compositor.resolveMediaPlayback(layer, 6500, 30);
+  assert.strictEqual(looped.state, 'playing');
+  assert.ok(Math.abs(looped.position - 11.5) < 0.001);
+  const paused = compositor.mediaTransportCommand(layer, 'pause', { now: 3000, duration: 30 });
+  assert.strictEqual(paused.playbackState, 'paused');
+  assert.ok(Math.abs(paused.playbackPosition - 12) < 0.001);
+  const restarted = compositor.mediaTransportCommand({ ...layer, ...paused }, 'restart', { now: 4000, duration: 30 });
+  assert.deepStrictEqual({ state: restarted.playbackState, position: restarted.playbackPosition }, { state: 'playing', position: 10 });
+  assert.deepStrictEqual(
+    { monitoring: layer.audioMonitoring, enabled: layer.audioEnabled, muted: layer.muted, volume: layer.volume, restartOnTake: layer.restartOnTake },
+    { monitoring: 'monitor-and-output', enabled: true, muted: false, volume: 0.72, restartOnTake: true }
+  );
+});
+
 console.log('COMPOSITOR_MODEL_TESTS_OK count=' + passed);

@@ -9,6 +9,8 @@
   const LAYER_TYPES = new Set(['color', 'image', 'video', 'pdf', 'text', 'timer', 'window', 'capture', 'audio']);
   const LIVE_INPUT_TYPES = new Set(['window', 'device', 'audio']);
   const AUDIO_MONITORING_MODES = new Set(['off', 'monitor-only', 'monitor-and-output']);
+  const MEDIA_PLAYBACK_STATES = new Set(['playing', 'paused', 'stopped']);
+  const MEDIA_END_BEHAVIORS = new Set(['stop', 'hold', 'loop']);
   const FITS = new Set(['cover', 'contain', 'fill']);
   const BLEND_MODES = new Set(['normal', 'multiply', 'screen', 'overlay', 'darken', 'lighten', 'difference']);
   const TRANSFORM_ORIGINS = new Set(['top-left', 'top-center', 'top-right', 'center-left', 'center', 'center-right', 'bottom-left', 'bottom-center', 'bottom-right']);
@@ -63,6 +65,85 @@
       bottom: finite(source.bottom, 0, 0, 49),
       left: finite(source.left, 0, 0, 49)
     };
+  }
+
+  function normalizeMediaTransport(raw = {}) {
+    const source = raw && typeof raw === 'object' ? raw : {};
+    const inPoint = finite(source.inPoint, 0, 0, 31536000);
+    const requestedOut = finite(source.outPoint, 0, 0, 31536000);
+    const outPoint = requestedOut > inPoint + 0.01 ? requestedOut : 0;
+    const endBehavior = MEDIA_END_BEHAVIORS.has(source.endBehavior)
+      ? source.endBehavior
+      : (source.loop === false ? 'hold' : 'loop');
+    return {
+      playbackState: MEDIA_PLAYBACK_STATES.has(source.playbackState) ? source.playbackState : 'playing',
+      playbackPosition: finite(source.playbackPosition, inPoint, 0, 31536000),
+      playbackUpdatedAt: finite(source.playbackUpdatedAt, 0, 0, Number.MAX_SAFE_INTEGER),
+      playbackRate: finite(source.playbackRate, 1, 0.25, 4),
+      inPoint,
+      outPoint,
+      endBehavior,
+      restartOnTake: source.restartOnTake !== false
+    };
+  }
+
+  function mediaPlaybackBounds(raw = {}, duration = 0) {
+    const transport = normalizeMediaTransport(raw);
+    const mediaDuration = Number(duration);
+    const hasDuration = Number.isFinite(mediaDuration) && mediaDuration > 0;
+    const start = hasDuration ? Math.min(transport.inPoint, Math.max(0, mediaDuration - 0.01)) : transport.inPoint;
+    let end = transport.outPoint > start + 0.01 ? transport.outPoint : (hasDuration ? mediaDuration : 0);
+    if (hasDuration) end = Math.min(end, mediaDuration);
+    if (end > 0 && end <= start + 0.01) end = hasDuration ? mediaDuration : 0;
+    return { start, end, duration: hasDuration ? mediaDuration : 0 };
+  }
+
+  function resolveMediaPlayback(raw = {}, now = Date.now(), duration = 0) {
+    const transport = normalizeMediaTransport(raw);
+    const bounds = mediaPlaybackBounds(transport, duration);
+    let state = transport.playbackState;
+    let position = Math.max(bounds.start, transport.playbackPosition);
+    if (state === 'playing' && transport.playbackUpdatedAt > 0) {
+      position += Math.max(0, Number(now) - transport.playbackUpdatedAt) / 1000 * transport.playbackRate;
+    }
+    if (bounds.end > bounds.start && position >= bounds.end) {
+      if (transport.endBehavior === 'loop') {
+        position = bounds.start + ((position - bounds.start) % (bounds.end - bounds.start));
+      } else if (transport.endBehavior === 'hold') {
+        position = Math.max(bounds.start, bounds.end - 0.04);
+        state = 'paused';
+      } else {
+        position = bounds.start;
+        state = 'stopped';
+      }
+    }
+    if (bounds.end > bounds.start) position = Math.min(position, Math.max(bounds.start, bounds.end - 0.001));
+    return { ...transport, ...bounds, state, position };
+  }
+
+  function mediaTransportCommand(raw = {}, action, options = {}) {
+    const now = Number.isFinite(Number(options.now)) ? Number(options.now) : Date.now();
+    const resolved = resolveMediaPlayback(raw, now, options.duration);
+    const requestedPosition = Number(options.position);
+    let position = Number.isFinite(requestedPosition) ? requestedPosition : resolved.position;
+    if (resolved.end > resolved.start) position = Math.min(Math.max(resolved.start, position), Math.max(resolved.start, resolved.end - 0.001));
+    else position = Math.max(resolved.start, position);
+    let playbackState = resolved.state;
+    if (action === 'play') {
+      playbackState = 'playing';
+      if (resolved.end > resolved.start && position >= resolved.end - 0.05) position = resolved.start;
+    } else if (action === 'pause') {
+      playbackState = 'paused';
+    } else if (action === 'stop') {
+      playbackState = 'stopped';
+      position = resolved.start;
+    } else if (action === 'restart') {
+      playbackState = 'playing';
+      position = resolved.start;
+    } else if (action === 'seek') {
+      playbackState = normalizeMediaTransport(raw).playbackState;
+    }
+    return { playbackState, playbackPosition: position, playbackUpdatedAt: now };
   }
 
   function normalizeCanvas(raw = {}) {
@@ -439,11 +520,13 @@
       layer.audioMonitoring = AUDIO_MONITORING_MODES.has(source.audioMonitoring) ? source.audioMonitoring : 'off';
     }
     if (type === 'video') {
-      layer.loop = source.loop !== false;
+      const transport = normalizeMediaTransport(source);
+      Object.assign(layer, transport);
+      layer.loop = transport.endBehavior === 'loop';
+      layer.audioEnabled = source.audioEnabled !== false;
       layer.muted = source.muted !== false;
       layer.volume = finite(source.volume, 1, 0, 1);
       layer.audioMonitoring = AUDIO_MONITORING_MODES.has(source.audioMonitoring) ? source.audioMonitoring : 'off';
-      layer.playbackRate = finite(source.playbackRate, 1, 0.25, 4);
     }
     if (type === 'pdf') {
       layer.page = integer(source.page, 1, 1, 999);
@@ -536,6 +619,8 @@
     LAYER_TYPES: [...LAYER_TYPES],
     LIVE_INPUT_TYPES: [...LIVE_INPUT_TYPES],
     AUDIO_MONITORING_MODES: [...AUDIO_MONITORING_MODES],
+    MEDIA_PLAYBACK_STATES: [...MEDIA_PLAYBACK_STATES],
+    MEDIA_END_BEHAVIORS: [...MEDIA_END_BEHAVIORS],
     BLEND_MODES: [...BLEND_MODES],
     TRANSFORM_ORIGINS: [...TRANSFORM_ORIGINS],
     CANVAS_PRESETS,
@@ -555,6 +640,10 @@
     normalizeLiveInput,
     normalizeLiveInputs,
     normalizeLayer,
+    normalizeMediaTransport,
+    mediaPlaybackBounds,
+    resolveMediaPlayback,
+    mediaTransportCommand,
     normalizeCrop,
     layerVisualStyle,
     normalizeScene,

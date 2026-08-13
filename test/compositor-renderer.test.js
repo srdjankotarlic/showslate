@@ -4,6 +4,7 @@ const { app, BrowserWindow, ipcMain, screen } = require('electron');
 const fs = require('fs');
 const os = require('os');
 const path = require('path');
+const { pathToFileURL } = require('url');
 const { ShowRepository } = require('../src/show-storage/repository.js');
 const smokeDisplay = require('../tools/smoke-display.js');
 
@@ -333,6 +334,26 @@ app.whenReady().then(async () => {
   })()`));
   check('OUTPUT_RENDERER_MULTI_SURFACE_MESH_MASK_OK', advancedOutput.active && advancedOutput.sourceHidden && advancedOutput.surfaceCount === 2 && advancedOutput.frameCount === 5 && advancedOutput.meshFrames === 4 && advancedOutput.meshGridFrames === 4 && new Set(advancedOutput.meshGridOffsets.map(pair=>pair.join('|'))).size === 4 && advancedOutput.checkerCells >= 48 && advancedOutput.cloneCount === 5 && advancedOutput.labels.length === 2 && advancedOutput.checker && advancedOutput.mask !== 'none' && advancedOutput.labelUnclipped && advancedOutput.bodyText.includes('INPUT A') && advancedOutput.bodyText.includes('INPUT B'), JSON.stringify(advancedOutput));
   fs.writeFileSync(path.join(artifactDirectory, 'advanced-output-multi-surface-1280x720.png'), (await outputRendererWin.webContents.capturePage()).toPNG());
+  const transportFixtureUrl = pathToFileURL(path.join(root, 'test', 'fixtures', 'lower-third', 'opaque-h264.mp4')).href;
+  const outputVideoAudio = JSON.parse(await outputRendererWin.webContents.executeJavaScript(`(async()=>{
+    const base={
+      activeCompositionId:'composition-main',activeSceneId:'video-output-scene',canvas:{width:1920,height:1080,fps:30,background:'#000000',transparent:false},
+      scenes:[{id:'video-output-scene',name:'Video output',compositionId:'composition-main',layers:[{
+        id:'video-output-layer',type:'video',name:'Video output test',src:${JSON.stringify(transportFixtureUrl)},visible:true,x:0,y:0,w:100,h:100,opacity:1,fit:'contain',
+        playbackState:'paused',playbackPosition:.2,playbackUpdatedAt:Date.now(),playbackRate:1,inPoint:.1,outPoint:.8,endBehavior:'loop',restartOnTake:true,
+        audioEnabled:true,audioMonitoring:'off',muted:false,volume:.7
+      }]}],mode:'countdown',running:false,durationMs:600000,remMs:600000,endAt:0,startAt:0,elapsedMs:0,overtime:true,bgColor:'#000000',fgColor:'#ffffff',message:{text:'',flash:false},blackout:false,showProgress:false,transparent:false,lang:'en',cues:[],currentCue:-1,sceneFadeMs:0
+    };
+    const waitVideo=async()=>{const started=Date.now();while(Date.now()-started<2500){const video=document.querySelector('#sceneRoot video');if(video&&video.readyState>=1)return video;await new Promise(resolve=>setTimeout(resolve,25));}return document.querySelector('#sceneRoot video');};
+    applyState({...base,_outputRoute:{id:'primary',role:'audience',liveAudio:true,audioOutputDeviceId:'',outputCanvas:{width:1920,height:1080,fps:30,fit:'contain'}}});
+    let video=await waitVideo();
+    const routed={exists:!!video,muted:video&&video.muted,volume:video&&video.volume,controls:video&&video.controls,state:video&&video.dataset.playbackState,currentTime:video&&video.currentTime};
+    applyState({...base,_outputRoute:{id:'primary',role:'audience',liveAudio:false,audioOutputDeviceId:'',outputCanvas:{width:1920,height:1080,fps:30,fit:'contain'}}});
+    video=await waitVideo();
+    const safe={muted:video&&video.muted,state:video&&video.dataset.playbackState};
+    return JSON.stringify({routed,safe});
+  })()`));
+  check('OUTPUT_VIDEO_TRANSPORT_AND_SINGLE_ROUTE_AUDIO_OK', outputVideoAudio.routed.exists && outputVideoAudio.routed.muted === false && Math.abs(outputVideoAudio.routed.volume - .7) < .001 && outputVideoAudio.routed.controls === false && outputVideoAudio.routed.state === 'paused' && outputVideoAudio.routed.currentTime >= .1 && outputVideoAudio.routed.currentTime < .8 && outputVideoAudio.safe.muted === true, JSON.stringify(outputVideoAudio));
   outputRendererWin.destroy();
 
   const picturePath = path.join(profile, 'picture.svg');
@@ -372,6 +393,51 @@ app.whenReady().then(async () => {
     return JSON.stringify({startupInvalidated,previewWarning:previewWarning&&previewWarning.textContent||'',programClean,programMediaCount,programHtml:programLayer&&programLayer.innerHTML||''});
   })()`));
   check('COMPOSITOR_MEDIA_STARTUP_AND_ERROR_RECOVERY_OK', mediaRecovery.startupInvalidated && mediaRecovery.previewWarning.includes('Offline sponsor slate') && mediaRecovery.programClean, JSON.stringify(mediaRecovery));
+
+  const videoTransport = JSON.parse(await win.webContents.executeJavaScript(`(async()=>{
+    window.__videoTransportRestore={state:cloneState(S),program:cloneState(programState),selected:selectedLayerId,target:videoTransportTarget,outputs:cloneState(outputConfigs)};
+    const wait=ms=>new Promise(resolve=>setTimeout(resolve,ms));
+    const waitForVideo=async prefix=>{const started=Date.now();while(Date.now()-started<2500){const video=document.querySelector('#'+prefix+'Scene video');if(video&&video.readyState>=1)return video;await wait(25);}return document.querySelector('#'+prefix+'Scene video');};
+    const change=element=>element.dispatchEvent(new Event('change',{bubbles:true}));
+    const testScene=PTCOMP.normalizeScene({id:'video-transport-scene',name:'Video transport test',compositionId:S.activeCompositionId,layers:[{
+      id:'video-transport-layer',type:'video',name:'Operator clip',src:${JSON.stringify(transportFixtureUrl)},visible:true,x:0,y:0,w:100,h:100,opacity:1,fit:'contain',
+      playbackState:'paused',playbackPosition:.2,playbackUpdatedAt:Date.now(),playbackRate:1,inPoint:0,outPoint:0,endBehavior:'loop',restartOnTake:true,
+      audioEnabled:true,audioMonitoring:'off',muted:true,volume:.8
+    }]});
+    S.scenes.push(testScene);S.activeSceneId=testScene.id;S.studioDirect=false;selectedLayerId='video-transport-layer';videoTransportTarget='preview';
+    monitorSceneKeys={pv:'',pg:''};renderScenesUI();renderStage('pv',S,Date.now());renderStage('pg',programState,Date.now());
+    let previewVideo=await waitForVideo('pv');
+    const visible=['inspVideoWrap','inspVideoTargetPreview','inspVideoTargetProgram','inspVideoTargetBoth','inspVideoSeek','inspVideoRestart','inspVideoPlay','inspVideoPause','inspVideoStop','inspVideoIn','inspVideoOut','inspVideoEndBehavior','inspVideoPreviewAudio','inspVideoProgramAudio','inspVideoMuted','inspVideoVolume'].every(id=>document.getElementById(id).getClientRects().length>0);
+    document.getElementById('inspVideoIn').value='00:00.100';change(document.getElementById('inspVideoIn'));
+    document.getElementById('inspVideoOut').value='00:00.800';change(document.getElementById('inspVideoOut'));
+    document.getElementById('inspVideoEndBehavior').value='loop';change(document.getElementById('inspVideoEndBehavior'));
+    const previewAudio=document.getElementById('inspVideoPreviewAudio'),programAudio=document.getElementById('inspVideoProgramAudio');
+    if(!previewAudio.checked)previewAudio.click();
+    if(programAudio.checked)programAudio.click();
+    await wait(60);
+    const previewOnly={monitoring:selectedLayer().audioMonitoring,enabled:selectedLayer().audioEnabled,muted:(await waitForVideo('pv')).muted};
+    document.getElementById('inspVideoProgramAudio').click();
+    document.getElementById('inspVideoPreviewAudio').click();
+    await wait(60);
+    const programOnly={monitoring:selectedLayer().audioMonitoring,enabled:selectedLayer().audioEnabled,muted:(await waitForVideo('pv')).muted,route:activeProgramAudioRouteValue()};
+    document.getElementById('inspVideoPreviewAudio').click();
+    await wait(60);
+    previewVideo=await waitForVideo('pv');
+    const bothAudio={monitoring:selectedLayer().audioMonitoring,enabled:selectedLayer().audioEnabled,muted:previewVideo.muted,volume:previewVideo.volume};
+    document.getElementById('inspVideoRestart').click();await wait(80);
+    const previewPlaying={state:selectedLayer().playbackState,currentTime:(await waitForVideo('pv')).currentTime};
+    takeSelectedLayer();await wait(90);
+    const liveAfterTake=findProgramLayer(selectedLayer()),programVideo=await waitForVideo('pg');
+    const taken={exists:!!liveAfterTake,state:liveAfterTake&&liveAfterTake.playbackState,position:liveAfterTake&&liveAfterTake.playbackPosition,inPoint:liveAfterTake&&liveAfterTake.inPoint,outPoint:liveAfterTake&&liveAfterTake.outPoint,programMonitorMuted:programVideo&&programVideo.muted};
+    document.getElementById('inspVideoTargetProgram').click();document.getElementById('inspVideoPause').click();await wait(60);
+    const independent={preview:selectedLayer().playbackState,program:findProgramLayer(selectedLayer())&&findProgramLayer(selectedLayer()).playbackState};
+    document.getElementById('inspVideoTargetBoth').click();document.getElementById('inspVideoStop').click();await wait(60);
+    const stopped={preview:selectedLayer().playbackState,previewPosition:selectedLayer().playbackPosition,program:findProgramLayer(selectedLayer())&&findProgramLayer(selectedLayer()).playbackState,programPosition:findProgramLayer(selectedLayer())&&findProgramLayer(selectedLayer()).playbackPosition};
+    return JSON.stringify({visible,previewOnly,programOnly,bothAudio,previewPlaying,taken,independent,stopped,target:videoTransportTarget,clock:document.getElementById('inspVideoClock').textContent});
+  })()`));
+  check('COMPOSITOR_VIDEO_TRANSPORT_AND_AUDIO_ROUTING_OK', videoTransport.visible && videoTransport.previewOnly.monitoring === 'monitor-only' && videoTransport.previewOnly.enabled === false && videoTransport.previewOnly.muted === false && videoTransport.programOnly.monitoring === 'off' && videoTransport.programOnly.enabled === true && videoTransport.programOnly.muted === true && videoTransport.programOnly.route === 'primary' && videoTransport.bothAudio.monitoring === 'monitor-and-output' && videoTransport.bothAudio.enabled === true && videoTransport.bothAudio.muted === false && Math.abs(videoTransport.bothAudio.volume - .8) < .001 && videoTransport.previewPlaying.state === 'playing' && videoTransport.previewPlaying.currentTime >= .1 && videoTransport.previewPlaying.currentTime < .8 && videoTransport.taken.exists && videoTransport.taken.state === 'playing' && Math.abs(videoTransport.taken.position - .1) < .001 && videoTransport.taken.inPoint === .1 && videoTransport.taken.outPoint === .8 && videoTransport.taken.programMonitorMuted === true && videoTransport.independent.preview === 'playing' && videoTransport.independent.program === 'paused' && videoTransport.stopped.preview === 'stopped' && videoTransport.stopped.program === 'stopped' && Math.abs(videoTransport.stopped.previewPosition - .1) < .001 && Math.abs(videoTransport.stopped.programPosition - .1) < .001 && videoTransport.target === 'both', JSON.stringify(videoTransport));
+  fs.writeFileSync(path.join(artifactDirectory, 'video-transport-audio-1280x800.png'), (await win.webContents.capturePage()).toPNG());
+  await win.webContents.executeJavaScript(`(()=>{const prior=window.__videoTransportRestore;S=prior.state;programState=prior.program;selectedLayerId=prior.selected;videoTransportTarget=prior.target;outputConfigs=prior.outputs;delete window.__videoTransportRestore;monitorSceneKeys={pv:'',pg:''};renderScenesUI();renderStage('pv',S,Date.now());renderStage('pg',programState,Date.now());})()`);
 
   const authored = JSON.parse(await win.webContents.executeJavaScript(`(async()=>{
     const change=(element)=>element.dispatchEvent(new Event('change',{bubbles:true}));

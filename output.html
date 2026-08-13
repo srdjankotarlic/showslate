@@ -198,12 +198,14 @@
   <div id="blackout"></div>
 
 <script src="src/compositor/model.js"></script>
+<script src="src/compositor/media-transport.js"></script>
 <script src="src/live-input/consumer.js"></script>
 <script src="i18n.js?v=20260703-i18n2"></script>
 <script>
 const IS_ELECTRON = !!window.pt;
 const api = window.pt || null;
 const PTCOMP = window.ShowSlateCompositor;
+const PTMEDIA = window.ShowSlateMediaTransport;
 const OUTPUT_QUERY = new URLSearchParams(location.search);
 const OUTPUT_ROLES = ['audience','confidence','timer','stream','door'];
 let outputRole = OUTPUT_ROLES.includes(OUTPUT_QUERY.get('outputRole')) ? OUTPUT_QUERY.get('outputRole') : 'audience';
@@ -258,6 +260,9 @@ function applyState(s){
   const fitStateChanged=!S || !!s.fitWindow!==!!S.fitWindow || !!s.gridOn!==!!S.gridOn;
   if (S && (s.mode!==S.mode || s.durationMs!==S.durationMs)) prevRem = null;
   S = s;
+  // Audio routing is a live safety control. Apply it immediately instead of
+  // waiting for a potentially throttled animation frame.
+  syncSceneMediaRuntime();
   outputRole = OUTPUT_ROLES.includes(s && s._outputRoute && s._outputRoute.role) ? s._outputRoute.role : outputRole;
   document.body.classList.remove(...OUTPUT_ROLES.map(role=>'role-'+role));
   document.body.classList.add('role-'+outputRole);
@@ -523,7 +528,7 @@ function syncMappedMedia(source,clone,allowAudio=false){
       if(media.currentSrc!==sourceUrl&&media.src!==sourceUrl)media.src=sourceUrl;
       media.loop=original.loop;media.playbackRate=original.playbackRate;
       if(Number.isFinite(original.currentTime)&&Math.abs((media.currentTime||0)-original.currentTime)>.18)try{media.currentTime=original.currentTime;}catch(_){}
-      if(!original.paused)media.play().catch(()=>{});
+      if(original.paused)media.pause();else media.play().catch(()=>{});
     }
   });
 }
@@ -667,6 +672,47 @@ function routeMediaAudio(element,layer,enabled){
   if(programAllowed&&sinkId&&typeof element.setSinkId==='function') element.setSinkId(sinkId).catch(()=>{});
   return programAllowed;
 }
+function outputMediaRuntimeSignature(layer){
+  return JSON.stringify({
+    state:layer.playbackState,position:layer.playbackPosition,updatedAt:layer.playbackUpdatedAt,
+    rate:layer.playbackRate,inPoint:layer.inPoint,outPoint:layer.outPoint,endBehavior:layer.endBehavior,
+    audioEnabled:layer.audioEnabled,audioMonitoring:layer.audioMonitoring,muted:layer.muted,volume:layer.volume,
+    routeAudio:!!(S&&S._outputRoute&&S._outputRoute.liveAudio===true),
+    sink:String(S&&S._outputRoute&&S._outputRoute.audioOutputDeviceId||'')
+  });
+}
+function bindOutputVideo(video,layer){
+  if(!video||!layer)return;
+  const signature=outputMediaRuntimeSignature(layer);
+  if(video.dataset.mediaRuntimeSignature===signature)return;
+  const routeAudio=!!(S&&S._outputRoute&&S._outputRoute.liveAudio===true);
+  routeMediaAudio(video,layer,routeAudio);
+  PTMEDIA.bind(video,layer,{
+    muted:video.muted,
+    volume:video.volume,
+    sinkId:routeAudio?String(S&&S._outputRoute&&S._outputRoute.audioOutputDeviceId||''):''
+  });
+  video.dataset.mediaRuntimeSignature=signature;
+}
+function syncSceneMediaRuntime(providedLayers){
+  const scene=S&&activeScene();
+  const layers=providedLayers||((scene&&Array.isArray(scene.layers))?scene.layers.filter(layer=>layer&&layer.visible!==false):[]);
+  if(!layers.length)return;
+  const byId=new Map(layers.map(layer=>[String(layer.id||''),layer]));
+  const frames=[...document.querySelectorAll('#sceneRoot .scene-frame')];
+  const frame=frames[frames.length-1];
+  if(!frame)return;
+  frame.querySelectorAll('.scene-layer[data-layer-id]').forEach(box=>{
+    const layer=byId.get(String(box.dataset.layerId||''));
+    if(!layer)return;
+    if(layer.type==='video')bindOutputVideo(box.querySelector('video'),layer);
+    else if(layer.type==='window'||layer.type==='capture'){
+      const video=box.querySelector('video');if(video)routeMediaAudio(video,layer,!!(S._outputRoute&&S._outputRoute.liveAudio===true));
+    }else if(layer.type==='audio'){
+      const audio=box.querySelector('audio');if(audio)routeMediaAudio(audio,layer,!!(S._outputRoute&&S._outputRoute.liveAudio===true));
+    }
+  });
+}
 
 function renderScene(){
   const root=$('sceneRoot');
@@ -679,10 +725,9 @@ function renderScene(){
     x:l.x,y:l.y,w:l.w,h:l.h,rotation:l.rotation,opacity:l.opacity,fit:l.fit,text:l.text,color:l.color,bg:l.bg,page:l.page,
     lockAspect:l.lockAspect,flipX:l.flipX,flipY:l.flipY,transformOrigin:l.transformOrigin,crop:l.crop,objectPositionX:l.objectPositionX,objectPositionY:l.objectPositionY,
     blendMode:l.blendMode,cornerRadius:l.cornerRadius,brightness:l.brightness,contrast:l.contrast,saturation:l.saturation,hue:l.hue,blur:l.blur,
-    fontSize:l.fontSize,fontFamily:l.fontFamily,fontWeight:l.fontWeight,textAlign:l.textAlign,verticalAlign:l.verticalAlign,italic:l.italic,underline:l.underline,
-    audioEnabled:l.audioEnabled,audioMonitoring:l.audioMonitoring,volume:l.volume,loop:l.loop,muted:l.muted,playbackRate:l.playbackRate
-  })))+'|projection:'+JSON.stringify(projection)+'|inactive:'+projectionInactive+'|audio:'+(S._outputRoute&&S._outputRoute.liveAudio===true)+'|sink:'+String(S._outputRoute&&S._outputRoute.audioOutputDeviceId||'');
-  if(key===lastSceneKey) return;
+    fontSize:l.fontSize,fontFamily:l.fontFamily,fontWeight:l.fontWeight,textAlign:l.textAlign,verticalAlign:l.verticalAlign,italic:l.italic,underline:l.underline
+  })))+'|projection:'+JSON.stringify(projection)+'|inactive:'+projectionInactive;
+  if(key===lastSceneKey){syncSceneMediaRuntime(layers);return;}
   lastSceneKey=key;
   const fadeMs = Math.max(0, Math.min(2000, Number(S.sceneFadeMs ?? 0)));
   const oldFrames=[...root.children];
@@ -707,6 +752,7 @@ function renderScene(){
     if(layer.type==='timer') return;   // tajmer renderuje #stage, ne scena
     const d=document.createElement('div');
     d.className='scene-layer fit-'+(layer.fit||'cover');
+    d.dataset.layerId=String(layer.id||'');
     d.style.left=pct(layer.x,0)+'%';
     d.style.top=pct(layer.y,0)+'%';
     d.style.width=Math.max(1,pct(layer.w,100))+'%';
@@ -728,11 +774,9 @@ function renderScene(){
       content.appendChild(img);
     } else if(layer.type==='video' && layer.src){
       const v=document.createElement('video');
-      v.preload='auto';
-      v.disablePictureInPicture=true;
       v.src=mediaSrc(layer.src);
-      const routeAudio=S._outputRoute&&S._outputRoute.liveAudio===true;
-      v.autoplay=true; v.loop=layer.loop!==false; routeMediaAudio(v,layer,routeAudio); v.playbackRate=Math.max(.25,Math.min(4,Number(layer.playbackRate)||1)); v.playsInline=true; v.style.objectPosition=visual.objectPosition;
+      bindOutputVideo(v,layer);
+      v.style.objectPosition=visual.objectPosition;
       content.appendChild(v);
     } else if(layer.type==='pdf' && layer.src){
       const f=document.createElement('iframe');
@@ -773,6 +817,7 @@ function renderScene(){
     }
     frame.appendChild(d);
   });
+  syncSceneMediaRuntime(layers);
   if(liveInputConsumer) liveInputConsumer.sync(layers.filter(layer=>(layer.type==='window'||layer.type==='capture')&&layer.inputId).map(layer=>layer.inputId));
 }
 
