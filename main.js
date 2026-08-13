@@ -2059,7 +2059,9 @@ async function runLiveInputSmoke(waitLoad, options = {}) {
       const video=document.querySelector('video[data-live-input-id=${JSON.stringify(inputId)}]');
       const stream=video&&video.srcObject;
       const track=stream&&stream.getVideoTracks()[0];
-      return {ok:!!(video&&stream&&video.readyState>=2&&stream.getVideoTracks().length===1&&stream.getAudioTracks().length===1),scene:S&&S.activeSceneId,muted:video?video.muted:null,width:video?video.videoWidth:0,height:video?video.videoHeight:0,videoTracks:stream?stream.getVideoTracks().length:0,audioTracks:stream?stream.getAudioTracks().length:0,currentTime:video?video.currentTime:0,settings:track?track.getSettings():null};
+      const ready=!!(video&&stream&&video.readyState>=2&&stream.getVideoTracks().length===1&&stream.getAudioTracks().length===1);
+      const fullFormat=!!(video&&video.videoWidth===${width}&&video.videoHeight===${height});
+      return {ok:ready&&fullFormat,ready,fullFormat,scene:S&&S.activeSceneId,muted:video?video.muted:null,width:video?video.videoWidth:0,height:video?video.videoHeight:0,videoTracks:stream?stream.getVideoTracks().length:0,audioTracks:stream?stream.getAudioTracks().length:0,currentTime:video?video.currentTime:0,settings:track?track.getSettings():null};
     })())`));
     return value;
   }, 10000);
@@ -2537,7 +2539,7 @@ app.whenReady().then(async () => {
           smokeCheck(prefix + '_REMOTE_VIDEO_STATS_OK', live.previewReceiver&&live.previewReceiver.ok&&live.previewReceiver.framesDecoded>0&&live.previewReceiver.width===1280&&live.previewReceiver.height===720&&live.previewReceiver.packetsLost===0&&live.previewReceiver.framesDropped===0&&live.programReceiver&&live.programReceiver.ok&&live.programReceiver.framesDecoded>0&&live.programReceiver.width===expected.width&&live.programReceiver.height===expected.height&&live.programReceiver.packetsLost===0&&live.programReceiver.framesDropped===0, JSON.stringify({preview:live.previewReceiver,program:live.programReceiver,sender:live.programSender}));
           smokeCheck(prefix + '_PROGRAM_FRAME_RATE_OK', live.previewReceiver&&live.previewReceiver.decodedFps>=24&&live.programReceiver&&live.programReceiver.decodedFps>=expected.programFps&&live.programReceiver.width===expected.width&&live.programReceiver.height===expected.height, JSON.stringify({preview:live.previewReceiver,program:live.programReceiver,sender:live.programSender}));
           smokeCheck('LIVE_INPUT_PREVIEW_DOES_NOT_CHANGE_PROGRAM_OK', live.setup&&live.beforeTake&&live.setup.previewScene!==live.setup.programScene&&live.beforeTake.scene===live.setup.programScene&&!live.beforeTake.liveVideo, JSON.stringify({setup:live.setup,beforeTake:live.beforeTake}));
-          smokeCheck('LIVE_INPUT_TAKE_SENDS_EXPECTED_SCENE_OK', live.program&&live.program.ok&&live.program.scene===live.sceneId&&live.programMoving, JSON.stringify(live.program||live));
+          smokeCheck('LIVE_INPUT_TAKE_SENDS_EXPECTED_SCENE_OK', live.program&&live.program.ok&&live.program.fullFormat===true&&live.program.width===expected.width&&live.program.height===expected.height&&live.program.scene===live.sceneId&&live.programMoving, JSON.stringify(live.program||live));
           smokeCheck('LIVE_INPUT_PROGRAM_AUDIO_DEFAULT_MUTED_OK', live.program&&live.program.audioTracks===1&&live.program.muted===true, JSON.stringify(live.program||live));
           smokeCheck('LIVE_INPUT_PROGRAM_PIXELS_OK', live.visual&&live.visual.ok, JSON.stringify(live.visual||live));
           console.log((uhd60 ? 'LIVE_INPUT_UHD60_TARGETED_OK' : 'LIVE_INPUT_TARGETED_OK') + '=' + (smokeFailures.length === 0));
