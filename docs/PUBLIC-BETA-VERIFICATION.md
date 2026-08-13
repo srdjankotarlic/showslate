@@ -2,6 +2,19 @@
 
 Verified for the `0.11.0-beta.1` release candidate through 2026-08-11. This page separates what was exercised on the tested Mac from what was only automated, built or structurally inspected.
 
+## 2026-08-13 advanced mapping development verification
+
+Targeted source renderer/model checks and a freshly packaged Apple Silicon smoke run exercised the in-development multi-surface mapping workflow on `Built-in Retina Display`.
+
+- A custom 5376x768 composition was split into two independent Input Selection regions and mapped to separate halves of one 1920x1080 destination.
+- The first surface used four-corner perspective correction. The second used a 2x2 linear mesh with a polygon mask.
+- The route payload retained both surfaces, and the output renderer produced one perspective frame plus four independently transformed mesh cells.
+- Grid and Checker calibration patterns, surface labels, edge overlap and dynamic Program content remained present after mapping.
+- The editor remained reachable at 900x600 through local scrolling.
+- The packaged app retained strict display selection, fullscreen restore, simultaneous independent outputs, custom Canvas settings and mapped complete-Program rendering.
+
+This is development evidence, not a new public release certification. No physical multi-projector overlap, venue surface, lens, brightness or color-matching pass was performed for this update.
+
 ## 2026-08-11 multi-output mapping update
 
 Targeted source and freshly packaged Apple Silicon checks passed on the explicitly selected `PHL 243V7` display from clean commit `11489f9c3dcbb21cdf8dd90d4beb70704f81e27d`.

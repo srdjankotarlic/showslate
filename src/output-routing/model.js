@@ -22,7 +22,7 @@ function normalizeProjection(raw) {
   const width = numberInRange(raw.width, canvasWidth - x, 1, Math.max(1, canvasWidth - x));
   const height = numberInRange(raw.height, canvasHeight - y, 1, Math.max(1, canvasHeight - y));
   const blend = raw.blend && typeof raw.blend === 'object' ? raw.blend : {};
-  return {
+  const primary = {
     id: String(raw.id || ''),
     name: String(raw.name || 'Projector surface').slice(0, 160),
     compositionId: String(raw.compositionId || ''),
@@ -33,14 +33,27 @@ function normalizeProjection(raw) {
     height,
     canvasWidth,
     canvasHeight,
+    input: compositor.normalizeMappingInput(raw.input || { x, y, width, height }, { width: canvasWidth, height: canvasHeight }),
+    output: compositor.normalizeMappingOutput(raw.output),
+    opacity: Math.max(0, Math.min(1, Number(raw.opacity ?? 1))),
+    solo: raw.solo === true,
+    mask: compositor.normalizeMappingMask(raw.mask),
     blend: {
-      left: numberInRange(blend.left, 0, 0, Math.min(512, Math.floor(width / 2))),
-      right: numberInRange(blend.right, 0, 0, Math.min(512, Math.floor(width / 2))),
-      top: numberInRange(blend.top, 0, 0, Math.min(512, Math.floor(height / 2))),
-      bottom: numberInRange(blend.bottom, 0, 0, Math.min(512, Math.floor(height / 2)))
+      left: numberInRange(blend.left, 0, 0, Math.min(2048, Math.floor(width / 2))),
+      right: numberInRange(blend.right, 0, 0, Math.min(2048, Math.floor(width / 2))),
+      top: numberInRange(blend.top, 0, 0, Math.min(2048, Math.floor(height / 2))),
+      bottom: numberInRange(blend.bottom, 0, 0, Math.min(2048, Math.floor(height / 2))),
+      gamma: Math.max(0.1, Math.min(3, Number(blend.gamma) || 1)),
+      blackLevel: Math.max(0, Math.min(1, Number(blend.blackLevel) || 0))
     },
     warp: compositor.normalizeProjectorWarp(raw.warp)
   };
+  if (Array.isArray(raw.surfaces)) {
+    primary.surfaces = raw.surfaces
+      .map(surface => normalizeProjection({ ...surface, surfaces: undefined }))
+      .filter(Boolean);
+  }
+  return primary;
 }
 
 function normalizeOutputCanvas(raw) {

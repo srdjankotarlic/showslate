@@ -45,7 +45,7 @@ Select **Outputs** from the header.
 4. Choose **Fullscreen**, **Window**, **Custom size** or **Grid cell**.
 5. Choose a standard or custom output Canvas resolution and frame rate for that destination, then choose **Fit**, **Cover** or **Fill** scaling.
 6. For Custom size, enter width, height and coordinates.
-7. For a projector or LED processor, select **Map projector**. Assign the Canvas region, enable four-corner warp, move the corner handles and use the calibration grid to align the surface.
+7. For a projector or LED processor, select **Map projector** and follow the mapping workflow below.
 8. Enable **Program audio** on no more than one local desktop route when a scene really needs source audio.
 9. Enable the route and select **Apply routing**.
 
@@ -59,7 +59,21 @@ Available roles:
 
 Routes do not silently move to a different monitor if a display disappears. An unavailable or ambiguous route remains blocked until the intended display returns or the operator explicitly changes it.
 
-Every enabled route receives the same Program revision but keeps its own Canvas, scaling and optional projector mapping. Mapping transforms the complete Program. The beta mapper is intended for simple four-corner correction; it is not a full mesh-warping or automatic projector-calibration system.
+Every enabled route receives the same Program revision but keeps its own Canvas, scaling and optional projector mapping. Mapping transforms the complete Program, including scene layers, timer, text, logos and lower thirds.
+
+### Projector mapping workflow
+
+1. Open **Outputs**, create and configure the physical destination, then select **Map projector**. The same editor is available from **Composition** in the main header.
+2. Select the required composition and use its native Canvas dimensions. Custom Canvas sizes are intended for exact LED-processor pixel spaces.
+3. Select **Add surface**. Name the surface and assign it to an output destination. Multiple surfaces may target the same destination.
+4. In **Input Selection**, drag/resize the surface or enter exact pixel values to choose the source region. Horizontal and vertical flip are available for unusual optical paths.
+5. In **Output Mapping**, place the surface in the destination, set its size/rotation and choose **Perspective** for four-corner correction or **Linear mesh** for curved or segmented geometry. Meshes are bounded to 4 x 4 cells in this beta.
+6. Drag corner, mesh or enabled polygon-mask points directly on the canvas. A surface can be hidden or Soloed while calibrating.
+7. Turn on Grid, Checker or Crosshair and optional surface labels. Adjust edge overlap, blend gamma and black level for adjacent projectors.
+8. Duplicate a surface when building a neighboring projector, then adjust its Input Selection and Output Mapping independently.
+9. Select **Save**, then **Apply mapping to outputs**. Turn calibration patterns off and inspect every physical edge before doors open.
+
+Mapping data is saved with the show. The beta does not perform automatic camera calibration, projector color matching or physical venue certification.
 
 ## Preflight
 

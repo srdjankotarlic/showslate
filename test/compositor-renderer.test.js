@@ -171,9 +171,54 @@ app.whenReady().then(async () => {
     document.getElementById('mappingWarpBlX').value='8';
     document.getElementById('mappingWarpBlY').value='98';
     change(document.getElementById('mappingName'));
+    document.getElementById('btnMappingOutputMode').click();
+    document.getElementById('mappingX').value='0';
+    document.getElementById('mappingY').value='0';
+    document.getElementById('mappingWidth').value='50';
+    document.getElementById('mappingHeight').value='100';
+    change(document.getElementById('mappingWidth'));
+    const firstMappingId=selectedProjectorMappingId;
+    document.getElementById('btnMappingDuplicate').click();
+    const secondMappingId=selectedProjectorMappingId;
+    document.getElementById('btnMappingInputMode').click();
+    document.getElementById('mappingName').value='Right curved screen';
+    document.getElementById('mappingX').value='2688';
+    document.getElementById('mappingY').value='0';
+    document.getElementById('mappingWidth').value='2688';
+    document.getElementById('mappingHeight').value='768';
+    change(document.getElementById('mappingName'));
+    document.getElementById('btnMappingOutputMode').click();
+    document.getElementById('mappingX').value='50';
+    document.getElementById('mappingY').value='0';
+    document.getElementById('mappingWidth').value='50';
+    document.getElementById('mappingHeight').value='100';
+    document.getElementById('mappingWarpEnabled').checked=true;
+    document.getElementById('mappingWarpMode').value='mesh';
+    document.getElementById('mappingMeshColumns').value='2';
+    document.getElementById('mappingMeshRows').value='2';
+    document.getElementById('mappingGridVisible').checked=true;
+    document.getElementById('mappingGridPattern').value='checker';
+    document.getElementById('mappingGridLabels').checked=true;
+    document.getElementById('mappingMaskEnabled').checked=true;
+    change(document.getElementById('mappingMaskEnabled'));
+    const advancedMapping=selectedProjectorMapping();
+    advancedMapping.warp.mesh.points[4]={x:47,y:54};
+    advancedMapping.mask.points=[{x:2,y:3},{x:98,y:1},{x:94,y:97},{x:5,y:100}];
+    compositionDirty();
     const composition=cloneState(activeComposition());
     const mapping=cloneState(composition.mappings[0]);
     const projected=projectedOutputConfig(outputConfigs[0]);
+    const advanced=cloneState(composition.mappings.find(row=>row.id===secondMappingId));
+    const editor={
+      inputModeVisible:document.getElementById('btnMappingInputMode').getClientRects().length>0,
+      outputModeActive:document.getElementById('btnMappingOutputMode').classList.contains('active'),
+      surfaceTabs:document.querySelectorAll('#projectorMappingList .projector-mapping-tab').length,
+      visibleSurfaces:document.querySelectorAll('#projectorMappingSurfaces .mapping-surface').length,
+      meshHandles:[...document.querySelectorAll('.mapping-surface.selected .mapping-mesh-handle')].filter(node=>getComputedStyle(node).display!=='none').length,
+      meshLines:document.querySelectorAll('.mapping-surface.selected .mapping-mesh-overlay line').length,
+      maskHandles:[...document.querySelectorAll('.mapping-surface.selected .mapping-mask-handle')].filter(node=>getComputedStyle(node).display!=='none').length,
+      inspectorScroll:getComputedStyle(document.querySelector('.composition-settings-pane')).overflowY
+    };
     document.getElementById('btnCompositionClose').click();
     button.click();
     const reopened=await wait(()=>document.getElementById('compositionWorkspace').classList.contains('open'));
@@ -192,11 +237,14 @@ app.whenReady().then(async () => {
     document.querySelector('.output-route-editor[data-route-id="projection-test"] .out-map').click();
     const mapEntryOpened=await wait(()=>document.getElementById('compositionWorkspace').classList.contains('open')&&selectedProjectorMappingId===mapping.id);
     const cornerHandles=[...document.querySelectorAll('.mapping-surface.selected .mapping-corner-handle')].filter(node=>getComputedStyle(node).display!=='none').length;
-    return JSON.stringify({topButtonVisible,singleTopEntry,opened,panes,modalOpened,inspectorVisible,reopened,persisted,routerVisible,routeCanvases,mapEntryOpened,cornerHandles,compositionId:composition.id,compositionCount:S.compositions.length,sceneCount:scenesForComposition(composition.id).length,canvas:composition.canvas,mapping,projected,overlayInside:document.querySelector('.composition-workspace-dialog').getBoundingClientRect().right<=innerWidth+1});
+    return JSON.stringify({topButtonVisible,singleTopEntry,opened,panes,modalOpened,inspectorVisible,reopened,persisted,routerVisible,routeCanvases,mapEntryOpened,cornerHandles,compositionId:composition.id,compositionCount:S.compositions.length,sceneCount:scenesForComposition(composition.id).length,canvas:composition.canvas,mapping,advanced,editor,firstMappingId,secondMappingId,projected,overlayInside:document.querySelector('.composition-workspace-dialog').getBoundingClientRect().right<=innerWidth+1});
   })()`));
   check('COMPOSITION_WORKSPACE_VISIBLE_FROM_TOP_NAV_OK', compositionWorkflow.topButtonVisible && compositionWorkflow.singleTopEntry && compositionWorkflow.opened && compositionWorkflow.panes && compositionWorkflow.modalOpened && compositionWorkflow.inspectorVisible && compositionWorkflow.reopened && compositionWorkflow.overlayInside, JSON.stringify(compositionWorkflow));
   check('COMPOSITION_CUSTOM_LED_MULTI_PROJECTOR_MAPPING_OK', compositionWorkflow.persisted && compositionWorkflow.compositionCount >= 2 && compositionWorkflow.sceneCount >= 1 && compositionWorkflow.canvas.width === 5376 && compositionWorkflow.canvas.height === 768 && compositionWorkflow.canvas.fps === 50 && compositionWorkflow.mapping.width === 2688 && compositionWorkflow.mapping.height === 768 && compositionWorkflow.mapping.blend.right === 96 && compositionWorkflow.mapping.warp.enabled && compositionWorkflow.mapping.warp.grid.visible && compositionWorkflow.mapping.warp.grid.columns === 10 && compositionWorkflow.mapping.warp.corners.topLeft.x === 4 && compositionWorkflow.projected.compositionId === compositionWorkflow.compositionId && compositionWorkflow.projected.projection.width === 2688 && compositionWorkflow.projected.projection.warp.enabled && compositionWorkflow.cornerHandles === 4, JSON.stringify(compositionWorkflow));
+  check('COMPOSITION_ADVANCED_OUTPUT_INPUT_OUTPUT_EDITOR_OK', compositionWorkflow.editor.inputModeVisible && compositionWorkflow.editor.outputModeActive && compositionWorkflow.editor.surfaceTabs === 2 && compositionWorkflow.editor.visibleSurfaces === 2 && compositionWorkflow.editor.meshHandles === 9 && compositionWorkflow.editor.meshLines === 12 && compositionWorkflow.editor.maskHandles === 4 && ['auto','scroll'].includes(compositionWorkflow.editor.inspectorScroll) && compositionWorkflow.advanced.input.x === 2688 && compositionWorkflow.advanced.output.x === 50 && compositionWorkflow.advanced.output.width === 50 && compositionWorkflow.advanced.warp.mode === 'mesh' && compositionWorkflow.advanced.mask.enabled, JSON.stringify(compositionWorkflow.editor));
+  check('COMPOSITION_MULTI_SURFACE_ROUTE_PAYLOAD_OK', compositionWorkflow.projected.projection.surfaces.length === 2 && compositionWorkflow.projected.projection.surfaces[0].output.width === 50 && compositionWorkflow.projected.projection.surfaces[1].input.x === 2688 && compositionWorkflow.projected.projection.surfaces[1].output.x === 50 && compositionWorkflow.projected.projection.surfaces[1].warp.mode === 'mesh' && compositionWorkflow.projected.projection.surfaces[1].mask.enabled, JSON.stringify(compositionWorkflow.projected.projection.surfaces));
   check('OUTPUT_ROUTER_MULTI_CANVAS_AND_MAPPING_ENTRY_OK', compositionWorkflow.routerVisible && compositionWorkflow.mapEntryOpened && compositionWorkflow.routeCanvases.length === 2 && compositionWorkflow.routeCanvases[0].width === 1920 && compositionWorkflow.routeCanvases[0].height === 1080 && compositionWorkflow.routeCanvases[0].fit === 'contain' && compositionWorkflow.routeCanvases[0].mapping === 'Mapping active' && compositionWorkflow.routeCanvases[1].width === 1000 && compositionWorkflow.routeCanvases[1].height === 1000 && compositionWorkflow.routeCanvases[1].fit === 'cover' && compositionWorkflow.routeCanvases.every(route=>route.mapVisible), JSON.stringify(compositionWorkflow.routeCanvases));
+  await win.webContents.executeJavaScript(`(()=>{selectedProjectorMappingId=${JSON.stringify(compositionWorkflow.secondMappingId)};setMappingWorkspaceMode('output');renderCompositionWorkspace();})()`);
   await new Promise(resolve => setTimeout(resolve, 180));
   fs.writeFileSync(path.join(artifactDirectory, 'composition-workspace-1280x800.png'), (await win.webContents.capturePage()).toPNG());
   win.webContents.sendInputEvent({ type: 'keyDown', keyCode: 'Escape' });
@@ -249,6 +297,30 @@ app.whenReady().then(async () => {
   })()`));
   check('OUTPUT_RENDERER_FULL_PROGRAM_WARP_AND_CALIBRATION_GRID_OK', outputGeometry.surface.width === outputGeometry.surface.height && outputGeometry.surface.width >= 600 && outputGeometry.surface.transform !== 'none' && outputGeometry.surface.mask !== 'none' && outputGeometry.content.scaleX === 2 && outputGeometry.content.scaleY === 1 && Math.abs(outputGeometry.content.translateX + outputGeometry.surface.width) < 0.5 && outputGeometry.content.translateY === 0 && outputGeometry.content.containsLowerThird && outputGeometry.grid.display === 'block' && outputGeometry.grid.size.includes('10%') && outputGeometry.grid.parent === 'programSurface' && outputGeometry.canvas.width === '1000' && outputGeometry.canvas.height === '1000' && outputGeometry.canvas.fit === 'contain' && outputGeometry.canvas.warp === 'on', JSON.stringify(outputGeometry));
   fs.writeFileSync(path.join(artifactDirectory, 'projector-mapped-output-1280x720.png'), (await outputRendererWin.webContents.capturePage()).toPNG());
+  const advancedOutput = JSON.parse(await outputRendererWin.webContents.executeJavaScript(`(async()=>{
+    const base={
+      activeCompositionId:'composition-main',activeSceneId:'scene-main',canvas:{width:1920,height:1080,fps:30,background:'#000000',transparent:false},
+      scenes:[{id:'scene-main',name:'Advanced Output',compositionId:'composition-main',layers:[
+        {id:'background',type:'color',name:'Background',visible:true,color:'#121a24',x:0,y:0,w:100,h:100,opacity:1},
+        {id:'left',type:'text',name:'Left',visible:true,text:'INPUT A',color:'#e8edf5',bg:'transparent',x:5,y:35,w:38,h:25,opacity:1,fontSize:10},
+        {id:'right',type:'text',name:'Right',visible:true,text:'INPUT B',color:'#b8e4cb',bg:'transparent',x:57,y:35,w:38,h:25,opacity:1,fontSize:10}
+      ]}],mode:'countdown',running:false,durationMs:600000,remMs:600000,endAt:0,startAt:0,elapsedMs:0,overtime:true,bgColor:'#000000',fgColor:'#ffffff',message:{text:'',flash:false},blackout:false,showProgress:false,transparent:false,lang:'en',cues:[],currentCue:-1
+    };
+    const surfaces=[
+      {id:'surface-a',name:'Stage left',compositionId:'composition-main',enabled:true,canvasWidth:1920,canvasHeight:1080,input:{x:0,y:0,width:960,height:1080},output:{x:0,y:0,width:50,height:100},opacity:1,mask:{enabled:false},blend:{right:48,gamma:1,blackLevel:0},warp:{enabled:true,mode:'perspective',corners:{topLeft:{x:2,y:4},topRight:{x:98,y:1},bottomRight:{x:96,y:97},bottomLeft:{x:4,y:99}},grid:{visible:true,columns:8,rows:6,pattern:'grid',labels:true}}},
+      {id:'surface-b',name:'Curved right',compositionId:'composition-main',enabled:true,canvasWidth:1920,canvasHeight:1080,input:{x:960,y:0,width:960,height:1080},output:{x:50,y:0,width:50,height:100},opacity:.94,mask:{enabled:true,points:[{x:2,y:4},{x:98,y:2},{x:94,y:96},{x:6,y:99}]},blend:{left:48,gamma:1.15,blackLevel:.03},warp:{enabled:true,mode:'mesh',mesh:{columns:2,rows:2,points:[{x:0,y:0},{x:50,y:2},{x:100,y:0},{x:2,y:50},{x:47,y:54},{x:98,y:49},{x:0,y:100},{x:52,y:98},{x:100,y:100}]},grid:{visible:true,columns:8,rows:6,pattern:'checker',labels:true}}}
+    ];
+    applyState({...base,_outputRoute:{id:'advanced-output',role:'audience',liveAudio:false,outputCanvas:{width:1920,height:1080,fps:30,fit:'contain'},projection:{...surfaces[0],surfaces}}});
+    await new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)));
+    const host=document.getElementById('mappingSurfaceHost'),source=document.getElementById('programSurface'),wrappers=[...host.querySelectorAll('.mapped-surface')],mesh=wrappers.find(node=>node.dataset.surfaceId==='surface-b');
+    const before=host.textContent;
+    applyState({...base,remMs:545000,_outputRoute:{id:'advanced-output',role:'audience',liveAudio:false,outputCanvas:{width:1920,height:1080,fps:30,fit:'contain'},projection:{...surfaces[0],surfaces}}});
+    await new Promise(resolve=>setTimeout(resolve,70));
+    const meshGrids=mesh?[...mesh.querySelectorAll('.mapped-surface-frame .mapped-runtime-grid')]:[];
+    return JSON.stringify({active:host.classList.contains('active'),sourceHidden:getComputedStyle(source).opacity==='0',surfaceCount:wrappers.length,frameCount:host.querySelectorAll('.mapped-surface-frame').length,meshFrames:mesh?mesh.querySelectorAll('.mapped-surface-frame').length:0,meshGridFrames:meshGrids.length,meshGridOffsets:meshGrids.map(node=>[node.style.left,node.style.top]),checker:!!host.querySelector('.pattern-checker'),checkerCells:host.querySelectorAll('.pattern-checker rect').length,cloneCount:host.querySelectorAll('.mapped-program-clone').length,labels:[...host.querySelectorAll('.mapped-surface-label')].map(node=>node.textContent),mask:getComputedStyle(mesh.querySelector('.mapped-surface-content')).clipPath,labelUnclipped:getComputedStyle(mesh).clipPath==='none',bodyText:before,dynamicTimer:[...host.querySelectorAll('[data-mapped-source-id="timer"]')].map(node=>node.textContent)});
+  })()`));
+  check('OUTPUT_RENDERER_MULTI_SURFACE_MESH_MASK_OK', advancedOutput.active && advancedOutput.sourceHidden && advancedOutput.surfaceCount === 2 && advancedOutput.frameCount === 5 && advancedOutput.meshFrames === 4 && advancedOutput.meshGridFrames === 4 && new Set(advancedOutput.meshGridOffsets.map(pair=>pair.join('|'))).size === 4 && advancedOutput.checkerCells >= 48 && advancedOutput.cloneCount === 5 && advancedOutput.labels.length === 2 && advancedOutput.checker && advancedOutput.mask !== 'none' && advancedOutput.labelUnclipped && advancedOutput.bodyText.includes('INPUT A') && advancedOutput.bodyText.includes('INPUT B'), JSON.stringify(advancedOutput));
+  fs.writeFileSync(path.join(artifactDirectory, 'advanced-output-multi-surface-1280x720.png'), (await outputRendererWin.webContents.capturePage()).toPNG());
   outputRendererWin.destroy();
 
   const picturePath = path.join(profile, 'picture.svg');
@@ -655,10 +727,12 @@ app.whenReady().then(async () => {
     const grid=document.querySelector('.composition-workspace-grid'),dialog=document.querySelector('.composition-workspace-dialog'),settings=document.querySelector('.composition-settings-pane');
     grid.scrollTop=grid.scrollHeight;
     await new Promise(resolve=>setTimeout(resolve,80));
-    const dr=dialog.getBoundingClientRect(),sr=settings.getBoundingClientRect();
-    return JSON.stringify({open:document.getElementById('compositionWorkspace').classList.contains('open'),dialogInside:dr.left>=0&&dr.right<=innerWidth&&dr.top>=0&&dr.bottom<=innerHeight,horizontalFit:grid.scrollWidth<=grid.clientWidth+2,verticalScroll:grid.scrollHeight>grid.clientHeight,settingsReachable:sr.left>=dr.left&&sr.right<=dr.right+1&&sr.top<dr.bottom&&sr.bottom>dr.top,closeVisible:document.getElementById('btnCompositionClose').getClientRects().length>0,dialog:{left:dr.left,right:dr.right,top:dr.top,bottom:dr.bottom},settings:{left:sr.left,right:sr.right,top:sr.top,bottom:sr.bottom},scroll:{top:grid.scrollTop,height:grid.clientHeight,full:grid.scrollHeight}});
+    const dr=dialog.getBoundingClientRect(),sr=settings.getBoundingClientRect(),empty=document.getElementById('mappingEmpty'),emptyRect=empty.getBoundingClientRect(),inspector=document.getElementById('mappingInspector'),inspectorRect=inspector.getBoundingClientRect(),selection=document.getElementById('mappingSelectionStatus'),selectionRect=selection.getBoundingClientRect(),surfaceCount=document.querySelectorAll('.projector-mapping-tab').length;
+    const emptyVisible=!empty.hidden&&getComputedStyle(empty).display!=='none'&&emptyRect.height>0,inspectorVisible=!inspector.hidden&&getComputedStyle(inspector).display!=='none'&&inspectorRect.height>0;
+    const mappingStateCoherent=surfaceCount>0?(inspectorVisible&&!emptyVisible):(!inspectorVisible&&emptyVisible);
+    return JSON.stringify({open:document.getElementById('compositionWorkspace').classList.contains('open'),dialogInside:dr.left>=0&&dr.right<=innerWidth&&dr.top>=0&&dr.bottom<=innerHeight,horizontalFit:grid.scrollWidth<=grid.clientWidth+2,verticalScroll:grid.scrollHeight>grid.clientHeight,settingsReachable:sr.left>=dr.left&&sr.right<=dr.right+1&&sr.top<dr.bottom&&sr.bottom>dr.top,closeVisible:document.getElementById('btnCompositionClose').getClientRects().length>0,mappingStateCoherent,surfaceCount,empty:{hidden:empty.hidden,display:getComputedStyle(empty).display,top:emptyRect.top,bottom:emptyRect.bottom,height:emptyRect.height},inspector:{hidden:inspector.hidden,display:getComputedStyle(inspector).display,top:inspectorRect.top,bottom:inspectorRect.bottom,height:inspectorRect.height},selection:{text:selection.textContent,top:selectionRect.top,bottom:selectionRect.bottom,height:selectionRect.height},dialog:{left:dr.left,right:dr.right,top:dr.top,bottom:dr.bottom},settings:{left:sr.left,right:sr.right,top:sr.top,bottom:sr.bottom},scroll:{top:grid.scrollTop,height:grid.clientHeight,full:grid.scrollHeight}});
   })()`));
-  check('COMPOSITION_900X600_WORKSPACE_REACHABLE_OK', compactComposition.open && compactComposition.dialogInside && compactComposition.horizontalFit && compactComposition.verticalScroll && compactComposition.settingsReachable && compactComposition.closeVisible, JSON.stringify(compactComposition));
+  check('COMPOSITION_900X600_WORKSPACE_REACHABLE_OK', compactComposition.open && compactComposition.dialogInside && compactComposition.horizontalFit && compactComposition.verticalScroll && compactComposition.settingsReachable && compactComposition.closeVisible && compactComposition.mappingStateCoherent, JSON.stringify(compactComposition));
   await new Promise(resolve => setTimeout(resolve, 120));
   fs.writeFileSync(path.join(artifactDirectory, 'composition-workspace-900x600.png'), (await win.webContents.capturePage()).toPNG());
   await win.webContents.executeJavaScript(`document.getElementById('btnCompositionClose').click()`);
@@ -693,7 +767,7 @@ app.whenReady().then(async () => {
   await new Promise(resolve => setTimeout(resolve, 160));
   fs.writeFileSync(path.join(artifactDirectory, 'compositor-demo-1600x900.png'), (await win.webContents.capturePage()).toPNG());
 
-  console.log(`COMPOSITOR_RENDERER_TESTS_OK ${checks}/42`);
+  console.log(`COMPOSITOR_RENDERER_TESTS_OK count=${checks}`);
   win.destroy();
   fs.rmSync(profile, { recursive: true, force: true });
   app.quit();

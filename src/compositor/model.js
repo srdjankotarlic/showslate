@@ -16,6 +16,8 @@
   const TEXT_ALIGNS = new Set(['left', 'center', 'right']);
   const VERTICAL_ALIGNS = new Set(['top', 'center', 'bottom']);
   const WARP_CORNERS = Object.freeze(['topLeft', 'topRight', 'bottomRight', 'bottomLeft']);
+  const WARP_MODES = new Set(['perspective', 'mesh']);
+  const TEST_PATTERNS = new Set(['grid', 'checker', 'crosshair']);
   const CANVAS_PRESETS = Object.freeze([
     { id: '1080p', label: 'HD 1080p', width: 1920, height: 1080 },
     { id: '720p', label: 'HD 720p', width: 1280, height: 720 },
@@ -96,6 +98,46 @@
     };
   }
 
+  function defaultMeshPoints(columns, rows, corners) {
+    const points = [];
+    for (let row = 0; row <= rows; row++) {
+      const v = row / rows;
+      for (let column = 0; column <= columns; column++) {
+        const u = column / columns;
+        const topX = corners.topLeft.x + (corners.topRight.x - corners.topLeft.x) * u;
+        const topY = corners.topLeft.y + (corners.topRight.y - corners.topLeft.y) * u;
+        const bottomX = corners.bottomLeft.x + (corners.bottomRight.x - corners.bottomLeft.x) * u;
+        const bottomY = corners.bottomLeft.y + (corners.bottomRight.y - corners.bottomLeft.y) * u;
+        points.push({ x: topX + (bottomX - topX) * v, y: topY + (bottomY - topY) * v });
+      }
+    }
+    return points;
+  }
+
+  function normalizeWarpMesh(raw = {}, corners) {
+    const source = raw && typeof raw === 'object' ? raw : {};
+    const columns = integer(source.columns, 1, 1, 4);
+    const rows = integer(source.rows, 1, 1, 4);
+    const defaults = defaultMeshPoints(columns, rows, corners);
+    const supplied = Array.isArray(source.points) ? source.points : [];
+    const points = defaults.map((fallback, index) => normalizeWarpPoint(supplied[index], fallback));
+
+    // Keep every point inside its own half-cell neighborhood. This still gives
+    // the operator useful curved/linear correction while preventing inverted
+    // mesh cells that would create undefined pixels during a live show.
+    points.forEach((point, index) => {
+      const column = index % (columns + 1);
+      const row = Math.floor(index / (columns + 1));
+      const halfX = 45 / columns;
+      const halfY = 45 / rows;
+      const centerX = column / columns * 100;
+      const centerY = row / rows * 100;
+      point.x = finite(point.x, defaults[index].x, centerX - halfX, centerX + halfX);
+      point.y = finite(point.y, defaults[index].y, centerY - halfY, centerY + halfY);
+    });
+    return { columns, rows, points };
+  }
+
   function normalizeProjectorWarp(raw = {}) {
     const source = raw && typeof raw === 'object' ? raw : {};
     const corners = source.corners && typeof source.corners === 'object' ? source.corners : {};
@@ -130,14 +172,19 @@
     });
 
     const grid = source.grid && typeof source.grid === 'object' ? source.grid : {};
+    const mode = WARP_MODES.has(source.mode) ? source.mode : 'perspective';
     return {
       enabled: source.enabled === true,
+      mode,
       corners: clean,
+      mesh: normalizeWarpMesh(source.mesh, clean),
       grid: {
         visible: grid.visible === true,
         columns: integer(grid.columns, 8, 2, 32),
         rows: integer(grid.rows, 6, 2, 32),
-        opacity: finite(grid.opacity, 0.72, 0.1, 1)
+        opacity: finite(grid.opacity, 0.72, 0.1, 1),
+        pattern: TEST_PATTERNS.has(grid.pattern) ? grid.pattern : 'grid',
+        labels: grid.labels !== false
       }
     };
   }
@@ -156,32 +203,90 @@
     }, 0) / 2);
     const clockwise = crosses.every(value => value > 0.01);
     const counterClockwise = crosses.every(value => value < -0.01);
-    return area >= 100 && (clockwise || counterClockwise);
+    if (!(area >= 100 && (clockwise || counterClockwise))) return false;
+    if (warp.mode !== 'mesh') return true;
+    const { columns, rows, points: meshPoints } = warp.mesh;
+    for (let row = 0; row < rows; row++) {
+      for (let column = 0; column < columns; column++) {
+        const stride = columns + 1;
+        const cell = [meshPoints[row * stride + column], meshPoints[row * stride + column + 1], meshPoints[(row + 1) * stride + column + 1], meshPoints[(row + 1) * stride + column]];
+        const cellArea = Math.abs(cell.reduce((sum, point, index) => {
+          const next = cell[(index + 1) % cell.length];
+          return sum + point.x * next.y - next.x * point.y;
+        }, 0) / 2);
+        if (cellArea < 0.1) return false;
+      }
+    }
+    return true;
+  }
+
+  function normalizeMappingInput(raw = {}, canvas = {}) {
+    const source = raw && typeof raw === 'object' ? raw : {};
+    const cleanCanvas = normalizeCanvas(canvas);
+    const x = integer(source.x, 0, 0, Math.max(0, cleanCanvas.width - 1));
+    const y = integer(source.y, 0, 0, Math.max(0, cleanCanvas.height - 1));
+    return {
+      x,
+      y,
+      width: integer(source.width, cleanCanvas.width - x, 1, Math.max(1, cleanCanvas.width - x)),
+      height: integer(source.height, cleanCanvas.height - y, 1, Math.max(1, cleanCanvas.height - y)),
+      flipX: source.flipX === true,
+      flipY: source.flipY === true
+    };
+  }
+
+  function normalizeMappingOutput(raw = {}) {
+    const source = raw && typeof raw === 'object' ? raw : {};
+    return {
+      x: finite(source.x, 0, -25, 125),
+      y: finite(source.y, 0, -25, 125),
+      width: finite(source.width, 100, 1, 150),
+      height: finite(source.height, 100, 1, 150),
+      rotation: finite(source.rotation, 0, -180, 180)
+    };
+  }
+
+  function normalizeMappingMask(raw = {}) {
+    const source = raw && typeof raw === 'object' ? raw : {};
+    const fallback = [{ x: 0, y: 0 }, { x: 100, y: 0 }, { x: 100, y: 100 }, { x: 0, y: 100 }];
+    const points = (Array.isArray(source.points) && source.points.length >= 3 ? source.points : fallback)
+      .slice(0, 16).map((point, index) => ({
+        x: finite(point && point.x, fallback[index % fallback.length].x, -25, 125),
+        y: finite(point && point.y, fallback[index % fallback.length].y, -25, 125)
+      }));
+    return { enabled: source.enabled === true, points, feather: finite(source.feather, 0, 0, 25) };
   }
 
   function normalizeProjectorMapping(raw = {}, index = 0, rawCanvas = {}) {
     const source = raw && typeof raw === 'object' ? raw : {};
     const canvas = normalizeCanvas(rawCanvas);
-    const x = integer(source.x, 0, 0, Math.max(0, canvas.width - 1));
-    const y = integer(source.y, 0, 0, Math.max(0, canvas.height - 1));
-    const width = integer(source.width, canvas.width - x, 1, Math.max(1, canvas.width - x));
-    const height = integer(source.height, canvas.height - y, 1, Math.max(1, canvas.height - y));
+    const input = normalizeMappingInput(source.input || source, canvas);
+    const output = normalizeMappingOutput(source.output);
     const blend = source.blend && typeof source.blend === 'object' ? source.blend : {};
     return {
       schemaVersion: SCHEMA_VERSION,
+      mappingVersion: 2,
       id: id(source.id, `mapping-${index + 1}`),
       name: cleanName(source.name, `Projector ${index + 1}`),
       enabled: source.enabled !== false,
+      solo: source.solo === true,
       outputId: id(source.outputId, ''),
-      x,
-      y,
-      width,
-      height,
+      input,
+      output,
+      // Legacy aliases remain in saved shows and API payloads during the beta.
+      x: input.x,
+      y: input.y,
+      width: input.width,
+      height: input.height,
+      opacity: finite(source.opacity, 1, 0, 1),
+      mask: normalizeMappingMask(source.mask),
       blend: {
-        left: integer(blend.left, 0, 0, Math.min(512, Math.floor(width / 2))),
-        right: integer(blend.right, 0, 0, Math.min(512, Math.floor(width / 2))),
-        top: integer(blend.top, 0, 0, Math.min(512, Math.floor(height / 2))),
-        bottom: integer(blend.bottom, 0, 0, Math.min(512, Math.floor(height / 2)))
+        left: integer(blend.left, 0, 0, Math.min(2048, Math.floor(input.width / 2))),
+        right: integer(blend.right, 0, 0, Math.min(2048, Math.floor(input.width / 2))),
+        top: integer(blend.top, 0, 0, Math.min(2048, Math.floor(input.height / 2))),
+        bottom: integer(blend.bottom, 0, 0, Math.min(2048, Math.floor(input.height / 2))),
+        gamma: finite(blend.gamma, 1, 0.1, 3),
+        blackLevel: finite(blend.blackLevel, 0, 0, 1)
       },
       warp: normalizeProjectorWarp(source.warp)
     };
@@ -438,7 +543,11 @@
     canvasPreset,
     canvasAspect,
     normalizeProjectorWarp,
+    normalizeWarpMesh,
     projectorWarpIsValid,
+    normalizeMappingInput,
+    normalizeMappingOutput,
+    normalizeMappingMask,
     normalizeProjectorMapping,
     normalizeComposition,
     normalizeCompositions,

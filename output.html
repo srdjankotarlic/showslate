@@ -16,6 +16,18 @@
 
   #programSurface{position:absolute;left:0;top:0;width:100%;height:100%;overflow:hidden;isolation:isolate;transform-origin:0 0;will-change:transform;backface-visibility:hidden;}
   #programContent{position:absolute;inset:0;width:100%;height:100%;overflow:visible;transform-origin:0 0;will-change:transform;}
+  #programSurface.mapping-source{opacity:0;pointer-events:none;}
+  #mappingSurfaceHost{position:absolute;inset:0;z-index:20;display:none;overflow:hidden;isolation:isolate;background:#000;pointer-events:none;}
+  #mappingSurfaceHost.active{display:block;}
+  body.role-stream #mappingSurfaceHost{background:transparent;}
+  .mapped-surface{position:absolute;overflow:visible;transform-origin:50% 50%;isolation:isolate;will-change:transform;}
+  .mapped-surface-content{position:absolute;inset:0;overflow:visible;isolation:isolate;}
+  .mapped-surface-frame{position:absolute;inset:0;overflow:visible;transform-origin:0 0;will-change:transform;backface-visibility:hidden;}
+  .mapped-surface-clip{position:absolute;inset:0;overflow:hidden;isolation:isolate;}
+  .mapped-program-clone{position:absolute;left:0;top:0;overflow:visible;transform-origin:0 0;will-change:transform;}
+  .mapped-surface-label{position:absolute;z-index:80;left:10px;top:10px;max-width:calc(100% - 20px);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;padding:5px 8px;border:1px solid rgba(255,255,255,.8);border-radius:3px;background:rgba(0,0,0,.72);color:#fff;font:700 12px/1.1 -apple-system,system-ui,sans-serif;letter-spacing:.08em;text-transform:uppercase;}
+  .mapped-runtime-grid{position:absolute;z-index:490;display:block;overflow:visible;pointer-events:none;}
+  .mapping-filter-defs{position:absolute;width:0;height:0;overflow:hidden;}
   #sceneRoot{position:absolute; inset:0; z-index:auto; overflow:hidden; pointer-events:none; isolation:isolate;}
   .scene-layer{position:absolute; overflow:visible; display:flex; align-items:center; justify-content:center;
     opacity:var(--layerOpacity,1); transform:translateZ(0);}
@@ -182,6 +194,7 @@
     </div>
     <div id="projectionCalibration" aria-hidden="true"></div>
   </div>
+  <div id="mappingSurfaceHost" aria-hidden="true"></div>
   <div id="blackout"></div>
 
 <script src="src/compositor/model.js"></script>
@@ -199,7 +212,8 @@ const langUtil = window.PT_I18N_UTIL || { normalizeLang:c=>(OUT_I18N[c]?c:'en'),
 function outLang(){ return langUtil.normalizeLang((S && S.lang) || 'en'); }
 function outT(key){ const l=outLang(); return (OUT_I18N[l] && OUT_I18N[l][key]) || OUT_I18N.en[key] || key; }
 
-let S = null, prevRem = null, lastKey = '', lastSceneKey = '', lastLtRuntimeKey = '', ltSequenceTimer = null;
+let S = null, prevRem = null, lastKey = '', lastSceneKey = '', lastLtRuntimeKey = '', ltSequenceTimer = null, lastMappedSurfaceKey = '', lastMappedDynamicSyncAt = 0;
+const mappedRuntimeNodes = new Map();
 const liveInputConsumer = IS_ELECTRON && window.ShowSlateLiveInput
   ? new window.ShowSlateLiveInput.LiveInputConsumer(api,{label:'output'}) : null;
 let lastAckRevision = 0;
@@ -402,6 +416,25 @@ function routeProjection(){
   const height=Math.max(1,Math.min(canvasHeight-y,Number(raw.height)||canvasHeight-y));
   return {...raw,x,y,width,height,canvasWidth,canvasHeight,blend:raw.blend||{}};
 }
+function sceneProjection(){
+  const projection=routeProjection();
+  return projection&&Array.isArray(projection.surfaces)?null:projection;
+}
+function routeProjectionSurfaces(){
+  const projection=routeProjection();
+  if(!projection)return [];
+  const raw=Array.isArray(projection.surfaces)&&projection.surfaces.length?projection.surfaces:[projection];
+  const normalized=raw.map((surface,index)=>{
+    if(!surface||surface.enabled===false)return null;
+    const canvasWidth=Math.max(1,Number(surface.canvasWidth)||projection.canvasWidth),canvasHeight=Math.max(1,Number(surface.canvasHeight)||projection.canvasHeight);
+    const input=PTCOMP.normalizeMappingInput(surface.input||surface,{width:canvasWidth,height:canvasHeight});
+    return {...surface,id:String(surface.id||`surface-${index+1}`),enabled:true,compositionId:String(surface.compositionId||projection.compositionId||''),canvasWidth,canvasHeight,input,x:input.x,y:input.y,width:input.width,height:input.height,output:PTCOMP.normalizeMappingOutput(surface.output),opacity:Math.max(0,Math.min(1,Number(surface.opacity??1))),mask:PTCOMP.normalizeMappingMask(surface.mask),blend:surface.blend||{},warp:PTCOMP.normalizeProjectorWarp(surface.warp)};
+  }).filter(Boolean);
+  const activeCompositionId=String(S&&S.activeCompositionId||'composition-main');
+  const active=normalized.filter(surface=>!surface.compositionId||surface.compositionId===activeCompositionId);
+  const solos=active.filter(surface=>surface.solo===true);
+  return solos.length?solos:active;
+}
 function routeOutputCanvas(){
   const raw=S&&S._outputRoute&&S._outputRoute.outputCanvas;
   const fallback=PTCOMP.normalizeCanvas(S&&S.canvas||{});
@@ -441,6 +474,7 @@ function homographyMatrix(width,height,destinations){
 function applyOutputGeometry(){
   const surface=$('programSurface'),content=$('programContent'),calibration=$('projectionCalibration');
   if(!surface||!content||!calibration) return;
+  const multiSurface=!!(S&&S._outputRoute&&S._outputRoute.projection&&Array.isArray(S._outputRoute.projection.surfaces));
   const canvas=routeOutputCanvas(),viewportWidth=Math.max(1,innerWidth),viewportHeight=Math.max(1,innerHeight),aspect=canvas.width/canvas.height,viewportAspect=viewportWidth/viewportHeight;
   let width=viewportWidth,height=viewportHeight,left=0,top=0;
   if(canvas.fit==='contain'){
@@ -450,7 +484,7 @@ function applyOutputGeometry(){
     if(viewportAspect>aspect){width=viewportWidth;height=width/aspect;top=(viewportHeight-height)/2;}
     else{height=viewportHeight;width=height*aspect;left=(viewportWidth-width)/2;}
   }
-  const projection=routeProjection(),activeProjection=projection&&!projectionIsInactive(projection)?projection:null;
+  const projection=multiSurface?null:routeProjection(),activeProjection=projection&&!projectionIsInactive(projection)?projection:null;
   const warp=projection&&projection.warp?PTCOMP.normalizeProjectorWarp(projection.warp):PTCOMP.normalizeProjectorWarp();
   const corners=warp.enabled&&PTCOMP.projectorWarpIsValid(warp)?warp.corners:PTCOMP.normalizeProjectorWarp().corners;
   const destinations=[corners.topLeft,corners.topRight,corners.bottomRight,corners.bottomLeft].map(point=>[left+width*point.x/100,top+height*point.y/100]);
@@ -466,6 +500,119 @@ function applyOutputGeometry(){
   calibration.style.display=warp.grid.visible?'block':'none';
   calibration.style.backgroundSize=`${100/warp.grid.columns}% ${100/warp.grid.rows}%`;
   calibration.style.opacity=String(warp.grid.opacity);
+}
+function mappedOutputBounds(canvas){
+  const viewportWidth=Math.max(1,innerWidth),viewportHeight=Math.max(1,innerHeight),aspect=canvas.width/canvas.height,viewportAspect=viewportWidth/viewportHeight;
+  let width=viewportWidth,height=viewportHeight,left=0,top=0;
+  if(canvas.fit==='contain'){
+    if(viewportAspect>aspect){height=viewportHeight;width=height*aspect;left=(viewportWidth-width)/2;}else{width=viewportWidth;height=width/aspect;top=(viewportHeight-height)/2;}
+  }else if(canvas.fit==='cover'){
+    if(viewportAspect>aspect){width=viewportWidth;height=width/aspect;top=(viewportHeight-height)/2;}else{height=viewportHeight;width=height*aspect;left=(viewportWidth-width)/2;}
+  }
+  return {left,top,width,height};
+}
+function syncMappedMedia(source,clone,allowAudio=false){
+  const sourceMedia=[...source.querySelectorAll('video,audio')],cloneMedia=[...clone.querySelectorAll('video,audio')];
+  cloneMedia.forEach((media,index)=>{
+    const original=sourceMedia[index];if(!original)return;
+    media.muted=!allowAudio||original.muted;media.defaultMuted=media.muted;media.volume=original.volume;
+    if(original.srcObject){media.srcObject=original.srcObject;media.play().catch(()=>{});return;}
+    if(original.currentSrc||original.src){
+      const sourceUrl=original.currentSrc||original.src;
+      if(media.currentSrc!==sourceUrl&&media.src!==sourceUrl)media.src=sourceUrl;
+      media.loop=original.loop;media.playbackRate=original.playbackRate;
+      if(Number.isFinite(original.currentTime)&&Math.abs((media.currentTime||0)-original.currentTime)>.18)try{media.currentTime=original.currentTime;}catch(_){}
+      if(!original.paused)media.play().catch(()=>{});
+    }
+  });
+}
+function syncMappedDynamic(source,clone){
+  const sourceNodes=[...source.querySelectorAll('[id]')];
+  sourceNodes.forEach(original=>{
+    const id=original.id,target=clone.querySelector(`[data-mapped-source-id="${CSS.escape(id)}"]`);if(!target)return;
+    target.className=original.className;target.style.cssText=original.style.cssText;
+    if(['text','timer','msg','paused','roleRoomLabel','roleShowName','roleClock','roleCurrentLabel','roleCurrent','roleCurrentMeta','roleNextLabel','roleNext','roleNextMeta','ltName','ltTitle','ltMeta'].includes(id))target.textContent=original.textContent;
+    if(id==='nownext'&&target.innerHTML!==original.innerHTML)target.innerHTML=original.innerHTML;
+    if((original.tagName==='IMG')&&original.getAttribute('src')!==target.getAttribute('src'))target.setAttribute('src',original.getAttribute('src')||'');
+  });
+  syncMappedMedia(source,clone,false);
+}
+function mappedProgramClone(surface,surfaceWidth,surfaceHeight,input){
+  const clone=$('programContent').cloneNode(true);clone.removeAttribute('id');clone.classList.add('mapped-program-clone');clone.querySelectorAll('[id]').forEach(node=>{node.dataset.mappedSourceId=node.id;});
+  const scaleX=surface.canvasWidth/input.width,scaleY=surface.canvasHeight/input.height,translateX=-input.x/input.width*surfaceWidth,translateY=-input.y/input.height*surfaceHeight,flipX=input.flipX?-1:1,flipY=input.flipY?-1:1;
+  clone.style.width=`${surfaceWidth}px`;clone.style.height=`${surfaceHeight}px`;clone.style.transform=`matrix(${scaleX*flipX},0,0,${scaleY*flipY},${input.flipX?surfaceWidth-translateX:translateX},${input.flipY?surfaceHeight-translateY:translateY})`;
+  clone.dataset.allowAudio='0';syncMappedMedia($('programContent'),clone,false);return clone;
+}
+function mappedMaskStyle(element,surface){
+  const points=surface.mask&&surface.mask.enabled?surface.mask.points:null;
+  element.style.clipPath=points&&points.length>=3?`polygon(${points.map(point=>`${point.x}% ${point.y}%`).join(',')})`:'';
+  const blend=surface.blend||{},left=Math.max(0,Math.min(49,(Number(blend.left)||0)/surface.input.width*100)),right=Math.max(0,Math.min(49,(Number(blend.right)||0)/surface.input.width*100)),top=Math.max(0,Math.min(49,(Number(blend.top)||0)/surface.input.height*100)),bottom=Math.max(0,Math.min(49,(Number(blend.bottom)||0)/surface.input.height*100));
+  const masks=[];if(left||right)masks.push(`linear-gradient(to right,transparent 0%,#000 ${left}%,#000 ${100-right}%,transparent 100%)`);if(top||bottom)masks.push(`linear-gradient(to bottom,transparent 0%,#000 ${top}%,#000 ${100-bottom}%,transparent 100%)`);
+  element.style.maskImage=masks.join(',');element.style.webkitMaskImage=masks.join(',');element.style.maskComposite=masks.length>1?'intersect':'';element.style.webkitMaskComposite=masks.length>1?'source-in':'';
+}
+function svgNode(name,attributes={}){
+  const node=document.createElementNS('http://www.w3.org/2000/svg',name);
+  Object.entries(attributes).forEach(([key,value])=>node.setAttribute(key,String(value)));
+  return node;
+}
+function mappedCalibrationLayer(grid,fullWidth,fullHeight,offsetX=0,offsetY=0){
+  const columns=Math.max(2,Number(grid.columns)||10),rows=Math.max(2,Number(grid.rows)||8),pattern=['grid','checker','crosshair'].includes(grid.pattern)?grid.pattern:'grid';
+  const svg=svgNode('svg',{viewBox:`0 0 ${columns} ${rows}`,preserveAspectRatio:'none','aria-hidden':'true'});
+  svg.classList.add('mapped-runtime-grid',`pattern-${pattern}`);
+  svg.style.inset='auto';svg.style.left=`${-offsetX}px`;svg.style.top=`${-offsetY}px`;svg.style.width=`${fullWidth}px`;svg.style.height=`${fullHeight}px`;svg.style.opacity=String(grid.opacity);
+  svg.appendChild(svgNode('rect',{x:0,y:0,width:columns,height:rows,fill:'rgba(0,0,0,.18)'}));
+  if(pattern==='checker'){
+    for(let row=0;row<rows;row++)for(let column=0;column<columns;column++){
+      svg.appendChild(svgNode('rect',{x:column,y:row,width:1,height:1,fill:(row+column)%2===0?'rgba(255,255,255,.48)':'rgba(8,12,18,.2)'}));
+    }
+  }
+  const lineGroup=svgNode('g',{fill:'none',stroke:'rgba(255,255,255,.72)','stroke-width':'1','vector-effect':'non-scaling-stroke'});
+  if(pattern!=='crosshair'){
+    for(let column=1;column<columns;column++)lineGroup.appendChild(svgNode('line',{x1:column,y1:0,x2:column,y2:rows,'vector-effect':'non-scaling-stroke'}));
+    for(let row=1;row<rows;row++)lineGroup.appendChild(svgNode('line',{x1:0,y1:row,x2:columns,y2:row,'vector-effect':'non-scaling-stroke'}));
+  }
+  lineGroup.appendChild(svgNode('rect',{x:.02,y:.02,width:columns-.04,height:rows-.04,stroke:'rgba(255,255,255,.96)','stroke-width':'2','vector-effect':'non-scaling-stroke'}));
+  svg.appendChild(lineGroup);
+  if(pattern==='crosshair'){
+    const cross=svgNode('g',{fill:'none',stroke:'rgba(255,70,70,.96)','stroke-width':'2','vector-effect':'non-scaling-stroke'});
+    cross.appendChild(svgNode('line',{x1:columns/2,y1:0,x2:columns/2,y2:rows,'vector-effect':'non-scaling-stroke'}));
+    cross.appendChild(svgNode('line',{x1:0,y1:rows/2,x2:columns,y2:rows/2,'vector-effect':'non-scaling-stroke'}));
+    svg.appendChild(cross);
+  }
+  return svg;
+}
+function createMappedSurface(surface,bounds,index){
+  const host=$('mappingSurfaceHost'),wrapper=document.createElement('div'),contentGroup=document.createElement('div');wrapper.className='mapped-surface';wrapper.dataset.surfaceId=surface.id;contentGroup.className='mapped-surface-content';
+  const output=surface.output;wrapper.style.left=`${bounds.left+bounds.width*output.x/100}px`;wrapper.style.top=`${bounds.top+bounds.height*output.y/100}px`;wrapper.style.width=`${bounds.width*output.width/100}px`;wrapper.style.height=`${bounds.height*output.height/100}px`;wrapper.style.transform=output.rotation?`rotate(${output.rotation}deg)`:'';wrapper.style.zIndex=String(index+1);wrapper.style.opacity=String(surface.opacity);
+  const surfaceWidth=Math.max(1,bounds.width*output.width/100),surfaceHeight=Math.max(1,bounds.height*output.height/100),warp=surface.warp,validWarp=warp.enabled&&PTCOMP.projectorWarpIsValid(warp),gamma=Math.max(.1,Math.min(3,Number(surface.blend.gamma)||1)),black=Math.max(0,Math.min(1,Number(surface.blend.blackLevel)||0)),clones=[];
+  if(validWarp&&warp.mode==='mesh'&&(warp.mesh.columns>1||warp.mesh.rows>1)){
+    const columns=warp.mesh.columns,rows=warp.mesh.rows,stride=columns+1,cellWidth=surfaceWidth/columns,cellHeight=surfaceHeight/rows;
+    for(let row=0;row<rows;row++)for(let column=0;column<columns;column++){
+      const points=[warp.mesh.points[row*stride+column],warp.mesh.points[row*stride+column+1],warp.mesh.points[(row+1)*stride+column+1],warp.mesh.points[(row+1)*stride+column]];
+      const frame=document.createElement('div');frame.className='mapped-surface-frame';frame.style.inset='auto';frame.style.left='0';frame.style.top='0';frame.style.width=`${cellWidth}px`;frame.style.height=`${cellHeight}px`;
+      const clip=document.createElement('div');clip.className='mapped-surface-clip';clip.style.background=S.transparent?'transparent':(S.bgColor||'#000000');clip.style.filter=`brightness(${Math.max(0,1-black)}) contrast(${gamma})`;const input={...surface.input,x:surface.input.x+surface.input.width*column/columns,y:surface.input.y+surface.input.height*row/rows,width:surface.input.width/columns,height:surface.input.height/rows};
+      const clone=mappedProgramClone(surface,cellWidth,cellHeight,input);clones.push(clone);clip.appendChild(clone);
+      if(warp.grid.visible)clip.appendChild(mappedCalibrationLayer(warp.grid,surfaceWidth,surfaceHeight,column*cellWidth,row*cellHeight));
+      frame.appendChild(clip);frame.style.transform=homographyMatrix(cellWidth,cellHeight,points.map(point=>[surfaceWidth*point.x/100,surfaceHeight*point.y/100]));contentGroup.appendChild(frame);
+    }
+  }else{
+    const frame=document.createElement('div');frame.className='mapped-surface-frame';const clip=document.createElement('div');clip.className='mapped-surface-clip';clip.style.background=S.transparent?'transparent':(S.bgColor||'#000000');clip.style.filter=`brightness(${Math.max(0,1-black)}) contrast(${gamma})`;
+    const clone=mappedProgramClone(surface,surfaceWidth,surfaceHeight,surface.input);clones.push(clone);clip.appendChild(clone);if(warp.grid.visible)clip.appendChild(mappedCalibrationLayer(warp.grid,surfaceWidth,surfaceHeight));frame.appendChild(clip);contentGroup.appendChild(frame);
+    const corners=validWarp?warp.corners:PTCOMP.normalizeProjectorWarp().corners;frame.style.width=`${surfaceWidth}px`;frame.style.height=`${surfaceHeight}px`;frame.style.transform=homographyMatrix(surfaceWidth,surfaceHeight,[corners.topLeft,corners.topRight,corners.bottomRight,corners.bottomLeft].map(point=>[surfaceWidth*point.x/100,surfaceHeight*point.y/100]));
+  }
+  mappedMaskStyle(contentGroup,surface);wrapper.appendChild(contentGroup);
+  if(warp.grid.visible&&warp.grid.labels){const label=document.createElement('div');label.className='mapped-surface-label';label.textContent=`${index+1} · ${surface.name||surface.id}`;wrapper.appendChild(label);}
+  host.appendChild(wrapper);mappedRuntimeNodes.set(surface.id,{wrapper,clones,surface});
+}
+function renderMappedSurfaces(){
+  const host=$('mappingSurfaceHost'),source=$('programSurface');if(!host||!source||!S)return;
+  const surfaces=routeProjectionSurfaces();
+  const projection=routeProjection(),enabled=Array.isArray(projection&&projection.surfaces);
+  host.classList.toggle('active',enabled);source.classList.toggle('mapping-source',enabled);
+  if(!enabled){host.replaceChildren();mappedRuntimeNodes.clear();lastMappedSurfaceKey='';lastMappedDynamicSyncAt=0;return;}
+  const bounds=mappedOutputBounds(routeOutputCanvas()),key=`${innerWidth}x${innerHeight}|${S.activeSceneId}|${lastSceneKey}|${lastLtRuntimeKey}|${JSON.stringify(surfaces)}|${S.blackout}`;
+  if(key===lastMappedSurfaceKey){const now=performance.now();if(now-lastMappedDynamicSyncAt>=33){lastMappedDynamicSyncAt=now;mappedRuntimeNodes.forEach(record=>record.clones.forEach(clone=>syncMappedDynamic($('programContent'),clone)));}return;}
+  lastMappedSurfaceKey=key;lastMappedDynamicSyncAt=performance.now();host.replaceChildren();mappedRuntimeNodes.clear();surfaces.forEach((surface,index)=>createMappedSurface(surface,bounds,index));
 }
 function projectionIsInactive(projection){
   return !!projection&&!!projection.compositionId&&String(projection.compositionId)!==String(S&&S.activeCompositionId||'composition-main');
@@ -524,7 +671,7 @@ function renderScene(){
   const root=$('sceneRoot');
   if(!root || !S) return;
   const scene=activeScene();
-  const projection=routeProjection(),projectionInactive=projectionIsInactive(projection);
+  const projection=sceneProjection(),projectionInactive=projectionIsInactive(projection);
   const layers=!projectionInactive&&(scene && Array.isArray(scene.layers)) ? scene.layers.filter(l=>l && l.visible!==false) : [];
   const key=(S._mediaBase||'')+'|'+JSON.stringify(layers.map(l=>({
     id:l.id,type:l.type,name:l.name,src:l.src,inputId:l.inputId,sourceId:l.sourceId,sourceName:l.sourceName,
@@ -634,7 +781,7 @@ function applyTimerLayerStage(){
   if (!stage) return;
   const scene = S ? activeScene() : null;
   const layers = (scene && Array.isArray(scene.layers)) ? scene.layers.filter(l => l && l.visible !== false) : [];
-  const projection=routeProjection(),projectionInactive=projectionIsInactive(projection);
+  const projection=sceneProjection(),projectionInactive=projectionIsInactive(projection);
   const tl = projectionInactive ? null : layers.find(l => l.type === 'timer');
   let key, css;
   if (tl){
@@ -726,6 +873,7 @@ function render(){
   if (fitMode) requestFit();
   renderNowNext(fg);
   renderLowerThird();
+  renderMappedSurfaces();
   $('blackout').classList.toggle('on', !!S.blackout);
 }
 
@@ -1252,7 +1400,7 @@ if (IS_ELECTRON){
   document.addEventListener('dblclick', () => api.toggleFullscreen());
 }
 
-window.addEventListener('resize', () => { lastKey=''; lastLtRuntimeKey=''; applyOutputGeometry(); renderLowerThird(); });
+window.addEventListener('resize', () => { lastKey=''; lastLtRuntimeKey=''; lastMappedSurfaceKey=''; applyOutputGeometry(); renderLowerThird(); renderMappedSurfaces(); });
 requestAnimationFrame(render);
 </script>
 </body>

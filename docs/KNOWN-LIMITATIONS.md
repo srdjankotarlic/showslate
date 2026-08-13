@@ -13,8 +13,8 @@
 - Window and device identifiers are machine-local and can change after moving or importing a show. Scene geometry persists, but the operator can need to use **Change source**.
 - Canvas media imports are limited to 200 MB per file. Large or demanding codecs can still exceed practical memory/GPU limits before that cap.
 - Different Canvas and output aspect ratios can stretch the composed scene. Preflight warns but does not block an intentional mismatch.
-- Projector mapping is currently a four-corner correction tool with an adjustable calibration grid and soft-edge values. It does not yet provide arbitrary mesh warping, masks, automatic camera calibration, projector color matching or specialist multi-projector overlap calibration.
-- Automated tests prove that the complete Program receives the configured warp and that simultaneous routes keep independent Canvas settings. They cannot prove alignment on every real projector, lens, LED processor or physical surface.
+- Projector mapping provides four-corner perspective correction, a bounded linear mesh up to 4 x 4 cells, polygon masks, calibration patterns and manual edge-blend controls. It does not provide spline/Bezier warping, automatic camera calibration, projector color matching or automatic multi-projector overlap calibration.
+- Automated tests prove separate Input Selection and Output Mapping state, multiple surfaces on one destination, perspective and mesh rendering, masks, calibration patterns and complete-Program transforms. They cannot prove alignment, brightness, focus, latency, lens behavior or color on every real projector, LED processor or physical surface.
 - NDI, streaming/encoding and cloud collaboration remain outside this beta scope.
 - The product coordinates one conference room. Multi-room synchronization, registration systems, advanced camera switching, audio mixing, PTZ, DMX and streaming are not included.
 - Show-folder import reads CSV, TSV or text schedules. Excel `.xlsx`/`.xls` files must be exported to CSV/TSV or pasted into the wizard.

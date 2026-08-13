@@ -4150,13 +4150,23 @@
         </aside>
         <section class="composition-map-pane">
           <div class="composition-map-toolbar">
-            <div><span data-i18n="mappingCanvas">Mapping canvas</span><strong id="mappingCanvasLabel">Main Composition</strong></div>
-            <div class="mapping-legend"><span><i class="mapping-swatch active"></i><span data-i18n="mappingSelected">Selected surface</span></span><span><i class="mapping-swatch assigned"></i><span data-i18n="mappingAssigned">Assigned output</span></span></div>
+            <div class="mapping-toolbar-copy"><span data-i18n="mappingCanvas">Mapping canvas</span><strong id="mappingCanvasLabel">Main Composition</strong><small id="mappingCanvasSize">1920 x 1080</small></div>
+            <div class="mapping-workspace-modes" role="tablist" aria-label="Mapping workspace">
+              <button id="btnMappingInputMode" type="button" class="active" role="tab" aria-selected="true" data-mapping-mode="input" data-i18n="mappingInputSelection">Input Selection</button>
+              <button id="btnMappingOutputMode" type="button" role="tab" aria-selected="false" data-mapping-mode="output" data-i18n="mappingOutputTransform">Output Mapping</button>
+            </div>
+            <div class="mapping-toolbar-actions">
+              <button id="btnMappingIdentify" class="ghost" type="button" data-i18n="mappingIdentify">Identify</button>
+              <button id="btnMappingPattern" class="ghost" type="button" data-i18n="mappingTestPattern">Test pattern</button>
+            </div>
           </div>
           <div class="composition-map-viewport" id="compositionMapViewport">
-            <div class="composition-map-stage" id="compositionMapStage" aria-label="Projector mapping canvas">
+            <div class="composition-map-stage" id="compositionMapStage" data-mode="input" aria-label="Projector mapping canvas" tabindex="0">
+              <div class="mapping-input-preview" id="mappingInputPreview" aria-hidden="true"></div>
               <div class="composition-map-grid" aria-hidden="true"></div>
               <div class="composition-safe-area" aria-hidden="true"></div>
+              <div class="composition-map-axis axis-x" aria-hidden="true"></div>
+              <div class="composition-map-axis axis-y" aria-hidden="true"></div>
               <div id="projectorMappingSurfaces"></div>
             </div>
           </div>
@@ -4175,21 +4185,42 @@
             <p class="composition-field-note" data-i18n="canvasCustomHint">Use Custom for the exact processor or LED wall pixel dimensions.</p>
           </section>
           <section class="composition-settings-section mapping-settings-section">
-            <div class="composition-pane-head"><div><span data-i18n="projectorMapping">Projector mapping</span><strong id="mappingCount">0</strong></div><button id="btnMappingAdd" class="primary" type="button" data-i18n="mappingAdd">Add surface</button></div>
+            <div class="composition-pane-head"><div><span data-i18n="projectorMapping">Output surfaces</span><strong id="mappingCount">0</strong></div><button id="btnMappingAdd" class="primary" type="button" data-i18n="mappingAdd">Add surface</button></div>
             <div class="projector-mapping-list" id="projectorMappingList"></div>
             <div class="mapping-inspector" id="mappingInspector" hidden>
+              <div class="mapping-surface-status">
+                <label class="route-check"><input id="mappingEnabled" type="checkbox"> <span data-i18n="mappingEnabled">Visible</span></label>
+                <label class="route-check"><input id="mappingSolo" type="checkbox"> <span data-i18n="mappingSolo">Solo</span></label>
+                <label class="composition-field mapping-opacity"><span data-i18n="inspOpacity">Opacity</span><input id="mappingOpacity" type="number" min="0" max="100" step="1"></label>
+              </div>
               <label class="composition-field full"><span data-i18n="mappingName">Surface name</span><input id="mappingName" type="text" maxlength="160"></label>
               <label class="composition-field full"><span data-i18n="mappingOutput">Output destination</span><select id="mappingOutput"></select></label>
+              <div class="mapping-section-label"><strong id="mappingGeometryTitle" data-i18n="mappingInputSelection">Input Selection</strong><span id="mappingGeometryHint" data-i18n="mappingInputHint">Choose the exact pixels from the composition canvas.</span></div>
               <div class="mapping-geometry-grid">
-                <label class="composition-field"><span>X</span><input id="mappingX" type="number" min="0" max="8191"></label>
-                <label class="composition-field"><span>Y</span><input id="mappingY" type="number" min="0" max="8191"></label>
-                <label class="composition-field"><span data-i18n="canvasWidth">Width</span><input id="mappingWidth" type="number" min="1" max="8192"></label>
-                <label class="composition-field"><span data-i18n="canvasHeight">Height</span><input id="mappingHeight" type="number" min="1" max="8192"></label>
+                <label class="composition-field"><span id="mappingXLabel">X px</span><input id="mappingX" type="number" min="0" max="8191" step="1"></label>
+                <label class="composition-field"><span id="mappingYLabel">Y px</span><input id="mappingY" type="number" min="0" max="8191" step="1"></label>
+                <label class="composition-field"><span id="mappingWidthLabel">Width px</span><input id="mappingWidth" type="number" min="1" max="8192" step="1"></label>
+                <label class="composition-field"><span id="mappingHeightLabel">Height px</span><input id="mappingHeight" type="number" min="1" max="8192" step="1"></label>
+              </div>
+              <div class="mapping-input-options" id="mappingInputOptions">
+                <label class="route-check"><input id="mappingFlipX" type="checkbox"> <span data-i18n="mappingFlipX">Flip horizontal</span></label>
+                <label class="route-check"><input id="mappingFlipY" type="checkbox"> <span data-i18n="mappingFlipY">Flip vertical</span></label>
+                <button id="btnMappingInputFull" class="ghost" type="button" data-i18n="mappingInputFull">Use full canvas</button>
+              </div>
+              <div class="mapping-output-options" id="mappingOutputOptions" hidden>
+                <label class="composition-field"><span data-i18n="mappingRotation">Rotation</span><input id="mappingRotation" type="number" min="-180" max="180" step="0.1"></label>
+                <button id="btnMappingOutputFull" class="ghost" type="button" data-i18n="mappingOutputFull">Fit output</button>
+                <button id="btnMappingOutputCenter" class="ghost" type="button" data-i18n="inspCenter">Center</button>
               </div>
               <section class="mapping-warp-settings">
                 <div class="mapping-warp-head">
-                  <div><span data-i18n="mappingWarp">Corner pin</span><small data-i18n="mappingWarpHint">Move four key points to match an irregular projection surface.</small></div>
+                  <div><span data-i18n="mappingWarp">Warp</span><small data-i18n="mappingWarpHint">Use four corners or a linear mesh to fit an irregular projection surface.</small></div>
                   <label class="route-check"><input id="mappingWarpEnabled" type="checkbox"> <span data-i18n="mappingWarpEnabled">Enable warp</span></label>
+                </div>
+                <div class="mapping-warp-mode-row">
+                  <label class="composition-field"><span data-i18n="mappingWarpMode">Mode</span><select id="mappingWarpMode"><option value="perspective" data-i18n="mappingPerspective">Perspective</option><option value="mesh" data-i18n="mappingMesh">Linear mesh</option></select></label>
+                  <label class="composition-field mesh-only"><span data-i18n="mappingMeshColumns">Mesh columns</span><input id="mappingMeshColumns" type="number" min="1" max="4" step="1"></label>
+                  <label class="composition-field mesh-only"><span data-i18n="mappingMeshRows">Mesh rows</span><input id="mappingMeshRows" type="number" min="1" max="4" step="1"></label>
                 </div>
                 <div class="mapping-warp-corners" id="mappingWarpCorners">
                   <fieldset><legend data-i18n="mappingTopLeft">Top left</legend><label><span>X %</span><input id="mappingWarpTlX" type="number" min="-25" max="125" step="0.1"></label><label><span>Y %</span><input id="mappingWarpTlY" type="number" min="-25" max="125" step="0.1"></label></fieldset>
@@ -4203,7 +4234,16 @@
                   <label class="composition-field"><span data-i18n="mappingRows">Rows</span><input id="mappingGridRows" type="number" min="2" max="32"></label>
                   <button id="btnMappingWarpReset" class="ghost" type="button" data-i18n="mappingResetWarp">Reset corners</button>
                 </div>
+                <div class="mapping-pattern-controls">
+                  <label class="composition-field"><span data-i18n="mappingPattern">Pattern</span><select id="mappingGridPattern"><option value="grid" data-i18n="mappingPatternGrid">Grid</option><option value="checker" data-i18n="mappingPatternChecker">Checker</option><option value="crosshair" data-i18n="mappingPatternCrosshair">Crosshair</option></select></label>
+                  <label class="route-check"><input id="mappingGridLabels" type="checkbox"> <span data-i18n="mappingLabels">Surface labels</span></label>
+                </div>
               </section>
+              <details class="mapping-mask-details">
+                <summary data-i18n="mappingMask">Polygon mask</summary>
+                <div class="mapping-mask-controls"><label class="route-check"><input id="mappingMaskEnabled" type="checkbox"> <span data-i18n="mappingMaskEnabled">Enable mask</span></label><button id="btnMappingMaskReset" class="ghost" type="button" data-i18n="mappingMaskReset">Reset mask</button></div>
+                <p data-i18n="mappingMaskHint">Drag polygon points directly on the Output Mapping canvas.</p>
+              </details>
               <details class="mapping-blend-details">
                 <summary data-i18n="mappingBlend">Soft-edge overlap</summary>
                 <div class="mapping-geometry-grid">
@@ -4212,6 +4252,7 @@
                   <label class="composition-field"><span data-i18n="mappingTop">Top</span><input id="mappingBlendTop" type="number" min="0" max="512"></label>
                   <label class="composition-field"><span data-i18n="mappingBottom">Bottom</span><input id="mappingBlendBottom" type="number" min="0" max="512"></label>
                 </div>
+                <div class="mapping-blend-secondary"><label class="composition-field"><span data-i18n="mappingBlendGamma">Blend gamma</span><input id="mappingBlendGamma" type="number" min="0.1" max="3" step="0.05"></label><label class="composition-field"><span data-i18n="mappingBlackLevel">Black level</span><input id="mappingBlackLevel" type="number" min="0" max="100" step="1"></label></div>
               </details>
               <div class="mapping-inspector-actions"><button id="btnMappingDuplicate" class="ghost" type="button" data-i18n="duplicate">Duplicate</button><button id="btnMappingDelete" class="ghost danger" type="button" data-i18n="delete">Delete</button></div>
             </div>
@@ -4415,7 +4456,7 @@ const I18N = {
     badgeLive:'U PROGRAMU', badgeSelected:'IZABRANO', badgeNext:'SLEDI', badgeSkipped:'PRESKOČENO',
     goSelectedBtn:'KRENI ▶ {name}', goSelectedShort:'GO IZABRANO &nbsp;(N)', goAutoStart:'Auto-start na GO', goAutoTitle:'GO odmah pokreće tajmer novog reda',
     advanced:'Preview / Program', advancedTitle:'Preview/Program režija (Cut/Transition). Isključeno: sve ide direktno na Program.',
-    compositionClose:'Zatvori',
+    compositionClose:'Zatvori', mappingInputSelection:'Izbor ulaza', mappingOutputTransform:'Mapiranje izlaza', mappingInputHint:'Izaberite tačne piksele iz kompozicionog canvasa.', mappingOutputHint:'Postavite površinu na fizički izlaz i korigujte geometriju.', mappingIdentify:'Označi', mappingTestPattern:'Test šara', mappingEnabled:'Vidljivo', mappingSolo:'Solo', mappingFlipX:'Okreni horizontalno', mappingFlipY:'Okreni vertikalno', mappingInputFull:'Ceo canvas', mappingOutputFull:'Popuni izlaz', mappingRotation:'Rotacija', mappingWarpMode:'Režim', mappingPerspective:'Perspektiva', mappingMesh:'Linearni mesh', mappingMeshColumns:'Mesh kolone', mappingMeshRows:'Mesh redovi', mappingPattern:'Šara', mappingPatternGrid:'Mreža', mappingPatternChecker:'Šahovnica', mappingPatternCrosshair:'Nišan', mappingLabels:'Nazivi površina', mappingMask:'Poligonska maska', mappingMaskEnabled:'Uključi masku', mappingMaskReset:'Vrati masku', mappingMaskHint:'Pomerajte poligonske tačke direktno na canvasu Mapiranje izlaza.', mappingBlendGamma:'Blend gama', mappingBlackLevel:'Nivo crne', mappingUnassignedOutput:'Nedodeljen izlaz',
     rundownBtn:'Rundown', sidebarToggle:'Prikaži ili sakrij navigaciju', utilityToggle:'Prikaži ili sakrij poruke, status i izlaze', msgOutBtn:'Poruke', settingsBtn:'Podešavanja', compositionButton:'Kompozicija', compositionOpen:'Otvori podešavanja kompozicije', compositionEyebrow:'CANVAS I MAPIRANJE PROJEKTORA', compositionTitle:'Kompozicija', compositionBody:'Napravite nezavisne canvase za LED zidove i mapirajte tačne delove canvasa na projektorske izlaze.', compositions:'Kompozicije', compositionNew:'Nova', compositionScenes:'Scene u ovoj kompoziciji', compositionSceneHint:'Nove scene napravljene u Composer-u pripadaju aktivnoj kompoziciji.', mappingCanvas:'Canvas za mapiranje', mappingSelected:'Izabrana površina', mappingAssigned:'Dodeljen izlaz', canvasSettings:'Canvas', canvasSettingsHint:'Izvorni piksel prostor ove kompozicije', canvasWidth:'Širina', canvasHeight:'Visina', canvasCustomHint:'Za LED zid izaberite Custom i unesite tačne piksel dimenzije procesora.', projectorMapping:'Mapiranje projektora', mappingAdd:'Dodaj površinu', mappingName:'Naziv površine', mappingOutput:'Izlazna destinacija', mappingBlend:'Soft-edge preklapanje', mappingLeft:'Levo', mappingRight:'Desno', mappingTop:'Gore', mappingBottom:'Dole', mappingEmpty:'Dodajte projektorsku površinu, pa je dodelite jednom Output-u.', mappingWarp:'Corner pin', mappingWarpHint:'Pomerite četiri ključne tačke da slika legne na nepravilnu površinu.', mappingWarpEnabled:'Uključi deformaciju', mappingTopLeft:'Gore levo', mappingTopRight:'Gore desno', mappingBottomLeft:'Dole levo', mappingBottomRight:'Dole desno', mappingGridLive:'Prikaži kalibracionu mrežu na izlazu', mappingColumns:'Kolone', mappingRows:'Redovi', mappingResetWarp:'Vrati uglove', compositionSaved:'Podešavanja kompozicije čuvaju se sa show-om.', mappingApply:'Primeni mapiranje na izlaze', save:'Sačuvaj', compactMode:'Kompaktan režim', compactTitle:'Fokusirani operater: Program, GO i poruka; kontrole tajmera su u Podešavanjima.', fsMenu:'⛶ Pun ekran', closeMenu:'✕ Zatvori izlaz',
     inspTitle:'Izvor', inspOpacity:'Prozirnost', inspFitTitle:'Kako medij popunjava kutiju',
     programLayer:'PROGRAM LEJER', layerNoneSelected:'Izaberite lejer', takeLayer:'PUSTI LEJER', hideLayer:'SKLONI', takeLayerShort:'PUSTI', hideLayerShort:'SKLONI',
@@ -4516,7 +4557,7 @@ const I18N = {
     badgeLive:'LIVE', badgeSelected:'SELECTED', badgeNext:'NEXT', badgeSkipped:'SKIPPED',
     goSelectedBtn:'GO ▶ {name}', goSelectedShort:'GO SELECTED &nbsp;(N)', goAutoStart:'Auto-start on GO', goAutoTitle:'GO immediately starts the new item timer',
     advanced:'Preview / Program', advancedTitle:'Preview/Program workflow (Cut/Transition). Off: everything goes straight to Program.',
-    compositionClose:'Close',
+    compositionClose:'Close', mappingInputSelection:'Input Selection', mappingOutputTransform:'Output Mapping', mappingInputHint:'Choose the exact pixels from the composition canvas.', mappingOutputHint:'Place the surface on the physical output and correct its geometry.', mappingIdentify:'Identify', mappingTestPattern:'Test pattern', mappingEnabled:'Visible', mappingSolo:'Solo', mappingFlipX:'Flip horizontal', mappingFlipY:'Flip vertical', mappingInputFull:'Use full canvas', mappingOutputFull:'Fit output', mappingRotation:'Rotation', mappingWarpMode:'Mode', mappingPerspective:'Perspective', mappingMesh:'Linear mesh', mappingMeshColumns:'Mesh columns', mappingMeshRows:'Mesh rows', mappingPattern:'Pattern', mappingPatternGrid:'Grid', mappingPatternChecker:'Checker', mappingPatternCrosshair:'Crosshair', mappingLabels:'Surface labels', mappingMask:'Polygon mask', mappingMaskEnabled:'Enable mask', mappingMaskReset:'Reset mask', mappingMaskHint:'Drag polygon points directly on the Output Mapping canvas.', mappingBlendGamma:'Blend gamma', mappingBlackLevel:'Black level', mappingUnassignedOutput:'Unassigned output',
     rundownBtn:'Rundown', sidebarToggle:'Show or hide navigation', utilityToggle:'Show or hide messages, status and outputs', msgOutBtn:'Message', settingsBtn:'Settings', compositionButton:'Composition', compositionOpen:'Open composition settings', compositionEyebrow:'CANVAS & PROJECTOR MAPPING', compositionTitle:'Composition', compositionBody:'Build independent canvases for LED walls and map exact canvas regions to projector outputs.', compositions:'Compositions', compositionNew:'New', compositionScenes:'Scenes in this composition', compositionSceneHint:'New scenes created in Composer belong to the active composition.', mappingCanvas:'Mapping canvas', mappingSelected:'Selected surface', mappingAssigned:'Assigned output', canvasSettings:'Canvas', canvasSettingsHint:'Native pixel space for this composition', canvasWidth:'Width', canvasHeight:'Height', canvasCustomHint:'Use Custom for the exact processor or LED wall pixel dimensions.', projectorMapping:'Projector mapping', mappingAdd:'Add surface', mappingName:'Surface name', mappingOutput:'Output destination', mappingBlend:'Soft-edge overlap', mappingLeft:'Left', mappingRight:'Right', mappingTop:'Top', mappingBottom:'Bottom', mappingEmpty:'Add a projector surface, then assign it to an Output.', mappingWarp:'Corner pin', mappingWarpHint:'Move four key points to fit an irregular projection surface.', mappingWarpEnabled:'Enable warp', mappingTopLeft:'Top left', mappingTopRight:'Top right', mappingBottomLeft:'Bottom left', mappingBottomRight:'Bottom right', mappingGridLive:'Show calibration grid on output', mappingColumns:'Columns', mappingRows:'Rows', mappingResetWarp:'Reset corners', compositionSaved:'Composition settings are saved with this show.', mappingApply:'Apply mapping to outputs', save:'Save', compactMode:'Compact mode', compactTitle:'Focused operator: Program, GO and message; timer controls are in Settings.', fsMenu:'⛶ Fullscreen', closeMenu:'✕ Close output',
     inspTitle:'Source', inspOpacity:'Opacity', inspFitTitle:'How media fills the box',
     programLayer:'PROGRAM LAYER', layerNoneSelected:'Select a layer', takeLayer:'TAKE LAYER', hideLayer:'HIDE', takeLayerShort:'TAKE', hideLayerShort:'HIDE',
@@ -5241,6 +5282,7 @@ function render(){
   syncLiveInputService();
 
   updateStudioButtons();
+  syncMappingInputPreview();
 
   // over / under raspored
   const sch=schedule(now); const ou=$('ouStatus');
@@ -6400,7 +6442,14 @@ function load(){
 }
 
 // ---------- SCENE / SOURCES ----------
-function makeId(prefix='id'){ return prefix+'-'+Date.now().toString(36)+'-'+Math.random().toString(36).slice(2,7); }
+let makeIdSequence=0;
+function makeId(prefix='id'){
+  makeIdSequence=(makeIdSequence+1)%1679616;
+  const entropy=globalThis.crypto&&typeof globalThis.crypto.randomUUID==='function'
+    ? globalThis.crypto.randomUUID().replace(/-/g,'').slice(0,10)
+    : Math.random().toString(36).slice(2,12);
+  return `${prefix}-${Date.now().toString(36)}-${makeIdSequence.toString(36)}-${entropy}`;
+}
 function makeTimerLayer(){
   return {id:makeId('layer'), type:'timer', name:'Timer', visible:true, fit:'contain', x:0, y:0, w:100, h:100, opacity:1};
 }
@@ -6418,7 +6467,14 @@ function legacyAspectForCanvas(canvas){
 }
 function ensureCompositions(){
   const fallback=PTCOMP.normalizeCanvas(S.canvas||canvasFromLegacyAspect(S.canvasAspect));
-  S.compositions=PTCOMP.normalizeCompositions(S.compositions,fallback);
+  const rows=Array.isArray(S.compositions)?S.compositions:[];
+  const needsNormalization=!rows.length||rows.some(composition=>{
+    if(!composition||typeof composition!=='object'||!composition.id||!composition.canvas||!Array.isArray(composition.mappings))return true;
+    return composition.mappings.some(mapping=>!mapping||typeof mapping!=='object'||!mapping.id||mapping.mappingVersion!==2||!mapping.input||!mapping.output||!mapping.warp);
+  });
+  // Keep canonical composition, mapping and canvas object references stable. Rebuilding
+  // the complete graph on every lookup made a duplicate/edit land on an obsolete copy.
+  if(needsNormalization)S.compositions=PTCOMP.normalizeCompositions(rows,fallback);
   if(!S.compositions.some(composition=>composition.id===S.activeCompositionId)) S.activeCompositionId=S.compositions[0].id;
   return S.compositions.find(composition=>composition.id===S.activeCompositionId)||S.compositions[0];
 }
@@ -7006,6 +7062,8 @@ function initSourceInspectorLayout(){
 }
 
 let selectedProjectorMappingId='';
+let mappingWorkspaceMode='input';
+let mappingInputPreviewKey='';
 function compositionById(id){
   ensureCompositions();
   return S.compositions.find(composition=>composition.id===String(id||''))||null;
@@ -7116,15 +7174,43 @@ function selectedProjectorMapping(){
   const composition=activeComposition();
   return (composition.mappings||[]).find(mapping=>mapping.id===selectedProjectorMappingId)||null;
 }
+function mappingOutputConfig(mapping=selectedProjectorMapping()){
+  return mapping&&mapping.outputId?outputConfigs.find(config=>String(config.id)===String(mapping.outputId))||null:null;
+}
+function mappingStageCanvas(){
+  if(mappingWorkspaceMode!=='output') return activeComposition().canvas;
+  const route=mappingOutputConfig();
+  return PTCOMP.normalizeCanvas(route&&route.outputCanvas||activeComposition().canvas);
+}
+function mappingIsOnCurrentOutput(mapping){
+  if(mappingWorkspaceMode!=='output') return true;
+  const selected=selectedProjectorMapping();
+  if(!selected) return false;
+  if(!selected.outputId) return mapping.id===selected.id;
+  return String(mapping.outputId||'')===String(selected.outputId);
+}
+function setMappingWorkspaceMode(mode,{render=true}={}){
+  mappingWorkspaceMode=mode==='output'?'output':'input';
+  $('compositionMapStage')?.setAttribute('data-mode',mappingWorkspaceMode);
+  $('compositionSettingsPane')?.setAttribute('data-mapping-mode',mappingWorkspaceMode);
+  const settingsPane=document.querySelector('.composition-settings-pane');
+  if(settingsPane) settingsPane.dataset.mappingMode=mappingWorkspaceMode;
+  ['Input','Output'].forEach(name=>{
+    const button=$(`btnMapping${name}Mode`),active=button?.dataset.mappingMode===mappingWorkspaceMode;
+    button?.classList.toggle('active',active); button?.setAttribute('aria-selected',active?'true':'false');
+  });
+  if(render) renderCompositionWorkspace();
+}
 function addProjectorMapping(){
   const composition=activeComposition(),canvas=composition.canvas,index=composition.mappings.length;
   const split=index===0?1:2, width=Math.floor(canvas.width/split), x=index===0?0:(index%2)*width;
-  const mapping=PTCOMP.normalizeProjectorMapping({id:makeId('mapping'),name:`Projector ${index+1}`,x,y:0,width,height:canvas.height,outputId:''},index,canvas);
+  const mapping=PTCOMP.normalizeProjectorMapping({id:makeId('mapping'),name:`Surface ${index+1}`,input:{x,y:0,width,height:canvas.height},output:{x:Math.min(75,index*4),y:Math.min(75,index*4),width:100,height:100},outputId:''},index,canvas);
   composition.mappings.push(mapping); selectedProjectorMappingId=mapping.id; compositionDirty();
 }
 function duplicateProjectorMapping(){
   const composition=activeComposition(),source=selectedProjectorMapping(); if(!source) return;
-  const mapping=PTCOMP.normalizeProjectorMapping({...cloneState(source),id:makeId('mapping'),name:`${source.name} copy`,outputId:'',x:Math.min(composition.canvas.width-1,source.x+32),y:Math.min(composition.canvas.height-1,source.y+32)},composition.mappings.length,composition.canvas);
+  const input=source.input||source,output=source.output||{};
+  const mapping=PTCOMP.normalizeProjectorMapping({...cloneState(source),id:makeId('mapping'),name:`${source.name} copy`,outputId:source.outputId||'',solo:false,input:{...input,x:Math.min(composition.canvas.width-1,input.x+32),y:Math.min(composition.canvas.height-1,input.y+32)},output:{...output,x:Math.min(120,(Number(output.x)||0)+3),y:Math.min(120,(Number(output.y)||0)+3)}},composition.mappings.length,composition.canvas);
   composition.mappings.push(mapping); selectedProjectorMappingId=mapping.id; compositionDirty();
 }
 function deleteProjectorMapping(){
@@ -7133,18 +7219,47 @@ function deleteProjectorMapping(){
 }
 function fitCompositionMapStage(){
   const viewport=$('compositionMapViewport'),stage=$('compositionMapStage'); if(!viewport||!stage||!viewport.getClientRects().length) return;
-  const canvas=activeComposition().canvas,availableWidth=Math.max(1,viewport.clientWidth-28),availableHeight=Math.max(1,viewport.clientHeight-28),ratio=canvas.width/canvas.height;
+  const canvas=mappingStageCanvas(),availableWidth=Math.max(1,viewport.clientWidth-28),availableHeight=Math.max(1,viewport.clientHeight-28),ratio=canvas.width/canvas.height;
   let width=Math.min(availableWidth,availableHeight*ratio),height=width/ratio;
   if(height>availableHeight){ height=availableHeight; width=height*ratio; }
   stage.style.width=`${Math.max(1,width)}px`; stage.style.height=`${Math.max(1,height)}px`; stage.style.aspectRatio=`${canvas.width} / ${canvas.height}`;
 }
+function syncMappingInputPreview(force=false){
+  const host=$('mappingInputPreview'),source=$('preview'),workspace=$('compositionWorkspace');
+  if(!host||!source||!workspace?.classList.contains('open')||mappingWorkspaceMode!=='input'){
+    if(host)host.replaceChildren();mappingInputPreviewKey='';return;
+  }
+  const key=`${S.activeSceneId}|${monitorSceneKeys.pv}|${selectedLayerId}|${JSON.stringify(S.lowerThird||{})}|${S.transparent}`;
+  let clone=host.firstElementChild;
+  if(force||!clone||key!==mappingInputPreviewKey){
+    mappingInputPreviewKey=key;clone=source.cloneNode(true);clone.removeAttribute('id');clone.className='mapping-input-preview-content preview';
+    clone.querySelectorAll('[id]').forEach(node=>node.removeAttribute('id'));
+    clone.querySelectorAll('.transform-handle').forEach(node=>node.remove());
+    clone.querySelectorAll('.sel').forEach(node=>node.classList.remove('sel'));
+    host.replaceChildren(clone);
+  }
+  const sourceMedia=[...source.querySelectorAll('video,audio')],cloneMedia=[...clone.querySelectorAll('video,audio')];
+  cloneMedia.forEach((media,index)=>{const original=sourceMedia[index];if(!original)return;media.muted=true;media.defaultMuted=true;if(original.srcObject){media.srcObject=original.srcObject;media.play().catch(()=>{});}else if(original.currentSrc||original.src){const url=original.currentSrc||original.src;if(media.currentSrc!==url&&media.src!==url)media.src=url;if(Number.isFinite(original.currentTime)&&Math.abs((media.currentTime||0)-original.currentTime)>.2)try{media.currentTime=original.currentTime;}catch(_){}if(!original.paused)media.play().catch(()=>{});}});
+  [['.pv-time','.pv-time'],['.pv-text','.pv-text'],['.pv-msg','.pv-msg']].forEach(([sourceSelector,targetSelector])=>{const from=source.querySelector(sourceSelector),to=clone.querySelector(targetSelector);if(from&&to){to.textContent=from.textContent;to.className=from.className;to.style.cssText=from.style.cssText;}});
+}
 function updateMappingSurfaceElement(element,mapping,canvas){
-  element.style.left=`${mapping.x/canvas.width*100}%`; element.style.top=`${mapping.y/canvas.height*100}%`;
-  element.style.width=`${mapping.width/canvas.width*100}%`; element.style.height=`${mapping.height/canvas.height*100}%`;
-  const detail=element.querySelector('.mapping-surface-copy span'); if(detail) detail.textContent=`${mapping.x}, ${mapping.y} · ${mapping.width} x ${mapping.height}`;
+  const input=PTCOMP.normalizeMappingInput(mapping.input||mapping,canvas),output=PTCOMP.normalizeMappingOutput(mapping.output);
+  mapping.input=input; mapping.output=output; Object.assign(mapping,{x:input.x,y:input.y,width:input.width,height:input.height});
+  const geometry=mappingWorkspaceMode==='output'?output:{x:input.x/canvas.width*100,y:input.y/canvas.height*100,width:input.width/canvas.width*100,height:input.height/canvas.height*100};
+  element.dataset.mode=mappingWorkspaceMode;
+  element.style.left=`${geometry.x}%`; element.style.top=`${geometry.y}%`; element.style.width=`${geometry.width}%`; element.style.height=`${geometry.height}%`;
+  element.style.transform=mappingWorkspaceMode==='output'&&output.rotation?`rotate(${output.rotation}deg)`:'none';
+  element.style.transformOrigin='50% 50%'; element.style.opacity=String(mapping.enabled===false?0.38:mapping.opacity??1);
+  element.classList.toggle('hidden-surface',mapping.enabled===false); element.classList.toggle('solo-surface',mapping.solo===true);
+  const detail=element.querySelector('.mapping-surface-copy span');
+  if(detail) detail.textContent=mappingWorkspaceMode==='output'?`${output.x.toFixed(1)}%, ${output.y.toFixed(1)}% · ${output.width.toFixed(1)}% x ${output.height.toFixed(1)}%`:`${input.x}, ${input.y} · ${input.width} x ${input.height}`;
   const warp=PTCOMP.normalizeProjectorWarp(mapping.warp);
   mapping.warp=warp;
-  element.classList.toggle('warp-enabled',warp.enabled);
+  element.classList.toggle('warp-enabled',mappingWorkspaceMode==='output'&&warp.enabled);
+  element.classList.toggle('mesh-enabled',mappingWorkspaceMode==='output'&&warp.enabled&&warp.mode==='mesh');
+  element.classList.toggle('mask-enabled',mappingWorkspaceMode==='output'&&mapping.mask&&mapping.mask.enabled);
+  element.classList.toggle('pattern-visible',mappingWorkspaceMode==='output'&&warp.grid.visible);
+  element.classList.toggle('invalid-surface',warp.enabled&&!PTCOMP.projectorWarpIsValid(warp));
   const shape=element.querySelector('.mapping-warp-shape');
   const c=warp.corners;
   if(shape){
@@ -7155,16 +7270,47 @@ function updateMappingSurfaceElement(element,mapping,canvas){
     const point=c[handle.dataset.corner]; if(!point) return;
     handle.style.left=`${point.x}%`; handle.style.top=`${point.y}%`;
   });
+  element.querySelectorAll('.mapping-mesh-handle').forEach(handle=>{const point=warp.mesh.points[Number(handle.dataset.meshIndex)];if(point){handle.style.left=`${point.x}%`;handle.style.top=`${point.y}%`;}});
+  const mask=PTCOMP.normalizeMappingMask(mapping.mask); mapping.mask=mask;
+  const polygon=mask.points.map(point=>`${point.x}% ${point.y}%`).join(',');
+  element.style.setProperty('--mapping-mask-polygon',`polygon(${polygon})`);
+  const meshOverlay=element.querySelector('.mapping-mesh-overlay');
+  if(meshOverlay){
+    meshOverlay.replaceChildren();
+    const {columns,rows,points}=warp.mesh,stride=columns+1;
+    const addLine=(from,to)=>{const line=document.createElementNS('http://www.w3.org/2000/svg','line');line.setAttribute('x1',from.x);line.setAttribute('y1',from.y);line.setAttribute('x2',to.x);line.setAttribute('y2',to.y);meshOverlay.appendChild(line);};
+    for(let row=0;row<=rows;row++)for(let column=0;column<columns;column++)addLine(points[row*stride+column],points[row*stride+column+1]);
+    for(let column=0;column<=columns;column++)for(let row=0;row<rows;row++)addLine(points[row*stride+column],points[(row+1)*stride+column]);
+    if(mask.enabled){const outline=document.createElementNS('http://www.w3.org/2000/svg','polygon');outline.setAttribute('points',mask.points.map(point=>`${point.x},${point.y}`).join(' '));meshOverlay.appendChild(outline);}
+  }
+  element.querySelectorAll('.mapping-mask-handle').forEach(handle=>{const point=mask.points[Number(handle.dataset.maskIndex)];if(point){handle.style.left=`${point.x}%`;handle.style.top=`${point.y}%`;}});
+  const calibration=element.querySelector('.mapping-calibration-preview');
+  if(calibration){calibration.style.backgroundSize=`${100/warp.grid.columns}% ${100/warp.grid.rows}%`;calibration.dataset.pattern=warp.grid.pattern;}
 }
 function fillMappingInspector(mapping){
   const inspector=$('mappingInspector'),empty=$('mappingEmpty');
   if(!mapping){ inspector.hidden=true; empty.hidden=false; return; }
   inspector.hidden=false; empty.hidden=true;
-  $('mappingName').value=mapping.name; $('mappingX').value=mapping.x; $('mappingY').value=mapping.y; $('mappingWidth').value=mapping.width; $('mappingHeight').value=mapping.height;
+  const canvas=activeComposition().canvas,input=PTCOMP.normalizeMappingInput(mapping.input||mapping,canvas),outputGeometry=PTCOMP.normalizeMappingOutput(mapping.output);
+  mapping.input=input; mapping.output=outputGeometry;
+  $('mappingEnabled').checked=mapping.enabled!==false; $('mappingSolo').checked=mapping.solo===true; $('mappingOpacity').value=String(Math.round((mapping.opacity??1)*100));
+  $('mappingName').value=mapping.name;
+  const geometry=mappingWorkspaceMode==='output'?outputGeometry:input;
+  $('mappingX').value=geometry.x; $('mappingY').value=geometry.y; $('mappingWidth').value=geometry.width; $('mappingHeight').value=geometry.height;
+  ['mappingX','mappingY','mappingWidth','mappingHeight'].forEach(id=>{const field=$(id);field.step=mappingWorkspaceMode==='output'?'0.1':'1';field.min=mappingWorkspaceMode==='output'?(id.includes('Width')||id.includes('Height')?'1':'-25'):'0';field.max=mappingWorkspaceMode==='output'?'150':'8192';});
+  $('mappingXLabel').textContent=mappingWorkspaceMode==='output'?'X %':'X px'; $('mappingYLabel').textContent=mappingWorkspaceMode==='output'?'Y %':'Y px'; $('mappingWidthLabel').textContent=mappingWorkspaceMode==='output'?'W %':'Width px'; $('mappingHeightLabel').textContent=mappingWorkspaceMode==='output'?'H %':'Height px';
+  $('mappingGeometryTitle').textContent=t(mappingWorkspaceMode==='output'?'mappingOutputTransform':'mappingInputSelection');
+  $('mappingGeometryHint').textContent=t(mappingWorkspaceMode==='output'?'mappingOutputHint':'mappingInputHint');
+  $('mappingFlipX').checked=input.flipX; $('mappingFlipY').checked=input.flipY; $('mappingRotation').value=outputGeometry.rotation;
   $('mappingBlendLeft').value=mapping.blend.left; $('mappingBlendRight').value=mapping.blend.right; $('mappingBlendTop').value=mapping.blend.top; $('mappingBlendBottom').value=mapping.blend.bottom;
+  $('mappingBlendGamma').value=mapping.blend.gamma; $('mappingBlackLevel').value=Math.round(mapping.blend.blackLevel*100);
+  const mask=PTCOMP.normalizeMappingMask(mapping.mask);mapping.mask=mask;$('mappingMaskEnabled').checked=mask.enabled;
   const warp=PTCOMP.normalizeProjectorWarp(mapping.warp); mapping.warp=warp;
   $('mappingWarpEnabled').checked=warp.enabled; $('mappingGridVisible').checked=warp.grid.visible;
   $('mappingGridColumns').value=warp.grid.columns; $('mappingGridRows').value=warp.grid.rows;
+  $('mappingGridPattern').value=warp.grid.pattern; $('mappingGridLabels').checked=warp.grid.labels;
+  $('mappingWarpMode').value=warp.mode; $('mappingMeshColumns').value=warp.mesh.columns; $('mappingMeshRows').value=warp.mesh.rows;
+  document.querySelector('.mapping-warp-settings')?.classList.toggle('mesh-mode',warp.mode==='mesh');
   const cornerInputs={topLeft:['mappingWarpTlX','mappingWarpTlY'],topRight:['mappingWarpTrX','mappingWarpTrY'],bottomLeft:['mappingWarpBlX','mappingWarpBlY'],bottomRight:['mappingWarpBrX','mappingWarpBrY']};
   Object.entries(cornerInputs).forEach(([name,[xId,yId]])=>{$(xId).value=warp.corners[name].x;$(yId).value=warp.corners[name].y;$(xId).disabled=!warp.enabled;$(yId).disabled=!warp.enabled;});
   const output=$('mappingOutput'); output.innerHTML='';
@@ -7179,23 +7325,50 @@ function beginMappingGesture(event,mapping,element){
   document.querySelectorAll('.mapping-surface').forEach(node=>node.classList.toggle('selected',node===element));
   document.querySelectorAll('.projector-mapping-tab').forEach(node=>node.classList.toggle('active',node.dataset.mappingId===mapping.id));
   fillMappingInspector(mapping);
-  const canvas=activeComposition().canvas,stage=$('compositionMapStage'),rect=stage.getBoundingClientRect(),surfaceRect=element.getBoundingClientRect(),start={x:event.clientX,y:event.clientY,mapping:cloneState(mapping)},resize=!!event.target.closest('.mapping-resize-handle'),corner=event.target.closest('.mapping-corner-handle')?.dataset.corner||'';
+  const canvas=activeComposition().canvas,stage=$('compositionMapStage'),rect=stage.getBoundingClientRect(),surfaceRect=element.getBoundingClientRect(),start={x:event.clientX,y:event.clientY,mapping:cloneState(mapping)},resize=!!event.target.closest('.mapping-resize-handle'),corner=event.target.closest('.mapping-corner-handle')?.dataset.corner||'',meshIndex=event.target.closest('.mapping-mesh-handle')?.dataset.meshIndex,maskIndex=event.target.closest('.mapping-mask-handle')?.dataset.maskIndex;
   const move=moveEvent=>{
     if(corner){
       const warp=cloneState(start.mapping.warp||{}); warp.enabled=true; warp.corners=warp.corners||{};
       warp.corners[corner]={x:(moveEvent.clientX-surfaceRect.left)/Math.max(1,surfaceRect.width)*100,y:(moveEvent.clientY-surfaceRect.top)/Math.max(1,surfaceRect.height)*100};
       mapping.warp=PTCOMP.normalizeProjectorWarp(warp);
+    }else if(meshIndex!==undefined){
+      const warp=PTCOMP.normalizeProjectorWarp(cloneState(start.mapping.warp||{}));warp.enabled=true;warp.mode='mesh';
+      warp.mesh.points[Number(meshIndex)]={x:(moveEvent.clientX-surfaceRect.left)/Math.max(1,surfaceRect.width)*100,y:(moveEvent.clientY-surfaceRect.top)/Math.max(1,surfaceRect.height)*100};
+      mapping.warp=PTCOMP.normalizeProjectorWarp(warp);
+    }else if(maskIndex!==undefined){
+      const mask=PTCOMP.normalizeMappingMask(cloneState(start.mapping.mask||{}));mask.enabled=true;
+      mask.points[Number(maskIndex)]={x:(moveEvent.clientX-surfaceRect.left)/Math.max(1,surfaceRect.width)*100,y:(moveEvent.clientY-surfaceRect.top)/Math.max(1,surfaceRect.height)*100};
+      mapping.mask=PTCOMP.normalizeMappingMask(mask);
     }else{
-      const dx=(moveEvent.clientX-start.x)/Math.max(1,rect.width)*canvas.width,dy=(moveEvent.clientY-start.y)/Math.max(1,rect.height)*canvas.height;
-      if(resize){ mapping.width=start.mapping.width+dx; mapping.height=start.mapping.height+dy; }
-      else { mapping.x=start.mapping.x+dx; mapping.y=start.mapping.y+dy; }
+      const scalar=mappingWorkspaceMode==='output'?100:canvas.width,scalarY=mappingWorkspaceMode==='output'?100:canvas.height;
+      const dx=(moveEvent.clientX-start.x)/Math.max(1,rect.width)*scalar,dy=(moveEvent.clientY-start.y)/Math.max(1,rect.height)*scalarY;
+      if(mappingWorkspaceMode==='output'){
+        const geometry={...(start.mapping.output||{})}; if(resize){geometry.width=(geometry.width||100)+dx;geometry.height=(geometry.height||100)+dy;}else{geometry.x=(geometry.x||0)+dx;geometry.y=(geometry.y||0)+dy;} mapping.output=PTCOMP.normalizeMappingOutput(geometry);
+      }else{
+        const geometry={...(start.mapping.input||start.mapping)}; if(resize){geometry.width=(geometry.width||canvas.width)+dx;geometry.height=(geometry.height||canvas.height)+dy;}else{geometry.x=(geometry.x||0)+dx;geometry.y=(geometry.y||0)+dy;} mapping.input=PTCOMP.normalizeMappingInput(geometry,canvas);
+      }
       Object.assign(mapping,PTCOMP.normalizeProjectorMapping(mapping,0,canvas));
     }
     updateMappingSurfaceElement(element,mapping,canvas); fillMappingInspector(mapping);
-    $('mappingPixelReadout').textContent=`${mapping.x}, ${mapping.y} · ${mapping.width} x ${mapping.height}`;
+    updateMappingPixelReadout(mapping);
   };
   const end=()=>{ document.removeEventListener('pointermove',move); document.removeEventListener('pointerup',end); compositionDirty(); };
   document.addEventListener('pointermove',move); document.addEventListener('pointerup',end,{once:true});
+}
+function updateMappingPixelReadout(mapping){
+  const canvas=activeComposition().canvas;
+  if(!mapping){$('mappingPixelReadout').textContent=`0, 0 · ${canvas.width} x ${canvas.height}`;return;}
+  if(mappingWorkspaceMode==='output'){
+    const routeCanvas=mappingStageCanvas(),output=PTCOMP.normalizeMappingOutput(mapping.output);
+    $('mappingPixelReadout').textContent=`${output.x.toFixed(1)}%, ${output.y.toFixed(1)}% · ${Math.round(routeCanvas.width*output.width/100)} x ${Math.round(routeCanvas.height*output.height/100)} px`;
+  }else{const input=PTCOMP.normalizeMappingInput(mapping.input||mapping,canvas);$('mappingPixelReadout').textContent=`${input.x}, ${input.y} · ${input.width} x ${input.height} px`;}
+}
+function nudgeProjectorMapping(event,mapping){
+  if(!['ArrowLeft','ArrowRight','ArrowUp','ArrowDown'].includes(event.key)||event.target.closest('input,select'))return;
+  event.preventDefault();const amount=event.shiftKey?(mappingWorkspaceMode==='output'?2:10):(mappingWorkspaceMode==='output'?.25:1),dx=event.key==='ArrowLeft'?-amount:event.key==='ArrowRight'?amount:0,dy=event.key==='ArrowUp'?-amount:event.key==='ArrowDown'?amount:0;
+  if(mappingWorkspaceMode==='output')mapping.output=PTCOMP.normalizeMappingOutput({...mapping.output,x:(mapping.output?.x||0)+dx,y:(mapping.output?.y||0)+dy});
+  else mapping.input=PTCOMP.normalizeMappingInput({...mapping.input,x:(mapping.input?.x||0)+dx,y:(mapping.input?.y||0)+dy},activeComposition().canvas);
+  Object.assign(mapping,PTCOMP.normalizeProjectorMapping(mapping,0,activeComposition().canvas));compositionDirty();
 }
 function renderCompositionWorkspace(){
   ensureScenes();
@@ -7204,7 +7377,13 @@ function renderCompositionWorkspace(){
   const active=S.compositions[index]; S.canvas=cloneState(active.canvas);
   if(!active.mappings.some(mapping=>mapping.id===selectedProjectorMappingId)) selectedProjectorMappingId=(active.mappings[0]||{}).id||'';
   $('compositionHeadName').textContent=active.name; $('compositionHeadSize').textContent=`${active.canvas.width} x ${active.canvas.height} · ${active.canvas.fps} fps`;
-  $('mappingCanvasLabel').textContent=active.name; $('compositionCount').textContent=String(S.compositions.length); $('compositionSceneCount').textContent=String(scenesForComposition(active.id).length);
+  const stageCanvas=mappingStageCanvas(),route=mappingOutputConfig();
+  $('mappingCanvasLabel').textContent=mappingWorkspaceMode==='output'?(route?route.name:t('mappingUnassignedOutput')):active.name;
+  $('mappingCanvasSize').textContent=`${stageCanvas.width} x ${stageCanvas.height} · ${mappingWorkspaceMode==='output'?t('mappingOutputTransform'):t('mappingInputSelection')}`;
+  $('compositionMapStage').dataset.mode=mappingWorkspaceMode;
+  document.querySelector('.composition-settings-pane').dataset.mappingMode=mappingWorkspaceMode;
+  ['Input','Output'].forEach(name=>{const button=$(`btnMapping${name}Mode`),isActive=button.dataset.mappingMode===mappingWorkspaceMode;button.classList.toggle('active',isActive);button.setAttribute('aria-selected',isActive?'true':'false');});
+  $('compositionCount').textContent=String(S.compositions.length); $('compositionSceneCount').textContent=String(scenesForComposition(active.id).length);
   const list=$('compositionList'); list.innerHTML='';
   S.compositions.forEach(compositionRow=>{
     const button=document.createElement('button'); button.type='button'; button.className='composition-row'+(compositionRow.id===active.id?' active':''); button.setAttribute('role','option'); button.setAttribute('aria-selected',compositionRow.id===active.id?'true':'false');
@@ -7217,25 +7396,41 @@ function renderCompositionWorkspace(){
   $('mappingCount').textContent=String(active.mappings.length);
   const tabs=$('projectorMappingList'),surfaces=$('projectorMappingSurfaces'); tabs.innerHTML=''; surfaces.innerHTML='';
   active.mappings.forEach(mapping=>{
-    const tab=document.createElement('button'); tab.type='button'; tab.dataset.mappingId=mapping.id; tab.className='projector-mapping-tab'+(mapping.id===selectedProjectorMappingId?' active':'')+(mapping.outputId?' assigned':''); tab.textContent=mapping.name; tab.addEventListener('click',()=>{selectedProjectorMappingId=mapping.id;renderCompositionWorkspace();}); tabs.appendChild(tab);
+    const tab=document.createElement('button'); tab.type='button'; tab.dataset.mappingId=mapping.id; tab.className='projector-mapping-tab'+(mapping.id===selectedProjectorMappingId?' active':'')+(mapping.outputId?' assigned':'')+(mapping.enabled!==false?' enabled':'');
+    const eye=document.createElement('i');eye.className='surface-eye';eye.setAttribute('aria-hidden','true');
+    const tabName=document.createElement('span');tabName.className='surface-tab-copy';tabName.textContent=mapping.name;
+    const tabRoute=document.createElement('span');tabRoute.className='surface-tab-route';tabRoute.textContent=outputConfigs.find(config=>config.id===mapping.outputId)?.name||t('mappingUnassignedOutput');
+    tab.append(eye,tabName,tabRoute);tab.addEventListener('click',()=>{selectedProjectorMappingId=mapping.id;renderCompositionWorkspace();}); tabs.appendChild(tab);
+    if(!mappingIsOnCurrentOutput(mapping))return;
     const surface=document.createElement('button'); surface.type='button'; surface.className='mapping-surface'+(mapping.id===selectedProjectorMappingId?' selected':'')+(mapping.outputId?' assigned':''); surface.setAttribute('aria-label',mapping.name);
     const shape=document.createElement('span'); shape.className='mapping-warp-shape'; shape.setAttribute('aria-hidden','true');
-    const copy=document.createElement('span'); copy.className='mapping-surface-copy'; const name=document.createElement('strong'); name.textContent=mapping.name; const detail=document.createElement('span'); copy.append(name,detail); const handle=document.createElement('span'); handle.className='mapping-resize-handle'; handle.setAttribute('aria-hidden','true'); surface.append(shape,copy,handle);
+    const maskOutline=document.createElement('span');maskOutline.className='mapping-mask-outline';maskOutline.setAttribute('aria-hidden','true');
+    const meshOverlay=document.createElementNS('http://www.w3.org/2000/svg','svg');meshOverlay.classList.add('mapping-mesh-overlay');meshOverlay.setAttribute('viewBox','0 0 100 100');meshOverlay.setAttribute('preserveAspectRatio','none');meshOverlay.setAttribute('aria-hidden','true');
+    const calibration=document.createElement('span');calibration.className='mapping-calibration-preview';calibration.setAttribute('aria-hidden','true');
+    const copy=document.createElement('span'); copy.className='mapping-surface-copy'; const name=document.createElement('strong'); name.textContent=mapping.name; const detail=document.createElement('span');const routeLabel=document.createElement('em');routeLabel.textContent=mapping.outputId?(outputConfigs.find(config=>config.id===mapping.outputId)?.name||t('mappingUnassignedOutput')):t('mappingUnassignedOutput');copy.append(name,detail,routeLabel); const handle=document.createElement('span'); handle.className='mapping-resize-handle'; handle.setAttribute('aria-hidden','true'); surface.append(shape,maskOutline,meshOverlay,calibration,copy,handle);
     ['topLeft','topRight','bottomRight','bottomLeft'].forEach(corner=>{const point=document.createElement('span');point.className='mapping-corner-handle';point.dataset.corner=corner;point.setAttribute('aria-hidden','true');surface.appendChild(point);});
+    const warp=PTCOMP.normalizeProjectorWarp(mapping.warp);
+    warp.mesh.points.forEach((point,index)=>{const handle=document.createElement('span');handle.className='mapping-mesh-handle';handle.dataset.meshIndex=String(index);handle.setAttribute('aria-hidden','true');surface.appendChild(handle);});
+    PTCOMP.normalizeMappingMask(mapping.mask).points.forEach((point,index)=>{const handle=document.createElement('span');handle.className='mapping-mask-handle';handle.dataset.maskIndex=String(index);handle.setAttribute('aria-hidden','true');surface.appendChild(handle);});
     updateMappingSurfaceElement(surface,mapping,active.canvas); surface.addEventListener('pointerdown',event=>beginMappingGesture(event,mapping,surface)); surfaces.appendChild(surface);
   });
   const selected=selectedProjectorMapping(); fillMappingInspector(selected);
   $('mappingSelectionStatus').textContent=selected?(selected.outputId?(lang==='sr'?'Površina je dodeljena izlazu.':'Surface assigned to an output.'):(lang==='sr'?'Površina još nije dodeljena izlazu.':'Surface is not assigned to an output.')):t('mappingEmpty');
-  $('mappingPixelReadout').textContent=selected?`${selected.x}, ${selected.y} · ${selected.width} x ${selected.height}`:`0, 0 · ${active.canvas.width} x ${active.canvas.height}`;
+  updateMappingPixelReadout(selected);
   $('btnCompositionDelete').disabled=S.compositions.length<=1||compositionUsesLiveProgram(active.id);
   requestAnimationFrame(fitCompositionMapStage);
+  requestAnimationFrame(()=>syncMappingInputPreview(true));
 }
 function updateSelectedMappingFromInspector(){
   const composition=activeComposition(),mapping=selectedProjectorMapping(); if(!mapping) return;
   const nextOutput=String($('mappingOutput').value||'');
-  if(nextOutput) S.compositions.forEach(row=>(row.mappings||[]).forEach(item=>{ if(item.id!==mapping.id&&item.outputId===nextOutput) item.outputId=''; }));
-  const warp={enabled:$('mappingWarpEnabled').checked,corners:{topLeft:{x:+$('mappingWarpTlX').value,y:+$('mappingWarpTlY').value},topRight:{x:+$('mappingWarpTrX').value,y:+$('mappingWarpTrY').value},bottomLeft:{x:+$('mappingWarpBlX').value,y:+$('mappingWarpBlY').value},bottomRight:{x:+$('mappingWarpBrX').value,y:+$('mappingWarpBrY').value}},grid:{visible:$('mappingGridVisible').checked,columns:+$('mappingGridColumns').value,rows:+$('mappingGridRows').value}};
-  Object.assign(mapping,PTCOMP.normalizeProjectorMapping({...mapping,name:$('mappingName').value,outputId:nextOutput,x:+$('mappingX').value,y:+$('mappingY').value,width:+$('mappingWidth').value,height:+$('mappingHeight').value,blend:{left:+$('mappingBlendLeft').value,right:+$('mappingBlendRight').value,top:+$('mappingBlendTop').value,bottom:+$('mappingBlendBottom').value},warp},composition.mappings.indexOf(mapping),composition.canvas));
+  const previousWarp=PTCOMP.normalizeProjectorWarp(mapping.warp),meshColumns=+$('mappingMeshColumns').value,meshRows=+$('mappingMeshRows').value;
+  const meshChanged=meshColumns!==previousWarp.mesh.columns||meshRows!==previousWarp.mesh.rows;
+  const warp={enabled:$('mappingWarpEnabled').checked,mode:$('mappingWarpMode').value,corners:{topLeft:{x:+$('mappingWarpTlX').value,y:+$('mappingWarpTlY').value},topRight:{x:+$('mappingWarpTrX').value,y:+$('mappingWarpTrY').value},bottomLeft:{x:+$('mappingWarpBlX').value,y:+$('mappingWarpBlY').value},bottomRight:{x:+$('mappingWarpBrX').value,y:+$('mappingWarpBrY').value}},mesh:{columns:meshColumns,rows:meshRows,points:meshChanged?[]:previousWarp.mesh.points},grid:{visible:$('mappingGridVisible').checked,columns:+$('mappingGridColumns').value,rows:+$('mappingGridRows').value,opacity:previousWarp.grid.opacity,pattern:$('mappingGridPattern').value,labels:$('mappingGridLabels').checked}};
+  const input=mappingWorkspaceMode==='input'?{...mapping.input,x:+$('mappingX').value,y:+$('mappingY').value,width:+$('mappingWidth').value,height:+$('mappingHeight').value,flipX:$('mappingFlipX').checked,flipY:$('mappingFlipY').checked}:{...mapping.input,flipX:$('mappingFlipX').checked,flipY:$('mappingFlipY').checked};
+  const output=mappingWorkspaceMode==='output'?{...mapping.output,x:+$('mappingX').value,y:+$('mappingY').value,width:+$('mappingWidth').value,height:+$('mappingHeight').value,rotation:+$('mappingRotation').value}:{...mapping.output,rotation:+$('mappingRotation').value};
+  Object.assign(mapping,PTCOMP.normalizeProjectorMapping({...mapping,name:$('mappingName').value,enabled:$('mappingEnabled').checked,solo:$('mappingSolo').checked,opacity:+$('mappingOpacity').value/100,outputId:nextOutput,input,output,mask:{...mapping.mask,enabled:$('mappingMaskEnabled').checked},blend:{left:+$('mappingBlendLeft').value,right:+$('mappingBlendRight').value,top:+$('mappingBlendTop').value,bottom:+$('mappingBlendBottom').value,gamma:+$('mappingBlendGamma').value,blackLevel:+$('mappingBlackLevel').value/100},warp},composition.mappings.indexOf(mapping),composition.canvas));
+  if(mapping.solo)composition.mappings.forEach(item=>{if(item.id!==mapping.id&&String(item.outputId||'')===String(mapping.outputId||''))item.solo=false;});
   compositionDirty();
 }
 $('btnCompositionWorkspace')?.addEventListener('click',openCompositionWorkspace);
@@ -7249,8 +7444,17 @@ $('btnCompositionDelete')?.addEventListener('click',deleteComposition);
 $('btnMappingAdd')?.addEventListener('click',addProjectorMapping);
 $('btnMappingDuplicate')?.addEventListener('click',duplicateProjectorMapping);
 $('btnMappingDelete')?.addEventListener('click',deleteProjectorMapping);
-['mappingName','mappingOutput','mappingX','mappingY','mappingWidth','mappingHeight','mappingBlendLeft','mappingBlendRight','mappingBlendTop','mappingBlendBottom','mappingWarpEnabled','mappingWarpTlX','mappingWarpTlY','mappingWarpTrX','mappingWarpTrY','mappingWarpBlX','mappingWarpBlY','mappingWarpBrX','mappingWarpBrY','mappingGridVisible','mappingGridColumns','mappingGridRows'].forEach(id=>$(id)?.addEventListener('change',updateSelectedMappingFromInspector));
-$('btnMappingWarpReset')?.addEventListener('click',()=>{const mapping=selectedProjectorMapping();if(!mapping)return;mapping.warp=PTCOMP.normalizeProjectorWarp({enabled:mapping.warp&&mapping.warp.enabled,grid:mapping.warp&&mapping.warp.grid});compositionDirty();});
+$('btnMappingInputMode')?.addEventListener('click',()=>setMappingWorkspaceMode('input'));
+$('btnMappingOutputMode')?.addEventListener('click',()=>setMappingWorkspaceMode('output'));
+$('compositionMapStage')?.addEventListener('keydown',event=>{const mapping=selectedProjectorMapping();if(mapping)nudgeProjectorMapping(event,mapping);});
+['mappingName','mappingOutput','mappingEnabled','mappingSolo','mappingOpacity','mappingX','mappingY','mappingWidth','mappingHeight','mappingRotation','mappingFlipX','mappingFlipY','mappingBlendLeft','mappingBlendRight','mappingBlendTop','mappingBlendBottom','mappingBlendGamma','mappingBlackLevel','mappingWarpEnabled','mappingWarpMode','mappingMeshColumns','mappingMeshRows','mappingWarpTlX','mappingWarpTlY','mappingWarpTrX','mappingWarpTrY','mappingWarpBlX','mappingWarpBlY','mappingWarpBrX','mappingWarpBrY','mappingGridVisible','mappingGridColumns','mappingGridRows','mappingGridPattern','mappingGridLabels','mappingMaskEnabled'].forEach(id=>$(id)?.addEventListener('change',updateSelectedMappingFromInspector));
+$('btnMappingInputFull')?.addEventListener('click',()=>{const mapping=selectedProjectorMapping(),canvas=activeComposition().canvas;if(!mapping)return;mapping.input=PTCOMP.normalizeMappingInput({x:0,y:0,width:canvas.width,height:canvas.height},canvas);compositionDirty();});
+$('btnMappingOutputFull')?.addEventListener('click',()=>{const mapping=selectedProjectorMapping();if(!mapping)return;mapping.output=PTCOMP.normalizeMappingOutput({x:0,y:0,width:100,height:100,rotation:0});compositionDirty();});
+$('btnMappingOutputCenter')?.addEventListener('click',()=>{const mapping=selectedProjectorMapping();if(!mapping)return;const output=PTCOMP.normalizeMappingOutput(mapping.output);output.x=(100-output.width)/2;output.y=(100-output.height)/2;mapping.output=PTCOMP.normalizeMappingOutput(output);compositionDirty();});
+$('btnMappingWarpReset')?.addEventListener('click',()=>{const mapping=selectedProjectorMapping();if(!mapping)return;mapping.warp=PTCOMP.normalizeProjectorWarp({enabled:mapping.warp&&mapping.warp.enabled,mode:mapping.warp&&mapping.warp.mode,mesh:{columns:mapping.warp&&mapping.warp.mesh&&mapping.warp.mesh.columns,rows:mapping.warp&&mapping.warp.mesh&&mapping.warp.mesh.rows},grid:mapping.warp&&mapping.warp.grid});compositionDirty();});
+$('btnMappingMaskReset')?.addEventListener('click',()=>{const mapping=selectedProjectorMapping();if(!mapping)return;mapping.mask=PTCOMP.normalizeMappingMask({enabled:mapping.mask&&mapping.mask.enabled});compositionDirty();});
+$('btnMappingPattern')?.addEventListener('click',()=>{const mapping=selectedProjectorMapping();if(!mapping)return;mapping.warp=PTCOMP.normalizeProjectorWarp({...mapping.warp,grid:{...mapping.warp.grid,visible:!mapping.warp.grid.visible}});compositionDirty();});
+$('btnMappingIdentify')?.addEventListener('click',async()=>{const mapping=selectedProjectorMapping();if(!mapping)return;mapping.warp=PTCOMP.normalizeProjectorWarp({...mapping.warp,grid:{...mapping.warp.grid,visible:true,labels:true}});compositionDirty();try{await api.identifyDisplays();}catch(_){}});
 $('btnCompositionSave')?.addEventListener('click',()=>{ saveSettings(); scheduleShowAutosave('composition',80); setCompositionSaveStatus('saved'); });
 $('btnCompositionApply')?.addEventListener('click',()=>{
   const applied=applyOutputConfigs();
@@ -7881,7 +8085,7 @@ function openProjectorMappingForOutput(routeId){
     const composition=activeComposition(),canvas=composition.canvas;
     const mapping=PTCOMP.normalizeProjectorMapping({
       id:makeId('mapping'),name:`${outputConfigs.find(config=>config.id===routeId)?.name||'Projector'} mapping`,outputId:routeId,
-      x:0,y:0,width:canvas.width,height:canvas.height,
+      input:{x:0,y:0,width:canvas.width,height:canvas.height},output:{x:0,y:0,width:100,height:100},
       warp:{enabled:false,grid:{visible:true,columns:8,rows:6}}
     },composition.mappings.length,canvas);
     composition.mappings.push(mapping);
@@ -7891,15 +8095,23 @@ function openProjectorMappingForOutput(routeId){
   closeOutputRouter();
   selectComposition(assignment.composition.id,{save:false});
   selectedProjectorMappingId=assignment.mapping.id;
+  mappingWorkspaceMode='output';
   renderCompositionWorkspace();
   openCompositionWorkspace();
 }
 function projectedOutputConfig(config){
   ensureCompositions();
-  for(const composition of S.compositions){
-    const mapping=(composition.mappings||[]).find(row=>row.enabled!==false&&String(row.outputId||'')===String(config.id||''));
-    if(!mapping) continue;
-    return {...config,compositionId:composition.id,mappingId:mapping.id,projection:{id:mapping.id,name:mapping.name,compositionId:composition.id,enabled:true,x:mapping.x,y:mapping.y,width:mapping.width,height:mapping.height,canvasWidth:composition.canvas.width,canvasHeight:composition.canvas.height,blend:cloneState(mapping.blend||{}),warp:cloneState(mapping.warp||{})}};
+  const surfaces=S.compositions.flatMap(composition=>(composition.mappings||[])
+    .filter(row=>row.enabled!==false&&String(row.outputId||'')===String(config.id||''))
+    .map(mapping=>({
+      id:mapping.id,name:mapping.name,compositionId:composition.id,enabled:true,solo:mapping.solo===true,
+      x:mapping.input?.x??mapping.x,y:mapping.input?.y??mapping.y,width:mapping.input?.width??mapping.width,height:mapping.input?.height??mapping.height,
+      canvasWidth:composition.canvas.width,canvasHeight:composition.canvas.height,input:cloneState(mapping.input||{}),output:cloneState(mapping.output||{}),
+      opacity:mapping.opacity??1,mask:cloneState(mapping.mask||{}),blend:cloneState(mapping.blend||{}),warp:cloneState(mapping.warp||{})
+    })));
+  if(surfaces.length){
+    const primary=surfaces.find(surface=>surface.compositionId===S.activeCompositionId)||surfaces[0];
+    return {...config,compositionId:primary.compositionId,mappingId:primary.id,projection:{...primary,surfaces}};
   }
   return {...config,compositionId:'',mappingId:'',projection:null};
 }

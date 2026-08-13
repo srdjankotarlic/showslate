@@ -4,6 +4,20 @@ All notable changes to ShowSlate are documented here.
 
 ## Unreleased
 
+### Added
+
+- Added a multi-surface projector-mapping workflow with separate **Input Selection** and **Output Mapping** stages.
+- Added perspective and bounded 4 x 4 linear-mesh warp, draggable mesh points, polygon masks, surface Solo/visibility/opacity and per-surface output placement.
+- Added continuous Grid, Checker and Crosshair calibration patterns with optional surface identification labels.
+- Added manual edge-overlap, blend-gamma and black-level controls for adjacent projector alignment.
+
+### Fixed
+
+- Kept composition and mapping object references stable so duplicated surfaces no longer overwrite the selected source surface.
+- Kept calibration patterns continuous across mesh cells and applied polygon/edge masks once to the mapped surface.
+- Kept the mapping inspector fully hidden when the active composition has no projector surfaces, including the 900x600 layout.
+- Made explicit smoke-test display environment settings override an older local display configuration.
+
 ## 0.11.0-beta.1 - 2026-08-11
 
 ### Added

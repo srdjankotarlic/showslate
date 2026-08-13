@@ -26,7 +26,7 @@ check('COMPOSITOR_MULTIPLE_COMPOSITIONS_AND_PROJECTOR_MAPPING_OK', () => {
   assert.strictEqual(compositions.length, 2);
   assert.deepStrictEqual(compositions[1].canvas, { schemaVersion: 1, width: 5376, height: 768, fps: 50, background: '#000000', transparent: false });
   assert.deepStrictEqual(
-    compositions[1].mappings.map(mapping => ({ id: mapping.id, outputId: mapping.outputId, x: mapping.x, width: mapping.width, height: mapping.height })),
+    compositions[1].mappings.map(mapping => ({ id: mapping.id, outputId: mapping.outputId, x: mapping.input.x, width: mapping.input.width, height: mapping.input.height })),
     [
       { id: 'left', outputId: 'output-left', x: 0, width: 2688, height: 768 },
       { id: 'right', outputId: 'output-right', x: 2688, width: 2688, height: 768 }
@@ -46,13 +46,33 @@ check('COMPOSITOR_PROJECTOR_CORNER_PIN_AND_GRID_OK', () => {
   assert.strictEqual(compositor.projectorWarpIsValid(warp), true);
   assert.deepStrictEqual(warp.corners.topLeft, { x: 4, y: 7 });
   assert.deepStrictEqual(warp.corners.bottomRight, { x: 92, y: 95 });
-  assert.deepStrictEqual(warp.grid, { visible: true, columns: 12, rows: 9, opacity: 0.8 });
+  assert.deepStrictEqual(warp.grid, { visible: true, columns: 12, rows: 9, opacity: 0.8, pattern: 'grid', labels: true });
   const guarded = compositor.normalizeProjectorWarp({
     enabled: true,
     corners: { topLeft: { x: 120, y: 120 }, topRight: { x: -20, y: -20 } }
   });
   assert.strictEqual(compositor.projectorWarpIsValid(guarded), true);
   assert.ok(guarded.corners.topLeft.x < guarded.corners.topRight.x);
+});
+
+check('COMPOSITOR_ADVANCED_OUTPUT_SURFACE_NORMALIZES_OK', () => {
+  const mapping = compositor.normalizeProjectorMapping({
+    id: 'stage-left', outputId: 'projector-a', enabled: true, solo: true,
+    input: { x: 960, y: 0, width: 960, height: 1080, flipX: true },
+    output: { x: 5, y: 8, width: 86, height: 72, rotation: 3 },
+    mask: { enabled: true, points: [{x:0,y:0},{x:100,y:12},{x:88,y:100},{x:8,y:90}] },
+    warp: { enabled: true, mode: 'mesh', mesh: { columns: 2, rows: 2, points: [
+      {x:0,y:0},{x:50,y:3},{x:100,y:0},{x:2,y:50},{x:48,y:54},{x:98,y:49},{x:0,y:100},{x:52,y:97},{x:100,y:100}
+    ] }, grid: { visible: true, pattern: 'checker', labels: false } },
+    blend: { left: 120, gamma: 1.4, blackLevel: 0.08 }
+  }, 0, { width: 1920, height: 1080 });
+  assert.deepStrictEqual(mapping.input, { x: 960, y: 0, width: 960, height: 1080, flipX: true, flipY: false });
+  assert.strictEqual(mapping.output.width, 86);
+  assert.strictEqual(mapping.mask.points.length, 4);
+  assert.strictEqual(mapping.warp.mode, 'mesh');
+  assert.strictEqual(mapping.warp.mesh.points.length, 9);
+  assert.strictEqual(mapping.blend.gamma, 1.4);
+  assert.strictEqual(compositor.projectorWarpIsValid(mapping.warp), true);
 });
 
 check('COMPOSITOR_LAYER_TYPES_AND_TRANSFORMS_OK', () => {

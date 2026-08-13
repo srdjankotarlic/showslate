@@ -27,8 +27,14 @@ const smokeProfileDir = fs.mkdtempSync(path.join(os.tmpdir(), 'showslate-smoke-'
 const artifactDir = path.join(root, 'artifacts', 'generated', packaged ? 'packaged' : 'source');
 fs.mkdirSync(artifactDir, { recursive: true });
 smokeArgs.push('--smoke-user-data-dir=' + smokeProfileDir, '--artifact-dir=' + artifactDir);
-const wantedId = displayId || (config && config.id);
-const wantedLabel = display || (config && config.labelContains);
+const wantedId = displayId
+  || process.env.SHOWSLATE_SMOKE_DISPLAY_ID
+  || process.env.PROTIMER_SMOKE_DISPLAY_ID
+  || (config && config.id);
+const wantedLabel = display
+  || process.env.SHOWSLATE_SMOKE_DISPLAY
+  || process.env.PROTIMER_SMOKE_DISPLAY
+  || (config && config.labelContains);
 if (wantedId) smokeArgs.push('--smoke-display-id=' + wantedId);
 else if (wantedLabel) smokeArgs.push('--smoke-display=' + wantedLabel);
 

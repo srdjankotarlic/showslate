@@ -31,7 +31,7 @@
 
 ![ShowSlate Live Compositor operator workspace](docs/images/live-compositor-workspace.png)
 
-ShowSlate builds a visual Program from reusable layered scenes on one Mac or Windows PC. Combine pictures, video, PDF pages, colors, text, a timer, application windows, displays, cameras and UVC capture devices; prepare the result in **Preview**, use **TAKE** to send it to **Program**, then route Program to one or more local displays. Every destination can use its own output Canvas, resolution and scaling mode, with optional four-corner projector mapping for irregular surfaces.
+ShowSlate builds a visual Program from reusable layered scenes on one Mac or Windows PC. Combine pictures, video, PDF pages, colors, text, a timer, application windows, displays, cameras and UVC capture devices; prepare the result in **Preview**, use **TAKE** to send it to **Program**, then route Program to one or more local displays. Every destination can use its own output Canvas, resolution and scaling mode, with optional multi-surface projector mapping for irregular projection areas.
 
 The included **Conference Desk** workflow adds a rundown, LIVE/NEXT/GO, speaker timing, cue-driven lower thirds, show-folder import and role-based room displays. It is intended for conferences, corporate events, education, community venues, houses of worship and small AV teams that need more structure than a media player but less complexity than a broadcast switcher.
 
@@ -43,7 +43,7 @@ The included **Conference Desk** workflow adds a rundown, LIVE/NEXT/GO, speaker 
 2. Add and arrange media, color, text, timing or a local live input as ordered layers.
 3. Prepare the scene in Preview, verify it, then use **TAKE** or **Cut** to send it to Program.
 4. Open **Outputs**, assign each destination to an explicit display, choose fullscreen/window placement and set its independent output Canvas, resolution and scaling.
-5. For a projector or LED processor, open **Map projector**, align the four corner points and use the calibration grid before applying the route.
+5. For projectors or LED processors, open **Map projector**, create one or more surfaces, choose source pixels in **Input Selection**, then align them in **Output Mapping** before applying the route.
 6. Enable Program audio on at most one local output when a video or capture source needs sound.
 
 ## The room workflow
@@ -75,11 +75,15 @@ Each role can be fullscreen, windowed, an exact pixel size or a grid region. Sho
 - Send the same live Program to multiple displays at the same time.
 - Give every destination its own standard or custom Canvas resolution, frame rate and **Fit / Cover / Fill** scaling.
 - Assign a fullscreen, windowed, exact-size or grid destination without changing the source scene.
-- Use **Map projector** to move four corner points, show an adjustable calibration grid and compensate for a simple irregular projection surface.
+- Build several independently named surfaces on one output and duplicate surfaces when preparing adjacent projectors or LED regions.
+- Use **Input Selection** to crop the exact source pixels from a standard or custom composition Canvas.
+- Use **Output Mapping** to position and rotate each surface, then choose four-corner perspective correction or a linear mesh up to 4 x 4 cells.
+- Drag perspective, mesh and polygon-mask points directly on the output canvas. Use Grid, Checker or Crosshair calibration patterns with optional surface labels.
+- Set per-surface visibility, Solo, opacity, edge overlap, blend gamma and black level while aligning multiple projectors.
 - Apply mapping to the complete Program, not only to one media layer. Scene media, timer, text, logos and lower thirds stay together.
 - Keep unavailable displays fail-closed: a missing projector is reported instead of silently moving the output elsewhere.
 
-The current mapper is a practical four-corner beta tool, not a replacement for specialist multi-projector warping software. Complex masks, arbitrary mesh warping, automatic camera calibration and projector color matching are not included yet.
+The mapper is still beta software. It provides perspective and bounded linear-mesh correction, polygon masks and manual edge blending, but it does not provide spline/Bezier warping, automatic camera calibration, projector color matching or certification for a particular venue chain. Calibrate and rehearse on the exact projectors, processors and surfaces before a live show.
 
 ![ShowSlate projector mapping workspace](docs/images/projector-mapping.png)
 
@@ -142,7 +146,7 @@ Supported folder media includes PNG, JPEG, WebP, GIF, SVG, MP4, WebM, MOV, M4V a
 - Window/display capture and camera/UVC capture-card layers with optional local Program audio.
 - Lower Third Studio with cue-driven dynamic fields, shapes, logos, images and muted video.
 - Explicit multi-display routing with per-destination Canvas settings, render acknowledgements and unavailable-display blocking.
-- Four-corner projector mapping with a calibration grid and soft-edge controls for simple irregular surfaces.
+- Multi-surface projector mapping with separate input/output transforms, perspective or linear-mesh warp, polygon masks, calibration patterns and manual edge-blend controls.
 - Autosave, crash recovery and portable `.showslate-show` and `.showslate-lt` packages.
 - Local phone remote, backstage view, Signal Light, HTTP and OSC control.
 - English default UI, full Serbian UI and 35 core language packs with English fallback.

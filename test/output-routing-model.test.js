@@ -62,4 +62,16 @@ const square = routing.normalizeConfig({
 }, 2, { displays, controlDisplayId: 1 });
 check('OUTPUT_MODEL_INDEPENDENT_DESTINATION_CANVASES_OK', projected.outputCanvas.width === 1920 && projected.outputCanvas.height === 1080 && projected.outputCanvas.fit === 'contain' && square.outputCanvas.width === 1000 && square.outputCanvas.height === 1000 && square.outputCanvas.fit === 'cover');
 
+const multiSurface = routing.normalizeConfig({
+  id: 'route-multi', displayId: 3, projection: {
+    id: 'surface-a', compositionId: 'composition-main', canvasWidth: 1920, canvasHeight: 1080,
+    input: { x: 0, y: 0, width: 960, height: 1080 }, output: { x: 0, y: 0, width: 50, height: 100 },
+    surfaces: [
+      { id: 'surface-a', compositionId: 'composition-main', canvasWidth: 1920, canvasHeight: 1080, input: {x:0,y:0,width:960,height:1080}, output: {x:0,y:0,width:50,height:100} },
+      { id: 'surface-b', compositionId: 'composition-main', canvasWidth: 1920, canvasHeight: 1080, input: {x:960,y:0,width:960,height:1080}, output: {x:50,y:0,width:50,height:100}, warp: {enabled:true,mode:'mesh',mesh:{columns:2,rows:1}} }
+    ]
+  }
+}, 3, { displays, controlDisplayId: 1 });
+check('OUTPUT_MODEL_MULTI_SURFACE_ROUTE_PRESERVED_OK', multiSurface.projection.surfaces.length === 2 && multiSurface.projection.surfaces[1].input.x === 960 && multiSurface.projection.surfaces[1].output.x === 50 && multiSurface.projection.surfaces[1].warp.mode === 'mesh');
+
 console.log(`OUTPUT_ROUTING_MODEL_TESTS_OK count=${checks}`);
