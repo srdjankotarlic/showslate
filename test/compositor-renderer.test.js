@@ -471,8 +471,9 @@ app.whenReady().then(async () => {
     const deviceStarted=Date.now(); while(Date.now()-deviceStarted<2000&&document.getElementById('sourceVideoDevice').options[0]?.value!=='video-card-1') await new Promise(resolve=>setTimeout(resolve,25));
     const captureAudioDefault=document.getElementById('sourceAudioDevice').value;
     document.getElementById('sourceAudioDevice').value='audio-card-1';
-    document.getElementById('sourceDeviceResolution').value='1280x720';
-    document.getElementById('sourceDeviceFps').value='30';
+    document.getElementById('sourceDeviceResolution').value='1920x1080';
+    document.getElementById('sourceDeviceFps').value='60';
+    document.getElementById('sourceDeviceCaptureMode').value='low-latency';
     document.getElementById('btnDeviceAdd').click();
     await new Promise(resolve=>setTimeout(resolve,80));
 
@@ -513,11 +514,13 @@ app.whenReady().then(async () => {
     document.getElementById('inspW').value='42'; change(document.getElementById('inspW'));
     document.getElementById('inspH').value='40'; change(document.getElementById('inspH'));
     renderStage('pv',S,Date.now());
-    const scene=currentScene(); const timer=scene.layers.find(layer=>layer.type==='timer'); const color=scene.layers.find(layer=>layer.type==='color'); const text=scene.layers.find(layer=>layer.type==='text'); const capture=scene.layers.find(layer=>layer.type==='window');
-    const captureElement=document.querySelector('#pvScene [data-layer-id="'+capture.id+'"]');
+    const scene=currentScene(); const timer=scene.layers.find(layer=>layer.type==='timer'); const color=scene.layers.find(layer=>layer.type==='color'); const text=scene.layers.find(layer=>layer.type==='text'); const capture=scene.layers.find(layer=>layer.type==='window'); const device=scene.layers.find(layer=>layer.type==='capture');
+    const captureElement=document.querySelector('#pvScene .pv-scene-selection[data-layer-id="'+capture.id+'"]');
+    const textElement=document.querySelector('#pvScene [data-layer-id="'+text.id+'"] .pv-scene-text');
+    const imageElements=[...document.querySelectorAll('#pvScene [data-layer-id] img')];
     const previewRect=document.getElementById('preview').getBoundingClientRect();
     const windowInput=liveInputDefinition(capture.inputId);
-    return JSON.stringify({canvas:S.canvas,previewRatio:previewRect.width/previewRect.height,types:scene.layers.map(layer=>layer.type),timerIndex:scene.layers.indexOf(timer),colorIndex:scene.layers.indexOf(color),text:{bg:text.bg,x:text.x,y:text.y,w:text.w,h:text.h},captureAudioDefault,systemAudioDefault,duplicateAudioDefault,duplicateNoticeVisible,capture:{x:capture.x,y:capture.y,w:capture.w,h:capture.h,fit:capture.fit,name:capture.name,audioEnabled:capture.audioEnabled,withAudio:windowInput&&windowInput.withAudio},audioState,windowAudioRows:document.querySelectorAll('#audioMixerRows [data-audio-layer-id="'+capture.id+'"]').length,handles:captureElement?captureElement.querySelectorAll('.transform-handle').length:0,layerRows:document.querySelectorAll('#layerList .layer-row').length,liveInputs:S.liveInputs.length});
+    return JSON.stringify({canvas:S.canvas,previewRatio:previewRect.width/previewRect.height,types:scene.layers.map(layer=>layer.type),timerIndex:scene.layers.indexOf(timer),colorIndex:scene.layers.indexOf(color),text:{bg:text.bg,x:text.x,y:text.y,w:text.w,h:text.h,rendered:textElement&&textElement.textContent},pictures:{count:imageElements.length,allHaveSource:imageElements.length>0&&imageElements.every(image=>!!image.src)},deviceInput:cloneState(liveInputDefinition(device.inputId)),captureAudioDefault,systemAudioDefault,duplicateAudioDefault,duplicateNoticeVisible,capture:{x:capture.x,y:capture.y,w:capture.w,h:capture.h,fit:capture.fit,name:capture.name,audioEnabled:capture.audioEnabled,withAudio:windowInput&&windowInput.withAudio,desktopSourceId:windowInput&&windowInput.desktopSourceId},audioState,windowAudioRows:document.querySelectorAll('#audioMixerRows [data-audio-layer-id="'+capture.id+'"]').length,handles:captureElement?captureElement.querySelectorAll('.transform-handle').length:0,layerRows:document.querySelectorAll('#layerList .layer-row').length,liveInputs:S.liveInputs.length});
   })()`));
   fs.writeFileSync(path.join(artifactDirectory, 'capture-safe-defaults.png'), (await win.webContents.capturePage()).toPNG());
   check('COMPOSITOR_CUSTOM_CANVAS_AND_SOURCE_TYPES_OK', authored.canvas.width === 1000 && authored.canvas.height === 1000 && authored.canvas.fps === 25 && Math.abs(authored.previewRatio - 1) < 0.02 && ['color','image','text','window','capture','timer'].every(type => authored.types.includes(type)), JSON.stringify(authored));
@@ -527,9 +530,11 @@ app.whenReady().then(async () => {
   check('COMPOSITOR_LAYER_LIST_STAYS_COMPACT_OK', layerListLayout.rows.length > 0 && layerListLayout.rows.every(height=>height >= 72 && height <= 80) && layerListLayout.chips.every(height=>height <= 18) && layerListLayout.bar <= 64, JSON.stringify(layerListLayout));
   check('COMPOSITOR_COLOR_DEFAULTS_BEHIND_TIMER_OK', authored.colorIndex === 0 && authored.timerIndex > authored.colorIndex, JSON.stringify({ colorIndex: authored.colorIndex, timerIndex: authored.timerIndex }));
   check('COMPOSITOR_TEXT_DEFAULT_IS_NON_OBSCURING_OK', authored.text.bg === 'transparent' && authored.text.x > 0 && authored.text.y > 0 && authored.text.w < 100 && authored.text.h < 100, JSON.stringify(authored.text));
+  check('COMPOSITOR_PICTURE_AND_TEXT_RENDER_OK', authored.pictures.count >= 1 && authored.pictures.allHaveSource && authored.text.rendered === 'Guest camera', JSON.stringify({ pictures: authored.pictures, text: authored.text }));
   check('COMPOSITOR_AUDIO_INPUT_AND_MIXER_OK', authored.types.includes('audio') && authored.audioState.layer.volume === 0.62 && authored.audioState.layer.audioMonitoring === 'monitor-only' && authored.audioState.input.type === 'audio' && authored.audioState.input.audioDeviceId === 'audio-card-1' && authored.audioState.rows >= 2 && authored.audioState.meters === authored.audioState.rows, JSON.stringify(authored.audioState));
   check('COMPOSITOR_WINDOW_SYSTEM_AUDIO_MIXER_OK', authored.systemAudioDefault && authored.capture.withAudio && authored.capture.audioEnabled && authored.windowAudioRows === 1, JSON.stringify({ systemAudioDefault: authored.systemAudioDefault, capture: authored.capture, windowAudioRows: authored.windowAudioRows }));
-  check('COMPOSITOR_WINDOW_CAPTURE_SAFE_DEFAULTS_OK', authored.capture.fit === 'contain' && authored.duplicateAudioDefault === false && authored.duplicateNoticeVisible, JSON.stringify({ capture: authored.capture, duplicateAudioDefault: authored.duplicateAudioDefault, duplicateNoticeVisible: authored.duplicateNoticeVisible }));
+  check('COMPOSITOR_WINDOW_CAPTURE_SAFE_DEFAULTS_OK', authored.capture.fit === 'contain' && authored.capture.desktopSourceId === 'window:compositor-test:1' && authored.duplicateAudioDefault === false && authored.duplicateNoticeVisible, JSON.stringify({ capture: authored.capture, duplicateAudioDefault: authored.duplicateAudioDefault, duplicateNoticeVisible: authored.duplicateNoticeVisible }));
+  check('COMPOSITOR_CAPTURE_CARD_1080P60_LOW_LATENCY_CONFIG_OK', authored.deviceInput.width === 1920 && authored.deviceInput.height === 1080 && authored.deviceInput.fps === 60 && authored.deviceInput.captureMode === 'low-latency' && authored.deviceInput.withAudio, JSON.stringify(authored.deviceInput));
   check('COMPOSITOR_AUDIO_OUTPUT_ROUTING_OK', authored.audioState.programRoute === 'primary' && authored.audioState.programDevice === 'speaker-main' && authored.audioState.programStateDevice === 'speaker-main', JSON.stringify(authored.audioState));
   const sourceCatalog = JSON.parse(await win.webContents.executeJavaScript(`JSON.stringify((()=>{document.getElementById('btnAddSource').click();const kinds=[...document.querySelectorAll('#sourceKindGrid [data-source-kind]')].map(button=>button.dataset.sourceKind);const groups=[...document.querySelectorAll('#sourceKindGrid .source-kind-section-title strong')].map(node=>node.textContent);closeSourceDialog();return {kinds,groups};})())`));
   check('COMPOSITOR_ADVANCED_SOURCE_CATALOG_OK', ['image','video','pdf','color','text','window','screen','device','audio','timer'].every(kind=>sourceCatalog.kinds.includes(kind)) && sourceCatalog.groups.length === 3, JSON.stringify(sourceCatalog));
@@ -570,7 +575,7 @@ app.whenReady().then(async () => {
   check('COMPOSITOR_SOURCE_INSPECTOR_COMPACT_RESIZABLE_OK', inspectorLayout.initial.inspector >= 340 && inspectorLayout.initial.inspector <= 360 && inspectorLayout.initial.toggleVisible && inspectorLayout.initial.resizerVisible && !inspectorLayout.initial.transformOpen && inspectorLayout.collapsed.inspector <= 46 && inspectorLayout.collapsed.layers > inspectorLayout.initial.layers + 140 && !inspectorLayout.collapsed.inputVisible && inspectorLayout.collapsed.toggleVisible && inspectorLayout.collapsed.ariaExpanded === 'false' && Math.abs(inspectorLayout.restored - inspectorLayout.initial.inspector) <= 2 && inspectorLayout.resized >= inspectorLayout.restored + 20 && inspectorLayout.stored >= 370 && !inspectorLayout.collapsedState && inspectorLayout.resizerRole === 'separator', JSON.stringify(inspectorLayout));
 
   const layerRowActions=JSON.parse(await win.webContents.executeJavaScript(`JSON.stringify((()=>{
-    const scene=currentScene(), original=cloneState(scene.layers), source=scene.layers[1]||scene.layers[0];
+    const scene=currentScene(), original=cloneState(scene.layers), selectedBefore=selectedLayerId, source=scene.layers[1]||scene.layers[0];
     const probe={...cloneState(source),id:'layer-action-probe',name:'Layer action probe'};
     scene.layers.splice(1,0,probe); selectedLayerId=probe.id; sceneDirty();
     const indexBefore=currentScene().layers.findIndex(layer=>layer.id===probe.id);
@@ -587,12 +592,47 @@ app.whenReady().then(async () => {
     row=document.querySelector('#layerList .layer-row[data-layer-id="layer-action-probe"]');
     row.querySelector('.del').click();
     const deleted=!currentScene().layers.some(layer=>layer.id===probe.id);
-    currentScene().layers=original; selectedLayerId=(original[original.length-1]||{}).id||null; sceneDirty();
+    currentScene().layers=original; selectedLayerId=selectedBefore; sceneDirty();
     return {indexBefore,indexForward,indexBackward,topForwardDisabled,bottomBackwardDisabled,deleted};
   })())`));
   check('COMPOSITOR_LAYER_REORDER_DELETE_CONTROLS_OK', layerRowActions.indexForward === layerRowActions.indexBefore + 1 && layerRowActions.indexBackward === layerRowActions.indexBefore && layerRowActions.topForwardDisabled && layerRowActions.bottomBackwardDisabled && layerRowActions.deleted, JSON.stringify(layerRowActions));
+  const layerDrag=JSON.parse(await win.webContents.executeJavaScript(`JSON.stringify((()=>{
+    const scene=currentScene(),original=cloneState(scene.layers),selectedBefore=selectedLayerId,programBefore=JSON.stringify(programState&&programState.scenes||[]);
+    const rows=[...document.querySelectorAll('#layerList .layer-row')];
+    const source=rows[0],target=rows[rows.length-1],sourceId=source.dataset.layerId,targetId=target.dataset.layerId;
+    const transfer=new DataTransfer(),targetRect=target.getBoundingClientRect();
+    source.querySelector('.layer-drag-handle').dispatchEvent(new DragEvent('dragstart',{bubbles:true,dataTransfer:transfer}));
+    target.dispatchEvent(new DragEvent('dragover',{bubbles:true,cancelable:true,clientY:targetRect.bottom-1,dataTransfer:transfer}));
+    target.dispatchEvent(new DragEvent('drop',{bubbles:true,cancelable:true,clientY:targetRect.bottom-1,dataTransfer:transfer}));
+    source.dispatchEvent(new DragEvent('dragend',{bubbles:true,dataTransfer:transfer}));
+    const visual=[...document.querySelectorAll('#layerList .layer-row')].map(row=>row.dataset.layerId);
+    const result={sourceId,targetId,last:visual[visual.length-1],modelBottom:currentScene().layers[0]?.id,programUnchanged:programBefore===JSON.stringify(programState&&programState.scenes||[]),handles:document.querySelectorAll('#layerList .layer-drag-handle').length,pointerDriven:[...document.querySelectorAll('#layerList .layer-row')].every(row=>!row.draggable),summary:document.getElementById('layerStackSummary').textContent};
+    scene.layers=original;selectedLayerId=selectedBefore;sceneDirty();return result;
+  })())`));
+  check('COMPOSITOR_LAYER_DRAG_REORDER_PREVIEW_ONLY_OK', layerDrag.sourceId !== layerDrag.targetId && layerDrag.last === layerDrag.sourceId && layerDrag.modelBottom === layerDrag.sourceId && layerDrag.programUnchanged && layerDrag.handles > 1 && layerDrag.pointerDriven && /top is in front/i.test(layerDrag.summary), JSON.stringify(layerDrag));
+  const layerPointerSetup=JSON.parse(await win.webContents.executeJavaScript(`JSON.stringify((()=>{
+    const scene=currentScene(),rows=[...document.querySelectorAll('#layerList .layer-row')],source=rows[1],target=rows[0],handle=source.querySelector('.layer-drag-handle');
+    const sourceRect=handle.getBoundingClientRect(),targetRect=target.getBoundingClientRect();
+    window.__layerPointerRestore={layers:cloneState(scene.layers),selected:selectedLayerId,program:JSON.stringify(programState&&programState.scenes||[])};
+    return {sourceId:source.dataset.layerId,targetId:target.dataset.layerId,startX:Math.round(sourceRect.left+sourceRect.width/2),startY:Math.round(sourceRect.top+sourceRect.height/2),dropX:Math.round(targetRect.left+12),dropY:Math.round(targetRect.top+2)};
+  })())`));
+  win.webContents.sendInputEvent({type:'mouseDown',x:layerPointerSetup.startX,y:layerPointerSetup.startY,button:'left',clickCount:1});
+  win.webContents.sendInputEvent({type:'mouseMove',x:layerPointerSetup.startX+3,y:layerPointerSetup.startY+12,movementX:3,movementY:12});
+  win.webContents.sendInputEvent({type:'mouseMove',x:layerPointerSetup.dropX,y:layerPointerSetup.dropY,movementX:layerPointerSetup.dropX-layerPointerSetup.startX,movementY:layerPointerSetup.dropY-layerPointerSetup.startY});
+  await new Promise(resolve=>setTimeout(resolve,40));
+  const layerPointerActive=JSON.parse(await win.webContents.executeJavaScript(`JSON.stringify({active:document.body.classList.contains('layer-pointer-dragging'),marked:!!document.querySelector('#layerList .layer-row.drop-before')})`));
+  win.webContents.sendInputEvent({type:'mouseUp',x:layerPointerSetup.dropX,y:layerPointerSetup.dropY,button:'left',clickCount:1});
+  await new Promise(resolve=>setTimeout(resolve,80));
+  const layerPointerDrag=JSON.parse(await win.webContents.executeJavaScript(`JSON.stringify((()=>{
+    const visual=[...document.querySelectorAll('#layerList .layer-row')].map(row=>row.dataset.layerId),prior=window.__layerPointerRestore;
+    const result={sourceId:${JSON.stringify(layerPointerSetup.sourceId)},targetId:${JSON.stringify(layerPointerSetup.targetId)},first:visual[0],active:${JSON.stringify(layerPointerActive.active)},marked:${JSON.stringify(layerPointerActive.marked)},programUnchanged:prior.program===JSON.stringify(programState&&programState.scenes||[]),bodyClean:!document.body.classList.contains('layer-pointer-dragging')};
+    currentScene().layers=prior.layers;selectedLayerId=prior.selected;delete window.__layerPointerRestore;sceneDirty();return result;
+  })())`));
+  check('COMPOSITOR_LAYER_POINTER_DRAG_REORDER_OK', layerPointerDrag.sourceId !== layerPointerDrag.targetId && layerPointerDrag.first === layerPointerDrag.sourceId && layerPointerDrag.active && layerPointerDrag.marked && layerPointerDrag.programUnchanged && layerPointerDrag.bodyClean, JSON.stringify(layerPointerDrag));
   if (!await waitFor(() => configuredInputs.some(input => input.type === 'window' && input.active))) throw new Error('window input was not configured');
-  check('COMPOSITOR_WINDOW_AND_CAPTURE_CARD_CONFIGURED_ONCE_OK', configuredInputs.filter(input => input.type === 'window' && input.withAudio).length === 1 && configuredInputs.filter(input => input.type === 'device' && input.videoDeviceId === 'video-card-1' && input.audioDeviceId === 'audio-card-1' && input.withAudio && input.width === 1280 && input.height === 720).length === 1, JSON.stringify(configuredInputs));
+  check('COMPOSITOR_WINDOW_AND_CAPTURE_CARD_CONFIGURED_ONCE_OK', configuredInputs.filter(input => input.type === 'window' && input.withAudio).length === 1 && configuredInputs.filter(input => input.type === 'device' && input.videoDeviceId === 'video-card-1' && input.audioDeviceId === 'audio-card-1' && input.withAudio && input.width === 1920 && input.height === 1080 && input.fps === 60 && input.captureMode === 'low-latency').length === 1, JSON.stringify(configuredInputs));
+  const captureFallback=JSON.parse(await win.webContents.executeJavaScript(`JSON.stringify((()=>{const previousId=selectedLayerId,layer=currentScene().layers.find(row=>row.type==='capture'),input=liveInputDefinition(layer.inputId);liveInputStatuses.set(input.id,{inputId:input.id,state:'live',width:1280,height:720,frameRate:30,requestedWidth:1920,requestedHeight:1080,requestedFrameRate:60,hasVideo:true,hasAudio:true,formatMatched:false,formatFallback:true});selectLayer(layer.id);renderInspector();const quality=document.getElementById('inspLiveQuality');const row=document.querySelector('#layerList .layer-row[data-layer-id="'+layer.id+'"]');const result={warning:quality.classList.contains('warning'),text:quality.textContent,meta:row&&row.querySelector('.layer-meta')?.textContent||''};liveInputStatuses.delete(input.id);selectLayer(previousId);renderInspector();return result;})())`));
+  check('COMPOSITOR_CAPTURE_FORMAT_FALLBACK_VISIBLE_OK', captureFallback.warning && captureFallback.text.includes('1920×1080 @ 60 fps') && captureFallback.text.includes('1280×720 @ 30 fps') && captureFallback.text.includes('Compatible fallback is active'), JSON.stringify(captureFallback));
 
   deviceDiscoveryMode = 'pending';
   const permissionPending = JSON.parse(await win.webContents.executeJavaScript(`(async()=>{
@@ -649,7 +689,7 @@ app.whenReady().then(async () => {
   })()`));
   check('COMPOSITOR_CHANGE_SOURCE_PRESERVES_TRANSFORM_OK', replaced.highlighted && replaced.closed && replaced.sameLayer && replaced.newInput && replaced.geometry && replaced.liveInputs === 3, JSON.stringify(replaced));
 
-  const handle = JSON.parse(await win.webContents.executeJavaScript(`JSON.stringify((()=>{const el=document.querySelector('#pvScene .transform-handle.handle-se');const r=el.getBoundingClientRect();const layer=selectedLayer();return {x:Math.round(r.left+r.width/2),y:Math.round(r.top+r.height/2),w:layer.w,h:layer.h,id:layer.id,type:layer.type,handleLayerId:el.closest('.pv-scene-layer')?.dataset.layerId||''};})())`));
+  const handle = JSON.parse(await win.webContents.executeJavaScript(`JSON.stringify((()=>{const el=document.querySelector('#pvScene .transform-handle.handle-se');const r=el.getBoundingClientRect();const layer=selectedLayer();return {x:Math.round(r.left+r.width/2),y:Math.round(r.top+r.height/2),w:layer.w,h:layer.h,id:layer.id,type:layer.type,handleLayerId:el.closest('[data-layer-id]')?.dataset.layerId||''};})())`));
   win.webContents.sendInputEvent({ type: 'mouseDown', x: handle.x, y: handle.y, button: 'left', clickCount: 1 });
   win.webContents.sendInputEvent({ type: 'mouseMove', x: handle.x + 45, y: handle.y + 28, movementX: 45, movementY: 28 });
   win.webContents.sendInputEvent({ type: 'mouseUp', x: handle.x + 45, y: handle.y + 28, button: 'left', clickCount: 1 });

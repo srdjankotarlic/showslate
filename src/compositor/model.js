@@ -8,6 +8,7 @@
   const SCHEMA_VERSION = 1;
   const LAYER_TYPES = new Set(['color', 'image', 'video', 'pdf', 'text', 'timer', 'window', 'capture', 'audio']);
   const LIVE_INPUT_TYPES = new Set(['window', 'device', 'audio']);
+  const CAPTURE_MODES = new Set(['low-latency', 'compatible']);
   const AUDIO_MONITORING_MODES = new Set(['off', 'monitor-only', 'monitor-and-output']);
   const MEDIA_PLAYBACK_STATES = new Set(['playing', 'paused', 'stopped']);
   const MEDIA_END_BEHAVIORS = new Set(['stop', 'hold', 'loop']);
@@ -453,6 +454,7 @@
       width: integer(source.width, 1920, 160, 7680),
       height: integer(source.height, 1080, 120, 4320),
       fps: integer(source.fps, 30, 1, 60),
+      captureMode: type === 'device' && CAPTURE_MODES.has(source.captureMode) ? source.captureMode : 'low-latency',
       autoReconnect: source.autoReconnect !== false,
       active: source.active !== false
     };

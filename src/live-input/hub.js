@@ -10,6 +10,7 @@
   const startTasks = new Map();
   const startGenerations = new Map();
   const failedStarts = new Map();
+  const captureMetadata = new WeakMap();
   let desktopCaptureQueue = Promise.resolve();
   const TEST_MODE = new URLSearchParams(location.search).get('test') === '1';
   const CAPTURE_START_TIMEOUT_MS = 10000;
@@ -98,6 +99,7 @@
       if (videoTrack && typeof videoTrack.applyConstraints === 'function') {
         await videoTrack.applyConstraints({ frameRate: { ideal: definition.fps, max: definition.fps } }).catch(() => {});
       }
+      captureMetadata.set(stream, { captureMode: 'desktop', formatFallback: false });
       return stream;
     };
     const result = desktopCaptureQueue.then(capture, capture);
@@ -117,21 +119,54 @@
   async function deviceStream(definition) {
     if (definition.type === 'audio' && !definition.audioDeviceId) throw new Error('Choose an audio input first.');
     if (definition.type !== 'audio' && !definition.videoDeviceId) throw new Error('Choose a video capture device first.');
-    const video = definition.type === 'audio' ? false : {
+    const audio = definition.withAudio && definition.audioDeviceId
+      ? { deviceId: { exact: definition.audioDeviceId }, echoCancellation: false, noiseSuppression: false, autoGainControl: false }
+      : false;
+    if (definition.type === 'audio') {
+      const stream = await navigator.mediaDevices.getUserMedia({ video: false, audio });
+      captureMetadata.set(stream, { captureMode: 'audio', formatFallback: false });
+      return stream;
+    }
+    const compatibleVideo = {
       deviceId: { exact: definition.videoDeviceId },
       width: { ideal: definition.width },
       height: { ideal: definition.height },
       frameRate: { ideal: definition.fps, max: definition.fps }
     };
-    const audio = definition.withAudio && definition.audioDeviceId
-      ? { deviceId: { exact: definition.audioDeviceId }, echoCancellation: false, noiseSuppression: false, autoGainControl: false }
-      : false;
-    return navigator.mediaDevices.getUserMedia({ video, audio });
+    if (definition.captureMode === 'compatible') {
+      const stream = await navigator.mediaDevices.getUserMedia({ video: compatibleVideo, audio });
+      captureMetadata.set(stream, { captureMode: 'compatible', formatFallback: false });
+      return stream;
+    }
+    const exactVideo = {
+      deviceId: { exact: definition.videoDeviceId },
+      width: { exact: definition.width },
+      height: { exact: definition.height },
+      frameRate: { exact: definition.fps }
+    };
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ video: exactVideo, audio });
+      captureMetadata.set(stream, { captureMode: 'low-latency', formatFallback: false });
+      return stream;
+    } catch (error) {
+      const constraintError = ['OverconstrainedError', 'ConstraintNotSatisfiedError'].includes(String(error && error.name || ''));
+      if (!constraintError) throw error;
+      const stream = await navigator.mediaDevices.getUserMedia({ video: compatibleVideo, audio });
+      captureMetadata.set(stream, {
+        captureMode: 'low-latency',
+        formatFallback: true,
+        fallbackReason: String(error && (error.constraint || error.message) || 'unsupported-format')
+      });
+      return stream;
+    }
   }
 
-  function syntheticStream() {
+  function syntheticStream(definition = {}) {
     const canvas = document.createElement('canvas');
-    canvas.width = 1280; canvas.height = 720;
+    const width = Math.max(160, Math.min(3840, Number(definition.width) || 1920));
+    const height = Math.max(120, Math.min(2160, Number(definition.height) || 1080));
+    const fps = Math.max(1, Math.min(60, Number(definition.fps) || 30));
+    canvas.width = width; canvas.height = height;
     const ctx = canvas.getContext('2d');
     let tick = 0;
     const draw = () => {
@@ -141,8 +176,8 @@
       tick += 6;
     };
     draw();
-    const timer = setInterval(draw, 33);
-    const videoStream = canvas.captureStream(30);
+    const timer = setInterval(draw, Math.max(16, Math.round(1000 / fps)));
+    const videoStream = canvas.captureStream(fps);
     const AudioContextClass = window.AudioContext || window.webkitAudioContext;
     const audioContext = AudioContextClass ? new AudioContextClass() : null;
     let oscillator = null;
@@ -158,6 +193,7 @@
       audioTracks = destination.stream.getAudioTracks();
     }
     const stream = new MediaStream([...videoStream.getVideoTracks(), ...audioTracks]);
+    captureMetadata.set(stream, { captureMode: 'synthetic', formatFallback: false });
     let cleaned = false;
     const cleanup = () => {
       if (cleaned) return;
@@ -189,7 +225,7 @@
       try {
         const captureTask = definition.type === 'window'
           ? desktopStream(definition)
-          : (TEST_MODE && definition.videoDeviceId === '__showslate_synthetic__' ? syntheticStream() : deviceStream(definition));
+          : (TEST_MODE && definition.videoDeviceId === '__showslate_synthetic__' ? syntheticStream(definition) : deviceStream(definition));
         const stream = await captureWithTimeout(captureTask);
         if (!streamReadyForDefinition(stream, definition)) {
           stopTracks(stream);
@@ -210,6 +246,15 @@
         const videoTrack = stream.getVideoTracks()[0];
         const audioTrack = stream.getAudioTracks()[0];
         const settings = videoTrack && typeof videoTrack.getSettings === 'function' ? videoTrack.getSettings() : {};
+        const metadata = captureMetadata.get(stream) || {};
+        const actualWidth = Number(settings.width) || 0;
+        const actualHeight = Number(settings.height) || 0;
+        const actualFrameRate = Number(settings.frameRate) || 0;
+        const formatMatched = definition.type === 'audio' ? true : !!(
+          actualWidth === Number(definition.width)
+          && actualHeight === Number(definition.height)
+          && (!actualFrameRate || Math.abs(actualFrameRate - Number(definition.fps)) <= 0.75)
+        );
         status(id, 'live', {
           name: definition.name,
           type: definition.type,
@@ -217,11 +262,18 @@
           hasAudio: stream.getAudioTracks().length > 0,
           videoLabel: videoTrack?.label || '',
           audioLabel: audioTrack?.label || '',
-          width: Number(settings.width) || 0,
-          height: Number(settings.height) || 0,
-          frameRate: Number(settings.frameRate) || 0
+          width: actualWidth,
+          height: actualHeight,
+          frameRate: actualFrameRate,
+          requestedWidth: Number(definition.width) || 0,
+          requestedHeight: Number(definition.height) || 0,
+          requestedFrameRate: Number(definition.fps) || 0,
+          captureMode: String(metadata.captureMode || definition.captureMode || ''),
+          formatMatched,
+          formatFallback: metadata.formatFallback === true || !formatMatched,
+          fallbackReason: String(metadata.fallbackReason || '')
         });
-        for (const peer of [...peers.values()]) if (peer.inputId === id) createOffer(peer.consumerId, id, true).catch(() => {});
+        for (const peer of [...peers.values()]) if (peer.inputId === id) createOffer(peer.consumerId, id, true, peer.profile).catch(() => {});
         return stream;
       } catch (error) {
         if (startGenerations.get(id) === generation) {
@@ -265,34 +317,40 @@
 
   function peerKey(consumerId, inputId) { return `${consumerId}:${inputId}`; }
 
-  async function createOffer(consumerId, inputId, replace = false) {
+  async function createOffer(consumerId, inputId, replace = false, requestedProfile = 'program') {
     const id = String(inputId || '');
     const definition = definitions.get(id);
     if (!definition || !definition.active) throw new Error('Live input is not available.');
     const stream = await startInput(id);
     const key = peerKey(consumerId, id);
     const previous = peers.get(key);
+    const profile = requestedProfile === 'operator' ? 'operator' : (previous && previous.profile === 'operator' ? 'operator' : 'program');
     if (previous && !replace) return;
     if (previous) previous.pc.close();
     const pc = new RTCPeerConnection({ iceServers: [] });
-    const peer = { consumerId: Number(consumerId), inputId: id, pc, pendingCandidates: [] };
+    const peer = { consumerId: Number(consumerId), inputId: id, profile, pc, pendingCandidates: [] };
     peers.set(key, peer);
     const senderSetup = stream.getTracks().map(async track => {
-      if (track.kind === 'video' && 'contentHint' in track) track.contentHint = 'detail';
+      if (track.kind === 'video' && 'contentHint' in track) track.contentHint = definition.type === 'device' ? 'motion' : 'detail';
       const sender = pc.addTrack(track, stream);
       if (track.kind !== 'video' || typeof sender.getParameters !== 'function' || typeof sender.setParameters !== 'function') return;
       const parameters = sender.getParameters();
       const settings = typeof track.getSettings === 'function' ? track.getSettings() : {};
-      const pixelsPerSecond = Math.max(1, Number(settings.width) || Number(definition.width) || 1920)
-        * Math.max(1, Number(settings.height) || Number(definition.height) || 1080)
+      const sourceWidth = Math.max(1, Number(settings.width) || Number(definition.width) || 1920);
+      const sourceHeight = Math.max(1, Number(settings.height) || Number(definition.height) || 1080);
+      const proxyScale = profile === 'operator' ? Math.max(1, sourceWidth / 1280, sourceHeight / 720) : 1;
+      const pixelsPerSecond = sourceWidth
+        * sourceHeight
         * Math.max(1, Number(settings.frameRate) || Number(definition.fps) || 30);
-      const maxBitrate = Math.max(4000000, Math.min(24000000, Math.round(pixelsPerSecond * 0.24)));
+      const maxBitrate = profile === 'operator'
+        ? Math.max(3500000, Math.min(10000000, Math.round((pixelsPerSecond / (proxyScale * proxyScale)) * 0.28)))
+        : Math.max(6000000, Math.min(60000000, Math.round(pixelsPerSecond * 0.35)));
       parameters.degradationPreference = 'maintain-resolution';
       if (!Array.isArray(parameters.encodings) || !parameters.encodings.length) parameters.encodings = [{}];
       parameters.encodings = parameters.encodings.map(encoding => ({
         ...encoding,
         active: true,
-        scaleResolutionDownBy: 1,
+        scaleResolutionDownBy: proxyScale,
         maxBitrate,
         maxFramerate: Math.max(1, Number(definition.fps) || 30)
       }));
@@ -370,7 +428,7 @@
   api.onLiveHubCommand(async command => {
     try {
       if (command.type === 'configure') await configure(command.definitions);
-      if (command.type === 'subscribe') await createOffer(command.consumerId, command.inputId, true);
+      if (command.type === 'subscribe') await createOffer(command.consumerId, command.inputId, true, command.profile);
       if (command.type === 'unsubscribe') unsubscribe(command.consumerId, command.inputId);
       if (command.type === 'release-consumer') releaseConsumer(command.consumerId);
       if (command.type === 'signal') await handleConsumerSignal(command.payload);

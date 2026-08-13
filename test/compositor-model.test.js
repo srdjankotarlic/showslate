@@ -112,9 +112,10 @@ check('COMPOSITOR_TEXT_STYLE_NORMALIZES_OK', () => {
 });
 
 check('COMPOSITOR_LIVE_INPUT_DEVICE_AUDIO_OK', () => {
-  const input = compositor.normalizeLiveInput({ id: 'capture-1', type: 'device', videoDeviceId: 'video-1', audioDeviceId: 'audio-1', withAudio: true, width: 3840, height: 2160, fps: 60 });
+  const input = compositor.normalizeLiveInput({ id: 'capture-1', type: 'device', videoDeviceId: 'video-1', audioDeviceId: 'audio-1', withAudio: true, width: 3840, height: 2160, fps: 60, captureMode: 'compatible' });
   assert.strictEqual(input.withAudio, true);
-  assert.deepStrictEqual({ width: input.width, height: input.height, fps: input.fps }, { width: 3840, height: 2160, fps: 60 });
+  assert.deepStrictEqual({ width: input.width, height: input.height, fps: input.fps, captureMode: input.captureMode }, { width: 3840, height: 2160, fps: 60, captureMode: 'compatible' });
+  assert.strictEqual(compositor.normalizeLiveInput({ type: 'device', captureMode: 'invalid' }).captureMode, 'low-latency');
 });
 
 check('COMPOSITOR_WINDOW_SYSTEM_AUDIO_OK', () => {

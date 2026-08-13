@@ -3445,7 +3445,7 @@
         <div class="preview monitor-screen preview-screen" id="preview">
           <div class="pv-checker" id="pvChecker"></div>
           <div class="pv-scene-root" id="pvScene"></div>
-          <div class="pv-stage" id="pvStage">
+          <div class="pv-stage" id="pvStage" style="display:none">
             <div class="pv-text" id="pvText"></div>
             <div class="pv-time" id="pvTime">10:00</div>
           </div>
@@ -3468,7 +3468,7 @@
         <div class="preview monitor-screen program-screen" id="program" data-testid="program-monitor">
           <div class="pv-checker" id="pgChecker"></div>
           <div class="pv-scene-root" id="pgScene"></div>
-          <div class="pv-stage" id="pgStage">
+          <div class="pv-stage" id="pgStage" style="display:none">
             <div class="pv-text" id="pgText"></div>
             <div class="pv-time" id="pgTime" data-testid="timer-display">10:00</div>
           </div>
@@ -3510,7 +3510,7 @@
       </div>
       <div class="compositor-workspace">
         <section class="compositor-layers">
-          <div class="compositor-pane-head"><strong data-i18n="layers">Layers</strong><span data-i18n="layersTopHint">Top layer is in front</span></div>
+          <div class="compositor-pane-head"><strong data-i18n="layers">Layers</strong><span id="layerStackSummary" data-i18n="layersDragHint">Drag sources to set their stack. Top is in front.</span></div>
           <div class="layer-program-bar" id="layerProgramBar" aria-live="polite">
             <div class="layer-program-copy">
               <span data-i18n="programLayer">PROGRAM LAYER</span>
@@ -4034,7 +4034,7 @@
           <button class="source-kind" data-source-kind="timer"><span class="source-kind-icon">00</span><span class="source-kind-copy"><strong data-i18n="sourceTimer">Timer</strong><span data-i18n="sourceTimerBody">Place the ShowSlate timer in this scene.</span></span></button>
         </div>
         <section class="source-picker" id="sourceWindowPicker"><div class="source-picker-head"><button class="ghost mini source-back">‹</button><div><h3 id="sourceDesktopTitle" data-i18n="sourceWindow">Window capture</h3><p id="sourceDesktopHint" data-i18n="sourceWindowChoose">Choose one application window.</p></div><span class="grow"></span><button id="btnDesktopRefresh" class="ghost mini" data-i18n="refresh">Refresh</button></div><label class="desktop-audio-option"><input id="sourceDesktopAudio" type="checkbox" checked><span><strong data-i18n="sourceSystemAudio">Include system audio</strong><small data-i18n="sourceSystemAudioHint">Adds desktop sound to the mixer. Program audio remains off until you route it to one output.</small></span></label><div class="source-picker-note" id="sourceDesktopNotice" hidden></div><div class="desktop-source-grid" id="desktopSourceGrid"></div></section>
-        <section class="source-picker" id="sourceDevicePicker"><div class="source-picker-head"><button class="ghost mini source-back">‹</button><div><h3 data-i18n="sourceDevice">Video capture device</h3><p data-i18n="sourceDeviceChoose">Choose video, audio and requested format.</p></div></div><div class="source-form"><div class="source-permission-note wide" id="sourceDeviceStatus" hidden><span id="sourceDeviceStatusText"></span><div class="source-permission-actions"><button id="btnCameraPermission" class="ghost mini" type="button" data-i18n="sourceAllowCamera">Allow camera</button><button id="btnMicrophonePermission" class="ghost mini" type="button" data-i18n="sourceAllowMicrophone">Allow audio</button><button id="btnCameraSettings" class="ghost mini" type="button" data-i18n="sourceOpenCameraSettings">Open Camera settings</button><button id="btnMicrophoneSettings" class="ghost mini" type="button" data-i18n="sourceOpenMicrophoneSettings">Open Audio settings</button></div></div><label class="wide"><span data-i18n="sourceName">Source name</span><input id="sourceDeviceName" type="text" value="Video input"></label><label class="wide"><span data-i18n="sourceVideoDevice">Video device</span><select id="sourceVideoDevice"></select></label><label class="wide"><span data-i18n="sourceAudioDevice">Audio device</span><select id="sourceAudioDevice"><option value="" data-i18n="sourceNoAudio">No audio</option></select></label><label><span data-i18n="resolution">Resolution</span><select id="sourceDeviceResolution"><option value="1920x1080">1920 × 1080</option><option value="1280x720">1280 × 720</option><option value="720x576">720 × 576</option><option value="720x480">720 × 480</option></select></label><label><span>FPS</span><select id="sourceDeviceFps"><option>60</option><option selected>30</option><option>25</option><option>24</option></select></label><div class="form-actions"><button class="ghost source-back" data-i18n="cancel">Cancel</button><button id="btnDeviceAdd" class="primary" data-i18n="add">Add</button></div></div></section>
+        <section class="source-picker" id="sourceDevicePicker"><div class="source-picker-head"><button class="ghost mini source-back">‹</button><div><h3 data-i18n="sourceDevice">Video capture device</h3><p data-i18n="sourceDeviceChoose">Choose video, audio and requested format.</p></div></div><div class="source-form"><div class="source-permission-note wide" id="sourceDeviceStatus" hidden><span id="sourceDeviceStatusText"></span><div class="source-permission-actions"><button id="btnCameraPermission" class="ghost mini" type="button" data-i18n="sourceAllowCamera">Allow camera</button><button id="btnMicrophonePermission" class="ghost mini" type="button" data-i18n="sourceAllowMicrophone">Allow audio</button><button id="btnCameraSettings" class="ghost mini" type="button" data-i18n="sourceOpenCameraSettings">Open Camera settings</button><button id="btnMicrophoneSettings" class="ghost mini" type="button" data-i18n="sourceOpenMicrophoneSettings">Open Audio settings</button></div></div><label class="wide"><span data-i18n="sourceName">Source name</span><input id="sourceDeviceName" type="text" value="Video input"></label><label class="wide"><span data-i18n="sourceVideoDevice">Video device</span><select id="sourceVideoDevice"></select></label><label class="wide"><span data-i18n="sourceAudioDevice">Audio device</span><select id="sourceAudioDevice"><option value="" data-i18n="sourceNoAudio">No audio</option></select></label><label><span data-i18n="resolution">Resolution</span><select id="sourceDeviceResolution"><option value="3840x2160">3840 × 2160</option><option value="2560x1440">2560 × 1440</option><option value="1920x1080" selected>1920 × 1080</option><option value="1280x720">1280 × 720</option><option value="720x576">720 × 576</option><option value="720x480">720 × 480</option></select></label><label><span>FPS</span><select id="sourceDeviceFps"><option>60</option><option>50</option><option selected>30</option><option>25</option><option>24</option></select></label><label class="wide"><span data-i18n="captureMode">Capture mode</span><select id="sourceDeviceCaptureMode"><option value="low-latency" data-i18n="captureModeLowLatency">Low latency / exact format</option><option value="compatible" data-i18n="captureModeCompatible">Compatible</option></select><small class="source-field-hint" data-i18n="captureModeHint">Exact mode requests the selected format first and reports any fallback.</small></label><div class="form-actions"><button class="ghost source-back" data-i18n="cancel">Cancel</button><button id="btnDeviceAdd" class="primary" data-i18n="add">Add</button></div></div></section>
         <section class="source-picker" id="sourceAudioPicker"><div class="source-picker-head"><button class="ghost mini source-back">‹</button><div><h3 data-i18n="sourceAudioInput">Audio input capture</h3><p data-i18n="sourceAudioInputChoose">Choose a microphone, mixer or audio interface.</p></div></div><div class="source-form"><div class="source-permission-note wide" id="sourceAudioStatus" hidden><span id="sourceAudioStatusText"></span><div class="source-permission-actions"><button id="btnAudioPermission" class="ghost mini" type="button" data-i18n="sourceAllowMicrophone">Allow audio</button><button id="btnAudioSettings" class="ghost mini" type="button" data-i18n="sourceOpenMicrophoneSettings">Open Audio settings</button></div></div><label class="wide"><span data-i18n="sourceName">Source name</span><input id="sourceAudioName" type="text" value="Audio input"></label><label class="wide"><span data-i18n="sourceAudioDevice">Audio device</span><select id="sourceAudioInputDevice"></select></label><div class="form-actions"><button class="ghost source-back" data-i18n="cancel">Cancel</button><button id="btnAudioAdd" class="primary" data-i18n="add">Add</button></div></div></section>
         <section class="source-picker" id="sourceColorPicker"><div class="source-picker-head"><button class="ghost mini source-back">‹</button><div><h3 data-i18n="sourceColor">Color</h3><p data-i18n="sourceColorChoose">Choose a color for the new layer.</p></div></div><div class="source-form"><label class="wide"><span data-i18n="sourceName">Source name</span><input id="sourceColorName" type="text" value="Background"></label><label class="wide"><span data-i18n="sourceColor">Color</span><input id="sourceColorValue" type="color" value="#20242c"></label><div class="form-actions"><button class="ghost source-back" data-i18n="cancel">Cancel</button><button id="btnColorAdd" class="primary" data-i18n="add">Add</button></div></div></section>
       </main>
@@ -5141,6 +5141,7 @@ function calc(now, st=S){
 }
 let lastKey='', lastSchedFire=0, lastPreviewGridKey='', stageKeys={pv:'',pg:''}, monitorSceneKeys={pv:'',pg:''};
 let selectedLayerId=null;   // izabrani izvor (OBS-stil manipulacija u Preview-u)
+let draggedLayerId='', layerPointerDrag=null, suppressLayerClickUntil=0;
 let inspBinding=false;
 let videoTransportTarget='preview', videoTransportLayerId='', videoSeekDragging=false, lastVideoTransportPaint=0;
 let liveInputConfigKey=JSON.stringify([]), liveInputConfigurePending=false;
@@ -5154,6 +5155,12 @@ function liveInputStatusText(status){
   if(row.hasAudio) parts.push(t('sound'));
   if(row.error) parts.push(String(row.error));
   return parts.join(' · ');
+}
+function liveInputFormatText(status){
+  const row=status||{};
+  if(!row.width||!row.height)return '';
+  const rate=row.frameRate?` @ ${Math.round(row.frameRate*100)/100} fps`:'';
+  return `${Math.round(row.width)}×${Math.round(row.height)}${rate}`;
 }
 function syncLiveInputService(){
   if(!PTCOMP||!liveInputConsumer) return;
@@ -5271,7 +5278,7 @@ function renderMonitorScene(prefix, st){
     if(layer.type==='timer'&&prefix!=='pv') return;   // Program timer renderuje pgStage; Preview dobija interaktivni proxy.
     const d=document.createElement('div');
     const b=layerBounds(layer);
-    d.className='pv-scene-layer fit-'+(layer.fit||'cover')+(layer.type==='timer'?' timer-proxy':'')+((prefix==='pv'&&layer.id===selectedLayerId)?' sel':'');
+    d.className='pv-scene-layer fit-'+(layer.fit||'cover')+(layer.type==='timer'?' timer-proxy':'');
     d.dataset.layerId=layer.id;
     d.style.left=b.x+'%'; d.style.top=b.y+'%'; d.style.width=b.w+'%'; d.style.height=b.h+'%';
     d.style.setProperty('--layerOpacity', Math.max(0, Math.min(1, Number(layer.opacity ?? 1))));
@@ -5303,11 +5310,19 @@ function renderMonitorScene(prefix, st){
     } else if(layer.type==='text'){
       const tx=document.createElement('div'); tx.className='pv-scene-text'; tx.textContent=Object.prototype.hasOwnProperty.call(layer,'text')?String(layer.text||''):(layer.name||''); tx.style.color=layer.color||'#fff'; tx.style.background=layer.bg||'transparent'; tx.style.fontSize=Math.max(11,(root.clientHeight||240)*(Number(layer.fontSize)||8)/100)+'px'; tx.style.fontFamily=SCENE_FONT_MAP[layer.fontFamily]||SCENE_FONT_MAP.system; tx.style.fontWeight=String(Number(layer.fontWeight)||700); tx.style.fontStyle=layer.italic?'italic':'normal'; tx.style.textDecoration=layer.underline?'underline':'none'; tx.style.textAlign=layer.textAlign||'center'; tx.style.justifyContent=layer.textAlign==='left'?'flex-start':layer.textAlign==='right'?'flex-end':'center'; tx.style.alignItems=layer.verticalAlign==='top'?'flex-start':layer.verticalAlign==='bottom'?'flex-end':'center'; content.appendChild(tx);
     }
-    if(prefix==='pv'&&layer.id===selectedLayerId){
-      ['nw','ne','sw','se'].forEach(handle=>{const marker=document.createElement('span');marker.className='transform-handle handle-'+handle;marker.dataset.handle=handle;marker.setAttribute('aria-hidden','true');d.appendChild(marker);});
-    }
     root.appendChild(d);
   });
+  if(prefix==='pv'){
+    const selected=layers.find(layer=>layer.id===selectedLayerId&&layer.type!=='audio');
+    if(selected){
+      const b=layerBounds(selected),selection=document.createElement('div');
+      selection.className='pv-scene-selection'+(selected.locked?' locked':'');
+      selection.dataset.layerId=selected.id;
+      selection.style.left=b.x+'%'; selection.style.top=b.y+'%'; selection.style.width=b.w+'%'; selection.style.height=b.h+'%';
+      if(!selected.locked)['nw','ne','sw','se'].forEach(handle=>{const marker=document.createElement('span');marker.className='transform-handle handle-'+handle;marker.dataset.handle=handle;marker.setAttribute('aria-hidden','true');selection.appendChild(marker);});
+      root.appendChild(selection);
+    }
+  }
   syncMonitorVideoRuntime(prefix,st,layers);
 }
 function renderStage(prefix, st, now){
@@ -6862,6 +6877,115 @@ function moveSceneLayer(layerId,delta){
   sceneDirty();
   return true;
 }
+function clearLayerDropMarkers(){
+  $('layerList')?.querySelectorAll('.drop-before,.drop-after,.dragging').forEach(row=>row.classList.remove('drop-before','drop-after','dragging'));
+  document.body.classList.remove('layer-pointer-dragging');
+}
+function layerPointerDropPlacement(clientY,sourceId){
+  const rows=[...($('layerList')?.querySelectorAll('.layer-row')||[])].filter(row=>row.dataset.layerId!==sourceId);
+  if(!rows.length)return null;
+  for(const row of rows){
+    const rect=row.getBoundingClientRect();
+    if(clientY<rect.top+rect.height/2)return {row,targetId:row.dataset.layerId,placeAfter:false};
+    if(clientY<=rect.bottom)return {row,targetId:row.dataset.layerId,placeAfter:true};
+  }
+  const row=rows[rows.length-1];
+  return {row,targetId:row.dataset.layerId,placeAfter:true};
+}
+function paintLayerPointerDrop(state,clientY){
+  $('layerList')?.querySelectorAll('.drop-before,.drop-after').forEach(row=>row.classList.remove('drop-before','drop-after'));
+  const placement=layerPointerDropPlacement(clientY,state.layerId);
+  state.targetId=placement?.targetId||'';
+  state.placeAfter=placement?.placeAfter===true;
+  if(placement)placement.row.classList.add(state.placeAfter?'drop-after':'drop-before');
+}
+function finishLayerPointerDrag(commit=false){
+  const state=layerPointerDrag;
+  if(!state)return;
+  layerPointerDrag=null;
+  const shouldMove=commit&&state.active&&state.targetId&&state.targetId!==state.layerId;
+  const {layerId,targetId,placeAfter}=state;
+  draggedLayerId='';
+  suppressLayerClickUntil=Date.now()+(state.active?260:80);
+  clearLayerDropMarkers();
+  if(shouldMove)reorderSceneLayerById(layerId,targetId,placeAfter);
+}
+function moveLayerPointerDrag(event){
+  const state=layerPointerDrag;
+  if(!state)return;
+  if(!state.active&&Math.hypot(event.clientX-state.startX,event.clientY-state.startY)<5)return;
+  event.preventDefault();event.stopPropagation();
+  if(!state.active){
+    state.active=true;
+    state.row.classList.add('dragging');
+    document.body.classList.add('layer-pointer-dragging');
+  }
+  paintLayerPointerDrop(state,event.clientY);
+}
+function endLayerPointerDrag(event){
+  const state=layerPointerDrag;
+  if(!state)return;
+  event.preventDefault();event.stopPropagation();
+  finishLayerPointerDrag(event.type==='mouseup');
+}
+document.addEventListener('mousemove',moveLayerPointerDrag,true);
+document.addEventListener('mouseup',endLayerPointerDrag,true);
+window.addEventListener('blur',()=>finishLayerPointerDrag(false));
+function reorderSceneLayerById(layerId,targetId,placeAfter=false){
+  const sc=currentScene();
+  const visual=[...(sc.layers||[])].reverse();
+  const from=visual.findIndex(layer=>layer.id===layerId);
+  if(from<0)return false;
+  const [moved]=visual.splice(from,1);
+  let target=visual.findIndex(layer=>layer.id===targetId);
+  if(target<0)return false;
+  if(placeAfter)target+=1;
+  visual.splice(target,0,moved);
+  const next=visual.reverse();
+  if(next.every((layer,index)=>layer.id===sc.layers[index]?.id))return false;
+  sc.layers=next;
+  selectedLayerId=layerId;
+  sceneDirty();
+  return true;
+}
+function wireLayerSortableRow(row,layerId){
+  row.draggable=false;
+  row.setAttribute('aria-roledescription',t('layerDragRole'));
+  const handle=row.querySelector('.layer-drag-handle');
+  handle?.addEventListener('mousedown',event=>{
+    if(event.button!==0||layerPointerDrag)return;
+    event.preventDefault();event.stopPropagation();
+    draggedLayerId=layerId;
+    layerPointerDrag={layerId,startX:event.clientX,startY:event.clientY,active:false,targetId:'',placeAfter:false,handle,row};
+  });
+  row.addEventListener('dragstart',event=>{
+    if(layerPointerDrag){event.preventDefault();return;}
+    if(event.target.closest('input,.layer-row-actions')){event.preventDefault();return;}
+    draggedLayerId=layerId;
+    row.classList.add('dragging');
+    if(event.dataTransfer){event.dataTransfer.effectAllowed='move';event.dataTransfer.setData('text/plain',layerId);}
+  });
+  row.addEventListener('dragover',event=>{
+    if(!draggedLayerId||draggedLayerId===layerId)return;
+    event.preventDefault();
+    const rect=row.getBoundingClientRect();
+    row.classList.remove('drop-before','drop-after');
+    row.classList.add(event.clientY>=rect.top+rect.height/2?'drop-after':'drop-before');
+    if(event.dataTransfer)event.dataTransfer.dropEffect='move';
+  });
+  row.addEventListener('dragleave',event=>{if(!row.contains(event.relatedTarget))row.classList.remove('drop-before','drop-after');});
+  row.addEventListener('drop',event=>{
+    if(!draggedLayerId||draggedLayerId===layerId)return;
+    event.preventDefault();
+    const rect=row.getBoundingClientRect();
+    const placeAfter=event.clientY>=rect.top+rect.height/2;
+    const movedId=draggedLayerId;
+    draggedLayerId='';suppressLayerClickUntil=Date.now()+250;
+    clearLayerDropMarkers();
+    reorderSceneLayerById(movedId,layerId,placeAfter);
+  });
+  row.addEventListener('dragend',()=>{draggedLayerId='';suppressLayerClickUntil=Date.now()+180;clearLayerDropMarkers();});
+}
 function deleteSceneLayer(layerId){
   const sc=currentScene();
   const index=(sc.layers||[]).findIndex(layer=>layer.id===layerId);
@@ -6898,6 +7022,8 @@ function renderScenesUI(){
     canvasSceneSelect.value=sc.id;
   }
   layerBox.innerHTML='';
+  const stackSummary=$('layerStackSummary');
+  if(stackSummary)stackSummary.textContent=uiText('layerStackSummary',{n:sc.layers.length});
   if(!sc.layers.some(layer=>layer.id===selectedLayerId)) selectedLayerId=(sc.layers[sc.layers.length-1]||{}).id||null;
   if(!sc.layers.length){
     const d=document.createElement('div'); d.className='empty'; d.textContent=t('emptyScene'); layerBox.appendChild(d); renderInspector(); updateLayerProgramControls(); renderAudioMixer(); return;
@@ -6907,11 +7033,15 @@ function renderScenesUI(){
     const row=document.createElement('div');
     row.className='layer-row'+(layer.id===selectedLayerId?' sel':'');
     row.dataset.layerId=layer.id;
+    row.setAttribute('role','listitem');
+    row.setAttribute('aria-posinset',String(revIndex+1));
+    row.setAttribute('aria-setsize',String(sc.layers.length));
     const requestLayerSelection=()=>{ if(selectedLayerId!==layer.id) selectLayer(layer.id); };
     row.addEventListener('pointerdown',e=>{ if(e.button!==0||e.target.closest('input,.layer-row-actions')) return; requestLayerSelection(); });
-    row.addEventListener('click',e=>{ if(e.target.closest('input,.layer-row-actions')) return; requestLayerSelection(); });
+    row.addEventListener('click',e=>{ if(Date.now()<suppressLayerClickUntil||e.target.closest('input,.layer-row-actions')) return; requestLayerSelection(); });
     const thumb = (layer.thumbnail || (layer.type==='image'?layer.src:'')) ? '<img class="source-preview" alt="">' : '<span class="layer-kind"></span>';
-    row.innerHTML=`<label class="layer-visibility"><input type="checkbox" class="vis"><span>PV</span></label>${thumb}<button type="button" class="layer-copy layer-select"><span class="layer-name"></span><span class="layer-meta"></span></button><span class="layer-program-chip"></span><div class="layer-row-actions"><button type="button" class="row-take">${t('takeLayerShort')}</button><button type="button" class="row-hide">${t('hideLayerShort')}</button><button type="button" class="mini up" aria-label="${t('layerMoveForward')}" title="${t('layerMoveForward')}">↑</button><button type="button" class="mini dn" aria-label="${t('layerMoveBackward')}" title="${t('layerMoveBackward')}">↓</button><button type="button" class="mini del" aria-label="${t('layerDelete')}" title="${t('layerDelete')}">✕</button></div>`;
+    row.innerHTML=`<div class="layer-leading"><button type="button" class="layer-drag-handle" aria-label="${t('layerDrag')}" title="${t('layerDrag')}"><span></span><span></span><span></span><span></span><span></span><span></span></button><label class="layer-visibility"><input type="checkbox" class="vis"><span>PV</span></label></div>${thumb}<button type="button" class="layer-copy layer-select"><span class="layer-name"></span><span class="layer-meta"></span></button><span class="layer-program-chip"></span><div class="layer-row-actions"><button type="button" class="row-take">${t('takeLayerShort')}</button><button type="button" class="row-hide">${t('hideLayerShort')}</button><button type="button" class="mini up" aria-label="${t('layerMoveForward')}" title="${t('layerMoveForward')}">↑</button><button type="button" class="mini dn" aria-label="${t('layerMoveBackward')}" title="${t('layerMoveBackward')}">↓</button><button type="button" class="mini del" aria-label="${t('layerDelete')}" title="${t('layerDelete')}">✕</button></div>`;
+    wireLayerSortableRow(row,layer.id);
     const visibility=row.querySelector('.vis');
     visibility.checked=layer.visible!==false;
     visibility.setAttribute('aria-label',uiText('layerVisibility',{name:layer.name||layer.sourceName||layer.type}));
@@ -6944,7 +7074,8 @@ function renderScenesUI(){
     if(layer.type==='window'||layer.type==='capture'||layer.type==='audio'){
       const input=liveInputDefinition(layer.inputId), status=liveInputStatus(layer.inputId);
       const dot=document.createElement('span'); dot.className='input-state '+String(status.state||'idle');
-      const label=document.createElement('span'); label.textContent=`${input?input.name:t('sourceMissing')} · ${liveInputStatusText(status)}`;
+      const label=document.createElement('span'); label.textContent=liveInputStatusText(status);
+      label.title=[input?input.name:t('sourceMissing'),liveInputStatusText(status)].filter(Boolean).join(' · ');
       meta.append(dot,label);
     } else meta.textContent=(layer.locked?t('sourceLocked')+' · ':'')+String(layer.type||'layer').toUpperCase();
     const programChip=row.querySelector('.layer-program-chip');
@@ -7375,7 +7506,7 @@ function syncMappingInputPreview(force=false){
   if(force||!clone||key!==mappingInputPreviewKey){
     mappingInputPreviewKey=key;clone=source.cloneNode(true);clone.removeAttribute('id');clone.className='mapping-input-preview-content preview';
     clone.querySelectorAll('[id]').forEach(node=>node.removeAttribute('id'));
-    clone.querySelectorAll('.transform-handle').forEach(node=>node.remove());
+    clone.querySelectorAll('.transform-handle,.pv-scene-selection').forEach(node=>node.remove());
     clone.querySelectorAll('.sel').forEach(node=>node.classList.remove('sel'));
     host.replaceChildren(clone);
   }
@@ -7781,6 +7912,7 @@ async function renderDeviceSources(requestPermission=''){
     $('sourceDeviceName').value=current.name||$('sourceDeviceName').value;
     const size=`${current.width}x${current.height}`; if([...$('sourceDeviceResolution').options].some(option=>option.value===size)) $('sourceDeviceResolution').value=size;
     $('sourceDeviceFps').value=String(current.fps||30);
+    $('sourceDeviceCaptureMode').value=current.captureMode||'low-latency';
   }
   const cameraUnavailable=['denied','restricted','not-determined'].includes(permissions.camera);
   const microphoneUnavailable=['denied','restricted','not-determined'].includes(permissions.microphone);
@@ -7862,7 +7994,7 @@ $('btnDeviceAdd')?.addEventListener('click',()=>{
   addLiveInputLayer({
     id:makeId('input'),type:'device',name:$('sourceDeviceName').value.trim()||video.selectedOptions[0]?.textContent||t('sourceDevice'),
     videoDeviceId:video.value,videoDeviceLabel:video.selectedOptions[0]?.textContent||'',audioDeviceId:audio.value,audioDeviceLabel:audio.selectedOptions[0]?.textContent||'',
-    withAudio:!!audio.value,width,height,fps:+$('sourceDeviceFps').value||30,autoReconnect:true
+    withAudio:!!audio.value,width,height,fps:+$('sourceDeviceFps').value||30,captureMode:$('sourceDeviceCaptureMode').value||'low-latency',autoReconnect:true
   },'capture');
 });
 $('btnAudioAdd')?.addEventListener('click',()=>{
@@ -11055,10 +11187,10 @@ function meterRecordForLayer(layer){
     audioMeterNodes.set(id,record);return record;
   }catch(error){return null;}
 }
-function setAudioMeterVisual(row,db,peakDb,hasSignal){
+function setAudioMeterVisual(row,db,peakDb,hasSignal,emptyLabel=t('audioNoSignal')){
   const fill=row&&row.querySelector('.audio-meter-fill'),label=row&&row.querySelector('.audio-db');
   if(fill)fill.style.width=`${Math.max(0,Math.min(100,(db+60)/60*100))}%`;
-  if(label){label.textContent=hasSignal?audioDbLabel(peakDb):t('audioNoSignal');label.classList.toggle('clip',peakDb>-1);}
+  if(label){label.textContent=hasSignal?audioDbLabel(peakDb):emptyLabel;label.classList.toggle('clip',hasSignal&&peakDb>-1);}
   if(row)row.classList.toggle('live',hasSignal);
 }
 function stopAudioMonitorPlayer(id){
@@ -11093,7 +11225,9 @@ function tickAudioMeters(now=performance.now()){
     const record=programLayer&&activeProgramAudioRouteValue()!=='off'&&mediaProgramAudioEnabled(programLayer)?programAudioRecordForLayer(programLayer):previewRecord;
     const stream=audioStreamForLayer(layer);
     syncAudioMonitorPlayer(layer,stream);
-    if(!record){setAudioMeterVisual(row,-60,-60,false);return;}
+    const definition=liveInputDefinition(layer.inputId),status=definition?liveInputStatus(layer.inputId):null;
+    const hasConfiguredAudio=layer.type==='video'||!!(definition&&definition.withAudio&&status?.hasAudio!==false);
+    if(!record){setAudioMeterVisual(row,-60,-60,false,hasConfiguredAudio?t('audioNoSignal'):t('audioNoAudio'));return;}
     record.analyser.getFloatTimeDomainData(record.data);
     let sum=0,peak=0;for(let i=0;i<record.data.length;i++){const value=Math.abs(record.data[i]);sum+=value*value;if(value>peak)peak=value;}
     const rms=Math.sqrt(sum/Math.max(1,record.data.length));
@@ -11486,6 +11620,13 @@ function renderLiveCaptureSetup(layer,status){
     if(result.crops){messages.push(t('sourceCaptureQualityCropped'));warning=true;}
     else if(result.aspectMismatch){messages.push(t('sourceCaptureQualityAspect'));warning=true;}
   }
+  const definition=liveInputDefinition(layer.inputId);
+  if(definition&&definition.type==='device'&&status&&status.state==='live'){
+    const actual=liveInputFormatText(status)||t('sourceCaptureQualityWaiting');
+    const requested=`${definition.width}×${definition.height} @ ${definition.fps} fps`;
+    if(status.formatMatched===false){messages.unshift(uiText('sourceCaptureFormatFallback',{requested,actual}));warning=true;}
+    else if(status.formatMatched===true)messages.unshift(uiText('sourceCaptureFormatMatched',{actual}));
+  }
   const captureCount=activeVideoCaptureCount();
   if(captureCount>1){messages.push(uiText('sourceCaptureMultiple',{n:captureCount}));warning=true;}
   quality.textContent=messages.join(' ');
@@ -11708,7 +11849,7 @@ $('inspLiveRestart').addEventListener('click',()=>{const L=selectedLayer();if(L&
     if(e.button!==0) return;
     const pointerRect=box.getBoundingClientRect();
     let id=null;
-    const lEl=e.target.closest('.pv-scene-layer');
+    const lEl=e.target.closest('.pv-scene-selection,.pv-scene-layer');
     if(lEl && lEl.dataset.layerId) id=lEl.dataset.layerId;
     else if(e.target.closest('.pv-stage')){ const tl=timerLayerOfScene(); if(tl) id=tl.id; }
     if(!id){ if(selectedLayerId){ selectLayer(null); } return; }
@@ -11761,7 +11902,8 @@ $('inspLiveRestart').addEventListener('click',()=>{const L=selectedLayer();if(L&
     if(layer.type==='timer'){ stageKeys.pv=''; }
     else {
       const d=box.querySelector('.pv-scene-layer[data-layer-id="'+drag.id+'"]');
-      if(d){ d.style.left=layer.x+'%'; d.style.top=layer.y+'%'; d.style.width=layer.w+'%'; d.style.height=layer.h+'%'; }
+      const selection=box.querySelector('.pv-scene-selection[data-layer-id="'+drag.id+'"]');
+      [d,selection].filter(Boolean).forEach(node=>{node.style.left=layer.x+'%';node.style.top=layer.y+'%';node.style.width=layer.w+'%';node.style.height=layer.h+'%';});
     }
   });
   const finish=e=>{ if(!drag) return; drag=null; sceneDirty(); renderInspector(); };

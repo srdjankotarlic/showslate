@@ -196,6 +196,7 @@
       element.playsInline = true;
       element.controls = false;
       element.disablePictureInPicture = true;
+      element.disableRemotePlayback = true;
       element.muted = options.muted !== false;
       element.defaultMuted = element.muted;
       element.volume = Math.max(0, Math.min(1, Number(options.volume ?? 1)));
