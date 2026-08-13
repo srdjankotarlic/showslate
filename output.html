@@ -140,8 +140,8 @@
   body.role-timer #stage{inset:0!important; left:0!important; top:0!important; right:0!important; bottom:0!important; width:auto!important; height:auto!important; opacity:1!important; display:flex!important;}
   body.role-timer #text{display:none!important;}
   body.role-stream{background:transparent!important; transition:none!important;}
-  body.role-stream #sceneRoot,body.role-stream #stage,body.role-stream #msg,body.role-stream #nownext,body.role-stream #prog,body.role-stream #paused,body.role-stream #roleView{display:none!important;}
-  body.role-door #sceneRoot,body.role-door #stage,body.role-door #msg,body.role-door #nownext,body.role-door #prog,body.role-door #paused,body.role-door #lowerThird,body.role-door #ltCanvas,body.role-door #logo{display:none!important;}
+  body.role-stream #sceneRoot,body.role-stream #stage,body.role-stream #msg,body.role-stream #nownext,body.role-stream #prog,body.role-stream #roleView{display:none!important;}
+  body.role-door #sceneRoot,body.role-door #stage,body.role-door #msg,body.role-door #nownext,body.role-door #prog,body.role-door #lowerThird,body.role-door #ltCanvas,body.role-door #logo{display:none!important;}
   body.role-door #roleView{display:grid; grid-template-rows:auto minmax(0,1fr) auto; gap:5vh; padding:6vh 6vw; background:#f4f1ea; color:#13161b;}
   body.role-door .role-head{display:grid; grid-template-columns:minmax(0,1fr) auto; gap:4vw; align-items:start; padding-bottom:3vh; border-bottom:2px solid rgba(19,22,27,.18);}
   body.role-door .role-kicker{color:#5c6570;}
@@ -170,9 +170,6 @@
       <div id="msg"></div>
       <div id="nownext"></div>
       <div id="prog"></div>
-      <div id="paused" style="display:none; position:fixed; top:12px; right:14px; z-index:60;
-        font:700 2.2vh/1 -apple-system,system-ui,sans-serif; letter-spacing:.12em; color:rgba(255,255,255,.85);
-        background:rgba(0,0,0,.5); padding:1vh 1.6vh; border-radius:1.2vh; pointer-events:none;">⏸ PAUZA</div>
       <img id="logo" alt="" style="display:none; position:fixed; z-index:5; pointer-events:none; max-width:40vw; object-fit:contain;">
       <div id="lowerThird">
         <img id="ltImg" alt="">
@@ -537,7 +534,7 @@ function syncMappedDynamic(source,clone){
   sourceNodes.forEach(original=>{
     const id=original.id,target=clone.querySelector(`[data-mapped-source-id="${CSS.escape(id)}"]`);if(!target)return;
     target.className=original.className;target.style.cssText=original.style.cssText;
-    if(['text','timer','msg','paused','roleRoomLabel','roleShowName','roleClock','roleCurrentLabel','roleCurrent','roleCurrentMeta','roleNextLabel','roleNext','roleNextMeta','ltName','ltTitle','ltMeta'].includes(id))target.textContent=original.textContent;
+    if(['text','timer','msg','roleRoomLabel','roleShowName','roleClock','roleCurrentLabel','roleCurrent','roleCurrentMeta','roleNextLabel','roleNext','roleNextMeta','ltName','ltTitle','ltMeta'].includes(id))target.textContent=original.textContent;
     if(id==='nownext'&&target.innerHTML!==original.innerHTML)target.innerHTML=original.innerHTML;
     if((original.tagName==='IMG')&&original.getAttribute('src')!==target.getAttribute('src'))target.setAttribute('src',original.getAttribute('src')||'');
   });
@@ -912,11 +909,6 @@ function render(){
   fitMode = IS_ELECTRON && !!S.fitWindow && !isFS && !S.gridOn;
 
   $('timer').style.fontFamily = FONT_MAP[S.font] || FONT_MAP.mono;
-  // PRO: ⏸ indikator kad je odbrojavanje pauzirano usred tačke
-  const midPause = S.mode==='countdown' && !S.running && S.remMs > 0 && S.remMs !== S.durationMs;
-  $('paused').style.display = (midPause && !S.blackout) ? 'block' : 'none';
-  $('paused').textContent = outT('paused');
-
   renderScene();
   paint(text, fg, bg, neg, S.text || '', S.message ? S.message.text : '',
         S.message && S.message.flash, S.showProgress ? prog : null);

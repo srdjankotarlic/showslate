@@ -342,18 +342,20 @@ app.whenReady().then(async () => {
         id:'video-output-layer',type:'video',name:'Video output test',src:${JSON.stringify(transportFixtureUrl)},visible:true,x:0,y:0,w:100,h:100,opacity:1,fit:'contain',
         playbackState:'paused',playbackPosition:.2,playbackUpdatedAt:Date.now(),playbackRate:1,inPoint:.1,outPoint:.8,endBehavior:'loop',restartOnTake:true,
         audioEnabled:true,audioMonitoring:'off',muted:false,volume:.7
-      }]}],mode:'countdown',running:false,durationMs:600000,remMs:600000,endAt:0,startAt:0,elapsedMs:0,overtime:true,bgColor:'#000000',fgColor:'#ffffff',message:{text:'',flash:false},blackout:false,showProgress:false,transparent:false,lang:'en',cues:[],currentCue:-1,sceneFadeMs:0
+      }]}],mode:'countdown',running:false,durationMs:600000,remMs:500000,endAt:0,startAt:0,elapsedMs:0,overtime:true,bgColor:'#000000',fgColor:'#ffffff',message:{text:'',flash:false},blackout:false,showProgress:false,transparent:false,lang:'en',cues:[],currentCue:-1,sceneFadeMs:0
     };
     const waitVideo=async()=>{const started=Date.now();while(Date.now()-started<2500){const video=document.querySelector('#sceneRoot video');if(video&&video.readyState>=1)return video;await new Promise(resolve=>setTimeout(resolve,25));}return document.querySelector('#sceneRoot video');};
     applyState({...base,_outputRoute:{id:'primary',role:'audience',liveAudio:true,audioOutputDeviceId:'',outputCanvas:{width:1920,height:1080,fps:30,fit:'contain'}}});
     let video=await waitVideo();
     const routed={exists:!!video,muted:video&&video.muted,volume:video&&video.volume,controls:video&&video.controls,state:video&&video.dataset.playbackState,currentTime:video&&video.currentTime};
+    const publicPauseOverlayAbsent=!document.getElementById('paused')&&!/\\b(PAUSED|PAUZA)\\b/.test(document.body.innerText);
     applyState({...base,_outputRoute:{id:'primary',role:'audience',liveAudio:false,audioOutputDeviceId:'',outputCanvas:{width:1920,height:1080,fps:30,fit:'contain'}}});
     video=await waitVideo();
     const safe={muted:video&&video.muted,state:video&&video.dataset.playbackState};
-    return JSON.stringify({routed,safe});
+    return JSON.stringify({routed,safe,publicPauseOverlayAbsent});
   })()`));
   check('OUTPUT_VIDEO_TRANSPORT_AND_SINGLE_ROUTE_AUDIO_OK', outputVideoAudio.routed.exists && outputVideoAudio.routed.muted === false && Math.abs(outputVideoAudio.routed.volume - .7) < .001 && outputVideoAudio.routed.controls === false && outputVideoAudio.routed.state === 'paused' && outputVideoAudio.routed.currentTime >= .1 && outputVideoAudio.routed.currentTime < .8 && outputVideoAudio.safe.muted === true, JSON.stringify(outputVideoAudio));
+  check('OUTPUT_PUBLIC_PAUSE_OVERLAY_ABSENT_OK', outputVideoAudio.publicPauseOverlayAbsent, JSON.stringify(outputVideoAudio));
   outputRendererWin.destroy();
 
   const picturePath = path.join(profile, 'picture.svg');

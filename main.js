@@ -5446,7 +5446,7 @@ app.whenReady().then(async () => {
             && rows[1].durationMs === 1500000 && rows[2].durationMs === 3600000;
         } catch (e) { csvStr = 'ERR ' + e; }
         smokeCheck('CSV_OK', csvOK, csvOK ? '' : csvStr);
-        // PRO: font tajmera se primenjuje na izlaz; 12h sat; preset šalje poruku; ⏸ na pauzi
+        // Font, 12h sat and presets render correctly; operator-only pause state never overlays Program.
         let extrasOK = false, extrasStr = '?';
         try {
           const outputForExtras = await ensureSmokeOutput();
@@ -5465,11 +5465,11 @@ app.whenReady().then(async () => {
           await new Promise(r => setTimeout(r, 600));   // pusti da otkuca — da remMs != durationMs
           await controlWin.webContents.executeJavaScript(`startPause();`); // pauza
           await new Promise(r => setTimeout(r, 400));
-          const pauseShown = await outputForExtras.webContents.executeJavaScript(`document.getElementById('paused').style.display==='block'`);
+          const publicPauseOverlayAbsent = await outputForExtras.webContents.executeJavaScript(`!document.getElementById('paused') && !/\\b(PAUSED|PAUZA)\\b/.test(document.body.innerText)`);
           await controlWin.webContents.executeJavaScript(`reset(); S.message={text:'',flash:false}; document.getElementById('chk12h').checked=false; document.getElementById('chk12h').dispatchEvent(new Event('change')); document.getElementById('fontSel').value='mono'; document.getElementById('fontSel').dispatchEvent(new Event('change'));`);
           const is12h = /AM|PM/.test(clockTxt);
-          extrasOK = /Georgia/.test(outFont) && is12h && presetTxt.length > 0 && pauseShown;
-          extrasStr = `font=${/Georgia/.test(outFont)} 12h=${is12h} preset="${presetTxt}" pause=${pauseShown}`;
+          extrasOK = /Georgia/.test(outFont) && is12h && presetTxt.length > 0 && publicPauseOverlayAbsent;
+          extrasStr = `font=${/Georgia/.test(outFont)} 12h=${is12h} preset="${presetTxt}" publicPauseOverlayAbsent=${publicPauseOverlayAbsent}`;
         } catch (e) { extrasStr = 'ERR ' + e; }
         smokeCheck('EXTRAS_OK', extrasOK, extrasStr);
         // PRO: izveštaj — pokretanje tačke upisuje dnevnik, reset ga zatvara
