@@ -31,7 +31,7 @@ Use **Load conference demo** in an empty workspace to practice without preparing
 
 ## Show-folder import
 
-The importer scans one selected folder, chooses a CSV/TSV schedule and copies supported media into ShowSlate's private media storage. A cue links to media by an exact `media` filename/path or an exact normalized cue title.
+The importer scans one selected folder, chooses a CSV/TSV schedule, manages smaller media in ShowSlate storage and links large originals at their current disk path. A cue links to media by an exact `media` filename/path or an exact normalized cue title.
 
 Excel workbooks are not parsed directly. Export the rundown sheet as CSV/TSV or paste its rows into the wizard. See [CONFERENCE-DESK.md](CONFERENCE-DESK.md) for the folder layout, supported columns, media types and safety limits.
 
@@ -107,6 +107,8 @@ Select **Composer** in the visible header to open the scene compositor. This wor
 7. Use **Change source** to reconnect a window or device without losing that layer's transform.
 8. Keep **Direct Program** off while preparing. Select **TAKE** to send the complete Preview scene to Program.
 
+ShowSlate keeps original picture/video bytes and does not reduce their quality. Files over 512 MB are linked and streamed from disk rather than copied or loaded wholly into RAM. Keep the source drive connected and do not move or rename linked files. For multi-gigabyte playback, use a fast SSD and test the exact codec, resolution, frame rate and number of active outputs before the event.
+
 Preview capture is always muted. To hear audio from an enabled video/capture layer, enable **Program audio** on exactly one local desktop output. It is off by default to prevent feedback.
 
 Window, display and capture-device streams are local to the desktop app. They appear in ShowSlate desktop output windows, but not in the browser/OBS URL output. Device identifiers can change after moving a show to another computer, so use **Change source** and run Preflight again.
@@ -135,7 +137,7 @@ Select **Edit Studio** for reusable custom templates:
 8. Use **Take** to resolve the template with data from the LIVE cue.
 9. Use **Hide** to remove the lower third and clean up its media.
 
-Export important templates as `.showslate-lt` packages. Legacy `.protimer-lt` packages remain importable.
+Export important templates as `.showslate-lt` packages. Legacy `.protimer-lt` packages remain importable. Portable packages embed assets up to 200 MB each; a template using larger disk-linked media must travel with those original files instead.
 
 ## Slides and linked content
 
@@ -157,7 +159,7 @@ Remote and API links contain a per-launch token. Treat them as operator credenti
 
 Shows autosave using atomic writes and bounded backups. After an unclean shutdown, recovery opens paused and off-air so the operator can inspect state before continuing.
 
-- Export a `.showslate-show` package before moving a show to another computer.
+- Export a `.showslate-show` package before moving a show to another computer. The package embeds managed assets up to 200 MB each; disk-linked media must be copied separately and reselected on the destination computer.
 - Import it into a clean profile and run Preflight with the actual display chain.
 - Do not rely on autosave as the only live-event backup.
 - After the show, open **Report** and export planned versus actual timing as CSV.

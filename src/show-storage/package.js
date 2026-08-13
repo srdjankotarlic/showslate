@@ -18,11 +18,14 @@ const MIME_BY_EXT = {
   '.jpeg': 'image/jpeg',
   '.gif': 'image/gif',
   '.webp': 'image/webp',
+  '.avif': 'image/avif',
+  '.bmp': 'image/bmp',
   '.svg': 'image/svg+xml',
   '.mp4': 'video/mp4',
   '.webm': 'video/webm',
   '.mov': 'video/quicktime',
   '.m4v': 'video/mp4',
+  '.ogv': 'video/ogg',
   '.pdf': 'application/pdf'
 };
 const FORBIDDEN_SECRET_KEYS = new Set([

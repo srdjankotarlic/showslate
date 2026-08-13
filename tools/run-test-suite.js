@@ -12,6 +12,7 @@ const groups = {
     'test:show-preflight',
     'test:conference-desk',
     'test:show-folder-import',
+    'test:media-library',
     'test:screen-content',
     'test:compositor',
     'test:control-api',

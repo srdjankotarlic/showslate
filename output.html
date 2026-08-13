@@ -269,7 +269,8 @@ function applyState(s){
   // PRO: logo na ekranu
   const lg = $('logo');
   if (s.logo){
-    if (lg.src !== s.logo) lg.src = s.logo;
+    const logoSource=mediaSrc(s.logo);
+    if (lg.src !== logoSource) lg.src = logoSource;
     lg.style.height = (s.logoSize || 16) + 'vh';
     const m = '3vh', pos = s.logoPos || 'tr';
     lg.style.top = pos[0]==='t' ? m : ''; lg.style.bottom = pos[0]==='b' ? m : '';
@@ -720,12 +721,15 @@ function renderScene(){
       content.style.background=layer.color||layer.bg||'#20242c';
     } else if(layer.type==='image' && layer.src){
       const img=document.createElement('img');
+      img.decoding='async';
       img.src=mediaSrc(layer.src);
       img.alt=layer.name||'';
       img.style.objectPosition=visual.objectPosition;
       content.appendChild(img);
     } else if(layer.type==='video' && layer.src){
       const v=document.createElement('video');
+      v.preload='auto';
+      v.disablePictureInPicture=true;
       v.src=mediaSrc(layer.src);
       const routeAudio=S._outputRoute&&S._outputRoute.liveAudio===true;
       v.autoplay=true; v.loop=layer.loop!==false; routeMediaAudio(v,layer,routeAudio); v.playbackRate=Math.max(.25,Math.min(4,Number(layer.playbackRate)||1)); v.playsInline=true; v.style.objectPosition=visual.objectPosition;
@@ -1301,7 +1305,7 @@ function renderLowerThird(){
   $('ltTitle').style.display=lt.title?'block':'none';
   $('ltMeta').style.display=lt.meta?'block':'none';
   const img=$('ltImg');
-  if(lt.graphic){ if(img.src!==lt.graphic) img.src=lt.graphic; img.style.display='block'; }
+  if(lt.graphic){ const src=mediaSrc(lt.graphic); if(img.src!==src) img.src=src; img.style.display='block'; }
   else { img.removeAttribute('src'); img.style.display='none'; }
   box.style.display='flex';
   updateLowerThirdRenderDebug('legacy-visible');

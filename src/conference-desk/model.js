@@ -35,8 +35,8 @@
   });
 
   const SUPPORTED_MEDIA_EXTENSIONS = Object.freeze({
-    '.png': 'image', '.jpg': 'image', '.jpeg': 'image', '.webp': 'image', '.gif': 'image', '.svg': 'image',
-    '.mp4': 'video', '.webm': 'video', '.mov': 'video', '.m4v': 'video', '.pdf': 'pdf'
+    '.png': 'image', '.jpg': 'image', '.jpeg': 'image', '.webp': 'image', '.gif': 'image', '.avif': 'image', '.bmp': 'image', '.svg': 'image',
+    '.mp4': 'video', '.webm': 'video', '.mov': 'video', '.m4v': 'video', '.ogv': 'video', '.pdf': 'pdf'
   });
 
   function normalizeHeader(value) {

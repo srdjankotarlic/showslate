@@ -4071,7 +4071,7 @@
             <label class="flow-field"><span data-i18n="background">Background</span><input id="wizardBg" type="color" value="#000000"></label>
             <label class="flow-field"><span data-i18n="timeText">Time / text</span><input id="wizardFg" type="color" value="#ffffff"></label>
             <label class="flow-field full"><span data-i18n="cueLtTemplate">Lower-third template</span><select id="wizardLtTemplate"></select></label>
-            <div class="flow-field full"><span data-i18n="wizardLogo">Show logo</span><div class="flow-inline"><button id="btnWizardLogo" class="ghost" data-i18n="wizardChooseLogo">Choose logo…</button><button id="btnWizardLogoClear" class="ghost" data-i18n="clear">Clear</button><span id="wizardLogoStatus" class="preflight-detail" data-i18n="wizardNoLogo">No logo selected</span><input id="wizardLogoFile" type="file" accept="image/png,image/jpeg,image/webp,image/svg+xml" hidden></div></div>
+            <div class="flow-field full"><span data-i18n="wizardLogo">Show logo</span><div class="flow-inline"><button id="btnWizardLogo" class="ghost" data-i18n="wizardChooseLogo">Choose logo…</button><button id="btnWizardLogoClear" class="ghost" data-i18n="clear">Clear</button><span id="wizardLogoStatus" class="preflight-detail" data-i18n="wizardNoLogo">No logo selected</span><input id="wizardLogoFile" type="file" accept="image/png,image/jpeg,image/webp,image/gif,image/avif,image/bmp,image/svg+xml,.png,.jpg,.jpeg,.webp,.gif,.avif,.bmp,.svg" hidden></div></div>
           </div>
         </section>
         <section class="wizard-pane" data-wizard-pane="4">
@@ -4358,7 +4358,7 @@
           <button id="btnLtStudioAddStatic" data-i18n="ltStudioAddStatic">Add static text</button>
           <button id="btnLtStudioAddShape" data-i18n="ltStudioAddShape">Add shape</button>
           <button id="btnLtStudioAddLogo" data-i18n="ltStudioAddLogo">Add logo</button>
-          <input type="file" id="ltStudioMediaFile" accept="image/png,image/svg+xml,image/jpeg,video/mp4,video/webm,.png,.svg,.jpg,.jpeg,.mp4,.webm" style="display:none">
+          <input type="file" id="ltStudioMediaFile" accept="image/png,image/svg+xml,image/jpeg,image/webp,image/gif,image/avif,image/bmp,video/mp4,video/webm,video/quicktime,video/ogg,.png,.svg,.jpg,.jpeg,.webp,.gif,.avif,.bmp,.mp4,.m4v,.mov,.webm,.ogv" style="display:none">
         </div>
         <div class="lt-layer-list" id="ltStudioLayers" data-testid="lt-studio-layers"></div>
       </div>
@@ -4404,7 +4404,7 @@ const api = window.pt || {
   sendState(){}, sendControlStatus(){}, onState(){}, openOutput(){}, closeOutput(){}, toggleFullscreen(){},
   exitFullscreen(){}, setOnTop(){}, getDisplays:async()=>[], isOutputOpen:async()=>false,
   getOutputConfigs:async()=>[], setOutputConfigs(){},
-  mediaSave:async()=>({ok:false,error:'preview'}), ltPackageExport:async()=>({ok:false,error:'preview'}), ltPackageImport:async()=>({ok:false,error:'preview'}),
+  mediaImportFile:async()=>({ok:false,error:'preview'}), mediaSave:async()=>({ok:false,error:'preview'}), ltPackageExport:async()=>({ok:false,error:'preview'}), ltPackageImport:async()=>({ok:false,error:'preview'}),
   showStorageStatus:async()=>({ok:false,autosaveEnabled:false,recoveryAvailable:false,currentAvailable:false}), showStorageSave:async()=>({ok:false,error:'preview'}),
   showStorageLoadCurrent:async()=>({ok:false,error:'preview'}), showStorageRecover:async()=>({ok:false,error:'preview'}),
   showPackageExport:async()=>({ok:false,error:'preview'}), showPackageImport:async()=>({ok:false,error:'preview'}),
@@ -4516,7 +4516,7 @@ const I18N = {
     netNote:'Svi uređaji moraju biti na <b>ISTOJ Wi-Fi</b> mreži. OBS: <b>Browser Source</b> → Ekran URL („Providna pozadina" za overlay; NDI preko DistroAV). Telefon: otvori Daljinski URL. OSC: UDP port <b>7879</b>; GO, tajmer, poruke, potpisi i Slides koriste <b>/showslate/…</b> adrese.',
     chimes:'Zvuk', chimesTitle:'Zvučni signal na ekranu: 1 ton žuto · 2 tona crveno · 3 tona nula',
     schedLabel:'Auto-start u', schedTitle:'Tajmer sam krene u zadato vreme',
-    logoBtn:'Logo slika', logoBig:'Slika je prevelika (max 8 MB).',
+    logoBtn:'Logo slika', logoBig:'Logo nije mogao da se uveze.', mediaImporting:'Povezujem medij sa diska…', mediaImportFailed:'Uvoz medija nije uspeo.', mediaLinked:'povezano sa diska', mediaManaged:'u biblioteci', mediaLinkedHint:'Veliki fajl se strimuje sa originalne lokacije. Ne premeštajte ga i ne odvajajte disk dok je deo show-a.',
     posTR:'Gore desno', posTL:'Gore levo', posTC:'Gore centar', posBL:'Dole levo', posBC:'Dole centar', posBR:'Dole desno',
     lowerThird:'Potpis', ltControl:'Live', ltAssets:'Grafika',
     ltNamePh:'Ime govornika', ltTitlePh:'Titula / uloga', ltMetaPh:'Dodatno',
@@ -4617,7 +4617,7 @@ const I18N = {
     netNote:'All devices must be on the <b>SAME Wi-Fi</b> network. OBS: <b>Browser Source</b> → Screen URL (enable “Transparent background” for overlay; NDI via DistroAV). Phone: open the Remote URL. OSC: UDP port <b>7879</b>; GO, timer, message, lower-third and Slides actions use <b>/showslate/…</b> addresses.',
     chimes:'Sound', chimesTitle:'Audible chime on screen: 1 tone yellow · 2 tones red · 3 tones zero',
     schedLabel:'Auto-start at', schedTitle:'Timer starts by itself at the set time',
-    logoBtn:'Logo image', logoBig:'Image too large (max 8 MB).',
+    logoBtn:'Logo image', logoBig:'The logo could not be imported.', mediaImporting:'Linking media from disk…', mediaImportFailed:'Media import failed.', mediaLinked:'linked from disk', mediaManaged:'in library', mediaLinkedHint:'This large file streams from its original location. Do not move it or disconnect its drive while it is part of the show.',
     posTR:'Top right', posTL:'Top left', posTC:'Top center', posBL:'Bottom left', posBC:'Bottom center', posBR:'Bottom right',
     lowerThird:'Lower third', ltControl:'Live', ltAssets:'Graphics',
     ltNamePh:'Speaker name', ltTitlePh:'Title / role', ltMetaPh:'Extra line',
@@ -5181,9 +5181,9 @@ function renderMonitorScene(prefix, st){
     } else if(layer.type==='color'){
       content.style.background=layer.color||layer.bg||'#20242c';
     } else if(layer.type==='image' && layer.src){
-      const img=document.createElement('img'); handleSceneMediaError(img,content,d,layer,prefix); img.src=mediaSrc(layer.src); applySceneMediaVisual(img,visual); content.appendChild(img);
+      const img=document.createElement('img'); img.decoding='async'; handleSceneMediaError(img,content,d,layer,prefix); img.src=mediaSrc(layer.src); applySceneMediaVisual(img,visual); content.appendChild(img);
     } else if(layer.type==='video' && layer.src){
-      const v=document.createElement('video'); handleSceneMediaError(v,content,d,layer,prefix); v.src=mediaSrc(layer.src); v.muted=true; v.autoplay=true; v.loop=layer.loop!==false; v.playbackRate=Math.max(.25,Math.min(4,Number(layer.playbackRate)||1)); v.playsInline=true; applySceneMediaVisual(v,visual); content.appendChild(v);
+      const v=document.createElement('video'); v.preload='auto'; v.disablePictureInPicture=true; handleSceneMediaError(v,content,d,layer,prefix); v.src=mediaSrc(layer.src); v.muted=true; v.autoplay=true; v.loop=layer.loop!==false; v.playbackRate=Math.max(.25,Math.min(4,Number(layer.playbackRate)||1)); v.playsInline=true; applySceneMediaVisual(v,visual); content.appendChild(v);
     } else if(layer.type==='pdf' && layer.src){
       const f=document.createElement('iframe'); f.src=mediaSrc(layer.src)+'#page='+Math.max(1,Number(layer.page)||1); content.appendChild(f);
     } else if((layer.type==='window'||layer.type==='capture')&&layer.inputId){
@@ -6048,7 +6048,7 @@ function buildWizardImportedContent(sceneSetup,assets){
   (Array.isArray(assets)?assets:[]).forEach(asset=>{
     if(!asset||!asset.src||!['image','video','pdf'].includes(asset.kind)) return;
     const sceneId=makeId('scene');
-    const layer={id:makeId('layer'),type:asset.kind,name:asset.name||'Media',src:asset.src,visible:true,fit:'contain',x:0,y:0,w:100,h:100,opacity:1};
+    const layer={id:makeId('layer'),type:asset.kind,name:asset.name||'Media',src:asset.src,mime:asset.mime||'',sourceBytes:asset.bytes,sourceStorage:asset.storage,sourcePortable:asset.portable!==false,visible:true,fit:'contain',x:0,y:0,w:100,h:100,opacity:1};
     if(asset.kind==='pdf') layer.page=1;
     const scene={id:sceneId,name:asset.name||'Media',layers:[layer]};
     const item={id:'content-'+sceneId,name:asset.name||'Media',type:asset.kind,sceneId,assetId:asset.src,page:asset.kind==='pdf'?1:1};
@@ -6176,11 +6176,10 @@ $('btnWizardLogo')?.addEventListener('click',()=>$('wizardLogoFile').click());
 $('btnWizardLogoClear')?.addEventListener('click',()=>{ wizardLogo=''; $('wizardLogoStatus').textContent=t('wizardNoLogo'); });
 $('wizardLogoFile')?.addEventListener('change',async event=>{
   const file=event.target.files[0]; event.target.value=''; if(!file) return;
-  if(file.size>8*1024*1024){ $('wizardLogoStatus').textContent=t('logoBig'); return; }
-  const dataURL=await readFileAsDataURL(file);
-  const saved=await api.mediaSave({name:file.name,dataURL});
+  $('wizardLogoStatus').textContent=t('mediaImporting');
+  const saved=await importLocalMediaFile(file);
   if(saved&&saved.ok){ wizardLogo=saved.src; $('wizardLogoStatus').textContent=file.name; }
-  else $('wizardLogoStatus').textContent=(saved&&saved.error)||t('logoBig');
+  else $('wizardLogoStatus').textContent=(saved&&saved.error)||t('mediaImportFailed');
 });
 $('btnWizardIdentify')?.addEventListener('click',()=>api.identifyDisplays());
 $('btnWizardCheck')?.addEventListener('click',runWizardConnectionCheck);
@@ -6579,12 +6578,10 @@ function addContentScene(name,type,layers,extra={}){
 }
 async function addSlideMedia(files){
   for(const file of Array.from(files||[])){
-    if(file.size>200*1024*1024){ alert(`${file.name} is too large (max 200 MB).`); continue; }
     const type=fileLayerType(file);
-    const dataURL=await readFileAsDataURL(file);
-    const saved=await api.mediaSave({name:file.name,dataURL});
-    if(!saved||!saved.ok){ alert(file.name+': '+((saved&&saved.error)||'Media import failed')); continue; }
-    const layer={id:makeId('layer'),type,name:file.name,src:saved.src,mime:file.type||'',page:1,visible:true,fit:type==='pdf'?'contain':'cover',x:0,y:0,w:100,h:100,opacity:1};
+    const saved=await importLocalMediaFile(file);
+    if(!saved||!saved.ok){ alert(file.name+': '+((saved&&saved.error)||t('mediaImportFailed'))); continue; }
+    const layer={id:makeId('layer'),type,name:file.name,src:saved.src,mime:saved.mime||file.type||'',sourceBytes:saved.bytes,sourceStorage:saved.storage,sourcePortable:saved.portable!==false,page:1,visible:true,fit:type==='pdf'?'contain':'cover',x:0,y:0,w:100,h:100,opacity:1};
     addContentScene(file.name.replace(/\.[^.]+$/,''),type,[layer],{assetId:saved.src,page:1});
   }
 }
@@ -6882,18 +6879,38 @@ function deleteScene(){
 function fileLayerType(file){
   const type=(file.type||'').toLowerCase();
   const name=(file.name||'').toLowerCase();
-  if(type.startsWith('image/')) return 'image';
-  if(type.startsWith('video/')) return 'video';
+  if(type.startsWith('image/') || /\.(png|jpe?g|gif|webp|avif|bmp|svg)$/.test(name)) return 'image';
+  if(type.startsWith('video/') || /\.(mp4|m4v|mov|webm|ogv)$/.test(name)) return 'video';
   if(type==='application/pdf' || name.endsWith('.pdf')) return 'pdf';
   return 'image';
 }
-function readFileAsDataURL(file){
-  return new Promise((resolve,reject)=>{
-    const r=new FileReader();
-    r.onerror=()=>reject(r.error||new Error('read_failed'));
-    r.onload=()=>resolve(String(r.result||''));
-    r.readAsDataURL(file);
-  });
+async function importLocalMediaFile(file,options={}){
+  if(!file) return {ok:false,code:'MEDIA_PATH_REQUIRED',error:t('mediaImportFailed')};
+  if(window.pt && typeof api.mediaImportFile==='function'){
+    try{
+      const saved=await api.mediaImportFile(file,options);
+      if(saved&&saved.ok) return saved;
+      return {ok:false,code:(saved&&saved.code)||'MEDIA_IMPORT_FAILED',error:(saved&&saved.error)||t('mediaImportFailed')};
+    }catch(error){
+      return {ok:false,code:'MEDIA_IMPORT_FAILED',error:String(error&&error.message||error||t('mediaImportFailed'))};
+    }
+  }
+  // Browser-only preview fallback. Desktop builds always use a disk-backed media:// URL.
+  return {ok:true,src:URL.createObjectURL(file),bytes:Number(file.size)||0,mime:file.type||'',storage:'session',portable:false,originalName:file.name||''};
+}
+function formatMediaBytes(value){
+  const bytes=Math.max(0,Number(value)||0);
+  if(bytes<1024) return `${bytes} B`;
+  const units=['KB','MB','GB','TB']; let size=bytes/1024,index=0;
+  while(size>=1024&&index<units.length-1){size/=1024;index++;}
+  return `${size>=10?size.toFixed(1):size.toFixed(2)} ${units[index]}`;
+}
+function mediaSourceSummary(layer){
+  const parts=[String(layer&&layer.name||inspectorLayerTypeLabel(layer))];
+  if(Number(layer&&layer.sourceBytes)>0) parts.push(formatMediaBytes(layer.sourceBytes));
+  if(layer&&layer.sourceStorage==='linked') parts.push(t('mediaLinked'));
+  else if(layer&&layer.sourceStorage==='managed') parts.push(t('mediaManaged'));
+  return parts.join(' · ');
 }
 async function addMediaLayers(files){
   const list=Array.from(files||[]);
@@ -6905,7 +6922,8 @@ async function addMediaLayers(files){
     const sc=S.scenes.find(scene=>scene.id===targetSceneId);
     if(!sc) continue;
     const layer={
-      id:makeId('layer'), type:media.type, name:file.name, src:media.src, mime:file.type||'',
+      id:makeId('layer'), type:media.type, name:file.name, src:media.src, mime:media.mime||file.type||'',
+      sourceBytes:media.bytes, sourceStorage:media.storage, sourcePortable:media.portable,
       visible:true, fit:media.type==='pdf'?'contain':'cover', x:0, y:0, w:100, h:100, opacity:1
     };
     sc.layers.push(layer);
@@ -6915,20 +6933,15 @@ async function addMediaLayers(files){
 }
 async function prepareSceneMedia(file){
   if(!file)return null;
-  if(file.size>200*1024*1024){alert(`${file.name}: ${t('compositorMediaTooLarge')}`);return null;}
-  const type=fileLayerType(file),dataURL=await readFileAsDataURL(file);
-  let src=dataURL;
-  try{
-    const saved=await api.mediaSave({name:file.name,dataURL});
-    if(saved&&saved.ok)src=saved.src;
-    else if(saved&&saved.error&&file.size>2000000){alert(file.name+': '+saved.error);return null;}
-  }catch(error){}
-  return {type,src};
+  const type=fileLayerType(file);
+  const saved=await importLocalMediaFile(file);
+  if(!saved||!saved.ok){alert(file.name+': '+((saved&&saved.error)||t('mediaImportFailed')));return null;}
+  return {type,src:saved.src,bytes:saved.bytes,mime:saved.mime||file.type||'',storage:saved.storage,portable:saved.portable!==false};
 }
 async function replaceSceneMedia(layerId,file){
   const media=await prepareSceneMedia(file); if(!media)return false;
   const layer=currentScene().layers.find(row=>row.id===layerId); if(!layer)return false;
-  Object.assign(layer,{type:media.type,name:file.name,src:media.src,mime:file.type||'',page:media.type==='pdf'?1:undefined,fit:media.type==='pdf'?'contain':layer.fit||'cover'});
+  Object.assign(layer,{type:media.type,name:file.name,src:media.src,mime:media.mime||file.type||'',sourceBytes:media.bytes,sourceStorage:media.storage,sourcePortable:media.portable,page:media.type==='pdf'?1:undefined,fit:media.type==='pdf'?'contain':layer.fit||'cover'});
   selectedLayerId=layer.id;sceneDirty();renderInspector();return true;
 }
 async function addTextLayer(){
@@ -8229,6 +8242,10 @@ function showNet(info){
     if(nextMediaBase!==ctlMediaBase){
       ctlMediaBase=nextMediaBase;
       monitorSceneKeys={pv:'',pg:''};
+      updateLogoPreview();
+      updateLowerThirdGraphicPreview();
+      renderPreviewLowerThird();
+      if($('ltStudio')?.classList.contains('open')) renderLtStudioCanvas();
     }
   }
   lastNetInfo = info;
@@ -8395,52 +8412,23 @@ function updateLogoPreview(){
   const thumb=$('logoThumb');
   if(!thumb) return;
   if(S.logo){
-    if(thumb.src!==S.logo) thumb.src=S.logo;
+    const src=mediaSrc(S.logo);
+    if(thumb.src!==src) thumb.src=src;
     thumb.style.display='block';
   } else {
     thumb.removeAttribute('src');
     thumb.style.display='none';
   }
 }
-function prepareLogoDataURL(file){
-  return new Promise((resolve,reject)=>{
-    if(!file || !/^image\//.test(file.type||'')){ reject(new Error('Not an image')); return; }
-    if(file.size>8000000){ reject(new Error('too_big')); return; }
-    const reader=new FileReader();
-    reader.onerror=()=>reject(reader.error||new Error('read_failed'));
-    reader.onload=()=>{
-      const original=String(reader.result||'');
-      const img=new Image();
-      img.onerror=()=>resolve(original);
-      img.onload=()=>{
-        const maxSide=1200;
-        const scale=Math.min(1, maxSide/Math.max(img.naturalWidth||img.width, img.naturalHeight||img.height));
-        if(scale>=1 && original.length<1500000){ resolve(original); return; }
-        const canvas=document.createElement('canvas');
-        canvas.width=Math.max(1, Math.round((img.naturalWidth||img.width)*scale));
-        canvas.height=Math.max(1, Math.round((img.naturalHeight||img.height)*scale));
-        const ctx=canvas.getContext('2d');
-        ctx.clearRect(0,0,canvas.width,canvas.height);
-        try{ ctx.drawImage(img,0,0,canvas.width,canvas.height); }
-        catch(e){ resolve(original); return; }
-        let out=canvas.toDataURL('image/png');
-        if(out.length>1500000) out=canvas.toDataURL('image/webp',0.86);
-        resolve(out);
-      };
-      img.src=original;
-    };
-    reader.readAsDataURL(file);
-  });
-}
 $('btnLogo').addEventListener('click',e=>{ e.preventDefault(); $('logoFile').click(); });
-$('logoFile').addEventListener('change',e=>{
+$('logoFile').addEventListener('change',async e=>{
   const f=e.target.files[0]; if(!f) return;
-  prepareLogoDataURL(f).then(data=>{
-    if(!data || data.length>2200000){ alert(t('logoBig')); return; }
-    S.logo=data;
+  const saved=await importLocalMediaFile(f);
+  if(saved&&saved.ok){
+    S.logo=saved.src;
     updateLogoPreview();
     send();
-  }).catch(()=>alert(t('logoBig')));
+  }else alert((saved&&saved.error)||t('mediaImportFailed'));
   e.target.value='';
 });
 $('logoPos').addEventListener('change',e=>{ S.logoPos=e.target.value; send(); });
@@ -8561,7 +8549,8 @@ function updateLowerThirdGraphicPreview(){
   const thumb=$('ltGraphicThumb');
   if(!thumb) return;
   if(S.lowerThird && S.lowerThird.graphic){
-    if(thumb.src!==S.lowerThird.graphic) thumb.src=S.lowerThird.graphic;
+    const src=mediaSrc(S.lowerThird.graphic);
+    if(thumb.src!==src) thumb.src=src;
     thumb.style.display='block';
   } else {
     thumb.removeAttribute('src');
@@ -8959,7 +8948,7 @@ function renderStageLowerThird(prefix, st){
   $(prefix+'LtTitle').style.display=lt.title?'block':'none';
   $(prefix+'LtMeta').style.display=lt.meta?'block':'none';
   const img=$(prefix+'LtImg');
-  if(lt.graphic){ if(img.src!==lt.graphic) img.src=lt.graphic; img.style.display='block'; }
+  if(lt.graphic){ const src=mediaSrc(lt.graphic); if(img.src!==src) img.src=src; img.style.display='block'; }
   else { img.removeAttribute('src'); img.style.display='none'; }
   box.style.display='flex';
 }
@@ -9240,8 +9229,15 @@ function ltFileKind(file){
   if(type==='image/png' || name.endsWith('.png')) return {ok:true, mediaKind:'image', mime:'image/png'};
   if(type==='image/svg+xml' || name.endsWith('.svg')) return {ok:true, mediaKind:'image', mime:'image/svg+xml'};
   if(type==='image/jpeg' || name.endsWith('.jpg') || name.endsWith('.jpeg')) return {ok:true, mediaKind:'image', mime:'image/jpeg'};
+  if(type==='image/webp' || name.endsWith('.webp')) return {ok:true, mediaKind:'image', mime:'image/webp'};
+  if(type==='image/gif' || name.endsWith('.gif')) return {ok:true, mediaKind:'image', mime:'image/gif'};
+  if(type==='image/avif' || name.endsWith('.avif')) return {ok:true, mediaKind:'image', mime:'image/avif'};
+  if(type==='image/bmp' || name.endsWith('.bmp')) return {ok:true, mediaKind:'image', mime:'image/bmp'};
   if(type==='video/mp4' || name.endsWith('.mp4')) return {ok:true, mediaKind:'video', mime:'video/mp4'};
   if(type==='video/webm' || name.endsWith('.webm')) return {ok:true, mediaKind:'video', mime:'video/webm'};
+  if(type==='video/quicktime' || name.endsWith('.mov')) return {ok:true, mediaKind:'video', mime:'video/quicktime'};
+  if(name.endsWith('.m4v')) return {ok:true, mediaKind:'video', mime:'video/mp4'};
+  if(type==='video/ogg' || name.endsWith('.ogv')) return {ok:true, mediaKind:'video', mime:'video/ogg'};
   return {ok:false, error:uiText('ltStudioSupportedMedia')};
 }
 async function ltImportMediaFile(file, target='media'){
@@ -9249,15 +9245,16 @@ async function ltImportMediaFile(file, target='media'){
   if(!t){ ltSetStatus(uiText('ltStudioCreateFirst'), 'error'); return; }
   const kind=ltFileKind(file);
   if(!kind.ok){ alert(kind.error); ltSetStatus(kind.error, 'error'); return; }
-  if(file.size>200*1024*1024){ alert(uiText('ltStudioFileTooLarge')); return; }
   ltSetStatus(uiText('ltStudioLoadingMedia'), 'loading');
-  const dataURL=await readFileAsDataURL(file);
-  const saved=await api.mediaSave({name:file.name, dataURL});
+  const saved=await importLocalMediaFile(file);
   if(!saved || !saved.ok){ ltSetStatus((saved&&saved.error)||uiText('ltStudioMediaFailed'), 'error'); return; }
   const base={
     name:file.name,
     sourceType:'mediaAsset',
     assetId:saved.src,
+    sourceBytes:saved.bytes,
+    sourceStorage:saved.storage,
+    sourcePortable:saved.portable!==false,
     mediaKind:kind.mediaKind,
     fit:kind.mediaKind==='video'?'cover':'contain',
     playbackMode:kind.mediaKind==='video'?'loop-until-hide':'static',
@@ -9648,12 +9645,12 @@ function renderLtStudioCanvas(runtimeOverride){
       const src=mediaSrc(l.src || l.assetId || '');
       if(src && l.mediaKind==='video'){
         const v=document.createElement('video');
-        v.src=src; v.muted=true; v.playsInline=true; v.autoplay=true; v.loop=l.playbackMode!=='play-once-hide';
+        v.preload='auto'; v.disablePictureInPicture=true; v.src=src; v.muted=true; v.playsInline=true; v.autoplay=true; v.loop=l.playbackMode!=='play-once-hide';
         v.addEventListener('error',()=>el.classList.add('missing'));
         el.appendChild(v);
       } else if(src){
         const img=document.createElement('img');
-        img.src=src; img.alt='';
+        img.decoding='async'; img.src=src; img.alt='';
         img.addEventListener('error',()=>el.classList.add('missing'));
         el.appendChild(img);
       }
@@ -10069,16 +10066,16 @@ $('btnLtShow').addEventListener('click',()=>showLowerThird());
 $('btnLtHide').addEventListener('click',()=>hideLowerThird());
 $('btnLtFromCue').addEventListener('click',()=>showLowerThirdFromCue());
 $('btnLtGraphic').addEventListener('click',e=>{ e.preventDefault(); $('ltGraphicFile').click(); });
-$('ltGraphicFile').addEventListener('change',e=>{
+$('ltGraphicFile').addEventListener('change',async e=>{
   const f=e.target.files[0]; if(!f) return;
-  prepareLogoDataURL(f).then(data=>{
-    if(!data || data.length>2200000){ alert(t('logoBig')); return; }
+  const saved=await importLocalMediaFile(f);
+  if(saved&&saved.ok){
     normalizeLowerThird();
-    S.lowerThird.graphic=data;
+    S.lowerThird.graphic=saved.src;
     updateLowerThirdGraphicPreview();
     renderPreviewLowerThird();
     if(S.lowerThird.visible) send(); else saveSettings();
-  }).catch(()=>alert(t('logoBig')));
+  }else alert((saved&&saved.error)||t('mediaImportFailed'));
   e.target.value='';
 });
 $('btnLtGraphicClear').addEventListener('click',()=>{ normalizeLowerThird(); S.lowerThird.graphic=''; updateLowerThirdGraphicPreview(); renderPreviewLowerThird(); if(S.lowerThird.visible) send(); else saveSettings(); });
@@ -11153,7 +11150,7 @@ function renderInspector(){
   const isVideo=L.type==='video'; $('inspVideoWrap').classList.toggle('open',isVideo);
   if(isVideo){$('inspVideoLoop').checked=L.loop!==false;$('inspVideoMuted').checked=L.muted!==false;$('inspVideoVolume').value=Math.round(Number(L.volume??1)*100);$('inspVideoRate').value=String(normalized.playbackRate);}
   const isPdf=L.type==='pdf'; $('inspPdfWrap').classList.toggle('open',isPdf); if(isPdf)$('inspPdfPage').value=normalized.page;
-  const isMedia=['image','video','pdf'].includes(L.type); $('inspMediaWrap').classList.toggle('open',isMedia); if(isMedia)$('inspMediaName').textContent=String(L.name||inspectorLayerTypeLabel(L));
+  const isMedia=['image','video','pdf'].includes(L.type); $('inspMediaWrap').classList.toggle('open',isMedia); if(isMedia){$('inspMediaName').textContent=mediaSourceSummary(L);$('inspMediaName').title=L.sourceStorage==='linked'?t('mediaLinkedHint'):'';}
   $('inspTransformSection').hidden=L.type==='audio';
   $('inspAppearanceSection').hidden=L.type==='audio';
   $('inspFramingSection').hidden=!['image','video','pdf','window','capture'].includes(L.type);

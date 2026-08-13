@@ -63,7 +63,7 @@ Rows with an invalid or empty duration are skipped and reported. A header row is
 
 ## Media matching
 
-The importer copies supported files into ShowSlate's private media storage. It never executes imported files.
+The importer never executes imported files. It keeps smaller supported files in ShowSlate's private media storage and links large originals at their current disk path, avoiding a second multi-gigabyte copy.
 
 Matching is deliberately conservative:
 
@@ -72,9 +72,9 @@ Matching is deliberately conservative:
 3. One asset is assigned to at most one cue during automatic matching.
 4. Unmatched cues and unused assets remain visible in the import summary.
 
-Supported show-folder media: PNG, JPEG, WebP, GIF, SVG, MP4, WebM, MOV, M4V and PDF.
+Supported show-folder media: PNG, JPEG, WebP, GIF, AVIF, BMP, SVG, MP4, WebM, OGV, MOV, M4V and PDF.
 
-Import safety limits are 500 files, 1 GB total, 200 MB per asset and 5 MB for the schedule. Hidden files, `__MACOSX` metadata and symbolic links are skipped.
+The desktop importer scans up to 500 files and accepts a schedule up to 5 MB. Live media playback has no fixed total-byte or per-asset cap; files over 512 MB are linked and range-streamed in place. Hidden files, `__MACOSX` metadata and symbolic links are skipped. Do not move, rename or disconnect linked media during the show.
 
 ## Assign output roles
 

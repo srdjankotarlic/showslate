@@ -30,6 +30,10 @@ async function scanDirectory(rootDirectory, options = {}) {
   const rootStat = await fsp.stat(root);
   if (!rootStat.isDirectory()) throw new Error('The selected show folder is not a directory.');
   const maxFiles = Math.max(1, Number(options.maxFiles) || DEFAULT_MAX_FILES);
+  const configuredTotal = Number(options.maxTotalBytes);
+  const maxTotalBytes = Number.isFinite(configuredTotal) && configuredTotal > 0
+    ? configuredTotal
+    : (configuredTotal === Number.POSITIVE_INFINITY ? configuredTotal : DEFAULT_MAX_TOTAL_BYTES);
   const files = [];
   const warnings = [];
   let totalBytes = 0;
@@ -52,8 +56,8 @@ async function scanDirectory(rootDirectory, options = {}) {
       if (files.length >= maxFiles) throw new Error(`The show folder contains more than ${maxFiles} files.`);
       const stat = await fsp.stat(absolute);
       totalBytes += stat.size;
-      if (totalBytes > (Number(options.maxTotalBytes) || DEFAULT_MAX_TOTAL_BYTES)) {
-        throw new Error('The show folder is larger than the 1 GB import limit.');
+      if (totalBytes > maxTotalBytes) {
+        throw new Error(`The show folder is larger than the ${Math.round(maxTotalBytes / (1024 * 1024))} MB import limit.`);
       }
       files.push({
         absolute,
@@ -80,10 +84,31 @@ function hashFile(filename) {
 }
 
 async function importAsset(file, mediaDirectory, options = {}) {
-  const maxBytes = Number(options.maxAssetBytes) || DEFAULT_MAX_ASSET_BYTES;
-  if (file.bytes > maxBytes) return { ok: false, warning: `Skipped ${file.relativePath}: file exceeds 200 MB.` };
   const kind = conference.mediaKind(file.name);
   if (!kind) return { ok: false, warning: '' };
+  if (typeof options.importMediaFile === 'function') {
+    const saved = await options.importMediaFile(file.absolute, { name: file.name });
+    if (!saved || !saved.ok) {
+      return { ok: false, warning: `Skipped ${file.relativePath}: ${(saved && saved.error) || 'media import failed'}.` };
+    }
+    return {
+      ok: true,
+      asset: {
+        id: `asset-${String(saved.src || '').replace(/^media:\/\//, '').replace(/\.[^.]+$/, '')}`,
+        name: file.name,
+        relativePath: file.relativePath,
+        bytes: Number(saved.bytes) || file.bytes,
+        mime: String(saved.mime || ''),
+        storage: String(saved.storage || 'managed'),
+        portable: saved.portable !== false,
+        kind,
+        src: saved.src
+      }
+    };
+  }
+  const configuredMax = Number(options.maxAssetBytes);
+  const maxBytes = Number.isFinite(configuredMax) && configuredMax > 0 ? configuredMax : DEFAULT_MAX_ASSET_BYTES;
+  if (file.bytes > maxBytes) return { ok: false, warning: `Skipped ${file.relativePath}: file exceeds ${Math.round(maxBytes / (1024 * 1024))} MB.` };
   const hash = await hashFile(file.absolute);
   const extension = file.extension || '.bin';
   const filename = hash + extension;

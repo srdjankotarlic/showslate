@@ -44,7 +44,7 @@ Preview is always muted. Program audio is off by default and can be enabled on o
 
 - Window/display and camera/capture-card streams are local to the ShowSlate desktop app and its Electron output windows. They do not travel through the browser/OBS URL output.
 - Capture source identifiers are machine-local and can change. Re-select live inputs after moving a show to another computer.
-- Canvas imports are limited to 200 MB per file.
+- Local Canvas playback has no fixed ShowSlate file-size limit. Media over 512 MB is linked to its original location and range-streamed without recompression; portable packages still limit embedded assets to 200 MB each and do not include linked originals.
 - Capture cards must appear as standard operating-system video/UVC devices. Real compatibility depends on the device, driver, source format and HDCP status.
 - ShowSlate does not encode or stream, route NDI, provide multibus audio mixing, control PTZ/DMX or synchronize multiple rooms.
 - Projector mapping currently provides four-corner correction and a calibration grid. It does not provide arbitrary mesh warping, masks, automatic camera calibration or projector color matching.

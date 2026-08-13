@@ -8,7 +8,7 @@ ShowSlate Live Compositor `0.11.0-beta.1` targets Apple Silicon Macs and Windows
 
 - Apple Silicon Mac (`arm64`).
 - macOS 13 Ventura or later recommended.
-- 8 GB RAM minimum; 16 GB recommended for video, PDF, live capture and multiple outputs.
+- 8 GB RAM minimum; 16 GB recommended, and 32 GB recommended for UHD/large stills, several video layers or multiple outputs.
 - 500 MB free disk space for the app, plus space for show media and backups.
 - 1280x800 recommended controller workspace; the responsive UI is tested down to 900x600.
 - One or more external displays for speaker, confidence or venue output workflows.
@@ -41,7 +41,11 @@ The controller, browser outputs, remote, backstage and Signal Light are designed
 
 ## Media
 
-Show-folder, screen content and Canvas media accept PNG, JPEG, GIF, WebP, SVG, MP4, WebM, MOV, M4V and PDF files. Lower Third Studio accepts PNG, SVG, JPEG, MP4/H.264 and WebM VP8/VP9. Canvas imports are capped at 200 MB per file.
+Show-folder, screen content and Canvas media accept PNG, JPEG, GIF, WebP, AVIF, BMP, SVG, MP4, M4V, MOV, WebM, OGV and PDF files. Lower Third Studio accepts the same image/video containers except PDF.
+
+Live playback has no fixed app-level file-size cap. ShowSlate preserves original bytes, manages files up to 512 MB in its profile and links larger files at their original path. The local media service supports byte-range seeking above 4 GB, so a multi-gigabyte video is not read into memory as one object. Use a fast local SSD or high-throughput external SSD; avoid network, cloud-synchronized and slow removable locations for show-critical media.
+
+Container support does not guarantee every codec profile. Hardware-decodable MP4/H.264 is the safest broad choice; HEVC availability varies by operating system and hardware. Large still images are decoded into memory, so their pixel dimensions can matter more than compressed file size. Portable `.showslate-show` and `.showslate-lt` packages allow at most 200 MB per embedded asset and do not embed linked originals.
 
 Schedules must be CSV, TSV or text. Export an Excel workbook to CSV/TSV or paste its rows into the setup wizard.
 

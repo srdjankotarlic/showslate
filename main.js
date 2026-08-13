@@ -16,6 +16,8 @@ const showFolderImport = require('./src/conference-desk/import.js');
 const { ShowRepository } = require('./src/show-storage/repository.js');
 const { migrateLegacyUserData } = require('./src/brand/migrate-user-data.js');
 const compositor = require('./src/compositor/model.js');
+const { MediaLibrary, SUPPORTED_MEDIA_MIME } = require('./src/media-library/library.js');
+const { parseByteRange } = require('./src/media-library/range.js');
 
 const SMOKE = process.argv.includes('--smoke');
 app.commandLine.appendSwitch('autoplay-policy', 'no-user-gesture-required');
@@ -119,9 +121,25 @@ function mediaDir() {
   try { fs.mkdirSync(d, { recursive: true }); } catch (e) {}
   return d;
 }
-const MEDIA_MIME = { '.png':'image/png', '.jpg':'image/jpeg', '.jpeg':'image/jpeg', '.gif':'image/gif',
-  '.webp':'image/webp', '.svg':'image/svg+xml', '.mp4':'video/mp4', '.webm':'video/webm',
-  '.mov':'video/quicktime', '.m4v':'video/mp4', '.pdf':'application/pdf' };
+const MEDIA_MIME = SUPPORTED_MEDIA_MIME;
+let mediaLibrary = null;
+function getMediaLibrary() {
+  if (!mediaLibrary) mediaLibrary = new MediaLibrary({ mediaDirectory: mediaDir() });
+  return mediaLibrary;
+}
+function linkedMediaPackageError(sources, label) {
+  const linked = [...new Set((sources || []).map(String).filter(source => source.startsWith('media://')))]
+    .map(source => ({ source, media: getMediaLibrary().inspect(source) }))
+    .filter(row => row.media.ok && row.media.storage === 'linked');
+  if (!linked.length) return null;
+  const names = linked.slice(0, 3).map(row => path.basename(row.media.path || row.source)).join(', ');
+  return {
+    ok: false,
+    code: 'LINKED_MEDIA_NOT_PORTABLE',
+    error: `${label} uses ${linked.length} disk-linked media ${linked.length === 1 ? 'file' : 'files'} (${names}). ` +
+      'Linked media can play at full quality, but is not embedded in portable packages. Keep the original files connected, or use managed media under 200 MB before exporting.'
+  };
+}
 
 let controlWin = null;
 let outputWin = null;
@@ -439,26 +457,35 @@ function startServer(port, attempt = 0) {
     }
 
     if (url.startsWith('/media/')) {
-      const file = path.basename(decodeURIComponent(url.slice(7)));
-      const full = path.join(mediaDir(), file);
+      if (req.method !== 'GET' && req.method !== 'HEAD') {
+        res.writeHead(405, { Allow: 'GET, HEAD' });
+        res.end();
+        return;
+      }
+      let file = '';
+      try { file = path.basename(decodeURIComponent(url.slice(7))); }
+      catch (_) { res.writeHead(400, { 'Content-Type': 'text/plain' }); res.end('Bad media path'); return; }
+      const media = getMediaLibrary().inspect(file);
+      const full = media.ok ? media.path : '';
       let stat = null;
       try { stat = fs.statSync(full); } catch (e) {}
       if (!stat || !stat.isFile()) { res.writeHead(404, { 'Content-Type': 'text/plain' }); res.end('Not found'); return; }
-      const mime = MEDIA_MIME[path.extname(file).toLowerCase()] || 'application/octet-stream';
-      const range = /^bytes=(\d*)-(\d*)$/.exec(req.headers.range || '');
-      if (range && (range[1] || range[2])) {
-        // video seek: jedan bytes=a-b opseg
-        let start = range[1] ? parseInt(range[1], 10) : 0;
-        let end = range[2] ? Math.min(parseInt(range[2], 10), stat.size - 1) : stat.size - 1;
-        if (!range[1] && range[2]) { start = Math.max(0, stat.size - parseInt(range[2], 10)); end = stat.size - 1; }
-        if (start > end || start >= stat.size) { res.writeHead(416, { 'Content-Range': `bytes */${stat.size}` }); res.end(); return; }
-        res.writeHead(206, { 'Content-Type': mime, 'Content-Length': end - start + 1,
-          'Content-Range': `bytes ${start}-${end}/${stat.size}`, 'Accept-Ranges': 'bytes', 'Cache-Control': 'max-age=86400' });
-        fs.createReadStream(full, { start, end }).pipe(res);
+      const mime = media.mime || MEDIA_MIME[path.extname(file).toLowerCase()] || 'application/octet-stream';
+      const range = parseByteRange(req.headers.range, stat.size);
+      const cacheControl = media.storage === 'linked' ? 'no-cache' : 'public, max-age=31536000, immutable';
+      if (range && range.invalid) {
+        res.writeHead(416, { 'Content-Range': `bytes */${stat.size}`, 'Accept-Ranges': 'bytes' });
+        res.end();
+      } else if (range) {
+        res.writeHead(206, { 'Content-Type': mime, 'Content-Length': range.length,
+          'Content-Range': `bytes ${range.start}-${range.end}/${stat.size}`, 'Accept-Ranges': 'bytes', 'Cache-Control': cacheControl });
+        if (req.method === 'HEAD') res.end();
+        else fs.createReadStream(full, { start: range.start, end: range.end }).on('error', () => res.destroy()).pipe(res);
       } else {
         res.writeHead(200, { 'Content-Type': mime, 'Content-Length': stat.size,
-          'Accept-Ranges': 'bytes', 'Cache-Control': 'max-age=86400' });
-        fs.createReadStream(full).pipe(res);
+          'Accept-Ranges': 'bytes', 'Cache-Control': cacheControl });
+        if (req.method === 'HEAD') res.end();
+        else fs.createReadStream(full).on('error', () => res.destroy()).pipe(res);
       }
       return;
     }
@@ -1353,6 +1380,11 @@ ipcMain.handle('show-storage-recover', async (event, choice) => {
 ipcMain.handle('show-package-export', async (event, payload) => {
   try {
     const document = payload && payload.document;
+    const linkedError = linkedMediaPackageError(
+      showPackage.collectMediaReferences(document).map(reference => reference.source),
+      'This show'
+    );
+    if (linkedError) return linkedError;
     const showName = String(document && document.show && document.show.name || 'ShowSlate Show')
       .replace(/[^A-Za-z0-9 _.-]+/g, '').trim().slice(0, 100) || 'ShowSlate Show';
     let destination = '';
@@ -1407,7 +1439,12 @@ ipcMain.handle('show-folder-import', async (event, payload) => {
       if (picked.canceled || !picked.filePaths[0]) return { ok: false, canceled: true };
       rootDirectory = picked.filePaths[0];
     }
-    return await showFolderImport.importShowFolder({ rootDirectory, mediaDirectory: mediaDir() });
+    return await showFolderImport.importShowFolder({
+      rootDirectory,
+      mediaDirectory: mediaDir(),
+      maxTotalBytes: Number.POSITIVE_INFINITY,
+      importMediaFile: (sourcePath, options) => getMediaLibrary().importFile(sourcePath, options)
+    });
   } catch (error) {
     return { ok: false, error: String(error.message || error), code: error.code || 'SHOW_FOLDER_IMPORT_FAILED' };
   }
@@ -1419,7 +1456,7 @@ ipcMain.handle('show-preflight-inspect', async (event, payload) => {
   try {
     for (const reference of showPackage.collectMediaReferences(document)) {
       const filename = showPackage.safeMediaFilename(reference.source);
-      if (!filename || !fs.existsSync(path.join(mediaDir(), filename))) missingAssets.push(reference.source);
+      if (!filename || !getMediaLibrary().inspect(reference.source).ok) missingAssets.push(reference.source);
     }
   } catch (error) {
     missingAssets.push(String(error.message || error));
@@ -1450,6 +1487,17 @@ ipcMain.handle('show-preflight-inspect', async (event, payload) => {
   });
 });
 ipcMain.on('set-output-configs', (e, configs) => applyOutputConfigs(configs));
+ipcMain.handle('media-import-file', async (e, payload) => {
+  try {
+    if (!controlWin || controlWin.isDestroyed() || e.sender.id !== controlWin.webContents.id) return { ok: false, error: 'unauthorized' };
+    return await getMediaLibrary().importFile(payload && payload.path, {
+      name: payload && payload.name,
+      storage: payload && payload.storage
+    });
+  } catch (err) {
+    return { ok: false, code: err.code || 'MEDIA_IMPORT_FAILED', error: String(err.message || err) };
+  }
+});
 ipcMain.handle('media-save', (e, payload) => {
   try {
     if (!controlWin || controlWin.isDestroyed() || e.sender.id !== controlWin.webContents.id) return { ok: false, error: 'unauthorized' };
@@ -1457,7 +1505,7 @@ ipcMain.handle('media-save', (e, payload) => {
     const m = /^data:([^;,]+);base64,(.+)$/.exec(String(dataURL || ''));
     if (!m) return { ok: false, error: 'bad data url' };
     const buf = Buffer.from(m[2], 'base64');
-    if (buf.length > 200 * 1024 * 1024) return { ok: false, error: 'file too large (max 200 MB)' };
+    if (buf.length > 32 * 1024 * 1024) return { ok: false, error: 'Use a local file for media larger than 32 MB.' };
     const hash = crypto.createHash('sha1').update(buf).digest('hex').slice(0, 16);
     const extByMime = Object.keys(MEDIA_MIME).find(k => MEDIA_MIME[k] === m[1]);
     const extByName = (path.extname(String(name || '')).toLowerCase().match(/^\.[a-z0-9]{1,5}$/) || [''])[0];
@@ -1471,6 +1519,13 @@ ipcMain.handle('media-save', (e, payload) => {
 ipcMain.handle('lt-package-export', async (e, payload) => {
   try {
     const template = payload && payload.template;
+    const linkedError = linkedMediaPackageError(
+      (template && Array.isArray(template.layers) ? template.layers : [])
+        .filter(layer => layer && (layer.type === 'media' || layer.type === 'logo'))
+        .map(layer => layer.assetId || layer.src || ''),
+      'This lower-third template'
+    );
+    if (linkedError) return linkedError;
     const requestedName = String((template && template.name) || 'lower-third-template')
       .replace(/[^A-Za-z0-9 _.-]+/g, '').trim().slice(0, 80) || 'lower-third-template';
     let destination = '';
@@ -3121,6 +3176,47 @@ app.whenReady().then(async () => {
           })()`);
         } catch (e) { mediaStr = 'ERR ' + e; }
         smokeCheck('MEDIA_LIB_OK', mediaOK, mediaStr);
+        // VELIKI MEDIA: linked disk source + pravi HTTP range iznad 4 GB. Sparse fixture
+        // proverava 64-bit seek putanju bez zauzimanja više gigabajta fizičkog prostora.
+        let largeMediaOK = false, largeMediaStr = '?';
+        const largeMediaPath = path.join(app.getPath('userData'), 'smoke-five-gigabyte.mp4');
+        try {
+          const markerOffset = 4 * 1024 * 1024 * 1024 + 54321;
+          const marker = Buffer.from('SHOWSLATE-PACKAGED-RANGE');
+          const descriptor = fs.openSync(largeMediaPath, 'w');
+          fs.ftruncateSync(descriptor, 5 * 1024 * 1024 * 1024 + 65536);
+          fs.writeSync(descriptor, marker, 0, marker.length, markerOffset);
+          fs.closeSync(descriptor);
+          const saved = await getMediaLibrary().importFile(largeMediaPath);
+          const mediaId = String(saved.src || '').replace(/^media:\/\//, '');
+          const response = await new Promise(resolve => {
+            const request = http.get({
+              hostname: '127.0.0.1', port: serverPort, path: '/media/' + encodeURIComponent(mediaId),
+              headers: { Range: `bytes=${markerOffset}-${markerOffset + marker.length - 1}` }
+            }, result => {
+              const chunks = [];
+              result.on('data', chunk => chunks.push(chunk));
+              result.on('end', () => resolve({
+                status: result.statusCode,
+                range: result.headers['content-range'],
+                acceptRanges: result.headers['accept-ranges'],
+                body: Buffer.concat(chunks)
+              }));
+            });
+            request.on('error', error => resolve({ status: 0, error: String(error.message || error), body: Buffer.alloc(0) }));
+          });
+          largeMediaOK = saved.ok && saved.storage === 'linked' && saved.portable === false && saved.bytes > 5_000_000_000
+            && response.status === 206 && response.acceptRanges === 'bytes'
+            && response.range === `bytes ${markerOffset}-${markerOffset + marker.length - 1}/${saved.bytes}`
+            && response.body.equals(marker) && !fs.existsSync(path.join(mediaDir(), mediaId));
+          largeMediaStr = JSON.stringify({ bytes: saved.bytes, storage: saved.storage, portable: saved.portable,
+            status: response.status, range: response.range, marker: response.body.toString('utf8') });
+        } catch (error) {
+          largeMediaStr = 'ERR ' + String(error && error.message || error);
+        } finally {
+          try { fs.rmSync(largeMediaPath, { force: true }); } catch (_) {}
+        }
+        smokeCheck('MEDIA_MULTI_GIGABYTE_RANGE_STREAM_OK', largeMediaOK, largeMediaStr);
         // TAJMER JE LEJER SCENE: kutija lejera pozicionira #stage; scena bez tajmera = bez tajmera
         let tlOK = false, tlStr = '?';
         try {

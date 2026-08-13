@@ -1,4 +1,4 @@
-const { contextBridge, ipcRenderer } = require('electron');
+const { contextBridge, ipcRenderer, webUtils } = require('electron');
 
 contextBridge.exposeInMainWorld('pt', {
   sendState: (s) => ipcRenderer.send('state', s),
@@ -15,6 +15,13 @@ contextBridge.exposeInMainWorld('pt', {
   isOutputOpen: () => ipcRenderer.invoke('output-open'),
   getOutputConfigs: () => ipcRenderer.invoke('output-configs'),
   setOutputConfigs: (configs) => ipcRenderer.send('set-output-configs', configs),
+  mediaImportFile: (file, options = {}) => ipcRenderer.invoke('media-import-file', {
+    path: webUtils.getPathForFile(file),
+    name: file && file.name,
+    type: file && file.type,
+    size: file && file.size,
+    storage: options && options.storage
+  }),
   mediaSave: (payload) => ipcRenderer.invoke('media-save', payload),
   ltPackageExport: (payload) => ipcRenderer.invoke('lt-package-export', payload),
   ltPackageImport: (payload) => ipcRenderer.invoke('lt-package-import', payload),

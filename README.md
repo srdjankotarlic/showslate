@@ -100,6 +100,12 @@ Set a standard, square, vertical, UHD or custom Canvas resolution and frame rate
 
 Live capture is local to the ShowSlate desktop app and its desktop output windows. Browser/OBS URLs do not carry local window, display or capture-card streams. Program audio is off by default and can be enabled on only one local output to prevent echo and feedback.
 
+### Full-quality and large media
+
+ShowSlate does not resize, recompress or transcode imported pictures and videos. Media up to 512 MB is normally cloned or copied into the app library; larger files are linked to their original disk location and streamed in byte ranges, so multi-gigabyte video does not need to be loaded into RAM or duplicated on the internal drive. Keep linked files and their external drive connected at the same path for the entire show.
+
+Playback has no fixed ShowSlate file-size cap. The practical limit is the show computer, codec and media: prefer a fast local SSD, hardware-decodable MP4/H.264 or HEVC where supported, and rehearse the exact resolution, frame rate and output count. Very large still images must still be decoded into GPU/RAM memory. Portable `.showslate-show` and `.showslate-lt` packages intentionally remain limited to 200 MB per embedded asset; disk-linked media is not silently embedded.
+
 ## Download one installer
 
 > **Choose one recommended installer for your computer.** GitHub's automatic `Source code` ZIP and TAR.GZ files are developer archives and will not install the app.
@@ -126,7 +132,7 @@ See the [system requirements](docs/SYSTEM-REQUIREMENTS.md), [known limitations](
 
 ## Show folder format
 
-The importer scans the selected folder safely, copies supported assets into ShowSlate storage and conservatively matches each cue by the `media` filename or an exact cue title.
+The importer scans the selected folder safely, manages smaller assets in ShowSlate storage, links large originals in place and conservatively matches each cue by the `media` filename or an exact cue title.
 
 ```csv
 session,duration,speaker,speaker title,company,media,room
@@ -135,7 +141,7 @@ Keynote,30:00,Dr Maya Chen,Keynote Speaker,Northstar,keynote.pdf,Main Room
 Coffee Break,15:00,,,,break.png,Main Room
 ```
 
-Supported folder media includes PNG, JPEG, WebP, GIF, SVG, MP4, WebM, MOV, M4V and PDF. For Excel workbooks, export the rundown sheet as CSV/TSV or paste the rows into the wizard. Import limits and the full column reference are in [Conference Desk workflow](docs/CONFERENCE-DESK.md).
+Supported folder media includes PNG, JPEG, WebP, GIF, AVIF, BMP, SVG, MP4, WebM, OGV, MOV, M4V and PDF. For Excel workbooks, export the rundown sheet as CSV/TSV or paste the rows into the wizard. Import behavior and the full column reference are in [Conference Desk workflow](docs/CONFERENCE-DESK.md).
 
 ## Included production tools
 

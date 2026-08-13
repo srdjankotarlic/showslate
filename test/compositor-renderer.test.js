@@ -62,6 +62,18 @@ ipcMain.handle('show-preflight-inspect', () => ({ overall: 'warning', checks: []
 ipcMain.handle('show-package-export', () => ({ ok: false, canceled: true }));
 ipcMain.handle('show-package-import', () => ({ ok: false, canceled: true }));
 ipcMain.handle('show-folder-import', () => ({ ok: false, canceled: true }));
+ipcMain.handle('media-import-file', (event, payload) => {
+  const data = fs.readFileSync(String(payload && payload.path || ''));
+  return {
+    ok: true,
+    src: 'data:image/svg+xml;base64,' + data.toString('base64'),
+    bytes: data.length,
+    mime: 'image/svg+xml',
+    storage: 'linked',
+    portable: false,
+    originalName: String(payload && payload.name || '')
+  };
+});
 ipcMain.handle('media-save', (event, payload) => ({ ok: true, src: String(payload.dataURL || '') }));
 ipcMain.handle('lt-package-export', () => ({ ok: false, canceled: true }));
 ipcMain.handle('lt-package-import', () => ({ ok: false, canceled: true }));
@@ -340,9 +352,9 @@ app.whenReady().then(async () => {
   await win.webContents.executeJavaScript(`selectLayer(${JSON.stringify(pictureLayerId)});document.getElementById('sceneMediaFile').addEventListener('click',event=>event.preventDefault(),{once:true});document.getElementById('inspMediaReplace').click()`);
   await win.webContents.debugger.sendCommand('DOM.setFileInputFiles', { files: [replacementPath], nodeId: mediaNode.nodeId });
   if (!await waitFor(() => win.webContents.executeJavaScript(`currentScene().layers.some(layer=>layer.id===${JSON.stringify(pictureLayerId)}&&layer.name==='replacement.svg')`))) throw new Error('media replacement did not preserve the selected layer');
-  const mediaReplacement = JSON.parse(await win.webContents.executeJavaScript(`JSON.stringify((()=>{const layer=currentScene().layers.find(row=>row.id===${JSON.stringify(pictureLayerId)});return {id:layer.id,name:layer.name,type:layer.type,selected:selectedLayer().id};})())`));
+  const mediaReplacement = JSON.parse(await win.webContents.executeJavaScript(`JSON.stringify((()=>{const layer=currentScene().layers.find(row=>row.id===${JSON.stringify(pictureLayerId)});return {id:layer.id,name:layer.name,type:layer.type,selected:selectedLayer().id,sourceBytes:layer.sourceBytes,sourceStorage:layer.sourceStorage,sourcePortable:layer.sourcePortable};})())`));
   win.webContents.debugger.detach();
-  check('COMPOSITOR_MEDIA_REPLACE_PRESERVES_LAYER_OK', mediaReplacement.id === pictureLayerId && mediaReplacement.selected === pictureLayerId && mediaReplacement.name === 'replacement.svg' && mediaReplacement.type === 'image', JSON.stringify(mediaReplacement));
+  check('COMPOSITOR_MEDIA_REPLACE_PRESERVES_LAYER_OK', mediaReplacement.id === pictureLayerId && mediaReplacement.selected === pictureLayerId && mediaReplacement.name === 'replacement.svg' && mediaReplacement.type === 'image' && mediaReplacement.sourceBytes > 0 && mediaReplacement.sourceStorage === 'linked' && mediaReplacement.sourcePortable === false, JSON.stringify(mediaReplacement));
   const mediaRecovery = JSON.parse(await win.webContents.executeJavaScript(`(async()=>{
     monitorSceneKeys={pv:'cached-preview',pg:'cached-program'};
     const previousBase=ctlMediaBase;

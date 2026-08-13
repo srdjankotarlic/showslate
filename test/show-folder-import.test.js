@@ -30,6 +30,21 @@ function check(name, condition) {
   check('SHOW_FOLDER_IMPORT_PERSISTS_HASHED_ASSETS_OK', result.assets.every(asset => fs.existsSync(path.join(mediaDirectory, asset.src.slice(8)))));
   check('SHOW_FOLDER_IMPORT_IGNORES_HIDDEN_FILES_OK', result.fileCount === 3);
 
+  const linkedResult = await importer.importShowFolder({
+    rootDirectory: showFolder,
+    mediaDirectory,
+    maxTotalBytes: Number.POSITIVE_INFINITY,
+    importMediaFile: async (sourcePath, options) => ({
+      ok: true,
+      src: 'media://linked-' + path.basename(sourcePath),
+      bytes: fs.statSync(sourcePath).size,
+      mime: options.name.endsWith('.pdf') ? 'application/pdf' : 'image/png',
+      storage: 'linked',
+      portable: false
+    })
+  });
+  check('SHOW_FOLDER_IMPORT_USES_DISK_MEDIA_LIBRARY_OK', linkedResult.ok && linkedResult.assets.length === 2 && linkedResult.assets.every(asset => asset.storage === 'linked' && asset.portable === false));
+
   let limitBlocked = false;
   try { await importer.scanDirectory(showFolder, { maxFiles: 2 }); }
   catch (error) { limitBlocked = /more than 2 files/.test(String(error.message)); }
