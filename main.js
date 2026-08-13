@@ -24,6 +24,8 @@ app.commandLine.appendSwitch('autoplay-policy', 'no-user-gesture-required');
 const LT2_SOAK_ONLY = SMOKE && process.argv.includes('--lt2-soak-only');
 const OUTPUT_ROUTING_SMOKE_ONLY = SMOKE && process.argv.includes('--output-routing-only');
 const LIVE_INPUT_SMOKE_ONLY = SMOKE && process.argv.includes('--live-input-only');
+const LIVE_INPUT_UHD60_SMOKE_ONLY = SMOKE && process.argv.includes('--live-input-uhd60-only');
+const LOCAL_MEDIA_UHD60_SMOKE_ONLY = SMOKE && process.argv.includes('--local-media-uhd60-only');
 // Smoke/test windows are pinned to one explicitly configured display. The resolver has
 // no dependencies; normal (non-smoke) mode is unaffected.
 let smokeDisplay = null;
@@ -1348,13 +1350,19 @@ ipcMain.on('live-hub-status', (event, payload) => {
     name: String(payload.name || ''), type: String(payload.type || ''), error: String(payload.error || ''),
     hasVideo: payload.hasVideo === true, hasAudio: payload.hasAudio === true,
     videoLabel: String(payload.videoLabel || ''), audioLabel: String(payload.audioLabel || ''),
+    audioSampleRate: Math.max(0, Math.min(384000, Math.round(Number(payload.audioSampleRate) || 0))),
+    audioSampleSize: Math.max(0, Math.min(64, Math.round(Number(payload.audioSampleSize) || 0))),
+    audioChannels: Math.max(0, Math.min(32, Math.round(Number(payload.audioChannels) || 0))),
+    audioLatency: Math.max(0, Math.min(10, Number(payload.audioLatency) || 0)),
     width: Math.max(0, Math.min(8192, Math.round(Number(payload.width) || 0))),
     height: Math.max(0, Math.min(8192, Math.round(Number(payload.height) || 0))),
     frameRate: Math.max(0, Math.min(120, Number(payload.frameRate) || 0)),
     requestedWidth: Math.max(0, Math.min(8192, Math.round(Number(payload.requestedWidth) || 0))),
     requestedHeight: Math.max(0, Math.min(8192, Math.round(Number(payload.requestedHeight) || 0))),
     requestedFrameRate: Math.max(0, Math.min(120, Number(payload.requestedFrameRate) || 0)),
-    captureMode: ['low-latency','compatible','desktop','audio','synthetic'].includes(String(payload.captureMode || '')) ? String(payload.captureMode) : '',
+    captureMode: ['low-latency','compatible','desktop','desktop-native','audio','synthetic'].includes(String(payload.captureMode || '')) ? String(payload.captureMode) : '',
+    qualityProfile: ['auto','quality','realtime'].includes(String(payload.qualityProfile || '')) ? String(payload.qualityProfile) : 'auto',
+    qualityTier: ['SD','HD','FHD','QHD','UHD','8K'].includes(String(payload.qualityTier || '')) ? String(payload.qualityTier) : '',
     formatMatched: payload.formatMatched === true,
     formatFallback: payload.formatFallback === true,
     fallbackReason: String(payload.fallbackReason || '').slice(0, 240)
@@ -1938,9 +1946,16 @@ async function waitForAuxOutputAcknowledgements(ids, timeoutMs = 2400) {
   return { runtime, stable: false };
 }
 
-async function runLiveInputSmoke(waitLoad) {
-  const inputId = 'smoke-live-input';
-  const sceneId = 'smoke-live-scene';
+async function runLiveInputSmoke(waitLoad, options = {}) {
+  const width = Math.max(160, Math.min(7680, Number(options.width) || 1920));
+  const height = Math.max(120, Math.min(4320, Number(options.height) || 1080));
+  const fps = Math.max(1, Math.min(120, Number(options.fps) || 60));
+  const suffix = String(options.suffix || 'fhd60').replace(/[^a-z0-9-]/gi, '-');
+  const inputId = `smoke-live-input-${suffix}`;
+  const sceneId = `smoke-live-scene-${suffix}`;
+  const qualityProfile = ['auto', 'quality', 'realtime'].includes(options.qualityProfile)
+    ? options.qualityProfile
+    : 'auto';
   const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
   const waitUntil = async (probe, timeoutMs = 9000) => {
     const deadline = Date.now() + timeoutMs;
@@ -1956,9 +1971,21 @@ async function runLiveInputSmoke(waitLoad) {
     const record=liveInputConsumer&&liveInputConsumer.peers&&liveInputConsumer.peers.get(${JSON.stringify(inputId)});
     const receiver=record&&record.pc&&record.pc.getReceivers().find(row=>row.track&&row.track.kind==='video');
     if(!receiver)return JSON.stringify({ok:false,error:'video receiver unavailable'});
-    const reports=await receiver.getStats();let inbound=null;
+    const reports=await receiver.getStats();let inbound=null,codec=null;
     reports.forEach(report=>{if(report.type==='inbound-rtp'&&(report.kind==='video'||report.mediaType==='video'))inbound=report;});
-    return JSON.stringify({ok:!!inbound,timestamp:Number(inbound&&inbound.timestamp)||0,framesDecoded:Number(inbound&&inbound.framesDecoded)||0,framesDropped:Number(inbound&&inbound.framesDropped)||0,framesPerSecond:Number(inbound&&inbound.framesPerSecond)||0,width:Number(inbound&&inbound.frameWidth)||0,height:Number(inbound&&inbound.frameHeight)||0,packetsLost:Number(inbound&&inbound.packetsLost)||0,jitter:Number(inbound&&inbound.jitter)||0});
+    if(inbound&&inbound.codecId)codec=reports.get(inbound.codecId)||null;
+    return JSON.stringify({ok:!!inbound,timestamp:Number(inbound&&inbound.timestamp)||0,framesDecoded:Number(inbound&&inbound.framesDecoded)||0,framesDropped:Number(inbound&&inbound.framesDropped)||0,framesPerSecond:Number(inbound&&inbound.framesPerSecond)||0,width:Number(inbound&&inbound.frameWidth)||0,height:Number(inbound&&inbound.frameHeight)||0,packetsLost:Number(inbound&&inbound.packetsLost)||0,jitter:Number(inbound&&inbound.jitter)||0,bytesReceived:Number(inbound&&inbound.bytesReceived)||0,keyFramesDecoded:Number(inbound&&inbound.keyFramesDecoded)||0,totalDecodeTime:Number(inbound&&inbound.totalDecodeTime)||0,totalProcessingDelay:Number(inbound&&inbound.totalProcessingDelay)||0,codec:codec?{mimeType:String(codec.mimeType||''),clockRate:Number(codec.clockRate)||0,sdpFmtpLine:String(codec.sdpFmtpLine||'')}:null});
+  })()`));
+  const senderStats = async (win, consumerId) => JSON.parse(await win.webContents.executeJavaScript(`(async function(){
+    const key=${JSON.stringify(String(outputWin && !outputWin.isDestroyed() ? outputWin.webContents.id : ''))}+':'+${JSON.stringify(inputId)};
+    const record=window.liveCapture&&window.liveCapture.peers&&window.liveCapture.peers.get(key);
+    const sender=record&&record.pc&&record.pc.getSenders().find(row=>row.track&&row.track.kind==='video');
+    if(!sender)return JSON.stringify({ok:false,error:'video sender unavailable',key,known:window.liveCapture&&window.liveCapture.peers?[...window.liveCapture.peers.keys()]:[]});
+    const reports=await sender.getStats();let outbound=null,codec=null;
+    reports.forEach(report=>{if(report.type==='outbound-rtp'&&(report.kind==='video'||report.mediaType==='video'))outbound=report;});
+    if(outbound&&outbound.codecId)codec=reports.get(outbound.codecId)||null;
+    const caps=typeof RTCRtpSender!=='undefined'&&typeof RTCRtpSender.getCapabilities==='function'?RTCRtpSender.getCapabilities('video'):null;
+    return JSON.stringify({ok:!!outbound,timestamp:Number(outbound&&outbound.timestamp)||0,framesEncoded:Number(outbound&&outbound.framesEncoded)||0,framesSent:Number(outbound&&outbound.framesSent)||0,framesPerSecond:Number(outbound&&outbound.framesPerSecond)||0,width:Number(outbound&&outbound.frameWidth)||0,height:Number(outbound&&outbound.frameHeight)||0,bytesSent:Number(outbound&&outbound.bytesSent)||0,keyFramesEncoded:Number(outbound&&outbound.keyFramesEncoded)||0,qpSum:Number(outbound&&outbound.qpSum)||0,totalEncodeTime:Number(outbound&&outbound.totalEncodeTime)||0,qualityLimitationReason:String(outbound&&outbound.qualityLimitationReason||''),qualityLimitationDurations:outbound&&outbound.qualityLimitationDurations||null,targetBitrate:Number(outbound&&outbound.targetBitrate)||0,encoderImplementation:String(outbound&&outbound.encoderImplementation||''),powerEfficientEncoder:outbound&&outbound.powerEfficientEncoder===true,codec:codec?{mimeType:String(codec.mimeType||''),clockRate:Number(codec.clockRate)||0,sdpFmtpLine:String(codec.sdpFmtpLine||'')}:null,availableCodecs:caps&&Array.isArray(caps.codecs)?caps.codecs.filter(row=>!String(row.mimeType||'').toLowerCase().includes('rtx')).map(row=>({mimeType:String(row.mimeType||''),sdpFmtpLine:String(row.sdpFmtpLine||'')})):[],transport:record.transport||null});
   })()`));
   const measuredReceiverStats = (before, after) => {
     const elapsedMs = Math.max(1, Number(after && after.timestamp) - Number(before && before.timestamp));
@@ -1984,13 +2011,13 @@ async function runLiveInputSmoke(waitLoad) {
     S.primaryLiveAudio=false;
     programState=outputSnapshot(S);
     pushProgramState(programState);
-    S.canvas=PTCOMP.normalizeCanvas({width:1920,height:1080,fps:60,background:'#12161d',transparent:false});
+    S.canvas=PTCOMP.normalizeCanvas({width:${width},height:${height},fps:${fps},background:'#12161d',transparent:false});
     S.canvasAspect=legacyAspectForCanvas(S.canvas);
     S.liveInputs=[PTCOMP.normalizeLiveInput({
       id:${JSON.stringify(inputId)},type:'device',name:'Synthetic capture card',
       videoDeviceId:'__showslate_synthetic__',videoDeviceLabel:'Synthetic capture card',
       audioDeviceId:'__showslate_synthetic_audio__',audioDeviceLabel:'Synthetic capture audio',withAudio:true,
-      width:1920,height:1080,fps:60,captureMode:'low-latency',active:true,autoReconnect:true
+      width:${width},height:${height},fps:${fps},captureMode:'low-latency',qualityProfile:${JSON.stringify(qualityProfile)},active:true,autoReconnect:true
     })];
     S.scenes=[PTCOMP.normalizeScene({id:${JSON.stringify(sceneId)},name:'Live input smoke',layers:[
       {id:'smoke-live-background',type:'color',name:'Background',color:'#12161d',visible:true,x:0,y:0,w:100,h:100,opacity:1},
@@ -2016,7 +2043,7 @@ async function runLiveInputSmoke(waitLoad) {
       const video=document.querySelector('#pvScene video[data-live-input-id=${JSON.stringify(inputId)}]');
       const stream=video&&video.srcObject;
       const track=stream&&stream.getVideoTracks()[0];
-      return {ok:!!(video&&stream&&video.readyState>=2&&video.videoWidth>=1000&&video.videoHeight>=560),muted:video?video.muted:null,paused:video?video.paused:null,width:video?video.videoWidth:0,height:video?video.videoHeight:0,videoTracks:stream?stream.getVideoTracks().length:0,audioTracks:stream?stream.getAudioTracks().length:0,currentTime:video?video.currentTime:0,settings:track?track.getSettings():null};
+      return {ok:!!(video&&stream&&video.readyState>=2&&stream.getVideoTracks().length===1&&stream.getAudioTracks().length===1),muted:video?video.muted:null,paused:video?video.paused:null,width:video?video.videoWidth:0,height:video?video.videoHeight:0,videoTracks:stream?stream.getVideoTracks().length:0,audioTracks:stream?stream.getAudioTracks().length:0,currentTime:video?video.currentTime:0,settings:track?track.getSettings():null};
     })())`));
     return value;
   }, 10000);
@@ -2032,7 +2059,7 @@ async function runLiveInputSmoke(waitLoad) {
       const video=document.querySelector('video[data-live-input-id=${JSON.stringify(inputId)}]');
       const stream=video&&video.srcObject;
       const track=stream&&stream.getVideoTracks()[0];
-      return {ok:!!(video&&stream&&video.readyState>=2&&video.videoWidth>=1000&&video.videoHeight>=560),scene:S&&S.activeSceneId,muted:video?video.muted:null,width:video?video.videoWidth:0,height:video?video.videoHeight:0,videoTracks:stream?stream.getVideoTracks().length:0,audioTracks:stream?stream.getAudioTracks().length:0,currentTime:video?video.currentTime:0,settings:track?track.getSettings():null};
+      return {ok:!!(video&&stream&&video.readyState>=2&&stream.getVideoTracks().length===1&&stream.getAudioTracks().length===1),scene:S&&S.activeSceneId,muted:video?video.muted:null,width:video?video.videoWidth:0,height:video?video.videoHeight:0,videoTracks:stream?stream.getVideoTracks().length:0,audioTracks:stream?stream.getAudioTracks().length:0,currentTime:video?video.currentTime:0,settings:track?track.getSettings():null};
     })())`));
     return value;
   }, 10000);
@@ -2040,12 +2067,17 @@ async function runLiveInputSmoke(waitLoad) {
     const value = JSON.parse(await outputWin.webContents.executeJavaScript(`JSON.stringify((function(){const video=document.querySelector('video[data-live-input-id=${JSON.stringify(inputId)}]');return {exists:!!video,readyState:video?video.readyState:0,currentTime:video?video.currentTime:0,paused:video?video.paused:null};})())`));
     return {...value, baseline:program.currentTime, ok:value.exists&&value.readyState>=2&&value.paused===false&&value.currentTime>program.currentTime+0.04};
   }, 3000);
-  await sleep(900);
-  const [previewReceiverBefore, programReceiverBefore] = await Promise.all([receiverStats(controlWin), receiverStats(outputWin)]);
-  await sleep(2200);
-  const [previewReceiverAfter, programReceiverAfter] = await Promise.all([receiverStats(controlWin), receiverStats(outputWin)]);
+  await sleep(options.width >= 3840 && options.fps >= 60 ? 3500 : 900);
+  const [previewReceiverBefore, programReceiverBefore, programSenderBefore] = await Promise.all([
+    receiverStats(controlWin), receiverStats(outputWin), senderStats(liveInputHubWin, outputWin.webContents.id)
+  ]);
+  await sleep(options.width >= 3840 && options.fps >= 60 ? 3500 : 2200);
+  const [previewReceiverAfter, programReceiverAfter, programSenderAfter] = await Promise.all([
+    receiverStats(controlWin), receiverStats(outputWin), senderStats(liveInputHubWin, outputWin.webContents.id)
+  ]);
   const previewReceiver = measuredReceiverStats(previewReceiverBefore, previewReceiverAfter);
   const programReceiver = measuredReceiverStats(programReceiverBefore, programReceiverAfter);
+  const programSender = measuredReceiverStats(programSenderBefore, programSenderAfter);
 
   const shot = await outputWin.webContents.capturePage();
   const bitmap = shot.toBitmap();
@@ -2054,16 +2086,177 @@ async function runLiveInputSmoke(waitLoad) {
     const value = Math.max(bitmap[index], bitmap[index + 1], bitmap[index + 2]);
     min = Math.min(min, value); max = Math.max(max, value); if (value > 80) bright++;
   }
-  const screenshot = writeTestArtifact('compositor/live-input-program.png', shot.toPNG());
+  const screenshot = writeTestArtifact(`compositor/live-input-program-${suffix}.png`, shot.toPNG());
   const visual = { ok: !shot.isEmpty() && max - min > 60 && bright > 20, min, max, bright, screenshot };
 
   await controlWin.webContents.executeJavaScript(`S.liveInputs=[];liveInputConfigKey='';syncLiveInputService();send();`);
   return {
     ok: service.ok && preview.ok && program.ok && visual.ok,
-    setup, service, hubMedia, preview, previewLater, beforeTake, program, programLater, previewReceiver, programReceiver, visual,
+    inputId, sceneId, width, height, fps, qualityProfile,
+    setup, service, hubMedia, preview, previewLater, beforeTake, program, programLater, previewReceiver, programReceiver, programSender, visual,
     previewMoving: previewLater.ok === true,
     programMoving: programLater.ok === true
   };
+}
+
+async function runLocalMediaUhd60Smoke(waitLoad, sourcePath) {
+  const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
+  const waitUntil = async (probe, timeoutMs = 10000) => {
+    const deadline = Date.now() + timeoutMs;
+    let last = null;
+    while (Date.now() < deadline) {
+      try { last = await probe(); } catch (error) { last = { ok: false, error: String(error && error.message || error) }; }
+      if (last && last.ok) return last;
+      await sleep(80);
+    }
+    return last || { ok: false, error: 'timeout' };
+  };
+  const file = path.resolve(String(sourcePath || ''));
+  if (!sourcePath || !fs.existsSync(file)) return { ok: false, stage: 'fixture', error: 'UHD60 media file is unavailable.', file };
+  const imported = await getMediaLibrary().importFile(file, { storage: 'linked', name: path.basename(file) });
+  if (!imported.ok) return { ok: false, stage: 'import', imported };
+
+  await waitLoad(controlWin);
+  createOutputWindow(SMOKE_TARGET && SMOKE_TARGET.id);
+  const output = await waitUntil(async () => ({ ok: !!(outputWin && !outputWin.isDestroyed() && !outputWin.webContents.isLoading()) }), 8000);
+  if (!output.ok) return { ok: false, stage: 'output-ready', output };
+  await waitLoad(outputWin);
+
+  const setup = JSON.parse(await controlWin.webContents.executeJavaScript(`JSON.stringify((function(){
+    ensureScenes();
+    applyAdvancedMode(true);
+    S.studioDirect=false;
+    S.primaryLiveAudio=false;
+    S.canvas=PTCOMP.normalizeCanvas({width:3840,height:2160,fps:60,background:'#07090d',transparent:false});
+    S.canvasAspect=legacyAspectForCanvas(S.canvas);
+    const now=Date.now();
+    S.scenes=[
+      PTCOMP.normalizeScene({id:'local-media-program-blank',name:'Program blank',layers:[{id:'local-media-blank',type:'color',name:'Blank',color:'#07090d',visible:true,x:0,y:0,w:100,h:100,opacity:1}]}),
+      PTCOMP.normalizeScene({id:'local-media-uhd60-scene',name:'UHD60 local media',layers:[{
+        id:'local-media-uhd60-layer',type:'video',name:${JSON.stringify(path.basename(file))},src:${JSON.stringify(imported.src)},mime:'video/mp4',
+        sourceBytes:${Number(imported.bytes) || 0},sourceStorage:${JSON.stringify(imported.storage || '')},sourcePortable:${imported.portable !== false},
+        sourceWidth:3840,sourceHeight:2160,sourceDuration:4,visible:true,fit:'contain',x:0,y:0,w:100,h:100,opacity:1,
+        playbackState:'playing',playbackPosition:0,playbackUpdatedAt:now,playbackRate:1,inPoint:0,outPoint:0,endBehavior:'loop',loop:true,restartOnTake:true,
+        videoAudioConfigured:true,audioEnabled:true,audioMonitoring:'off',muted:false,volume:1
+      }]})
+    ];
+    S.activeSceneId='local-media-program-blank';
+    programState=outputSnapshot(S);
+    pushProgramState(programState);
+    S.activeSceneId='local-media-uhd60-scene';
+    selectedLayerId='local-media-uhd60-layer';
+    monitorSceneKeys={pv:'',pg:''};
+    renderScenesUI();renderStage('pv',S,now);renderStage('pg',programState,now);renderAudioMixer();send();
+    return {previewScene:S.activeSceneId,programScene:programState.activeSceneId,src:${JSON.stringify(imported.src)}};
+  })())`));
+
+  const videoInfo = async (win, selector) => JSON.parse(await win.webContents.executeJavaScript(`JSON.stringify((function(){
+    const video=document.querySelector(${JSON.stringify(selector)});const quality=video&&video.getVideoPlaybackQuality?video.getVideoPlaybackQuality():null;
+    return {ok:!!(video&&video.readyState>=2&&video.videoWidth===3840&&video.videoHeight===2160),exists:!!video,readyState:video?video.readyState:0,
+      width:video?video.videoWidth:0,height:video?video.videoHeight:0,currentTime:video?video.currentTime:0,duration:video?video.duration:0,
+      paused:video?video.paused:null,muted:video?video.muted:null,totalFrames:quality?Number(quality.totalVideoFrames)||0:Number(video&&video.webkitDecodedFrameCount)||0,
+      droppedFrames:quality?Number(quality.droppedVideoFrames)||0:Number(video&&video.webkitDroppedFrameCount)||0};
+  })())`));
+  const presentationStats = async (win, selectors, sampleMs = 2200) => JSON.parse(await win.webContents.executeJavaScript(`(async function(){
+    const selectors=${JSON.stringify(selectors)};
+    const sampleMs=${Number(sampleMs)};
+    const videos=selectors.map(selector=>document.querySelector(selector));
+    return JSON.stringify(await Promise.all(videos.map(async (video,index)=>{
+      if(!video||typeof video.requestVideoFrameCallback!=='function')return {ok:false,index,error:'requestVideoFrameCallback unavailable'};
+      const qualityBefore=video.getVideoPlaybackQuality?video.getVideoPlaybackQuality():null;
+      let callbacks=0,firstAt=0,lastAt=0,firstMedia=0,lastMedia=0,firstPresented=0,lastPresented=0,handle=0;
+      const tick=(now,metadata)=>{
+        callbacks+=1;
+        const presented=Number(metadata&&metadata.presentedFrames)||0;
+        if(!firstAt){firstAt=now;firstMedia=Number(metadata&&metadata.mediaTime)||Number(video.currentTime)||0;firstPresented=presented;}
+        lastAt=now;lastMedia=Number(metadata&&metadata.mediaTime)||Number(video.currentTime)||0;lastPresented=presented;
+        handle=video.requestVideoFrameCallback(tick);
+      };
+      handle=video.requestVideoFrameCallback(tick);
+      await new Promise(resolve=>setTimeout(resolve,sampleMs));
+      try{video.cancelVideoFrameCallback(handle);}catch(error){}
+      const qualityAfter=video.getVideoPlaybackQuality?video.getVideoPlaybackQuality():null;
+      const elapsedMs=Math.max(1,lastAt-firstAt);
+      const callbackIntervals=Math.max(0,callbacks-1),presentedFrames=Math.max(0,lastPresented-firstPresented);
+      return {ok:callbacks>1&&presentedFrames>0,index,callbacks,presentedFrames,elapsedMs:Math.round(elapsedMs),
+        callbackFps:Math.round(callbackIntervals*10000/elapsedMs)/10,presentedFps:Math.round(presentedFrames*10000/elapsedMs)/10,
+        mediaAdvance:Math.round((lastMedia-firstMedia)*1000)/1000,totalFrames:qualityAfter?Number(qualityAfter.totalVideoFrames)||0:0,
+        droppedFrames:qualityAfter?Number(qualityAfter.droppedVideoFrames)||0:0,
+        droppedDuringSample:qualityAfter&&qualityBefore?Math.max(0,Number(qualityAfter.droppedVideoFrames)-Number(qualityBefore.droppedVideoFrames)):0};
+    })));
+  })()`));
+  const previewSelector = '#pvScene .pv-scene-layer[data-layer-id="local-media-uhd60-layer"] video';
+  const programMirrorSelector = '#pgScene .pv-scene-layer[data-layer-id="local-media-uhd60-layer"] video';
+  const outputSelector = '#sceneRoot .scene-frame:last-child .scene-layer[data-layer-id="local-media-uhd60-layer"] video';
+  const preview = await waitUntil(async () => {
+    const value = await videoInfo(controlWin, previewSelector);
+    return { ...value, ok: value.ok && !value.paused && value.currentTime > 0.08 };
+  }, 12000);
+  const beforeTake = JSON.parse(await outputWin.webContents.executeJavaScript(`JSON.stringify({scene:S&&S.activeSceneId,video:!!document.querySelector(${JSON.stringify(outputSelector)})})`));
+  await controlWin.webContents.executeJavaScript(`takePreview('cut')`);
+  const program = await waitUntil(async () => {
+    const [mirror, out] = await Promise.all([videoInfo(controlWin, programMirrorSelector), videoInfo(outputWin, outputSelector)]);
+    return { ok: mirror.ok && out.ok && !mirror.paused && !out.paused, mirror, output: out };
+  }, 12000);
+
+  await sleep(900);
+  const before = {
+    preview: await videoInfo(controlWin, previewSelector),
+    mirror: await videoInfo(controlWin, programMirrorSelector),
+    output: await videoInfo(outputWin, outputSelector)
+  };
+  const audio = await controlWin.webContents.executeJavaScript(`(async function(){
+    const layer=selectedLayer();const record=meterRecordForLayer(layer);if(!record)return JSON.stringify({ok:false,error:'audio analyser unavailable'});
+    try{await record.context.resume();}catch(error){}
+    await new Promise(resolve=>setTimeout(resolve,450));
+    record.analyser.getFloatTimeDomainData(record.data);let sum=0,peak=0;
+    for(let i=0;i<record.data.length;i++){const value=Math.abs(record.data[i]);sum+=value*value;peak=Math.max(peak,value);}
+    return JSON.stringify({ok:record.context.state==='running'&&peak>.001,rms:Math.sqrt(sum/Math.max(1,record.data.length)),peak,contextState:record.context.state,sampleRate:record.context.sampleRate});
+  })()`).then(JSON.parse);
+  // Presentation callbacks are compositor-facing. Keep Program fully visible so
+  // macOS occlusion throttling does not turn this into a window-overlap test.
+  controlWin.hide();
+  if (outputWin && !outputWin.isDestroyed()) {
+    // The ordinary smoke layout keeps every window on one display and therefore
+    // makes Program a small utility window. UHD60 must be measured like a real
+    // audience/LED destination: unobscured and covering the selected display.
+    if (SMOKE_TARGET) {
+      if (outputWin.isFullScreen()) outputWin.setFullScreen(false);
+      outputWin.setBounds(SMOKE_TARGET.bounds, false);
+    }
+    outputWin.show();
+  }
+  await sleep(250);
+  const [controllerPresentation, outputPresentation] = await Promise.all([
+    presentationStats(controlWin, [previewSelector, programMirrorSelector]),
+    presentationStats(outputWin, [outputSelector])
+  ]);
+  const after = {
+    preview: await videoInfo(controlWin, previewSelector),
+    mirror: await videoInfo(controlWin, programMirrorSelector),
+    output: await videoInfo(outputWin, outputSelector)
+  };
+  const measured = {};
+  for (const key of ['preview', 'mirror', 'output']) {
+    const frames = Math.max(0, Number(after[key].totalFrames) - Number(before[key].totalFrames));
+    measured[key] = {
+      ...after[key],
+      sampleMs: 2200,
+      framesDuringSample: frames,
+      decodedAheadFps: Math.round(frames / 2.2 * 10) / 10,
+      droppedDuringSample: Math.max(0, Number(after[key].droppedFrames) - Number(before[key].droppedFrames))
+    };
+  }
+  measured.preview.presentation = controllerPresentation[0] || null;
+  measured.mirror.presentation = controllerPresentation[1] || null;
+  measured.output.presentation = outputPresentation[0] || null;
+  const duration = Math.max(0, Number(after.output.duration) || Number(after.preview.duration) || 0);
+  const rawSyncDelta = Math.abs(Number(after.preview.currentTime) - Number(after.output.currentTime));
+  const syncDelta = duration > 0 ? Math.min(rawSyncDelta, Math.max(0, duration - rawSyncDelta)) : rawSyncDelta;
+  const shot = await outputWin.webContents.capturePage();
+  const screenshot = writeTestArtifact('compositor/local-media-program-uhd60.png', shot.toPNG());
+  const visual = { ok: !shot.isEmpty(), width: shot.getSize().width, height: shot.getSize().height, screenshot };
+  return { ok: preview.ok && program.ok && audio.ok && visual.ok, file, imported, setup, beforeTake, preview, program, measured, audio, syncDelta, visual };
 }
 
 async function runOutputRoutingSmoke() {
@@ -2317,18 +2510,37 @@ app.whenReady().then(async () => {
           app.exit(targeted.ok ? 0 : 1);
           return;
         }
-        if (LIVE_INPUT_SMOKE_ONLY) {
-          const live = await runLiveInputSmoke(waitLoad);
-          smokeCheck('LIVE_INPUT_SERVICE_VIDEO_AUDIO_OK', live.service&&live.service.ok, JSON.stringify({service:live.service,hubMedia:live.hubMedia}));
-          smokeCheck('LIVE_INPUT_1080P60_FORMAT_OK', live.service&&live.service.row&&live.service.row.width===1920&&live.service.row.height===1080&&live.service.row.frameRate>=55&&live.service.row.formatMatched===true&&live.hubMedia&&live.hubMedia.video&&live.hubMedia.video.width===1920&&live.hubMedia.video.height===1080, JSON.stringify({service:live.service,hubMedia:live.hubMedia}));
+        if (LOCAL_MEDIA_UHD60_SMOKE_ONLY) {
+          const media = await runLocalMediaUhd60Smoke(waitLoad, cliValue('--media-file'));
+          smokeCheck('LOCAL_MEDIA_UHD60_IMPORT_OK', media.imported&&media.imported.ok&&media.imported.bytes>0, JSON.stringify(media.imported||media));
+          smokeCheck('LOCAL_MEDIA_UHD60_PREVIEW_FORMAT_OK', media.preview&&media.preview.ok&&media.preview.width===3840&&media.preview.height===2160, JSON.stringify(media.preview||media));
+          smokeCheck('LOCAL_MEDIA_UHD60_PREVIEW_ISOLATION_OK', media.setup&&media.beforeTake&&media.setup.previewScene!==media.setup.programScene&&media.beforeTake.scene===media.setup.programScene&&!media.beforeTake.video, JSON.stringify({setup:media.setup,beforeTake:media.beforeTake}));
+          smokeCheck('LOCAL_MEDIA_UHD60_TAKE_PROGRAM_OK', media.program&&media.program.ok&&media.program.output.width===3840&&media.program.output.height===2160, JSON.stringify(media.program||media));
+          smokeCheck('LOCAL_MEDIA_UHD60_FRAME_RATE_OK', media.measured&&media.measured.output.presentation&&media.measured.output.presentation.presentedFps>=55&&media.measured.output.presentation.presentedFps<=65&&media.measured.output.presentation.droppedDuringSample===0, JSON.stringify(media.measured||media));
+          smokeCheck('LOCAL_MEDIA_UHD60_AUDIO_DECODE_OK', media.audio&&media.audio.ok&&media.audio.sampleRate===48000, JSON.stringify(media.audio||media));
+          smokeCheck('LOCAL_MEDIA_UHD60_AV_SYNC_OK', Number.isFinite(media.syncDelta)&&media.syncDelta<=0.2, JSON.stringify({syncDelta:media.syncDelta,measured:media.measured}));
+          smokeCheck('LOCAL_MEDIA_UHD60_PROGRAM_PIXELS_OK', media.visual&&media.visual.ok, JSON.stringify(media.visual||media));
+          console.log('LOCAL_MEDIA_UHD60_TARGETED_OK=' + (smokeFailures.length === 0));
+          app.exit(smokeFailures.length ? 1 : 0);
+          return;
+        }
+        if (LIVE_INPUT_SMOKE_ONLY || LIVE_INPUT_UHD60_SMOKE_ONLY) {
+          const uhd60 = LIVE_INPUT_UHD60_SMOKE_ONLY;
+          const expected = uhd60
+            ? { width:3840, height:2160, fps:60, suffix:'uhd60', programFps:55 }
+            : { width:1920, height:1080, fps:60, suffix:'fhd60', programFps:45 };
+          const live = await runLiveInputSmoke(waitLoad, expected);
+          const prefix = uhd60 ? 'LIVE_INPUT_UHD60' : 'LIVE_INPUT';
+          smokeCheck(prefix + '_SERVICE_VIDEO_AUDIO_OK', live.service&&live.service.ok&&live.service.row.audioSampleRate===48000&&live.service.row.audioChannels===2, JSON.stringify({service:live.service,hubMedia:live.hubMedia}));
+          smokeCheck(prefix + '_SOURCE_FORMAT_OK', live.service&&live.service.row&&live.service.row.width===expected.width&&live.service.row.height===expected.height&&live.service.row.frameRate>=55&&live.service.row.formatMatched===true&&live.hubMedia&&live.hubMedia.video&&live.hubMedia.video.width===expected.width&&live.hubMedia.video.height===expected.height, JSON.stringify({service:live.service,hubMedia:live.hubMedia}));
           smokeCheck('LIVE_INPUT_PREVIEW_MUTED_AND_MOVING_OK', live.preview&&live.preview.ok&&live.preview.muted===true&&live.preview.videoTracks===1&&live.preview.audioTracks===1&&live.previewMoving, JSON.stringify(live.preview||live));
-          smokeCheck('LIVE_INPUT_REMOTE_VIDEO_STATS_OK', live.previewReceiver&&live.previewReceiver.ok&&live.previewReceiver.framesDecoded>0&&live.previewReceiver.width===1280&&live.previewReceiver.height===720&&live.previewReceiver.packetsLost===0&&live.previewReceiver.framesDropped===0&&live.programReceiver&&live.programReceiver.ok&&live.programReceiver.framesDecoded>0&&live.programReceiver.width===1920&&live.programReceiver.height===1080&&live.programReceiver.packetsLost===0&&live.programReceiver.framesDropped===0, JSON.stringify({preview:live.previewReceiver,program:live.programReceiver}));
-          smokeCheck('LIVE_INPUT_REALTIME_1080P_PROGRAM_OK', live.previewReceiver&&live.previewReceiver.decodedFps>=45&&live.programReceiver&&live.programReceiver.decodedFps>=45&&live.programReceiver.width===1920&&live.programReceiver.height===1080, JSON.stringify({preview:live.previewReceiver,program:live.programReceiver}));
+          smokeCheck(prefix + '_REMOTE_VIDEO_STATS_OK', live.previewReceiver&&live.previewReceiver.ok&&live.previewReceiver.framesDecoded>0&&live.previewReceiver.width===1280&&live.previewReceiver.height===720&&live.previewReceiver.packetsLost===0&&live.previewReceiver.framesDropped===0&&live.programReceiver&&live.programReceiver.ok&&live.programReceiver.framesDecoded>0&&live.programReceiver.width===expected.width&&live.programReceiver.height===expected.height&&live.programReceiver.packetsLost===0&&live.programReceiver.framesDropped===0, JSON.stringify({preview:live.previewReceiver,program:live.programReceiver,sender:live.programSender}));
+          smokeCheck(prefix + '_PROGRAM_FRAME_RATE_OK', live.previewReceiver&&live.previewReceiver.decodedFps>=24&&live.programReceiver&&live.programReceiver.decodedFps>=expected.programFps&&live.programReceiver.width===expected.width&&live.programReceiver.height===expected.height, JSON.stringify({preview:live.previewReceiver,program:live.programReceiver,sender:live.programSender}));
           smokeCheck('LIVE_INPUT_PREVIEW_DOES_NOT_CHANGE_PROGRAM_OK', live.setup&&live.beforeTake&&live.setup.previewScene!==live.setup.programScene&&live.beforeTake.scene===live.setup.programScene&&!live.beforeTake.liveVideo, JSON.stringify({setup:live.setup,beforeTake:live.beforeTake}));
-          smokeCheck('LIVE_INPUT_TAKE_SENDS_EXPECTED_SCENE_OK', live.program&&live.program.ok&&live.program.scene==='smoke-live-scene'&&live.programMoving, JSON.stringify(live.program||live));
+          smokeCheck('LIVE_INPUT_TAKE_SENDS_EXPECTED_SCENE_OK', live.program&&live.program.ok&&live.program.scene===live.sceneId&&live.programMoving, JSON.stringify(live.program||live));
           smokeCheck('LIVE_INPUT_PROGRAM_AUDIO_DEFAULT_MUTED_OK', live.program&&live.program.audioTracks===1&&live.program.muted===true, JSON.stringify(live.program||live));
           smokeCheck('LIVE_INPUT_PROGRAM_PIXELS_OK', live.visual&&live.visual.ok, JSON.stringify(live.visual||live));
-          console.log('LIVE_INPUT_TARGETED_OK=' + (smokeFailures.length === 0));
+          console.log((uhd60 ? 'LIVE_INPUT_UHD60_TARGETED_OK' : 'LIVE_INPUT_TARGETED_OK') + '=' + (smokeFailures.length === 0));
           app.exit(smokeFailures.length ? 1 : 0);
           return;
         }

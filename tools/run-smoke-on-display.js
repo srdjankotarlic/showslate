@@ -10,7 +10,12 @@ const os = require('os');
 const path = require('path');
 
 const argv = process.argv.slice(2);
-function val(flag) { const i = argv.indexOf(flag); return i >= 0 ? argv[i + 1] : null; }
+function val(flag) {
+  const inline = argv.find((arg) => arg.startsWith(flag + '='));
+  if (inline) return inline.slice(flag.length + 1);
+  const i = argv.indexOf(flag);
+  return i >= 0 ? argv[i + 1] : null;
+}
 const display = val('--display');
 const displayId = val('--display-id');
 const packaged = argv.includes('--packaged');
@@ -23,6 +28,10 @@ for (const name of ['.showslate-smoke-display.json', '.protimer-smoke-display.js
 const smokeArgs = ['--smoke'];
 if (argv.includes('--output-routing-only')) smokeArgs.push('--output-routing-only');
 if (argv.includes('--live-input-only')) smokeArgs.push('--live-input-only');
+if (argv.includes('--live-input-uhd60-only')) smokeArgs.push('--live-input-uhd60-only');
+if (argv.includes('--local-media-uhd60-only')) smokeArgs.push('--local-media-uhd60-only');
+const mediaFile = val('--media-file');
+if (mediaFile) smokeArgs.push('--media-file=' + path.resolve(mediaFile));
 const smokeProfileDir = fs.mkdtempSync(path.join(os.tmpdir(), 'showslate-smoke-'));
 const artifactDir = path.join(root, 'artifacts', 'generated', packaged ? 'packaged' : 'source');
 fs.mkdirSync(artifactDir, { recursive: true });

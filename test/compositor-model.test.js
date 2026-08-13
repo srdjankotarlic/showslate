@@ -112,10 +112,39 @@ check('COMPOSITOR_TEXT_STYLE_NORMALIZES_OK', () => {
 });
 
 check('COMPOSITOR_LIVE_INPUT_DEVICE_AUDIO_OK', () => {
-  const input = compositor.normalizeLiveInput({ id: 'capture-1', type: 'device', videoDeviceId: 'video-1', audioDeviceId: 'audio-1', withAudio: true, width: 3840, height: 2160, fps: 60, captureMode: 'compatible' });
+  const input = compositor.normalizeLiveInput({ id: 'capture-1', type: 'device', videoDeviceId: 'video-1', audioDeviceId: 'audio-1', withAudio: true, width: 3840, height: 2160, fps: 59.94, captureMode: 'compatible', qualityProfile: 'quality' });
   assert.strictEqual(input.withAudio, true);
-  assert.deepStrictEqual({ width: input.width, height: input.height, fps: input.fps, captureMode: input.captureMode }, { width: 3840, height: 2160, fps: 60, captureMode: 'compatible' });
+  assert.deepStrictEqual({ width: input.width, height: input.height, fps: input.fps, captureMode: input.captureMode, qualityProfile: input.qualityProfile }, { width: 3840, height: 2160, fps: 59.94, captureMode: 'compatible', qualityProfile: 'quality' });
   assert.strictEqual(compositor.normalizeLiveInput({ type: 'device', captureMode: 'invalid' }).captureMode, 'low-latency');
+  assert.strictEqual(compositor.normalizeLiveInput({ type: 'device', qualityProfile: 'invalid' }).qualityProfile, 'auto');
+});
+
+check('COMPOSITOR_UHD_PROGRAM_AND_OPERATOR_PROXY_PROFILES_OK', () => {
+  const definition = compositor.normalizeLiveInput({
+    id: 'capture-uhd', type: 'device', videoDeviceId: 'card-1', width: 3840, height: 2160,
+    fps: 59.94, qualityProfile: 'quality'
+  });
+  const settings = { width: 3840, height: 2160, frameRate: 59.94 };
+  const program = compositor.liveTransportProfile(definition, settings, 'program');
+  const operator = compositor.liveTransportProfile(definition, settings, 'operator');
+  assert.deepStrictEqual(
+    { tier: program.sourceTier, width: program.targetWidth, height: program.targetHeight, fps: program.targetFrameRate, scale: program.scaleResolutionDownBy, preference: program.degradationPreference },
+    { tier: 'UHD', width: 3840, height: 2160, fps: 59.94, scale: 1, preference: 'maintain-resolution' }
+  );
+  assert.deepStrictEqual(
+    { width: operator.targetWidth, height: operator.targetHeight, fps: operator.targetFrameRate, scale: operator.scaleResolutionDownBy, preference: operator.degradationPreference },
+    { width: 1280, height: 720, fps: 30, scale: 3, preference: 'maintain-resolution' }
+  );
+  assert.ok(program.maxBitrate > operator.maxBitrate);
+  assert.ok(operator.maxBitrate <= 12000000);
+  const automaticOperator = compositor.liveTransportProfile({ ...definition, qualityProfile: 'auto' }, settings, 'operator');
+  assert.strictEqual(automaticOperator.targetFrameRate, 30);
+  assert.strictEqual(automaticOperator.degradationPreference, 'maintain-resolution');
+  const automaticProgram = compositor.liveTransportProfile({ ...definition, qualityProfile: 'auto' }, settings, 'program');
+  assert.strictEqual(automaticProgram.degradationPreference, 'maintain-framerate');
+  assert.ok(automaticProgram.maxBitrate > automaticOperator.maxBitrate);
+  const realtime = compositor.liveTransportProfile({ ...definition, qualityProfile: 'realtime' }, settings, 'program');
+  assert.strictEqual(realtime.degradationPreference, 'maintain-framerate');
 });
 
 check('COMPOSITOR_WINDOW_SYSTEM_AUDIO_OK', () => {

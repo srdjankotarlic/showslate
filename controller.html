@@ -4034,7 +4034,7 @@
           <button class="source-kind" data-source-kind="timer"><span class="source-kind-icon">00</span><span class="source-kind-copy"><strong data-i18n="sourceTimer">Timer</strong><span data-i18n="sourceTimerBody">Place the ShowSlate timer in this scene.</span></span></button>
         </div>
         <section class="source-picker" id="sourceWindowPicker"><div class="source-picker-head"><button class="ghost mini source-back">‹</button><div><h3 id="sourceDesktopTitle" data-i18n="sourceWindow">Window capture</h3><p id="sourceDesktopHint" data-i18n="sourceWindowChoose">Choose one application window.</p></div><span class="grow"></span><button id="btnDesktopRefresh" class="ghost mini" data-i18n="refresh">Refresh</button></div><label class="desktop-audio-option"><input id="sourceDesktopAudio" type="checkbox" checked><span><strong data-i18n="sourceSystemAudio">Include system audio</strong><small data-i18n="sourceSystemAudioHint">Adds desktop sound to the mixer. Program audio remains off until you route it to one output.</small></span></label><div class="source-picker-note" id="sourceDesktopNotice" hidden></div><div class="desktop-source-grid" id="desktopSourceGrid"></div></section>
-        <section class="source-picker" id="sourceDevicePicker"><div class="source-picker-head"><button class="ghost mini source-back">‹</button><div><h3 data-i18n="sourceDevice">Video capture device</h3><p data-i18n="sourceDeviceChoose">Choose video, audio and requested format.</p></div></div><div class="source-form"><div class="source-permission-note wide" id="sourceDeviceStatus" hidden><span id="sourceDeviceStatusText"></span><div class="source-permission-actions"><button id="btnCameraPermission" class="ghost mini" type="button" data-i18n="sourceAllowCamera">Allow camera</button><button id="btnMicrophonePermission" class="ghost mini" type="button" data-i18n="sourceAllowMicrophone">Allow audio</button><button id="btnCameraSettings" class="ghost mini" type="button" data-i18n="sourceOpenCameraSettings">Open Camera settings</button><button id="btnMicrophoneSettings" class="ghost mini" type="button" data-i18n="sourceOpenMicrophoneSettings">Open Audio settings</button></div></div><label class="wide"><span data-i18n="sourceName">Source name</span><input id="sourceDeviceName" type="text" value="Video input"></label><label class="wide"><span data-i18n="sourceVideoDevice">Video device</span><select id="sourceVideoDevice"></select></label><label class="wide"><span data-i18n="sourceAudioDevice">Audio device</span><select id="sourceAudioDevice"><option value="" data-i18n="sourceNoAudio">No audio</option></select></label><label><span data-i18n="resolution">Resolution</span><select id="sourceDeviceResolution"><option value="3840x2160">3840 × 2160</option><option value="2560x1440">2560 × 1440</option><option value="1920x1080" selected>1920 × 1080</option><option value="1280x720">1280 × 720</option><option value="720x576">720 × 576</option><option value="720x480">720 × 480</option></select></label><label><span>FPS</span><select id="sourceDeviceFps"><option>60</option><option>50</option><option selected>30</option><option>25</option><option>24</option></select></label><label class="wide"><span data-i18n="captureMode">Capture mode</span><select id="sourceDeviceCaptureMode"><option value="low-latency" data-i18n="captureModeLowLatency">Low latency / exact format</option><option value="compatible" data-i18n="captureModeCompatible">Compatible</option></select><small class="source-field-hint" data-i18n="captureModeHint">Exact mode requests the selected format first and reports any fallback.</small></label><div class="form-actions"><button class="ghost source-back" data-i18n="cancel">Cancel</button><button id="btnDeviceAdd" class="primary" data-i18n="add">Add</button></div></div></section>
+        <section class="source-picker" id="sourceDevicePicker"><div class="source-picker-head"><button class="ghost mini source-back">‹</button><div><h3 data-i18n="sourceDevice">Video capture device</h3><p data-i18n="sourceDeviceChoose">Choose video, audio and requested format.</p></div></div><div class="source-form"><div class="source-permission-note wide" id="sourceDeviceStatus" hidden><span id="sourceDeviceStatusText"></span><div class="source-permission-actions"><button id="btnCameraPermission" class="ghost mini" type="button" data-i18n="sourceAllowCamera">Allow camera</button><button id="btnMicrophonePermission" class="ghost mini" type="button" data-i18n="sourceAllowMicrophone">Allow audio</button><button id="btnCameraSettings" class="ghost mini" type="button" data-i18n="sourceOpenCameraSettings">Open Camera settings</button><button id="btnMicrophoneSettings" class="ghost mini" type="button" data-i18n="sourceOpenMicrophoneSettings">Open Audio settings</button></div></div><label class="wide"><span data-i18n="sourceName">Source name</span><input id="sourceDeviceName" type="text" value="Video input"></label><label class="wide"><span data-i18n="sourceVideoDevice">Video device</span><select id="sourceVideoDevice"></select></label><label class="wide"><span data-i18n="sourceAudioDevice">Audio device</span><select id="sourceAudioDevice"><option value="" data-i18n="sourceNoAudio">No audio</option></select></label><label><span data-i18n="resolution">Resolution</span><select id="sourceDeviceResolution"><option value="4096x2160">4096 × 2160 DCI 4K</option><option value="3840x2160">3840 × 2160 UHD</option><option value="2560x1440">2560 × 1440 QHD</option><option value="1920x1080" selected>1920 × 1080 FHD</option><option value="1280x720">1280 × 720 HD</option><option value="720x576">720 × 576 PAL</option><option value="720x480">720 × 480 NTSC</option></select></label><label><span>FPS</span><select id="sourceDeviceFps"><option>60</option><option>59.94</option><option>50</option><option selected>30</option><option>29.97</option><option>25</option><option>24</option><option>23.976</option></select></label><label class="wide"><span data-i18n="sourceQualityProfile">Performance profile</span><select id="sourceQualityProfile"><option value="auto" data-i18n="sourceQualityAuto">Auto (recommended)</option><option value="quality" data-i18n="sourceQualityMaximum">Maximum quality</option><option value="realtime" data-i18n="sourceQualityRealtime">Low latency</option></select><small class="source-field-hint" data-i18n="sourceQualityHint">Program keeps the full input format. Preview uses an adaptive operator proxy.</small></label><label class="wide"><span data-i18n="captureMode">Capture mode</span><select id="sourceDeviceCaptureMode"><option value="low-latency" data-i18n="captureModeLowLatency">Exact format, then safe fallback</option><option value="compatible" data-i18n="captureModeCompatible">Compatible negotiation</option></select><small class="source-field-hint" data-i18n="captureModeHint">Exact mode requests the selected format first and reports any fallback.</small></label><div class="form-actions"><button class="ghost source-back" data-i18n="cancel">Cancel</button><button id="btnDeviceAdd" class="primary" data-i18n="add">Add</button></div></div></section>
         <section class="source-picker" id="sourceAudioPicker"><div class="source-picker-head"><button class="ghost mini source-back">‹</button><div><h3 data-i18n="sourceAudioInput">Audio input capture</h3><p data-i18n="sourceAudioInputChoose">Choose a microphone, mixer or audio interface.</p></div></div><div class="source-form"><div class="source-permission-note wide" id="sourceAudioStatus" hidden><span id="sourceAudioStatusText"></span><div class="source-permission-actions"><button id="btnAudioPermission" class="ghost mini" type="button" data-i18n="sourceAllowMicrophone">Allow audio</button><button id="btnAudioSettings" class="ghost mini" type="button" data-i18n="sourceOpenMicrophoneSettings">Open Audio settings</button></div></div><label class="wide"><span data-i18n="sourceName">Source name</span><input id="sourceAudioName" type="text" value="Audio input"></label><label class="wide"><span data-i18n="sourceAudioDevice">Audio device</span><select id="sourceAudioInputDevice"></select></label><div class="form-actions"><button class="ghost source-back" data-i18n="cancel">Cancel</button><button id="btnAudioAdd" class="primary" data-i18n="add">Add</button></div></div></section>
         <section class="source-picker" id="sourceColorPicker"><div class="source-picker-head"><button class="ghost mini source-back">‹</button><div><h3 data-i18n="sourceColor">Color</h3><p data-i18n="sourceColorChoose">Choose a color for the new layer.</p></div></div><div class="source-form"><label class="wide"><span data-i18n="sourceName">Source name</span><input id="sourceColorName" type="text" value="Background"></label><label class="wide"><span data-i18n="sourceColor">Color</span><input id="sourceColorValue" type="color" value="#20242c"></label><div class="form-actions"><button class="ghost source-back" data-i18n="cancel">Cancel</button><button id="btnColorAdd" class="primary" data-i18n="add">Add</button></div></div></section>
       </main>
@@ -4212,7 +4212,7 @@
               <label class="composition-field"><span data-i18n="canvasWidth">Width</span><input id="canvasWidth" type="number" min="320" max="8192" step="1" value="1920"></label>
               <span class="canvas-times">×</span>
               <label class="composition-field"><span data-i18n="canvasHeight">Height</span><input id="canvasHeight" type="number" min="180" max="8192" step="1" value="1080"></label>
-              <label class="composition-field fps"><span>FPS</span><input id="canvasFps" type="number" min="1" max="60" step="1" value="30"></label>
+              <label class="composition-field fps"><span>FPS</span><input id="canvasFps" type="number" min="1" max="60" step="0.001" value="30"></label>
             </div>
             <p class="composition-field-note" data-i18n="canvasCustomHint">Use Custom for the exact processor or LED wall pixel dimensions.</p>
           </section>
@@ -5150,9 +5150,11 @@ function liveInputStatus(id){ return liveInputStatuses.get(String(id||''))||{inp
 function liveInputStatusText(status){
   const row=status||{};
   const parts=[t('sourceState_'+String(row.state||'idle'))];
+  if(row.qualityTier) parts.push(String(row.qualityTier));
   if(row.width&&row.height) parts.push(`${Math.round(row.width)}×${Math.round(row.height)}`);
   if(row.frameRate) parts.push(`${Math.round(row.frameRate*10)/10} fps`);
   if(row.hasAudio) parts.push(t('sound'));
+  if(row.audioSampleRate) parts.push(`${Math.round(row.audioSampleRate/100)/10} kHz${row.audioChannels?` · ${row.audioChannels} ch`:''}`);
   if(row.error) parts.push(String(row.error));
   return parts.join(' · ');
 }
@@ -5161,6 +5163,10 @@ function liveInputFormatText(status){
   if(!row.width||!row.height)return '';
   const rate=row.frameRate?` @ ${Math.round(row.frameRate*100)/100} fps`:'';
   return `${Math.round(row.width)}×${Math.round(row.height)}${rate}`;
+}
+function qualityProfileLabel(profile){
+  const key={quality:'sourceQualityMaximum',realtime:'sourceQualityRealtime',auto:'sourceQualityAuto'}[String(profile||'auto')]||'sourceQualityAuto';
+  return t(key);
 }
 function syncLiveInputService(){
   if(!PTCOMP||!liveInputConsumer) return;
@@ -7155,10 +7161,32 @@ function formatMediaBytes(value){
 }
 function mediaSourceSummary(layer){
   const parts=[String(layer&&layer.name||inspectorLayerTypeLabel(layer))];
+  if(Number(layer&&layer.sourceWidth)>0&&Number(layer&&layer.sourceHeight)>0){
+    const width=Math.round(Number(layer.sourceWidth)),height=Math.round(Number(layer.sourceHeight));
+    parts.push(`${PTCOMP.sourceQualityTier(width,height)||''} ${width}×${height}`.trim());
+  }
   if(Number(layer&&layer.sourceBytes)>0) parts.push(formatMediaBytes(layer.sourceBytes));
   if(layer&&layer.sourceStorage==='linked') parts.push(t('mediaLinked'));
   else if(layer&&layer.sourceStorage==='managed') parts.push(t('mediaManaged'));
   return parts.join(' · ');
+}
+async function probeLocalMediaFile(file,type){
+  if(!file||!['image','video'].includes(type)||typeof URL.createObjectURL!=='function')return {};
+  const url=URL.createObjectURL(file);
+  try{
+    return await new Promise(resolve=>{
+      const media=document.createElement(type==='video'?'video':'img');
+      let settled=false;
+      const finish=value=>{if(settled)return;settled=true;clearTimeout(timer);resolve(value||{});};
+      const timer=setTimeout(()=>finish({}),4000);
+      media.addEventListener(type==='video'?'loadedmetadata':'load',()=>finish(type==='video'?{
+        sourceWidth:media.videoWidth||0,sourceHeight:media.videoHeight||0,sourceDuration:Number.isFinite(media.duration)?media.duration:0
+      }:{sourceWidth:media.naturalWidth||0,sourceHeight:media.naturalHeight||0}),{once:true});
+      media.addEventListener('error',()=>finish({}),{once:true});
+      if(type==='video')media.preload='metadata';
+      media.src=url;
+    });
+  }finally{URL.revokeObjectURL(url);}
 }
 async function addMediaLayers(files){
   const list=Array.from(files||[]);
@@ -7172,6 +7200,7 @@ async function addMediaLayers(files){
     const layer={
       id:makeId('layer'), type:media.type, name:file.name, src:media.src, mime:media.mime||file.type||'',
       sourceBytes:media.bytes, sourceStorage:media.storage, sourcePortable:media.portable,
+      sourceWidth:media.sourceWidth,sourceHeight:media.sourceHeight,sourceDuration:media.sourceDuration,
       visible:true, fit:media.type==='pdf'?'contain':'cover', x:0, y:0, w:100, h:100, opacity:1
     };
     if(media.type==='video')Object.assign(layer,{
@@ -7187,15 +7216,17 @@ async function addMediaLayers(files){
 async function prepareSceneMedia(file){
   if(!file)return null;
   const type=fileLayerType(file);
+  const metadataTask=probeLocalMediaFile(file,type);
   const saved=await importLocalMediaFile(file);
   if(!saved||!saved.ok){alert(file.name+': '+((saved&&saved.error)||t('mediaImportFailed')));return null;}
-  return {type,src:saved.src,bytes:saved.bytes,mime:saved.mime||file.type||'',storage:saved.storage,portable:saved.portable!==false};
+  const metadata=await metadataTask;
+  return {type,src:saved.src,bytes:saved.bytes,mime:saved.mime||file.type||'',storage:saved.storage,portable:saved.portable!==false,...metadata};
 }
 async function replaceSceneMedia(layerId,file){
   const media=await prepareSceneMedia(file); if(!media)return false;
   const layer=currentScene().layers.find(row=>row.id===layerId); if(!layer)return false;
   const previousType=layer.type;
-  Object.assign(layer,{type:media.type,name:file.name,src:media.src,mime:media.mime||file.type||'',sourceBytes:media.bytes,sourceStorage:media.storage,sourcePortable:media.portable,page:media.type==='pdf'?1:undefined,fit:media.type==='pdf'?'contain':layer.fit||'cover'});
+  Object.assign(layer,{type:media.type,name:file.name,src:media.src,mime:media.mime||file.type||'',sourceBytes:media.bytes,sourceStorage:media.storage,sourcePortable:media.portable,sourceWidth:media.sourceWidth||0,sourceHeight:media.sourceHeight||0,sourceDuration:media.sourceDuration||0,page:media.type==='pdf'?1:undefined,fit:media.type==='pdf'?'contain':layer.fit||'cover'});
   if(media.type==='video'&&previousType!=='video')Object.assign(layer,{
     playbackState:'playing',playbackPosition:0,playbackUpdatedAt:Date.now(),playbackRate:1,
     inPoint:0,outPoint:0,endBehavior:'loop',loop:true,restartOnTake:true,
@@ -7851,7 +7882,8 @@ async function renderDesktopSources(){
     button.setAttribute('aria-label',`${source.name} · ${meta.textContent}`);
     button.append(image,copy);
     button.addEventListener('click',()=>addLiveInputLayer({
-      id:makeId('input'),type:'window',name:source.name,desktopSourceId:source.id,desktopSourceName:source.name,withAudio:$('sourceDesktopAudio')?.checked===true,width:S.canvas.width,height:S.canvas.height,fps:S.canvas.fps,autoReconnect:true
+      id:makeId('input'),type:'window',name:source.name,desktopSourceId:source.id,desktopSourceName:source.name,withAudio:$('sourceDesktopAudio')?.checked===true,
+      width:source.width||S.canvas.width,height:source.height||S.canvas.height,fps:S.canvas.fps,qualityProfile:'auto',autoReconnect:true
     },'window'));
     grid.appendChild(button);
   });
@@ -7913,6 +7945,7 @@ async function renderDeviceSources(requestPermission=''){
     const size=`${current.width}x${current.height}`; if([...$('sourceDeviceResolution').options].some(option=>option.value===size)) $('sourceDeviceResolution').value=size;
     $('sourceDeviceFps').value=String(current.fps||30);
     $('sourceDeviceCaptureMode').value=current.captureMode||'low-latency';
+    $('sourceQualityProfile').value=current.qualityProfile||'auto';
   }
   const cameraUnavailable=['denied','restricted','not-determined'].includes(permissions.camera);
   const microphoneUnavailable=['denied','restricted','not-determined'].includes(permissions.microphone);
@@ -7994,7 +8027,7 @@ $('btnDeviceAdd')?.addEventListener('click',()=>{
   addLiveInputLayer({
     id:makeId('input'),type:'device',name:$('sourceDeviceName').value.trim()||video.selectedOptions[0]?.textContent||t('sourceDevice'),
     videoDeviceId:video.value,videoDeviceLabel:video.selectedOptions[0]?.textContent||'',audioDeviceId:audio.value,audioDeviceLabel:audio.selectedOptions[0]?.textContent||'',
-    withAudio:!!audio.value,width,height,fps:+$('sourceDeviceFps').value||30,captureMode:$('sourceDeviceCaptureMode').value||'low-latency',autoReconnect:true
+    withAudio:!!audio.value,width,height,fps:+$('sourceDeviceFps').value||30,captureMode:$('sourceDeviceCaptureMode').value||'low-latency',qualityProfile:$('sourceQualityProfile').value||'auto',autoReconnect:true
   },'capture');
 });
 $('btnAudioAdd')?.addEventListener('click',()=>{
@@ -11621,6 +11654,13 @@ function renderLiveCaptureSetup(layer,status){
     else if(result.aspectMismatch){messages.push(t('sourceCaptureQualityAspect'));warning=true;}
   }
   const definition=liveInputDefinition(layer.inputId);
+  if(definition){
+    const tier=(status&&status.qualityTier)||PTCOMP.sourceQualityTier(definition.width,definition.height)||'—';
+    messages.unshift(uiText('sourceQualityStatus',{profile:qualityProfileLabel(definition.qualityProfile),tier}));
+  }
+  if(status&&status.hasAudio&&status.audioSampleRate){
+    messages.push(uiText('sourceAudioFormatStatus',{rate:Math.round(status.audioSampleRate/100)/10,channels:status.audioChannels||1,bits:status.audioSampleSize||'—'}));
+  }
   if(definition&&definition.type==='device'&&status&&status.state==='live'){
     const actual=liveInputFormatText(status)||t('sourceCaptureQualityWaiting');
     const requested=`${definition.width}×${definition.height} @ ${definition.fps} fps`;

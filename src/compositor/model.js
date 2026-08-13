@@ -9,6 +9,7 @@
   const LAYER_TYPES = new Set(['color', 'image', 'video', 'pdf', 'text', 'timer', 'window', 'capture', 'audio']);
   const LIVE_INPUT_TYPES = new Set(['window', 'device', 'audio']);
   const CAPTURE_MODES = new Set(['low-latency', 'compatible']);
+  const SOURCE_QUALITY_PROFILES = new Set(['auto', 'quality', 'realtime']);
   const AUDIO_MONITORING_MODES = new Set(['off', 'monitor-only', 'monitor-and-output']);
   const MEDIA_PLAYBACK_STATES = new Set(['playing', 'paused', 'stopped']);
   const MEDIA_END_BEHAVIORS = new Set(['stop', 'hold', 'loop']);
@@ -40,6 +41,10 @@
 
   function integer(value, fallback, min, max) {
     return Math.round(finite(value, fallback, min, max));
+  }
+
+  function frameRate(value, fallback = 30) {
+    return Math.round(finite(value, fallback, 1, 60) * 1000) / 1000;
   }
 
   function id(value, fallback) {
@@ -155,7 +160,7 @@
       schemaVersion: SCHEMA_VERSION,
       width,
       height,
-      fps: integer(source.fps, 30, 1, 60),
+      fps: frameRate(source.fps, 30),
       background: cleanColor(source.background, '#000000'),
       transparent: source.transparent === true
     };
@@ -433,6 +438,64 @@
     };
   }
 
+  function sourceQualityTier(width, height) {
+    const w = Math.max(0, Number(width) || 0);
+    const h = Math.max(0, Number(height) || 0);
+    if (w >= 7680 || h >= 4320) return '8K';
+    if (w >= 3840 || h >= 2160) return 'UHD';
+    if (w >= 2560 || h >= 1440) return 'QHD';
+    if (w >= 1920 || h >= 1080) return 'FHD';
+    if (w >= 1280 || h >= 720) return 'HD';
+    return w && h ? 'SD' : '';
+  }
+
+  function liveTransportProfile(rawDefinition = {}, rawSettings = {}, requestedProfile = 'program') {
+    const definition = normalizeLiveInput(rawDefinition);
+    const settings = rawSettings && typeof rawSettings === 'object' ? rawSettings : {};
+    const width = integer(settings.width, definition.width, 160, 8192);
+    const height = integer(settings.height, definition.height, 120, 8192);
+    const fps = frameRate(settings.frameRate, definition.fps);
+    const consumer = requestedProfile === 'operator' ? 'operator' : 'program';
+    const qualityProfile = SOURCE_QUALITY_PROFILES.has(definition.qualityProfile) ? definition.qualityProfile : 'auto';
+    const realtimeSource = definition.type === 'device';
+    let scaleResolutionDownBy = 1;
+    let maxFramerate = fps;
+    let bitrateFactor = qualityProfile === 'quality' ? 0.28 : qualityProfile === 'realtime' ? 0.12 : 0.18;
+    let minimumBitrate = 12000000;
+    let maximumBitrate = qualityProfile === 'quality' ? 120000000 : qualityProfile === 'realtime' ? 60000000 : 80000000;
+
+    if (consumer === 'operator') {
+      scaleResolutionDownBy = Math.max(1, width / 1280, height / 720);
+      maxFramerate = qualityProfile === 'realtime' ? fps : Math.min(fps, 30);
+      bitrateFactor = qualityProfile === 'realtime' ? 0.24 : 0.21;
+      minimumBitrate = 3500000;
+      maximumBitrate = qualityProfile === 'realtime' ? 14000000 : 12000000;
+    }
+
+    const targetWidth = Math.max(1, Math.round(width / scaleResolutionDownBy));
+    const targetHeight = Math.max(1, Math.round(height / scaleResolutionDownBy));
+    const pixelsPerSecond = targetWidth * targetHeight * maxFramerate;
+    const maxBitrate = Math.max(minimumBitrate, Math.min(maximumBitrate, Math.round(pixelsPerSecond * bitrateFactor)));
+    const degradationPreference = qualityProfile === 'realtime' || (consumer === 'program' && qualityProfile === 'auto' && realtimeSource)
+      ? 'maintain-framerate'
+      : 'maintain-resolution';
+
+    return {
+      consumer,
+      qualityProfile,
+      sourceWidth: width,
+      sourceHeight: height,
+      sourceFrameRate: fps,
+      sourceTier: sourceQualityTier(width, height),
+      targetWidth,
+      targetHeight,
+      targetFrameRate: maxFramerate,
+      scaleResolutionDownBy,
+      maxBitrate,
+      degradationPreference
+    };
+  }
+
   function normalizeLiveInput(raw = {}, index = 0) {
     const source = raw && typeof raw === 'object' ? raw : {};
     const type = LIVE_INPUT_TYPES.has(source.type) ? source.type : 'device';
@@ -453,8 +516,9 @@
         : (type === 'device' || type === 'audio') && source.withAudio !== false && !!String(source.audioDeviceId || ''),
       width: integer(source.width, 1920, 160, 7680),
       height: integer(source.height, 1080, 120, 4320),
-      fps: integer(source.fps, 30, 1, 60),
+      fps: frameRate(source.fps, 30),
       captureMode: type === 'device' && CAPTURE_MODES.has(source.captureMode) ? source.captureMode : 'low-latency',
+      qualityProfile: SOURCE_QUALITY_PROFILES.has(source.qualityProfile) ? source.qualityProfile : 'auto',
       autoReconnect: source.autoReconnect !== false,
       active: source.active !== false
     };
@@ -524,6 +588,9 @@
     if (type === 'video') {
       const transport = normalizeMediaTransport(source);
       Object.assign(layer, transport);
+      layer.sourceWidth = integer(source.sourceWidth, 0, 0, 16384);
+      layer.sourceHeight = integer(source.sourceHeight, 0, 0, 16384);
+      layer.sourceDuration = finite(source.sourceDuration, 0, 0, 31536000);
       layer.loop = transport.endBehavior === 'loop';
       layer.videoAudioConfigured = source.videoAudioConfigured === true;
       layer.audioEnabled = layer.videoAudioConfigured ? source.audioEnabled !== false : true;
@@ -533,6 +600,10 @@
     }
     if (type === 'pdf') {
       layer.page = integer(source.page, 1, 1, 999);
+    }
+    if (type === 'image') {
+      layer.sourceWidth = integer(source.sourceWidth, 0, 0, 16384);
+      layer.sourceHeight = integer(source.sourceHeight, 0, 0, 16384);
     }
     if (type === 'text') {
       layer.text = String(source.text ?? source.name ?? '').slice(0, 4000);
@@ -621,6 +692,7 @@
     SCHEMA_VERSION,
     LAYER_TYPES: [...LAYER_TYPES],
     LIVE_INPUT_TYPES: [...LIVE_INPUT_TYPES],
+    SOURCE_QUALITY_PROFILES: [...SOURCE_QUALITY_PROFILES],
     AUDIO_MONITORING_MODES: [...AUDIO_MONITORING_MODES],
     MEDIA_PLAYBACK_STATES: [...MEDIA_PLAYBACK_STATES],
     MEDIA_END_BEHAVIORS: [...MEDIA_END_BEHAVIORS],
@@ -640,6 +712,8 @@
     normalizeComposition,
     normalizeCompositions,
     captureQuality,
+    sourceQualityTier,
+    liveTransportProfile,
     normalizeLiveInput,
     normalizeLiveInputs,
     normalizeLayer,

@@ -44,10 +44,20 @@ function evaluatePreflight(input, facts = {}) {
   const statusById = new Map((Array.isArray(facts.liveInputStatuses) ? facts.liveInputStatuses : [])
     .filter(status => status && status.inputId).map(status => [String(status.inputId), status]));
   const unavailableActiveIds = activeInputIds.filter(id => String(statusById.get(id) && statusById.get(id).state || '') !== 'live');
-  const liveInputStatus = missingInputIds.length ? 'block' : (unavailableActiveIds.length ? 'warn' : 'ok');
+  const fallbackActiveIds = activeInputIds.filter(id => {
+    const status = statusById.get(id);
+    return status && status.state === 'live' && (status.formatFallback === true || status.formatMatched === false);
+  });
+  const liveInputStatus = missingInputIds.length ? 'block' : (unavailableActiveIds.length || fallbackActiveIds.length ? 'warn' : 'ok');
   const liveInputDetail = missingInputIds.length ? 'missing:' + missingInputIds.join(',')
     : (unavailableActiveIds.length ? 'not-live:' + unavailableActiveIds.join(',')
-      : (referencedInputIds.length ? referencedInputIds.length + '-ready' : 'none-configured'));
+      : (fallbackActiveIds.length ? 'format-fallback:' + fallbackActiveIds.map(id => {
+        const status = statusById.get(id) || {};
+        const actual = status.width && status.height
+          ? `${Math.round(status.width)}x${Math.round(status.height)}${status.frameRate ? `@${Math.round(status.frameRate * 100) / 100}` : ''}`
+          : 'unknown';
+        return `${id}=${actual}`;
+      }).join(',') : (referencedInputIds.length ? referencedInputIds.length + '-ready' : 'none-configured')));
   checks.push(row('liveInputSources', liveInputStatus, liveInputDetail));
 
   checks.push(row('speakerScreen', facts.speakerScreenReady ? 'ok' : 'warn', facts.speakerScreenReady ? 'open' : 'not-open'));

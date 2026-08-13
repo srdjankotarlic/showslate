@@ -160,9 +160,16 @@
   en.layerDrag = 'Drag to reorder source';
   en.layerDragRole = 'draggable source layer';
   en.captureMode = 'Capture mode';
-  en.captureModeLowLatency = 'Low latency / exact format';
-  en.captureModeCompatible = 'Compatible';
+  en.captureModeLowLatency = 'Exact format, then safe fallback';
+  en.captureModeCompatible = 'Compatible negotiation';
   en.captureModeHint = 'Exact mode requests the selected resolution and frame rate first, then clearly reports any fallback.';
+  en.sourceQualityProfile = 'Performance profile';
+  en.sourceQualityAuto = 'Auto (recommended)';
+  en.sourceQualityMaximum = 'Maximum quality';
+  en.sourceQualityRealtime = 'Low latency';
+  en.sourceQualityHint = 'Program keeps the full input format. Preview uses an adaptive operator proxy.';
+  en.sourceQualityStatus = '{profile} · {tier} source';
+  en.sourceAudioFormatStatus = 'Audio {rate} kHz · {channels} ch · {bits}-bit device format.';
   en.sourceCaptureFormatMatched = 'Input {actual} · requested format confirmed.';
   en.sourceCaptureFormatFallback = 'Requested {requested}; device supplied {actual}. Compatible fallback is active.';
   sr.sourceSystemAudio = 'Uključi sistemski zvuk';
@@ -186,9 +193,16 @@
   sr.layerDrag = 'Prevuci za promenu redosleda izvora';
   sr.layerDragRole = 'izvor koji se može prevlačiti';
   sr.captureMode = 'Režim snimanja';
-  sr.captureModeLowLatency = 'Malo kašnjenje / tačan format';
-  sr.captureModeCompatible = 'Kompatibilno';
+  sr.captureModeLowLatency = 'Tačan format, zatim bezbedan fallback';
+  sr.captureModeCompatible = 'Kompatibilno pregovaranje';
   sr.captureModeHint = 'Tačan režim prvo traži izabranu rezoluciju i FPS, a zatim jasno prijavljuje svaki fallback.';
+  sr.sourceQualityProfile = 'Profil performansi';
+  sr.sourceQualityAuto = 'Automatski (preporučeno)';
+  sr.sourceQualityMaximum = 'Maksimalni kvalitet';
+  sr.sourceQualityRealtime = 'Malo kašnjenje';
+  sr.sourceQualityHint = 'Program zadržava pun format ulaza. Preview koristi prilagođen operatorski proxy.';
+  sr.sourceQualityStatus = '{profile} · {tier} izvor';
+  sr.sourceAudioFormatStatus = 'Audio {rate} kHz · {channels} kanala · {bits}-bitni format uređaja.';
   sr.sourceCaptureFormatMatched = 'Ulaz {actual} · traženi format je potvrđen.';
   sr.sourceCaptureFormatFallback = 'Traženo {requested}; uređaj daje {actual}. Aktivan je kompatibilni fallback.';
 

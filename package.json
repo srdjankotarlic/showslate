@@ -55,6 +55,7 @@
     "smoke:lt-soak": "node tools/run-lt-soak.js",
     "smoke:output-routing": "node tools/run-smoke-on-display.js --source --output-routing-only",
     "smoke:live-input": "node tools/run-smoke-on-display.js --source --live-input-only",
+    "smoke:live-input:uhd60": "node tools/run-smoke-on-display.js --source --live-input-uhd60-only",
     "test:lt-package": "node test/lower-third-package.test.js",
     "test:brand-migration": "node test/brand-migration.test.js",
     "test:show-storage": "node test/show-repository.test.js",

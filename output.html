@@ -212,6 +212,7 @@ function outLang(){ return langUtil.normalizeLang((S && S.lang) || 'en'); }
 function outT(key){ const l=outLang(); return (OUT_I18N[l] && OUT_I18N[l][key]) || OUT_I18N.en[key] || key; }
 
 let S = null, prevRem = null, lastKey = '', lastSceneKey = '', lastLtRuntimeKey = '', ltSequenceTimer = null, lastMappedSurfaceKey = '', lastMappedDynamicSyncAt = 0;
+let outputRenderDirty = true, lastDynamicRenderAt = 0, lastMappedRenderAt = 0;
 const mappedRuntimeNodes = new Map();
 const liveInputConsumer = IS_ELECTRON && window.ShowSlateLiveInput
   ? new window.ShowSlateLiveInput.LiveInputConsumer(api,{label:'output'}) : null;
@@ -257,6 +258,7 @@ function applyState(s){
   const fitStateChanged=!S || !!s.fitWindow!==!!S.fitWindow || !!s.gridOn!==!!S.gridOn;
   if (S && (s.mode!==S.mode || s.durationMs!==S.durationMs)) prevRem = null;
   S = s;
+  outputRenderDirty = true;
   // Audio routing is a live safety control. Apply it immediately instead of
   // waiting for a potentially throttled animation frame.
   syncSceneMediaRuntime();
@@ -862,13 +864,30 @@ if (IS_ELECTRON){
   connect();
 }
 
-function render(){
+function render(frameNow){
   requestAnimationFrame(render);
+  const frameTime=Number(frameNow)||performance.now();
   const now = Date.now();
   const d = new Date();
 
   // dok ne stigne stanje — prikaži tačno vreme
-  if (!S){ paint(`${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`, '#ffffff', '#000000', false, '', '', false, null); return; }
+  if (!S){
+    if(frameTime-lastDynamicRenderAt>=250){
+      lastDynamicRenderAt=frameTime;
+      paint(`${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`, '#ffffff', '#000000', false, '', '', false, null);
+    }
+    return;
+  }
+
+  const projection=routeProjection();
+  const mappedOutputActive=!!(projection&&Array.isArray(projection.surfaces));
+  const mappingDue=mappedOutputActive&&frameTime-lastMappedRenderAt>=33;
+  const timerScene=activeScene();
+  const timerVisible=!!(timerScene&&Array.isArray(timerScene.layers)&&timerScene.layers.some(layer=>layer&&layer.visible!==false&&layer.type==='timer'));
+  const dynamicInterval=timerVisible&&(S.running||S.mode==='clock')?(S.showProgress?33:100):250;
+  const dynamicDue=frameTime-lastDynamicRenderAt>=dynamicInterval;
+  if(!outputRenderDirty&&!dynamicDue&&!mappingDue)return;
+  const renderStatic=outputRenderDirty;
 
   const bg = S.transparent ? 'transparent' : (S.bgColor || '#000000');
   document.body.classList.toggle('overlay', !!S.transparent);
@@ -904,20 +923,31 @@ function render(){
 
   // kompaktan prozor: kad NIJE fullscreen i opcija je uključena → tajmer puni širinu, prozor prati visinu
   // tajmer UVEK puni prozor; grid se realizuje veličinom/pozicijom samog PROZORA (main proces)
-  applyTimerLayerStage();   // tajmer je LEJER scene: pozicionira/gasi #stage
+  if(renderStatic) applyTimerLayerStage();   // tajmer je LEJER scene: pozicionira/gasi #stage
   // fit (kompaktan prozor) — samo ako NIJE grid i NIJE fullscreen
   fitMode = IS_ELECTRON && !!S.fitWindow && !isFS && !S.gridOn;
 
-  $('timer').style.fontFamily = FONT_MAP[S.font] || FONT_MAP.mono;
-  renderScene();
-  paint(text, fg, bg, neg, S.text || '', S.message ? S.message.text : '',
-        S.message && S.message.flash, S.showProgress ? prog : null);
+  if(renderStatic){
+    $('timer').style.fontFamily = FONT_MAP[S.font] || FONT_MAP.mono;
+    renderScene();
+  }
+  if(renderStatic||dynamicDue){
+    paint(text, fg, bg, neg, S.text || '', S.message ? S.message.text : '',
+          S.message && S.message.flash, S.showProgress ? prog : null);
+    lastDynamicRenderAt=frameTime;
+  }
 
-  if (fitMode) requestFit();
-  renderNowNext(fg);
-  renderLowerThird();
-  renderMappedSurfaces();
-  $('blackout').classList.toggle('on', !!S.blackout);
+  if (fitMode&&(renderStatic||dynamicDue)) requestFit();
+  if(renderStatic){
+    renderNowNext(fg);
+    renderLowerThird();
+    $('blackout').classList.toggle('on', !!S.blackout);
+  }
+  if(renderStatic||mappingDue){
+    renderMappedSurfaces();
+    lastMappedRenderAt=frameTime;
+  }
+  outputRenderDirty=false;
 }
 
 // kompaktan prozor: traži od main-a da visina prozora bude tačno koliko i tajmer (+mali rub)
@@ -1443,7 +1473,7 @@ if (IS_ELECTRON){
   document.addEventListener('dblclick', () => api.toggleFullscreen());
 }
 
-window.addEventListener('resize', () => { lastKey=''; lastLtRuntimeKey=''; lastMappedSurfaceKey=''; applyOutputGeometry(); renderLowerThird(); renderMappedSurfaces(); });
+window.addEventListener('resize', () => { outputRenderDirty=true; lastKey=''; lastLtRuntimeKey=''; lastMappedSurfaceKey=''; applyOutputGeometry(); renderLowerThird(); renderMappedSurfaces(); });
 requestAnimationFrame(render);
 </script>
 </body>

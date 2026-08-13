@@ -104,6 +104,25 @@ check('PREFLIGHT_LIVE_INPUT_STATUS_AND_AUDIO_ROUTE_OK', () => {
   assert.strictEqual(result.checks.find(row => row.id === 'liveInputAudio').status, 'block');
 });
 
+check('PREFLIGHT_WARNS_WHEN_LIVE_INPUT_FALLS_BACK_FROM_REQUESTED_FORMAT_OK', () => {
+  const document = showDocument();
+  document.show.screenContent = {
+    activeSceneId: 'live-scene',
+    scenes: [{ id: 'live-scene', layers: [{ id: 'camera', type: 'capture', inputId: 'card-4k' }] }],
+    liveInputs: [{ id: 'card-4k', type: 'device', videoDeviceId: 'video-4k', width: 3840, height: 2160, fps: 60 }]
+  };
+  const result = evaluatePreflight(document, {
+    ...readyFacts,
+    liveInputStatuses: [{
+      inputId: 'card-4k', state: 'live', formatMatched: false, formatFallback: true,
+      width: 1920, height: 1080, frameRate: 30
+    }]
+  });
+  const source = result.checks.find(row => row.id === 'liveInputSources');
+  assert.strictEqual(source.status, 'warn');
+  assert(source.detail.includes('format-fallback:card-4k=1920x1080@30'));
+});
+
 check('PREFLIGHT_WARNS_ON_CANVAS_OUTPUT_ASPECT_MISMATCH_OK', () => {
   const document = showDocument();
   document.show.screenContent = { canvas: { width: 1000, height: 1000, fps: 30 }, scenes: [], liveInputs: [] };
