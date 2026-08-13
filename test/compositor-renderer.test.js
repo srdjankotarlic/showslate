@@ -402,7 +402,7 @@ app.whenReady().then(async () => {
     const testScene=PTCOMP.normalizeScene({id:'video-transport-scene',name:'Video transport test',compositionId:S.activeCompositionId,layers:[{
       id:'video-transport-layer',type:'video',name:'Operator clip',src:${JSON.stringify(transportFixtureUrl)},visible:true,x:0,y:0,w:100,h:100,opacity:1,fit:'contain',
       playbackState:'paused',playbackPosition:.2,playbackUpdatedAt:Date.now(),playbackRate:1,inPoint:0,outPoint:0,endBehavior:'loop',restartOnTake:true,
-      audioEnabled:true,audioMonitoring:'off',muted:true,volume:.8
+      audioEnabled:false,audioMonitoring:'off',muted:true,volume:.8
     }]});
     S.scenes.push(testScene);S.activeSceneId=testScene.id;S.studioDirect=false;selectedLayerId='video-transport-layer';videoTransportTarget='preview';
     monitorSceneKeys={pv:'',pg:''};renderScenesUI();renderStage('pv',S,Date.now());renderStage('pg',programState,Date.now());

@@ -7029,7 +7029,7 @@ async function addMediaLayers(files){
     if(media.type==='video')Object.assign(layer,{
       playbackState:'playing',playbackPosition:0,playbackUpdatedAt:Date.now(),playbackRate:1,
       inPoint:0,outPoint:0,endBehavior:'loop',loop:true,restartOnTake:true,
-      audioEnabled:true,audioMonitoring:'off',muted:true,volume:1
+      audioEnabled:false,audioMonitoring:'off',muted:true,volume:1
     });
     sc.layers.push(layer);
     selectedLayerId=layer.id;
@@ -7051,7 +7051,7 @@ async function replaceSceneMedia(layerId,file){
   if(media.type==='video'&&previousType!=='video')Object.assign(layer,{
     playbackState:'playing',playbackPosition:0,playbackUpdatedAt:Date.now(),playbackRate:1,
     inPoint:0,outPoint:0,endBehavior:'loop',loop:true,restartOnTake:true,
-    audioEnabled:true,audioMonitoring:'off',muted:true,volume:1
+    audioEnabled:false,audioMonitoring:'off',muted:true,volume:1
   });
   selectedLayerId=layer.id;sceneDirty();renderInspector();return true;
 }
@@ -11422,7 +11422,8 @@ function renderInspector(){
     if(document.activeElement!==$('inspVideoIn'))$('inspVideoIn').value=formatMediaSeconds(transport.inPoint);
     if(document.activeElement!==$('inspVideoOut'))$('inspVideoOut').value=transport.outPoint>transport.inPoint?formatMediaSeconds(transport.outPoint):'';
     $('inspVideoEndBehavior').value=transport.endBehavior;$('inspVideoRestartOnTake').checked=transport.restartOnTake;
-    $('inspVideoPreviewAudio').checked=mediaPreviewAudioEnabled(reference);$('inspVideoProgramAudio').checked=mediaProgramAudioEnabled(reference);
+    $('inspVideoPreviewAudio').checked=mediaPreviewAudioEnabled(reference);
+    $('inspVideoProgramAudio').checked=mediaProgramAudioEnabled(reference)&&activeProgramAudioRouteValue()!=='off';
     $('inspVideoMuted').checked=reference.muted!==false;$('inspVideoVolume').value=Math.round(Number(reference.volume??1)*100);$('inspVideoRate').value=String(transport.playbackRate);
     $('inspVideoAudioRoute').textContent=activeProgramAudioRouteLabel();
   }
