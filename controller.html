@@ -5219,9 +5219,10 @@ function bindMonitorVideo(video,layer,prefix){
     sink:previewAudio?String(S.monitorAudioDeviceId||''):''
   });
   if(video.dataset.mediaRuntimeSignature===signature)return;
+  const webAudioOwnsPreview=prefix==='pv'&&video.dataset.webAudioOwned==='true';
   PTMEDIA.bind(video,layer,{
-    muted:!previewAudio,
-    volume:Math.max(0,Math.min(1,Number(layer.volume??1))),
+    muted:webAudioOwnsPreview?false:!previewAudio,
+    volume:webAudioOwnsPreview?1:Math.max(0,Math.min(1,Number(layer.volume??1))),
     sinkId:previewAudio?String(S.monitorAudioDeviceId||''):''
   });
   video.dataset.mediaRuntimeSignature=signature;
@@ -5274,7 +5275,9 @@ function renderMonitorScene(prefix, st){
     } else if(layer.type==='image' && layer.src){
       const img=document.createElement('img'); img.decoding='async'; handleSceneMediaError(img,content,d,layer,prefix); img.src=mediaSrc(layer.src); applySceneMediaVisual(img,visual); content.appendChild(img);
     } else if(layer.type==='video' && layer.src){
-      const v=document.createElement('video'); handleSceneMediaError(v,content,d,layer,prefix); v.src=mediaSrc(layer.src); bindMonitorVideo(v,layer,prefix); applySceneMediaVisual(v,visual); content.appendChild(v);
+      const v=document.createElement('video'),source=mediaSrc(layer.src); handleSceneMediaError(v,content,d,layer,prefix);
+      if(prefix==='pv'&&/^https?:/i.test(source))v.crossOrigin='anonymous';
+      v.src=source; bindMonitorVideo(v,layer,prefix); applySceneMediaVisual(v,visual); content.appendChild(v);
     } else if(layer.type==='pdf' && layer.src){
       const f=document.createElement('iframe'); f.src=mediaSrc(layer.src)+'#page='+Math.max(1,Number(layer.page)||1); content.appendChild(f);
     } else if((layer.type==='window'||layer.type==='capture')&&layer.inputId){
@@ -10876,6 +10879,7 @@ let audioMeterFrame=0;
 let audioMeterLastTick=0;
 const audioMeterNodes=new Map();
 const audioMonitorPlayers=new Map();
+let audioMeterSinkId=null;
 
 function audioCapableLayers(){
   const scene=currentScene();
@@ -10894,13 +10898,11 @@ function audioDbLabel(value){
 function audioStreamForLayer(layer){
   if(!layer)return null;
   if(['window','capture','audio'].includes(layer.type))return liveInputConsumer&&liveInputConsumer.streams&&liveInputConsumer.streams.get(String(layer.inputId||''))||null;
-  if(layer.type==='video'){
-    const element=document.querySelector(`#pvScene .pv-scene-layer[data-layer-id="${CSS.escape(String(layer.id||''))}"] video`);
-    if(!element)return null;
-    if(element.srcObject instanceof MediaStream)return element.srcObject;
-    try{return typeof element.captureStream==='function'?element.captureStream():null;}catch(error){return null;}
-  }
   return null;
+}
+function previewVideoForLayer(layer){
+  if(!layer||layer.type!=='video')return null;
+  return document.querySelector(`#pvScene .pv-scene-layer[data-layer-id="${CSS.escape(String(layer.id||''))}"] video`);
 }
 function ensureAudioMeterContext(){
   if(audioMeterContext)return audioMeterContext;
@@ -10909,24 +10911,64 @@ function ensureAudioMeterContext(){
   try{audioMeterContext=new AudioContextClass({latencyHint:'interactive'});}catch(error){audioMeterContext=new AudioContextClass();}
   return audioMeterContext;
 }
+function resumeAudioMeterContext(){
+  const context=ensureAudioMeterContext();
+  if(context&&context.state==='suspended')Promise.resolve(context.resume()).catch(()=>{});
+  return context;
+}
+function syncAudioMeterSink(context){
+  if(!context||typeof context.setSinkId!=='function')return;
+  const sinkId=String(S.monitorAudioDeviceId||'');
+  if(audioMeterSinkId===sinkId)return;
+  audioMeterSinkId=sinkId;
+  Promise.resolve(context.setSinkId(sinkId)).catch(()=>{audioMeterSinkId=null;});
+}
 function closeAudioMeterNode(id){
   const record=audioMeterNodes.get(id);if(!record)return;
   try{record.source.disconnect();}catch(error){}
+  try{record.analyser.disconnect();}catch(error){}
+  try{record.monitorGain&&record.monitorGain.disconnect();}catch(error){}
+  if(record.element){
+    delete record.element.dataset.webAudioOwned;
+    try{record.element.muted=true;}catch(error){}
+  }
   audioMeterNodes.delete(id);
 }
 function meterRecordForLayer(layer){
-  const id=String(layer.id||''),stream=audioStreamForLayer(layer);
+  const id=String(layer.id||'');
+  if(layer.type==='video'){
+    const element=previewVideoForLayer(layer);
+    if(!element){closeAudioMeterNode(id);return null;}
+    const existing=audioMeterNodes.get(id);
+    if(existing&&existing.element===element){
+      element.dataset.webAudioOwned='true';element.muted=false;element.defaultMuted=false;element.volume=1;
+      existing.monitorGain.gain.value=mediaPreviewAudioEnabled(layer)&&layer.visible!==false&&layer.muted!==true?Math.max(0,Math.min(1,Number(layer.volume??1))):0;
+      syncAudioMeterSink(existing.context);resumeAudioMeterContext();return existing;
+    }
+    closeAudioMeterNode(id);
+    const context=resumeAudioMeterContext();if(!context)return null;
+    try{
+      const source=context.createMediaElementSource(element),analyser=context.createAnalyser(),monitorGain=context.createGain();
+      analyser.fftSize=1024;analyser.smoothingTimeConstant=.68;
+      source.connect(analyser);analyser.connect(monitorGain);monitorGain.connect(context.destination);
+      element.dataset.webAudioOwned='true';element.muted=false;element.defaultMuted=false;element.volume=1;
+      monitorGain.gain.value=mediaPreviewAudioEnabled(layer)&&layer.visible!==false&&layer.muted!==true?Math.max(0,Math.min(1,Number(layer.volume??1))):0;
+      const record={element,context,source,analyser,monitorGain,data:new Float32Array(analyser.fftSize),peakDb:-60,peakAt:0};
+      audioMeterNodes.set(id,record);syncAudioMeterSink(context);return record;
+    }catch(error){return null;}
+  }
+  const stream=audioStreamForLayer(layer);
   if(!stream||!stream.getAudioTracks().some(track=>track.readyState==='live')){closeAudioMeterNode(id);return null;}
   const existing=audioMeterNodes.get(id);
   if(existing&&existing.stream===stream)return existing;
   closeAudioMeterNode(id);
-  const context=ensureAudioMeterContext();if(!context)return null;
+  const context=resumeAudioMeterContext();if(!context)return null;
   try{
     const audioOnly=new MediaStream(stream.getAudioTracks());
     const source=context.createMediaStreamSource(audioOnly),analyser=context.createAnalyser();
     analyser.fftSize=1024;analyser.smoothingTimeConstant=.68;source.connect(analyser);
     const record={stream,source,analyser,data:new Float32Array(analyser.fftSize),peakDb:-60,peakAt:0};
-    audioMeterNodes.set(id,record);Promise.resolve(context.resume()).catch(()=>{});return record;
+    audioMeterNodes.set(id,record);return record;
   }catch(error){return null;}
 }
 function setAudioMeterVisual(row,db,peakDb,hasSignal){
@@ -10976,6 +11018,8 @@ function tickAudioMeters(now=performance.now()){
     setAudioMeterVisual(row,db,record.peakDb,true);
   });
 }
+document.addEventListener('pointerdown',resumeAudioMeterContext,{capture:true});
+document.addEventListener('keydown',resumeAudioMeterContext,{capture:true});
 function appendDeviceOptions(select,kind,current,includeOff=false){
   if(!select)return;
   select.innerHTML='';

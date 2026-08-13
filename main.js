@@ -473,16 +473,20 @@ function startServer(port, attempt = 0) {
       const mime = media.mime || MEDIA_MIME[path.extname(file).toLowerCase()] || 'application/octet-stream';
       const range = parseByteRange(req.headers.range, stat.size);
       const cacheControl = media.storage === 'linked' ? 'no-cache' : 'public, max-age=31536000, immutable';
+      const mediaHeaders = {
+        'Access-Control-Allow-Origin': '*',
+        'Cross-Origin-Resource-Policy': 'cross-origin'
+      };
       if (range && range.invalid) {
-        res.writeHead(416, { 'Content-Range': `bytes */${stat.size}`, 'Accept-Ranges': 'bytes' });
+        res.writeHead(416, { ...mediaHeaders, 'Content-Range': `bytes */${stat.size}`, 'Accept-Ranges': 'bytes' });
         res.end();
       } else if (range) {
-        res.writeHead(206, { 'Content-Type': mime, 'Content-Length': range.length,
+        res.writeHead(206, { ...mediaHeaders, 'Content-Type': mime, 'Content-Length': range.length,
           'Content-Range': `bytes ${range.start}-${range.end}/${stat.size}`, 'Accept-Ranges': 'bytes', 'Cache-Control': cacheControl });
         if (req.method === 'HEAD') res.end();
         else fs.createReadStream(full, { start: range.start, end: range.end }).on('error', () => res.destroy()).pipe(res);
       } else {
-        res.writeHead(200, { 'Content-Type': mime, 'Content-Length': stat.size,
+        res.writeHead(200, { ...mediaHeaders, 'Content-Type': mime, 'Content-Length': stat.size,
           'Accept-Ranges': 'bytes', 'Cache-Control': cacheControl });
         if (req.method === 'HEAD') res.end();
         else fs.createReadStream(full).on('error', () => res.destroy()).pipe(res);
