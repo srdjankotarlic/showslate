@@ -88,6 +88,21 @@ check('COMPOSITOR_COLOR_SOURCE_NORMALIZES_OK', () => {
   assert.strictEqual(layer.bg, '#2468ac');
 });
 
+check('COMPOSITOR_LOWER_THIRD_SOURCE_NORMALIZES_OK', () => {
+  const layer = compositor.normalizeLayer({
+    type: 'lowerThird', templateId: 'speaker-clean', dataMode: 'liveCue',
+    speakerName: 'Ada Lovelace', speakerTitle: 'Keynote speaker', speakerMeta: 'ShowSlate',
+    durationSec: 12
+  });
+  assert.strictEqual(layer.type, 'lowerThird');
+  assert.strictEqual(layer.templateId, 'speaker-clean');
+  assert.strictEqual(layer.dataMode, 'liveCue');
+  assert.strictEqual(layer.speakerName, 'Ada Lovelace');
+  assert.strictEqual(layer.speakerTitle, 'Keynote speaker');
+  assert.strictEqual(layer.speakerMeta, 'ShowSlate');
+  assert.strictEqual(layer.durationSec, 12);
+});
+
 check('COMPOSITOR_ADVANCED_LAYER_STYLE_NORMALIZES_OK', () => {
   const layer = compositor.normalizeLayer({
     type: 'video', crop: { top: 80, left: 7 }, flipX: true, transformOrigin: 'top-left',

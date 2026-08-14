@@ -119,12 +119,19 @@ app.whenReady().then(async () => {
     S.scenes=[]; contentItems=[]; selectedContentItemId=''; liveContentItemId='';
     const timer=addContentScene('Timer','timer',[makeTimerLayer()]);
     const holding=addContentScene('Holding','text',[{id:makeId('layer'),type:'text',name:'Holding',text:'WELCOME',color:'#fff',bg:'transparent',fontSize:10,visible:true,fit:'contain',x:0,y:0,w:100,h:100,opacity:1}]);
+    const closing=addContentScene('Closing','text',[{id:makeId('layer'),type:'text',name:'Closing',text:'THANK YOU',color:'#fff',bg:'transparent',fontSize:10,visible:true,fit:'contain',x:0,y:0,w:100,h:100,opacity:1}]);
     selectContentItem(timer.id); liveContentItemId=timer.id; programState=outputSnapshot(S); programState.activeSceneId=timer.sceneId;
     selectContentItem(holding.id); const previewOnly=programState.activeSceneId===timer.sceneId&&liveContentItemId===timer.id;
+    setSidebarView('slides'); document.getElementById('btnGo').click();
+    const sceneGoTookPreview=programState.activeSceneId===holding.sceneId&&liveContentItemId===holding.id&&selectedContentItemId===closing.id;
+    document.getElementById('btnGo').click();
+    const sceneGoAdvancedInOrder=programState.activeSceneId===closing.sceneId&&liveContentItemId===closing.id;
+    setSidebarView('rundown');
+    selectContentItem(holding.id);
     const contentTaken=executeRemoteCommand({type:'contentTake',value:'cut'})&&programState.activeSceneId===holding.sceneId&&liveContentItemId===holding.id;
     executeRemoteCommand({type:'contentClear'});
     const contentCleared=liveContentItemId===''&&programState.activeSceneId==='scene-content-clear';
-    return JSON.stringify({primaryStartedFirst,primaryIgnoredSelection,primarySkippedMarkedCue,selectedWentLive,nextIgnoredSelection,started,paused,adjusted,messageSent,messageCleared,blackoutOn,blackoutOff,selectedTemplate,usesLiveCue,hideStarted,replayed,newInstance:!!secondInstance&&secondInstance!==firstInstance,autoOn,autoOff,previewOnly,contentTaken,contentCleared});
+    return JSON.stringify({primaryStartedFirst,primaryIgnoredSelection,primarySkippedMarkedCue,selectedWentLive,nextIgnoredSelection,started,paused,adjusted,messageSent,messageCleared,blackoutOn,blackoutOff,selectedTemplate,usesLiveCue,hideStarted,replayed,newInstance:!!secondInstance&&secondInstance!==firstInstance,autoOn,autoOff,previewOnly,sceneGoTookPreview,sceneGoAdvancedInOrder,contentTaken,contentCleared});
   })()`));
 
   check('PRIMARY_GO_NEXT_FOLLOWS_RUNDOWN_ORDER_OK', result.primaryStartedFirst && result.primaryIgnoredSelection && result.primarySkippedMarkedCue, JSON.stringify(result));
@@ -133,11 +140,12 @@ app.whenReady().then(async () => {
   check('CONTROL_API_LT_TAKE_HIDE_REPLAY_OK', result.selectedTemplate && result.usesLiveCue && result.hideStarted && result.replayed && result.newInstance, JSON.stringify(result));
   check('CONTROL_API_LT_AUTO_ON_OFF_OK', result.autoOn && result.autoOff, JSON.stringify(result));
   check('CONTROL_API_CONTENT_PREVIEW_TAKE_CLEAR_OK', result.previewOnly && result.contentTaken && result.contentCleared, JSON.stringify(result));
+  check('PRIMARY_GO_NEXT_FOLLOWS_SCENE_ORDER_OK', result.sceneGoTookPreview && result.sceneGoAdvancedInOrder, JSON.stringify(result));
   if (!await waitFor(() => latestStatus && latestStatus.show && latestStatus.show.id === 'api-show' && latestStatus.cue && latestStatus.cue.live && latestStatus.cue.live.id === 'cue-c')) throw new Error('control status was not published');
   check('CONTROL_API_STATUS_SNAPSHOT_OK', latestStatus.ready === true && latestStatus.lowerThird.canReplay === true && latestStatus.content.live === null && latestStatus.output.blackout === false, JSON.stringify(latestStatus));
   check('CONTROL_API_STATUS_EXCLUDES_LIBRARY_OK', latestStatus.lowerThird.library === undefined && latestStatus.token === undefined && latestStatus.license === undefined);
 
-  console.log('CONTROL_API_RENDERER_TESTS_OK ' + checks + '/9');
+  console.log('CONTROL_API_RENDERER_TESTS_OK ' + checks + '/10');
   win.destroy();
   fs.rmSync(profile, { recursive: true, force: true });
   app.quit();

@@ -6,7 +6,7 @@
   'use strict';
 
   const SCHEMA_VERSION = 1;
-  const LAYER_TYPES = new Set(['color', 'image', 'video', 'pdf', 'text', 'timer', 'window', 'capture', 'audio']);
+  const LAYER_TYPES = new Set(['color', 'image', 'video', 'pdf', 'text', 'timer', 'lowerThird', 'window', 'capture', 'audio']);
   const LIVE_INPUT_TYPES = new Set(['window', 'device', 'audio']);
   const CAPTURE_MODES = new Set(['low-latency', 'compatible']);
   const SOURCE_QUALITY_PROFILES = new Set(['auto', 'quality', 'realtime']);
@@ -538,6 +538,7 @@
     const requested = String(raw && raw.type || '').toLowerCase();
     if (requested === 'device' || requested === 'camera' || requested === 'capture-card') return 'capture';
     if (requested === 'window-capture' || requested === 'screen') return 'window';
+    if (requested === 'lowerthird' || requested === 'lower-third') return 'lowerThird';
     return LAYER_TYPES.has(requested) ? requested : 'image';
   }
 
@@ -618,6 +619,15 @@
       layer.verticalAlign = VERTICAL_ALIGNS.has(source.verticalAlign) ? source.verticalAlign : 'center';
       layer.italic = source.italic === true;
       layer.underline = source.underline === true;
+    }
+    if (type === 'lowerThird') {
+      const cleanText = (value, limit = 240) => String(value ?? '').replace(/[\u0000-\u001f\u007f]/g, ' ').trim().slice(0, limit);
+      layer.templateId = cleanText(source.templateId, 200);
+      layer.dataMode = source.dataMode === 'liveCue' ? 'liveCue' : 'custom';
+      layer.speakerName = cleanText(source.speakerName);
+      layer.speakerTitle = cleanText(source.speakerTitle);
+      layer.speakerMeta = cleanText(source.speakerMeta);
+      layer.durationSec = finite(source.durationSec, 8, 0, 600);
     }
     return layer;
   }

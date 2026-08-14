@@ -3707,6 +3707,45 @@
                 <label class="check half"><input type="checkbox" id="inspVideoMuted"> <span data-i18n="muted">Muted</span></label>
                 <label class="half"><span data-i18n="volume">Volume</span><input type="range" id="inspVideoVolume" min="0" max="100" step="1" value="100"></label>
               </div>
+              <div class="insp-type-controls lower-third-source-controls" id="inspLowerThirdWrap" data-testid="lower-third-source-controls">
+                <div class="lower-third-source-head">
+                  <div><strong data-i18n="sourceLowerThird">Lower Third</strong><span data-i18n="sourceLowerThirdHint">On-air name and title graphic</span></div>
+                  <button id="inspLowerThirdStudio" class="mini" type="button" data-i18n="ltEditStudio">Edit Studio</button>
+                </div>
+                <label class="wide"><span data-i18n="lowerThirdTemplate">Template</span><select id="inspLowerThirdTemplate"></select></label>
+                <label class="wide"><span data-i18n="lowerThirdDataSource">Data source</span><select id="inspLowerThirdDataMode"><option value="liveCue" data-i18n="lowerThirdLiveCue">LIVE rundown cue</option><option value="custom" data-i18n="lowerThirdCustomData">Custom text</option></select></label>
+                <label class="wide"><span data-i18n="ltName">Name</span><input id="inspLowerThirdName" type="text" maxlength="240" placeholder="Speaker name"></label>
+                <label class="wide"><span data-i18n="ltTitle">Title</span><input id="inspLowerThirdTitle" type="text" maxlength="240" placeholder="Role or organization"></label>
+                <label class="wide"><span data-i18n="ltMeta">Extra line</span><input id="inspLowerThirdMeta" type="text" maxlength="240" placeholder="Optional"></label>
+                <label class="wide"><span data-i18n="duration">Duration</span><input id="inspLowerThirdDuration" type="number" min="0" max="600" step="0.5" value="8"><small data-i18n="lowerThirdDurationHint">0 keeps it visible until HIDE.</small></label>
+                <div class="lower-third-source-note" id="inspLowerThirdCuePreview" role="status">—</div>
+              </div>
+              <div class="insp-type-controls timer-source-controls" id="inspTimerWrap" data-testid="timer-source-controls">
+                <div class="timer-source-head"><div><strong data-i18n="timerControls">Timer controls</strong><span id="inspTimerTarget">Preview</span></div><output id="inspTimerClock">10:00</output></div>
+                <div class="timer-source-modes" role="group" aria-label="Timer mode">
+                  <button type="button" data-timer-source-mode="countdown" data-i18n="modeCountdown">Countdown</button>
+                  <button type="button" data-timer-source-mode="countup" data-i18n="modeCountup">Stopwatch</button>
+                  <button type="button" data-timer-source-mode="clock" data-i18n="modeClock">Clock</button>
+                </div>
+                <div class="timer-source-duration">
+                  <label><span data-i18n="timerDuration">Duration</span><input id="inspTimerDuration" type="text" inputmode="numeric" value="10:00" data-i18n-title="durTitle" title="10 = minutes · 10:00 = MM:SS · 1:00:00 = HH:MM:SS"></label>
+                  <button id="inspTimerSet" type="button" data-i18n="set">Set</button>
+                </div>
+                <div class="timer-source-transport" role="group" aria-label="Timer transport">
+                  <button id="inspTimerStart" class="primary" type="button" data-i18n="start">Start</button>
+                  <button id="inspTimerReset" type="button" data-i18n="reset">Reset</button>
+                </div>
+                <div class="timer-source-adjust" role="group" aria-label="Adjust timer">
+                  <button type="button" data-timer-source-adjust="-300">−5m</button><button type="button" data-timer-source-adjust="-60">−1m</button><button type="button" data-timer-source-adjust="-10">−10s</button>
+                  <button type="button" data-timer-source-adjust="10">+10s</button><button type="button" data-timer-source-adjust="60">+1m</button><button type="button" data-timer-source-adjust="300">+5m</button>
+                </div>
+                <div class="timer-source-message-head"><strong data-i18n="message">Speaker message</strong><label class="check"><input id="inspTimerMessageFlash" type="checkbox"> <span data-i18n="flash">Flash</span></label></div>
+                <div class="timer-source-message">
+                  <input id="inspTimerMessage" type="text" maxlength="240" data-i18n-ph="messagePh" placeholder="Message to speaker…">
+                  <button id="inspTimerMessageSend" class="primary" type="button" data-i18n="send">Send</button>
+                  <button id="inspTimerMessageClear" type="button" data-i18n="clear">Clear</button>
+                </div>
+              </div>
               <div class="insp-type-controls" id="inspPdfWrap"><label class="half"><span data-i18n="slidePageLabel">Page</span><input type="number" id="inspPdfPage" min="1" max="999" step="1"></label></div>
             </div>
           </details>
@@ -4090,6 +4129,7 @@
           <button class="source-kind" data-source-kind="audio"><span class="source-kind-icon">AUD</span><span class="source-kind-copy"><strong data-i18n="sourceAudioInput">Audio input capture</strong><span data-i18n="sourceAudioInputBody">Microphone, mixer or audio interface.</span></span></button>
           <div class="source-kind-section-title"><strong data-i18n="sourceCategoryShow">Show tools</strong><span data-i18n="sourceCategoryShowHint">Live data generated by ShowSlate</span></div>
           <button class="source-kind" data-source-kind="timer"><span class="source-kind-icon">00</span><span class="source-kind-copy"><strong data-i18n="sourceTimer">Timer</strong><span data-i18n="sourceTimerBody">Place the ShowSlate timer in this scene.</span></span></button>
+          <button class="source-kind" data-source-kind="lowerThird"><span class="source-kind-icon">LT</span><span class="source-kind-copy"><strong data-i18n="sourceLowerThird">Lower Third</strong><span data-i18n="sourceLowerThirdBody">Add a reusable name, title or speaker signature.</span></span></button>
         </div>
         <section class="source-picker" id="sourceWindowPicker"><div class="source-picker-head"><button class="ghost mini source-back">‹</button><div><h3 id="sourceDesktopTitle" data-i18n="sourceWindow">Window capture</h3><p id="sourceDesktopHint" data-i18n="sourceWindowChoose">Choose one application window.</p></div><span class="grow"></span><button id="btnDesktopRefresh" class="ghost mini" data-i18n="refresh">Refresh</button></div><label class="desktop-audio-option"><input id="sourceDesktopAudio" type="checkbox" checked><span><strong data-i18n="sourceSystemAudio">Include system audio</strong><small data-i18n="sourceSystemAudioHint">Adds desktop sound to the mixer. Program audio remains off until you route it to one output.</small></span></label><div class="source-picker-note" id="sourceDesktopNotice" hidden></div><div class="desktop-source-grid" id="desktopSourceGrid"></div></section>
         <section class="source-picker" id="sourceDevicePicker"><div class="source-picker-head"><button class="ghost mini source-back">‹</button><div><h3 data-i18n="sourceDevice">Video capture device</h3><p data-i18n="sourceDeviceChoose">Choose video, audio and requested format.</p></div></div><div class="source-form"><div class="source-permission-note wide" id="sourceDeviceStatus" hidden><span id="sourceDeviceStatusText"></span><div class="source-permission-actions"><button id="btnCameraPermission" class="ghost mini" type="button" data-i18n="sourceAllowCamera">Allow camera</button><button id="btnMicrophonePermission" class="ghost mini" type="button" data-i18n="sourceAllowMicrophone">Allow audio</button><button id="btnCameraSettings" class="ghost mini" type="button" data-i18n="sourceOpenCameraSettings">Open Camera settings</button><button id="btnMicrophoneSettings" class="ghost mini" type="button" data-i18n="sourceOpenMicrophoneSettings">Open Audio settings</button></div></div><label class="wide"><span data-i18n="sourceName">Source name</span><input id="sourceDeviceName" type="text" value="Video input"></label><label class="wide"><span data-i18n="sourceVideoDevice">Video device</span><select id="sourceVideoDevice"></select></label><label class="wide"><span data-i18n="sourceAudioDevice">Audio device</span><select id="sourceAudioDevice"><option value="" data-i18n="sourceNoAudio">No audio</option></select></label><label><span data-i18n="resolution">Resolution</span><select id="sourceDeviceResolution"><option value="4096x2160">4096 × 2160 DCI 4K</option><option value="3840x2160">3840 × 2160 UHD</option><option value="2560x1440">2560 × 1440 QHD</option><option value="1920x1080" selected>1920 × 1080 FHD</option><option value="1280x720">1280 × 720 HD</option><option value="720x576">720 × 576 PAL</option><option value="720x480">720 × 480 NTSC</option></select></label><label><span>FPS</span><select id="sourceDeviceFps"><option>60</option><option>59.94</option><option>50</option><option selected>30</option><option>29.97</option><option>25</option><option>24</option><option>23.976</option></select></label><label class="wide"><span data-i18n="sourceQualityProfile">Performance profile</span><select id="sourceQualityProfile"><option value="auto" data-i18n="sourceQualityAuto">Auto (recommended)</option><option value="quality" data-i18n="sourceQualityMaximum">Maximum quality</option><option value="realtime" data-i18n="sourceQualityRealtime">Low latency</option></select><small class="source-field-hint" data-i18n="sourceQualityHint">Program keeps the full input format. Preview uses an adaptive operator proxy.</small></label><label class="wide"><span data-i18n="captureMode">Capture mode</span><select id="sourceDeviceCaptureMode"><option value="low-latency" data-i18n="captureModeLowLatency">Exact format, then safe fallback</option><option value="compatible" data-i18n="captureModeCompatible">Compatible negotiation</option></select><small class="source-field-hint" data-i18n="captureModeHint">Exact mode requests the selected format first and reports any fallback.</small></label><div class="form-actions"><button class="ghost source-back" data-i18n="cancel">Cancel</button><button id="btnDeviceAdd" class="primary" data-i18n="add">Add</button></div></div></section>
@@ -4564,7 +4604,7 @@ const I18N = {
     badgeLive:'U PROGRAMU', badgeSelected:'IZABRANO', badgeNext:'SLEDI', badgeSkipped:'PRESKOČENO',
     goSelectedBtn:'KRENI ▶ {name}', goNextBtn:'SLEDEĆE ▶ {name}', goSelectedShort:'GO IZABRANO &nbsp;(N)', goAutoStart:'Auto-start na GO', goAutoTitle:'GO odmah pokreće tajmer novog reda',
     advanced:'Preview / Program', advancedTitle:'Preview/Program režija (Cut/Transition). Isključeno: sve ide direktno na Program.',
-    compositionClose:'Zatvori', mappingInputSelection:'Izbor ulaza', mappingOutputTransform:'Mapiranje izlaza', mappingInputHint:'Izaberite tačne piksele iz kompozicionog canvasa.', mappingOutputHint:'Postavite površinu na fizički izlaz i korigujte geometriju.', mappingIdentify:'Označi', mappingTestPattern:'Test šara', mappingEnabled:'Vidljivo', mappingSolo:'Solo', mappingFlipX:'Okreni horizontalno', mappingFlipY:'Okreni vertikalno', mappingInputFull:'Ceo canvas', mappingOutputFull:'Popuni izlaz', mappingRotation:'Rotacija', mappingWarpMode:'Režim', mappingPerspective:'Perspektiva', mappingMesh:'Linearni mesh', mappingMeshColumns:'Mesh kolone', mappingMeshRows:'Mesh redovi', mappingPattern:'Šara', mappingPatternGrid:'Mreža', mappingPatternChecker:'Šahovnica', mappingPatternCrosshair:'Nišan', mappingLabels:'Nazivi površina', mappingMask:'Poligonska maska', mappingMaskEnabled:'Uključi masku', mappingMaskReset:'Vrati masku', mappingMaskHint:'Pomerajte poligonske tačke direktno na canvasu Mapiranje izlaza.', mappingBlendGamma:'Blend gama', mappingBlackLevel:'Nivo crne', mappingUnassignedOutput:'Nedodeljen izlaz',
+    compositionClose:'Zatvori', mappingInputSelection:'Izbor ulaza', mappingOutputTransform:'Mapiranje izlaza', mappingInputHint:'Izaberite tačne piksele iz kompozicionog canvasa.', mappingOutputHint:'Postavite površinu na fizički izlaz i korigujte geometriju.', mappingIdentify:'Označi', mappingTestPattern:'Test šara', mappingEnabled:'Vidljivo', mappingSolo:'Solo', mappingFlipX:'Okreni horizontalno', mappingFlipY:'Okreni vertikalno', mappingInputFull:'Ceo canvas', mappingOutputFull:'Popuni izlaz', mappingRotation:'Rotacija', mappingWarpMode:'Režim', mappingPerspective:'Perspektiva', mappingMesh:'Linearni mesh', mappingMeshColumns:'Mesh kolone', mappingMeshRows:'Mesh redovi', mappingPattern:'Šara', mappingPatternGrid:'Mreža', mappingPatternChecker:'Šahovnica', mappingPatternCrosshair:'Nišan', mappingLabels:'Nazivi površina', mappingMask:'Poligonska maska', mappingMaskEnabled:'Uključi masku', mappingMaskReset:'Vrati masku', mappingMaskHint:'Pomerajte poligonske tačke direktno na canvasu Mapiranje izlaza.', mappingBlendGamma:'Blend gama', mappingBlackLevel:'Nivo crne', mappingUnassignedOutput:'Nedodeljen izlaz', mappingFixAssignment:'dodelite vidljivu površinu jednom Output-u pre primene.', mappingFixMissingOutput:'dodeljeni Output više ne postoji.', mappingFixDisabledOutput:'uključite dodeljeni Output pre primene.', mappingFixWarp:'ispravite ukrštene ili nevažeće warp tačke pre primene.',
     rundownBtn:'Rundown', sidebarToggle:'Prikaži ili sakrij navigaciju', utilityToggle:'Prikaži ili sakrij poruke, status i izlaze', msgOutBtn:'Poruke', settingsBtn:'Podešavanja', compositionButton:'Kompozicija', compositionOpen:'Otvori podešavanja kompozicije', compositionEyebrow:'CANVAS I MAPIRANJE PROJEKTORA', compositionTitle:'Kompozicija', compositionBody:'Napravite nezavisne canvase za LED zidove i mapirajte tačne delove canvasa na projektorske izlaze.', compositions:'Kompozicije', compositionNew:'Nova', compositionScenes:'Scene u ovoj kompoziciji', compositionSceneHint:'Nove scene napravljene u Composer-u pripadaju aktivnoj kompoziciji.', mappingCanvas:'Canvas za mapiranje', mappingSelected:'Izabrana površina', mappingAssigned:'Dodeljen izlaz', canvasSettings:'Canvas', canvasSettingsHint:'Izvorni piksel prostor ove kompozicije', canvasWidth:'Širina', canvasHeight:'Visina', canvasCustomHint:'Za LED zid izaberite Custom i unesite tačne piksel dimenzije procesora.', projectorMapping:'Mapiranje projektora', mappingAdd:'Dodaj površinu', mappingName:'Naziv površine', mappingOutput:'Izlazna destinacija', mappingBlend:'Soft-edge preklapanje', mappingLeft:'Levo', mappingRight:'Desno', mappingTop:'Gore', mappingBottom:'Dole', mappingEmpty:'Dodajte projektorsku površinu, pa je dodelite jednom Output-u.', mappingWarp:'Corner pin', mappingWarpHint:'Pomerite četiri ključne tačke da slika legne na nepravilnu površinu.', mappingWarpEnabled:'Uključi deformaciju', mappingTopLeft:'Gore levo', mappingTopRight:'Gore desno', mappingBottomLeft:'Dole levo', mappingBottomRight:'Dole desno', mappingGridLive:'Prikaži kalibracionu mrežu na izlazu', mappingColumns:'Kolone', mappingRows:'Redovi', mappingResetWarp:'Vrati uglove', compositionSaved:'Podešavanja kompozicije čuvaju se sa show-om.', mappingApply:'Primeni mapiranje na izlaze', save:'Sačuvaj', compactMode:'Kompaktan režim', compactTitle:'Fokusirani operater: Program, GO i poruka; kontrole tajmera su u Podešavanjima.', fsMenu:'⛶ Pun ekran', closeMenu:'✕ Zatvori izlaz',
     inspTitle:'Izvor', inspOpacity:'Prozirnost', inspFitTitle:'Kako medij popunjava kutiju',
     programLayer:'PROGRAM LEJER', layerNoneSelected:'Izaberite lejer', takeLayer:'PUSTI LEJER', hideLayer:'SKLONI', takeLayerShort:'PUSTI', hideLayerShort:'SKLONI',
@@ -4573,10 +4613,10 @@ const I18N = {
     fitCover:'Popuni', fitContain:'Uklopi', fitFill:'Razvuci', inspCenter:'Centriraj', inspFull:'Ceo ekran',
     inspFontTitle:'Veličina teksta (% visine)', layerNamePrompt:'Naziv izvora:', textLayerPrompt:'Tekst izvora:',
     ltPresetPrompt:'Naziv preseta:', cancel:'Otkaži', ok:'U redu',
-    addTimer:'+ Tajmer', timerLayerOne:'Ova scena već ima tajmer lejer.', timerControls:'Kontrola tajmera', timerControlsHint:'Sekundarna kontrola za scene koje koriste tajmer.', programBlackoutTitle:'Uključi ili isključi crni Program izlaz',
+    addTimer:'+ Tajmer', timerLayerOne:'Ova scena već ima tajmer lejer.', timerControls:'Kontrola tajmera', timerControlsHint:'Sekundarna kontrola za scene koje koriste tajmer.', timerDuration:'Trajanje', sourceLowerThird:'Potpis', sourceLowerThirdHint:'Grafika sa imenom i titulom u programu', sourceLowerThirdBody:'Dodajte potpis, ime govornika ili naslov koji koristi LT Studio šablon.', lowerThirdTemplate:'Šablon', lowerThirdDataSource:'Izvor podataka', lowerThirdLiveCue:'LIVE rundown tačka', lowerThirdCustomData:'Ručni tekst', lowerThirdDurationHint:'0 ostaje vidljivo do komande SKLONI.', ltName:'Ime', ltTitle:'Titula', ltMeta:'Dodatni red', duration:'Trajanje (sekunde)', ltEditStudio:'OTVORI STUDIO', programBlackoutTitle:'Uključi ili isključi crni Program izlaz',
     tabTimer:'Tajming', tabLook:'Dizajn', tabScenes:'Scene', tabLt:'Potpis', tabNet:'Mreža & Izlazi',
     mode:'Režim', modeCountdown:'Odbrojavanje', modeCountup:'Štoperica', modeClock:'Sat',
-    set:'Postavi', endAt:'Kraj u', startTarget:'Start', targetTitle:'Odbrojavanje do tačnog vremena',
+    set:'Postavi', reset:'Resetuj', endAt:'Kraj u', startTarget:'Start', targetTitle:'Odbrojavanje do tačnog vremena',
     durTitle:'10 = minuti · 10:00 = MM:SS · 1:00:00 = HH:MM:SS', quick:'Brzo',
     colors:'Boje', background:'Pozadina', timeText:'Vreme/tekst', warnColors:'Boje upozorenja',
     tagY:'Ž', tagR:'C', yellow:'Žuto', red:'Crveno', transparent:'Providna pozadina (OBS)',
@@ -4667,7 +4707,7 @@ const I18N = {
     badgeLive:'LIVE', badgeSelected:'SELECTED', badgeNext:'NEXT', badgeSkipped:'SKIPPED',
     goSelectedBtn:'GO ▶ {name}', goNextBtn:'NEXT ▶ {name}', goSelectedShort:'GO SELECTED &nbsp;(N)', goAutoStart:'Auto-start on GO', goAutoTitle:'GO immediately starts the new item timer',
     advanced:'Preview / Program', advancedTitle:'Preview/Program workflow (Cut/Transition). Off: everything goes straight to Program.',
-    compositionClose:'Close', mappingInputSelection:'Input Selection', mappingOutputTransform:'Output Mapping', mappingInputHint:'Choose the exact pixels from the composition canvas.', mappingOutputHint:'Place the surface on the physical output and correct its geometry.', mappingIdentify:'Identify', mappingTestPattern:'Test pattern', mappingEnabled:'Visible', mappingSolo:'Solo', mappingFlipX:'Flip horizontal', mappingFlipY:'Flip vertical', mappingInputFull:'Use full canvas', mappingOutputFull:'Fit output', mappingRotation:'Rotation', mappingWarpMode:'Mode', mappingPerspective:'Perspective', mappingMesh:'Linear mesh', mappingMeshColumns:'Mesh columns', mappingMeshRows:'Mesh rows', mappingPattern:'Pattern', mappingPatternGrid:'Grid', mappingPatternChecker:'Checker', mappingPatternCrosshair:'Crosshair', mappingLabels:'Surface labels', mappingMask:'Polygon mask', mappingMaskEnabled:'Enable mask', mappingMaskReset:'Reset mask', mappingMaskHint:'Drag polygon points directly on the Output Mapping canvas.', mappingBlendGamma:'Blend gamma', mappingBlackLevel:'Black level', mappingUnassignedOutput:'Unassigned output',
+    compositionClose:'Close', mappingInputSelection:'Input Selection', mappingOutputTransform:'Output Mapping', mappingInputHint:'Choose the exact pixels from the composition canvas.', mappingOutputHint:'Place the surface on the physical output and correct its geometry.', mappingIdentify:'Identify', mappingTestPattern:'Test pattern', mappingEnabled:'Visible', mappingSolo:'Solo', mappingFlipX:'Flip horizontal', mappingFlipY:'Flip vertical', mappingInputFull:'Use full canvas', mappingOutputFull:'Fit output', mappingRotation:'Rotation', mappingWarpMode:'Mode', mappingPerspective:'Perspective', mappingMesh:'Linear mesh', mappingMeshColumns:'Mesh columns', mappingMeshRows:'Mesh rows', mappingPattern:'Pattern', mappingPatternGrid:'Grid', mappingPatternChecker:'Checker', mappingPatternCrosshair:'Crosshair', mappingLabels:'Surface labels', mappingMask:'Polygon mask', mappingMaskEnabled:'Enable mask', mappingMaskReset:'Reset mask', mappingMaskHint:'Drag polygon points directly on the Output Mapping canvas.', mappingBlendGamma:'Blend gamma', mappingBlackLevel:'Black level', mappingUnassignedOutput:'Unassigned output', mappingFixAssignment:'assign this visible surface to an Output before applying.', mappingFixMissingOutput:'the assigned Output no longer exists.', mappingFixDisabledOutput:'enable the assigned Output before applying.', mappingFixWarp:'correct crossed or invalid warp points before applying.',
     rundownBtn:'Rundown', sidebarToggle:'Show or hide navigation', utilityToggle:'Show or hide messages, status and outputs', msgOutBtn:'Message', settingsBtn:'Settings', compositionButton:'Composition', compositionOpen:'Open composition settings', compositionEyebrow:'CANVAS & PROJECTOR MAPPING', compositionTitle:'Composition', compositionBody:'Build independent canvases for LED walls and map exact canvas regions to projector outputs.', compositions:'Compositions', compositionNew:'New', compositionScenes:'Scenes in this composition', compositionSceneHint:'New scenes created in Composer belong to the active composition.', mappingCanvas:'Mapping canvas', mappingSelected:'Selected surface', mappingAssigned:'Assigned output', canvasSettings:'Canvas', canvasSettingsHint:'Native pixel space for this composition', canvasWidth:'Width', canvasHeight:'Height', canvasCustomHint:'Use Custom for the exact processor or LED wall pixel dimensions.', projectorMapping:'Projector mapping', mappingAdd:'Add surface', mappingName:'Surface name', mappingOutput:'Output destination', mappingBlend:'Soft-edge overlap', mappingLeft:'Left', mappingRight:'Right', mappingTop:'Top', mappingBottom:'Bottom', mappingEmpty:'Add a projector surface, then assign it to an Output.', mappingWarp:'Corner pin', mappingWarpHint:'Move four key points to fit an irregular projection surface.', mappingWarpEnabled:'Enable warp', mappingTopLeft:'Top left', mappingTopRight:'Top right', mappingBottomLeft:'Bottom left', mappingBottomRight:'Bottom right', mappingGridLive:'Show calibration grid on output', mappingColumns:'Columns', mappingRows:'Rows', mappingResetWarp:'Reset corners', compositionSaved:'Composition settings are saved with this show.', mappingApply:'Apply mapping to outputs', save:'Save', compactMode:'Compact mode', compactTitle:'Focused operator: Program, GO and message; timer controls are in Settings.', fsMenu:'⛶ Fullscreen', closeMenu:'✕ Close output',
     inspTitle:'Source', inspOpacity:'Opacity', inspFitTitle:'How media fills the box',
     programLayer:'PROGRAM LAYER', layerNoneSelected:'Select a layer', takeLayer:'TAKE LAYER', hideLayer:'HIDE', takeLayerShort:'TAKE', hideLayerShort:'HIDE',
@@ -4676,10 +4716,10 @@ const I18N = {
     fitCover:'Cover', fitContain:'Fit', fitFill:'Stretch', inspCenter:'Center', inspFull:'Full screen',
     inspFontTitle:'Text size (% of height)', layerNamePrompt:'Source name:', textLayerPrompt:'Source text:',
     ltPresetPrompt:'Preset name:', cancel:'Cancel', ok:'OK',
-    addTimer:'+ Timer', timerLayerOne:'This scene already has a timer layer.', timerControls:'Timer controls', timerControlsHint:'Secondary controls for scenes that use a timer source.', programBlackoutTitle:'Toggle black on the Program output',
+    addTimer:'+ Timer', timerLayerOne:'This scene already has a timer layer.', timerControls:'Timer controls', timerControlsHint:'Secondary controls for scenes that use a timer source.', timerDuration:'Duration', sourceLowerThird:'Lower Third', sourceLowerThirdHint:'On-air name and title graphic', sourceLowerThirdBody:'Add a speaker name, title or signature using a Lower Third Studio template.', lowerThirdTemplate:'Template', lowerThirdDataSource:'Data source', lowerThirdLiveCue:'LIVE rundown cue', lowerThirdCustomData:'Custom text', lowerThirdDurationHint:'0 keeps it visible until HIDE.', ltName:'Name', ltTitle:'Title', ltMeta:'Extra line', duration:'Duration (seconds)', ltEditStudio:'OPEN STUDIO', programBlackoutTitle:'Toggle black on the Program output',
     tabTimer:'Timing', tabLook:'Design', tabScenes:'Scenes', tabLt:'Lower third', tabNet:'Network & Outputs',
     mode:'Mode', modeCountdown:'Countdown', modeCountup:'Stopwatch', modeClock:'Clock',
-    set:'Set', endAt:'End at', startTarget:'Start', targetTitle:'Countdown to exact time',
+    set:'Set', reset:'Reset', endAt:'End at', startTarget:'Start', targetTitle:'Countdown to exact time',
     durTitle:'10 = minutes · 10:00 = MM:SS · 1:00:00 = HH:MM:SS', quick:'Quick',
     colors:'Colors', background:'Background', timeText:'Time/text', warnColors:'Warning colors',
     tagY:'Y', tagR:'R', yellow:'Yellow', red:'Red', transparent:'Transparent background (OBS)',
@@ -4995,7 +5035,7 @@ function send(forceProgram=false,options={}){
   if(S.studioDirect || forceProgram){
     const next=outputSnapshot(S);
     if(contentItems.length&&programState&&!options.takeContent) next.activeSceneId=programState.activeSceneId;
-    if(options.takeContent)prepareVideoSceneForTake(next);
+    if(options.takeContent){prepareVideoSceneForTake(next);prepareLowerThirdSceneForTake(next,ensureProgramState());}
     pushProgramState(next);
   }
   saveSettings();
@@ -5081,6 +5121,10 @@ function takeSelectedLayer({allowDirect=false}={}){
       next.liveInputs.push(cloneState(definition));
     }
   }
+  if(layer.type==='lowerThird'){
+    const lowerThird=lowerThirdStateFromSource(layer,{preview:false});
+    if(lowerThird)next.lowerThird=lowerThird;
+  }
   pushProgramState(next);
   if(layer.type==='video')videoTransportTarget='both';
   monitorSceneKeys={pv:'',pg:''};
@@ -5097,6 +5141,7 @@ function hideSelectedLayer({allowDirect=false}={}){
   const live=findProgramLayer(layer,next);
   if(!live || live.visible===false) return false;
   live.visible=false;
+  if(layer.type==='lowerThird')next.lowerThird={...(next.lowerThird||{}),visible:false,until:0,runtimeVersion:null,runtime:null};
   pushProgramState(next);
   updateStudioButtons();
   publishControlStatus();
@@ -5361,6 +5406,7 @@ function renderMonitorScene(prefix, st){
   monitorSceneKeys[prefix]=key;
   root.innerHTML='';
   layers.forEach((layer,layerIndex)=>{
+    if(layer.type==='lowerThird') return;             // Potpis renderuje zajednički LT runtime iznad scene.
     if(layer.type==='timer'&&prefix!=='pv') return;   // Program timer renderuje pgStage; Preview dobija interaktivni proxy.
     const d=document.createElement('div');
     const b=layerBounds(layer);
@@ -5476,7 +5522,7 @@ function renderStage(prefix, st, now){
     msgEl.style.display='block'; msgEl.textContent=st.message.text; msgEl.style.color=r.fg; msgEl.className='pv-msg'+(st.message.flash?' flash':'');
   } else msgEl.style.display='none';
 
-  renderStageLowerThird(prefix, st);
+  renderStageLowerThird(prefix, monitorLowerThirdState(prefix,st));
 
   if(st.showProgress&&r.prog!==null){ progEl.style.display='block'; progEl.style.width=(r.prog*100)+'%'; progEl.style.background=r.fg; }
   else progEl.style.display='none';
@@ -5494,6 +5540,7 @@ function render(){
   syncPairedVideoPlayback();
   updateVideoTransportUI(now);
   updateLiveModeTransportUI(now);
+  syncTimerInspector(now);
   syncLiveInputService();
 
   updateStudioButtons();
@@ -5755,8 +5802,11 @@ function updateLiveInfo(){
 function updateGoLabel(){
   const b=$('btnGo'); if(!b) return;
   b.innerHTML = t('goNext');
+  const sceneTarget=sceneSidebarActive()?sceneGoTargetItem():null;
   const nextIndex=nextRunnableCueIndex();
-  b.title=nextIndex>=0?t('goNextBtn').replace('{name}',cues[nextIndex].name||t('noName')):b.textContent.trim();
+  b.title=sceneTarget
+    ? t('goNextBtn').replace('{name}',sceneTarget.name||t('noName'))
+    : (nextIndex>=0?t('goNextBtn').replace('{name}',cues[nextIndex].name||t('noName')):b.textContent.trim());
   b.setAttribute('aria-label',b.title);
 }
 function escHtml(x){ const d=document.createElement('span'); d.textContent=String(x); return d.innerHTML; }
@@ -5889,8 +5939,42 @@ function nextRunnableCueIndex(fromIndex=currentCue){
   while(index<cues.length&&cues[index]&&cues[index].status==='skipped') index++;
   return index<cues.length?index:-1;
 }
+function sceneSidebarActive(){
+  return !!$('sidebarSlidesPane')?.classList.contains('active');
+}
+function orderedSceneContentItems(){
+  ensureScenes();
+  const compositionId=String(S.activeCompositionId||'');
+  return contentItems.filter(item=>{
+    const scene=sceneForContent(item);
+    return !!scene&&!scene.internal&&String(scene.compositionId||compositionId)===compositionId;
+  });
+}
+function sceneGoTargetItem(){
+  const items=orderedSceneContentItems();
+  if(!items.length) return null;
+  const preview=selectedContentItem();
+  const live=liveContentItem();
+  if(preview&&(!live||preview.id!==live.id)&&items.some(item=>item.id===preview.id)) return preview;
+  const anchorId=live?.id||preview?.id||'';
+  const anchor=items.findIndex(item=>item.id===anchorId);
+  return anchor>=0 ? (items[anchor+1]||null) : items[0];
+}
+function goNextScene(){
+  const target=sceneGoTargetItem();
+  if(!target) return false;
+  if(!selectContentItem(target.id,{previewOnly:true,reveal:true})) return false;
+  if(!takeSelectedContent('transition')) return false;
+  const takenSceneId=target.sceneId;
+  const items=orderedSceneContentItems();
+  const takenIndex=items.findIndex(item=>item.id===target.id);
+  const following=takenIndex>=0?items[takenIndex+1]:null;
+  if(following) selectContentItem(following.id,{previewOnly:true,reveal:true});
+  else { renderContentItems(); updateGoLabel(); }
+  return !!programState&&String(programState.activeSceneId)===String(takenSceneId);
+}
 function go(){
-  return goNext();
+  return sceneSidebarActive()?goNextScene():goNext();
 }
 function goNext(){
   const index=nextRunnableCueIndex();
@@ -6751,6 +6835,16 @@ function makeId(prefix='id'){
 function makeTimerLayer(){
   return {id:makeId('layer'), type:'timer', name:'Timer', visible:true, fit:'contain', x:0, y:0, w:100, h:100, opacity:1};
 }
+function makeLowerThirdLayer(){
+  const cue=cues[currentCue]||{};
+  const template=typeof activeLowerThirdTemplate==='function'?activeLowerThirdTemplate():null;
+  return PTCOMP.normalizeLayer({
+    id:makeId('layer'),type:'lowerThird',name:t('sourceLowerThird'),visible:true,
+    templateId:String(template&&template.id||''),dataMode:currentCue>=0?'liveCue':'custom',
+    speakerName:cueSpeakerName(cue)||'',speakerTitle:String(cue.speakerTitle||cue.ltTitle||''),speakerMeta:String(cue.company||''),
+    durationSec:Number((S.lowerThird&&S.lowerThird.durationSec)??8),x:0,y:0,w:100,h:100,opacity:1
+  });
+}
 function canvasFromLegacyAspect(aspect){
   const presets={'16:9':{width:1920,height:1080},'9:16':{width:1080,height:1920},'4:3':{width:1440,height:1080},'1:1':{width:1080,height:1080}};
   return {schemaVersion:1,...(presets[String(aspect||'')]||presets['16:9']),fps:30,background:S.bgColor||'#000000',transparent:!!S.transparent};
@@ -6842,6 +6936,7 @@ function selectContentItem(id,{previewOnly=false,reveal=true}={}){
   if(S.studioDirect&&!previewOnly){ liveContentItemId=item.id; send(true,{takeContent:true}); }
   else saveSettings();
   renderContentItems(); renderScenesUI();
+  updateGoLabel();
   if(reveal) revealListRow($('slidesList'),document.querySelector(`#slidesList .slide-row[data-content-id="${CSS.escape(item.id)}"]`));
   publishControlStatus();
   return true;
@@ -7009,6 +7104,7 @@ function setSidebarView(view){
   $('btnSidebarSlides').classList.toggle('active',slides); $('btnSidebarSlides').setAttribute('aria-selected',slides?'true':'false');
   localStorage.setItem('pt_sidebar_view',slides?'slides':'rundown');
   if(slides) renderContentItems();
+  updateGoLabel();
 }
 $('btnSidebarRundown')?.addEventListener('click',()=>setSidebarView('rundown'));
 $('btnSidebarSlides')?.addEventListener('click',()=>setSidebarView('slides'));
@@ -7444,6 +7540,13 @@ function addTimerLayer(){
   selectedLayerId=layer.id;
   sceneDirty();
 }
+function addLowerThirdLayer(){
+  const sc=currentScene();
+  const layer=makeLowerThirdLayer();
+  sc.layers.push(layer);
+  selectedLayerId=layer.id;
+  sceneDirty();
+}
 
 function setCompositorOpen(flag,options={}){
   const open=!!flag;
@@ -7550,6 +7653,7 @@ function setCompositionSaveStatus(state='saved',message=''){
   const status=$('compositionSaveStatus'); if(!status) return;
   status.classList.toggle('pending',state==='pending');
   status.classList.toggle('live',state==='live');
+  status.dataset.state=state;
   status.textContent=message||t(state==='pending'?'outputPendingState':'compositionSaved');
 }
 function compositionUsesLiveProgram(compositionId){
@@ -7583,9 +7687,9 @@ function compositionDirty({routing=true}={}){
   S.canvas=cloneState(composition.canvas);
   monitorSceneKeys={pv:'',pg:''}; stageKeys={pv:'',pg:''}; lastKey='';
   applyCanvasAspect();
+  setCompositionSaveStatus(routing?'pending':'saved');
   renderCompositionWorkspace(); renderScenesUI(); renderContentItems();
   if(routing&&composition.mappings.some(mapping=>mapping.outputId)) markOutputRoutingDirty();
-  setCompositionSaveStatus(routing?'pending':'saved');
   saveSettings();
 }
 function openCompositionWorkspace(){
@@ -7655,6 +7759,35 @@ function selectedProjectorMapping(){
 }
 function mappingOutputConfig(mapping=selectedProjectorMapping()){
   return mapping&&mapping.outputId?outputConfigs.find(config=>String(config.id)===String(mapping.outputId))||null:null;
+}
+function compositionMappingIssues(composition=activeComposition()){
+  if(!composition)return [];
+  const routes=new Map(outputConfigs.map(config=>[String(config.id||''),config]));
+  return (composition.mappings||[]).filter(mapping=>mapping&&mapping.enabled!==false).flatMap(mapping=>{
+    const routeId=String(mapping.outputId||''),route=routes.get(routeId);
+    if(!routeId)return [{mapping,type:'unassigned'}];
+    if(!route)return [{mapping,type:'missing-output'}];
+    if(route.enabled===false)return [{mapping,type:'disabled-output'}];
+    const warp=PTCOMP.normalizeProjectorWarp(mapping.warp);
+    if(warp.enabled&&!PTCOMP.projectorWarpIsValid(warp))return [{mapping,type:'invalid-warp'}];
+    return [];
+  });
+}
+function compositionMappingIssueText(issue){
+  const name=String(issue&&issue.mapping&&issue.mapping.name||t('mappingSelected'));
+  const key={unassigned:'mappingFixAssignment','missing-output':'mappingFixMissingOutput','disabled-output':'mappingFixDisabledOutput','invalid-warp':'mappingFixWarp'}[issue&&issue.type]||'mappingFixAssignment';
+  return `${name}: ${t(key)}`;
+}
+function updateCompositionMappingValidation(){
+  const issues=compositionMappingIssues(),apply=$('btnCompositionApply'),status=$('compositionSaveStatus');
+  if(apply){apply.disabled=issues.length>0;apply.title=issues.length?compositionMappingIssueText(issues[0]):'';}
+  document.querySelectorAll('#projectorMappingList .projector-mapping-tab').forEach(tab=>{
+    const issue=issues.find(row=>String(row.mapping.id)===String(tab.dataset.mappingId));
+    tab.classList.toggle('invalid',!!issue);
+    tab.title=issue?compositionMappingIssueText(issue):'';
+  });
+  if(issues.length&&status){status.textContent=compositionMappingIssueText(issues[0]);status.dataset.state='warning';}
+  return issues;
 }
 function mappingStageCanvas(){
   if(mappingWorkspaceMode!=='output') return activeComposition().canvas;
@@ -7894,9 +8027,11 @@ function renderCompositionWorkspace(){
     updateMappingSurfaceElement(surface,mapping,active.canvas); surface.addEventListener('pointerdown',event=>beginMappingGesture(event,mapping,surface)); surfaces.appendChild(surface);
   });
   const selected=selectedProjectorMapping(); fillMappingInspector(selected);
-  $('mappingSelectionStatus').textContent=selected?(selected.outputId?(lang==='sr'?'Površina je dodeljena izlazu.':'Surface assigned to an output.'):(lang==='sr'?'Površina još nije dodeljena izlazu.':'Surface is not assigned to an output.')):t('mappingEmpty');
+  const selectedIssue=compositionMappingIssues(active).find(issue=>issue.mapping.id===selected?.id);
+  $('mappingSelectionStatus').textContent=selectedIssue?compositionMappingIssueText(selectedIssue):(selected?(lang==='sr'?'Površina je spremna za izlaz.':'Surface is ready for output.'):t('mappingEmpty'));
   updateMappingPixelReadout(selected);
   $('btnCompositionDelete').disabled=S.compositions.length<=1||compositionUsesLiveProgram(active.id);
+  updateCompositionMappingValidation();
   requestAnimationFrame(fitCompositionMapStage);
   requestAnimationFrame(()=>syncMappingInputPreview(true));
 }
@@ -7936,6 +8071,8 @@ $('btnMappingPattern')?.addEventListener('click',()=>{const mapping=selectedProj
 $('btnMappingIdentify')?.addEventListener('click',async()=>{const mapping=selectedProjectorMapping();if(!mapping)return;mapping.warp=PTCOMP.normalizeProjectorWarp({...mapping.warp,grid:{...mapping.warp.grid,visible:true,labels:true}});compositionDirty();try{await api.identifyDisplays();}catch(_){}});
 $('btnCompositionSave')?.addEventListener('click',()=>{ saveSettings(); scheduleShowAutosave('composition',80); setCompositionSaveStatus('saved'); });
 $('btnCompositionApply')?.addEventListener('click',()=>{
+  const mappingIssues=updateCompositionMappingValidation();
+  if(mappingIssues.length){setCompositionSaveStatus('pending',compositionMappingIssueText(mappingIssues[0]));return;}
   const applied=applyOutputConfigs();
   if(applied) setCompositionSaveStatus('live',lang==='sr'?'Mapiranje je primenjeno na izlaze.':'Mapping applied to outputs.');
   else setCompositionSaveStatus('pending',$('outputRouterStatus')?.textContent||(lang==='sr'?'Proverite izlazne destinacije pre primene.':'Check output destinations before applying.'));
@@ -8191,6 +8328,7 @@ $('sourceKindGrid')?.addEventListener('click',event=>{
   if(kind==='audio'){setSourcePicker('audio');renderAudioSources();}
   if(kind==='text'){closeSourceDialog();addTextLayer();}
   if(kind==='timer'){closeSourceDialog();addTimerLayer();}
+  if(kind==='lowerThird'){closeSourceDialog();addLowerThirdLayer();}
 });
 $('btnColorAdd')?.addEventListener('click',()=>{
   const color=$('sourceColorValue').value||'#20242c';
@@ -8976,6 +9114,75 @@ function resolveActiveLowerThirdRuntime(fallback={}, options={}){
   });
   const valid=!PTLT.validateLowerThirdRuntime || PTLT.validateLowerThirdRuntime(runtime).ok;
   return valid ? runtime : null;
+}
+let lowerThirdSourcePreviewCache={key:'',state:null};
+function lowerThirdSourceData(layer){
+  const fallback={
+    id:`source-${String(layer&&layer.id||'lower-third')}`,
+    name:String(layer&&layer.speakerName||'').trim(),
+    speakerName:String(layer&&layer.speakerName||'').trim(),
+    ltName:String(layer&&layer.speakerName||'').trim(),
+    title:String(layer&&layer.speakerTitle||'').trim(),
+    ltTitle:String(layer&&layer.speakerTitle||'').trim(),
+    speakerTitle:String(layer&&layer.speakerTitle||'').trim(),
+    company:String(layer&&layer.speakerMeta||'').trim(),
+    sessionTitle:'',segmentTitle:'',custom1:String(layer&&layer.speakerMeta||'').trim()
+  };
+  if(!layer||layer.dataMode!=='liveCue'||currentCue<0)return fallback;
+  const cueData=cueRuntimeData(currentCue,fallback);
+  const speaker=String(cueData.speakerName||fallback.speakerName||'').trim();
+  const title=String(cueData.speakerTitle||fallback.speakerTitle||'').trim();
+  return {...cueData,name:speaker||cueData.name||'',speakerName:speaker,ltName:speaker,title,ltTitle:title,speakerTitle:title,company:String(cueData.company||fallback.company||'').trim()};
+}
+function lowerThirdStateFromSource(layer,{preview=false}={}){
+  if(!layer||layer.type!=='lowerThird'||layer.visible===false)return null;
+  const data=lowerThirdSourceData(layer);
+  const durationSec=Math.max(0,Math.min(600,Number(layer.durationSec)||0));
+  const base={
+    ...(S.lowerThird||{}),visible:true,name:data.speakerName||data.name||'',title:data.speakerTitle||data.ltTitle||'',meta:data.company||data.custom1||'',
+    durationSec,until:preview||durationSec===0?0:Date.now()+durationSec*1000,runtimeVersion:null,runtime:null
+  };
+  const template=activeLowerThirdTemplate(layer.templateId||'');
+  if(!template||typeof PTLT==='undefined')return base;
+  const cacheKey=preview?JSON.stringify({template,layer:{templateId:layer.templateId,dataMode:layer.dataMode,speakerName:layer.speakerName,speakerTitle:layer.speakerTitle,speakerMeta:layer.speakerMeta},data,mediaBase:ctlMediaBase}):'';
+  if(preview&&lowerThirdSourcePreviewCache.key===cacheKey&&lowerThirdSourcePreviewCache.state)return cloneState(lowerThirdSourcePreviewCache.state);
+  const now=Date.now();
+  const resolver=preview&&PTLT.resolveLowerThirdPreview?PTLT.resolveLowerThirdPreview:PTLT.resolveLowerThirdTemplate;
+  const runtime=resolver({
+    template,
+    ...(preview?{previewCue:data}:{liveCue:data}),
+    mediaResolver:assetId=>lowerThirdMediaSrc(assetId),
+    now,
+    assetBase:ctlMediaBase||null
+  });
+  const valid=!PTLT.validateLowerThirdRuntime||PTLT.validateLowerThirdRuntime(runtime).ok;
+  if(!valid)return base;
+  if(preview){
+    runtime.phase='hold';runtime.phaseStartedAt=now;runtime.phaseDurationMs=null;runtime.textRevealAt=now;
+  }
+  const state={...base,visible:!!(runtime.visible&&lowerThirdRuntimeHasContent(runtime)),runtimeVersion:1,runtime};
+  if(preview)lowerThirdSourcePreviewCache={key:cacheKey,state:cloneState(state)};
+  return state;
+}
+function sceneLowerThirdSource(st=S){
+  const scene=activeScene(st);
+  return (scene&&Array.isArray(scene.layers)?scene.layers:[]).find(layer=>layer&&layer.type==='lowerThird'&&layer.visible!==false)||null;
+}
+function monitorLowerThirdState(prefix,st){
+  if(prefix!=='pv')return st;
+  const source=sceneLowerThirdSource(st);
+  const lowerThird=lowerThirdStateFromSource(source,{preview:true});
+  return lowerThird?{...st,lowerThird}:st;
+}
+function prepareLowerThirdSceneForTake(next,previous=ensureProgramState()){
+  const source=sceneLowerThirdSource(next);
+  if(source){
+    const lowerThird=lowerThirdStateFromSource(source,{preview:false});
+    if(lowerThird)next.lowerThird=lowerThird;
+    return next;
+  }
+  if(sceneLowerThirdSource(previous))next.lowerThird={...(next.lowerThird||{}),visible:false,until:0,runtimeVersion:null,runtime:null};
+  return next;
 }
 function updateLowerThirdLiveSummary(){
   const templateEl=$('ltLiveTemplateName'), dataEl=$('ltLiveCueData');
@@ -12147,8 +12354,34 @@ function inspectorLayerTypeLabel(layer){
     const definition=liveInputDefinition(layer.inputId);
     return String(definition&&definition.desktopSourceId||'').startsWith('screen:')?t('sourceDisplay'):t('sourceWindow');
   }
-  const keys={image:'sourceImage',video:'sourceVideo',pdf:'PDF',text:'sourceText',color:'sourceColor',timer:'sourceTimer'};
+  const keys={image:'sourceImage',video:'sourceVideo',pdf:'PDF',text:'sourceText',color:'sourceColor',timer:'sourceTimer',lowerThird:'sourceLowerThird'};
   return keys[layer.type]==='PDF'?'PDF':t(keys[layer.type]||'inspTitle');
+}
+function syncLowerThirdSourceInspector(layer){
+  const wrap=$('inspLowerThirdWrap');
+  if(!wrap)return;
+  const active=!!layer&&layer.type==='lowerThird';
+  wrap.classList.toggle('open',active);
+  if(!active)return;
+  const select=$('inspLowerThirdTemplate');
+  const templates=((ltLibrary&&ltLibrary.templates)||[]).filter(template=>template&&template.kind!=='legacy');
+  select.replaceChildren();
+  if(!templates.length){
+    const option=document.createElement('option');option.value='';option.textContent=t('ltEditStudio');select.appendChild(option);
+  }else templates.forEach(template=>{
+    const option=document.createElement('option');option.value=template.id;option.textContent=template.name||template.id;select.appendChild(option);
+  });
+  if(templates.some(template=>template.id===layer.templateId))select.value=layer.templateId;
+  else if(templates[0]){layer.templateId=templates[0].id;select.value=layer.templateId;}
+  $('inspLowerThirdDataMode').value=layer.dataMode==='liveCue'?'liveCue':'custom';
+  $('inspLowerThirdName').value=String(layer.speakerName||'');
+  $('inspLowerThirdTitle').value=String(layer.speakerTitle||'');
+  $('inspLowerThirdMeta').value=String(layer.speakerMeta||'');
+  $('inspLowerThirdDuration').value=String(Math.max(0,Math.min(600,Number(layer.durationSec)||0)));
+  const data=lowerThirdSourceData(layer),parts=[data.speakerName||data.name,data.speakerTitle||data.ltTitle,data.company].filter(Boolean);
+  $('inspLowerThirdCuePreview').textContent=layer.dataMode==='liveCue'
+    ? (parts.length?`${t('liveLabel')}: ${parts.join(' · ')}`:`${t('liveLabel')}: —`)
+    : (parts.length?parts.join(' · '):'—');
 }
 function renderLiveCaptureSetup(layer,status){
   const wrap=$('inspLiveCaptureSetup');
@@ -12193,6 +12426,27 @@ function renderLiveCaptureSetup(layer,status){
   if(captureCount>1){messages.push(uiText('sourceCaptureMultiple',{n:captureCount}));warning=true;}
   quality.textContent=messages.join(' ');
   quality.classList.toggle('warning',warning);
+}
+function timerInspectorAffectsProgram(){
+  const scene=activeScene(ensureProgramState());
+  return !!(scene&&Array.isArray(scene.layers)&&scene.layers.some(layer=>layer&&layer.type==='timer'&&layer.visible!==false));
+}
+function syncTimerInspector(now=Date.now(),force=false){
+  const layer=selectedLayer(),wrap=$('inspTimerWrap');
+  if(!wrap)return;
+  const active=!!layer&&layer.type==='timer';
+  wrap.classList.toggle('open',active);
+  if(!active)return;
+  const result=calc(now,S),program=timerInspectorAffectsProgram();
+  $('inspTimerClock').textContent=result.text;
+  $('inspTimerTarget').textContent=program?t('mediaTargetBoth'):t('studioPreview');
+  $('inspTimerStart').disabled=S.mode==='clock';
+  $('inspTimerStart').textContent=S.mode==='clock'?t('clockBtn'):(S.running?t('pause'):t('start'));
+  $('inspTimerStart').classList.toggle('running',S.running&&S.mode!=='clock');
+  document.querySelectorAll('[data-timer-source-mode]').forEach(button=>button.classList.toggle('active',button.dataset.timerSourceMode===S.mode));
+  if((force||document.activeElement!==$('inspTimerDuration'))&&!S.running)$('inspTimerDuration').value=fmtSecs(Math.max(0,Math.round(S.durationMs/1000)),false);
+  if(document.activeElement!==$('inspTimerMessage'))$('inspTimerMessage').value=String(S.message&&S.message.text||'');
+  $('inspTimerMessageFlash').checked=!!(S.message&&S.message.flash);
 }
 function renderInspector(){
   const box=$('inspector'); if(!box) return;
@@ -12259,11 +12513,13 @@ function renderInspector(){
     $('inspVideoAudioRoute').textContent=activeProgramAudioRouteLabel();
   }
   const isPdf=L.type==='pdf'; $('inspPdfWrap').classList.toggle('open',isPdf); if(isPdf)$('inspPdfPage').value=normalized.page;
+  const isTimer=L.type==='timer'; syncTimerInspector(Date.now(),true);
+  const isLowerThird=L.type==='lowerThird'; syncLowerThirdSourceInspector(L);
   const isMedia=['image','video','pdf'].includes(L.type); $('inspMediaWrap').classList.toggle('open',isMedia); if(isMedia){$('inspMediaName').textContent=mediaSourceSummary(L);$('inspMediaName').title=L.sourceStorage==='linked'?t('mediaLinkedHint'):'';}
-  $('inspTransformSection').hidden=L.type==='audio';
-  $('inspAppearanceSection').hidden=L.type==='audio';
+  $('inspTransformSection').hidden=L.type==='audio'||isLowerThird;
+  $('inspAppearanceSection').hidden=L.type==='audio'||isLowerThird;
   $('inspFramingSection').hidden=!['image','video','pdf','window','capture'].includes(L.type);
-  $('inspSourceSection').hidden=!(isText||isColor||isLive||isMedia);
+  $('inspSourceSection').hidden=!(isText||isColor||isLive||isMedia||isTimer||isLowerThird);
   inspBinding=false;
   if(isVideo)requestAnimationFrame(()=>updateVideoTransportUI(Date.now(),true));
 }
@@ -12390,6 +12646,34 @@ $('inspVideoRate').addEventListener('change',event=>{
   mutateVideoTargets((layer,row)=>{const actual=videoActualState(row,now);Object.assign(layer,{playbackState:actual.state,playbackPosition:actual.position,playbackUpdatedAt:now,playbackRate:rate});});
 });
 $('inspPdfPage').addEventListener('change',e=>inspApply(L=>{if(L.type==='pdf')L.page=+e.target.value||1;}));
+function mutateLowerThirdSource(mutator){
+  const layer=selectedLayer();if(!layer||layer.type!=='lowerThird')return false;
+  mutator(layer);
+  lowerThirdSourcePreviewCache={key:'',state:null};
+  monitorLowerThirdKeys.pv='';
+  sceneDirty();
+  renderInspector();
+  return true;
+}
+$('inspLowerThirdTemplate')?.addEventListener('change',event=>mutateLowerThirdSource(layer=>{layer.templateId=String(event.target.value||'');}));
+$('inspLowerThirdDataMode')?.addEventListener('change',event=>mutateLowerThirdSource(layer=>{layer.dataMode=event.target.value==='liveCue'?'liveCue':'custom';}));
+$('inspLowerThirdName')?.addEventListener('change',event=>mutateLowerThirdSource(layer=>{layer.speakerName=event.target.value.trim().slice(0,240);}));
+$('inspLowerThirdTitle')?.addEventListener('change',event=>mutateLowerThirdSource(layer=>{layer.speakerTitle=event.target.value.trim().slice(0,240);}));
+$('inspLowerThirdMeta')?.addEventListener('change',event=>mutateLowerThirdSource(layer=>{layer.speakerMeta=event.target.value.trim().slice(0,240);}));
+$('inspLowerThirdDuration')?.addEventListener('change',event=>mutateLowerThirdSource(layer=>{layer.durationSec=Math.max(0,Math.min(600,Number(event.target.value)||0));}));
+$('inspLowerThirdStudio')?.addEventListener('click',openLtStudio);
+$('inspTimerStart')?.addEventListener('click',()=>startPause(timerInspectorAffectsProgram()));
+$('inspTimerReset')?.addEventListener('click',()=>reset(timerInspectorAffectsProgram()));
+$('inspTimerSet')?.addEventListener('click',()=>{const ms=parseTime($('inspTimerDuration').value);if(ms!==null&&ms>0)setDuration(ms,timerInspectorAffectsProgram());});
+$('inspTimerDuration')?.addEventListener('keydown',event=>{if(event.key==='Enter')$('inspTimerSet').click();});
+document.querySelectorAll('[data-timer-source-mode]').forEach(button=>button.addEventListener('click',()=>setMode(button.dataset.timerSourceMode,timerInspectorAffectsProgram())));
+document.querySelectorAll('[data-timer-source-adjust]').forEach(button=>button.addEventListener('click',()=>adjust(Number(button.dataset.timerSourceAdjust)||0,timerInspectorAffectsProgram())));
+$('inspTimerMessageSend')?.addEventListener('click',()=>{
+  S.message={text:$('inspTimerMessage').value.trim(),flash:$('inspTimerMessageFlash').checked};
+  $('msgInput').value=S.message.text;if($('msgInputC'))$('msgInputC').value=S.message.text;send(true);syncTimerInspector();
+});
+$('inspTimerMessage')?.addEventListener('keydown',event=>{if(event.key==='Enter')$('inspTimerMessageSend').click();});
+$('inspTimerMessageClear')?.addEventListener('click',()=>{S.message={text:'',flash:false};$('msgInput').value='';if($('msgInputC'))$('msgInputC').value='';send(true);syncTimerInspector();});
 $('inspLiveChange').addEventListener('click',()=>{const L=selectedLayer();if(L&&(L.type==='window'||L.type==='capture'||L.type==='audio'))openSourceDialog(L.id);});
 $('inspLiveRestart').addEventListener('click',()=>{const L=selectedLayer();if(L&&(L.type==='window'||L.type==='capture'||L.type==='audio'))api.liveInputRestart(L.inputId);});
 (function(){

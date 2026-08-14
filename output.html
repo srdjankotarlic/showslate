@@ -750,7 +750,7 @@ function renderScene(){
   }
   root.appendChild(frame);
   layers.forEach((layer,layerIndex)=>{
-    if(layer.type==='timer') return;   // tajmer renderuje #stage, ne scena
+    if(layer.type==='timer' || layer.type==='lowerThird') return;   // Dedicated overlay renderers own these sources.
     const d=document.createElement('div');
     d.className='scene-layer fit-'+(layer.fit||'cover');
     d.dataset.layerId=String(layer.id||'');

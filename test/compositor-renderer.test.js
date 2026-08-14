@@ -191,6 +191,8 @@ app.whenReady().then(async () => {
     renderOutputRows();
     document.getElementById('btnMappingAdd').click();
     const inspectorVisible=await wait(()=>!document.getElementById('mappingInspector').hidden);
+    const applyBlockedUnassigned=document.getElementById('btnCompositionApply').disabled;
+    const unassignedStatus=document.getElementById('compositionSaveStatus').textContent.trim();
     document.getElementById('mappingName').value='Left LED processor';
     document.getElementById('mappingOutput').value='projection-test';
     document.getElementById('mappingX').value='0';
@@ -211,6 +213,7 @@ app.whenReady().then(async () => {
     document.getElementById('mappingWarpBlX').value='8';
     document.getElementById('mappingWarpBlY').value='98';
     change(document.getElementById('mappingName'));
+    const applyReadyAssigned=!document.getElementById('btnCompositionApply').disabled;
     document.getElementById('btnMappingOutputMode').click();
     document.getElementById('mappingX').value='0';
     document.getElementById('mappingY').value='0';
@@ -277,9 +280,10 @@ app.whenReady().then(async () => {
     document.querySelector('.output-route-editor[data-route-id="projection-test"] .out-map').click();
     const mapEntryOpened=await wait(()=>document.getElementById('compositionWorkspace').classList.contains('open')&&selectedProjectorMappingId===mapping.id);
     const cornerHandles=[...document.querySelectorAll('.mapping-surface.selected .mapping-corner-handle')].filter(node=>getComputedStyle(node).display!=='none').length;
-    return JSON.stringify({topButtonVisible,singleTopEntry,opened,panes,modalOpened,inspectorVisible,reopened,persisted,routerVisible,routeCanvases,mapEntryOpened,cornerHandles,compositionId:composition.id,compositionCount:S.compositions.length,sceneCount:scenesForComposition(composition.id).length,canvas:composition.canvas,mapping,advanced,editor,firstMappingId,secondMappingId,projected,overlayInside:document.querySelector('.composition-workspace-dialog').getBoundingClientRect().right<=innerWidth+1});
+    return JSON.stringify({topButtonVisible,singleTopEntry,opened,panes,modalOpened,inspectorVisible,applyBlockedUnassigned,unassignedStatus,applyReadyAssigned,reopened,persisted,routerVisible,routeCanvases,mapEntryOpened,cornerHandles,compositionId:composition.id,compositionCount:S.compositions.length,sceneCount:scenesForComposition(composition.id).length,canvas:composition.canvas,mapping,advanced,editor,firstMappingId,secondMappingId,projected,overlayInside:document.querySelector('.composition-workspace-dialog').getBoundingClientRect().right<=innerWidth+1});
   })()`));
   check('COMPOSITION_WORKSPACE_VISIBLE_FROM_TOP_NAV_OK', compositionWorkflow.topButtonVisible && compositionWorkflow.singleTopEntry && compositionWorkflow.opened && compositionWorkflow.panes && compositionWorkflow.modalOpened && compositionWorkflow.inspectorVisible && compositionWorkflow.reopened && compositionWorkflow.overlayInside, JSON.stringify(compositionWorkflow));
+  check('COMPOSITION_MAPPING_APPLY_REQUIRES_VALID_ROUTE_OK', compositionWorkflow.applyBlockedUnassigned && compositionWorkflow.unassignedStatus.includes('assign') && compositionWorkflow.applyReadyAssigned, JSON.stringify({blocked:compositionWorkflow.applyBlockedUnassigned,status:compositionWorkflow.unassignedStatus,ready:compositionWorkflow.applyReadyAssigned}));
   check('COMPOSITION_CUSTOM_LED_MULTI_PROJECTOR_MAPPING_OK', compositionWorkflow.persisted && compositionWorkflow.compositionCount >= 2 && compositionWorkflow.sceneCount >= 1 && compositionWorkflow.canvas.width === 5376 && compositionWorkflow.canvas.height === 768 && compositionWorkflow.canvas.fps === 50 && compositionWorkflow.mapping.width === 2688 && compositionWorkflow.mapping.height === 768 && compositionWorkflow.mapping.blend.right === 96 && compositionWorkflow.mapping.warp.enabled && compositionWorkflow.mapping.warp.grid.visible && compositionWorkflow.mapping.warp.grid.columns === 10 && compositionWorkflow.mapping.warp.corners.topLeft.x === 4 && compositionWorkflow.projected.compositionId === compositionWorkflow.compositionId && compositionWorkflow.projected.projection.width === 2688 && compositionWorkflow.projected.projection.warp.enabled && compositionWorkflow.cornerHandles === 4, JSON.stringify(compositionWorkflow));
   check('COMPOSITION_ADVANCED_OUTPUT_INPUT_OUTPUT_EDITOR_OK', compositionWorkflow.editor.inputModeVisible && compositionWorkflow.editor.outputModeActive && compositionWorkflow.editor.surfaceTabs === 2 && compositionWorkflow.editor.visibleSurfaces === 2 && compositionWorkflow.editor.meshHandles === 9 && compositionWorkflow.editor.meshLines === 12 && compositionWorkflow.editor.maskHandles === 4 && ['auto','scroll'].includes(compositionWorkflow.editor.inspectorScroll) && compositionWorkflow.advanced.input.x === 2688 && compositionWorkflow.advanced.output.x === 50 && compositionWorkflow.advanced.output.width === 50 && compositionWorkflow.advanced.warp.mode === 'mesh' && compositionWorkflow.advanced.mask.enabled, JSON.stringify(compositionWorkflow.editor));
   check('COMPOSITION_MULTI_SURFACE_ROUTE_PAYLOAD_OK', compositionWorkflow.projected.projection.surfaces.length === 2 && compositionWorkflow.projected.projection.surfaces[0].output.width === 50 && compositionWorkflow.projected.projection.surfaces[1].input.x === 2688 && compositionWorkflow.projected.projection.surfaces[1].output.x === 50 && compositionWorkflow.projected.projection.surfaces[1].warp.mode === 'mesh' && compositionWorkflow.projected.projection.surfaces[1].mask.enabled, JSON.stringify(compositionWorkflow.projected.projection.surfaces));
@@ -567,7 +571,65 @@ app.whenReady().then(async () => {
   check('COMPOSITOR_CAPTURE_CARD_1080P60_LOW_LATENCY_CONFIG_OK', authored.deviceInput.width === 1920 && authored.deviceInput.height === 1080 && authored.deviceInput.fps === 60 && authored.deviceInput.captureMode === 'low-latency' && authored.deviceInput.withAudio, JSON.stringify(authored.deviceInput));
   check('COMPOSITOR_AUDIO_OUTPUT_ROUTING_OK', authored.audioState.programRoute === 'primary' && authored.audioState.programDevice === 'speaker-main' && authored.audioState.programStateDevice === 'speaker-main', JSON.stringify(authored.audioState));
   const sourceCatalog = JSON.parse(await win.webContents.executeJavaScript(`JSON.stringify((()=>{document.getElementById('btnAddSource').click();const kinds=[...document.querySelectorAll('#sourceKindGrid [data-source-kind]')].map(button=>button.dataset.sourceKind);const groups=[...document.querySelectorAll('#sourceKindGrid .source-kind-section-title strong')].map(node=>node.textContent);closeSourceDialog();return {kinds,groups};})())`));
-  check('COMPOSITOR_ADVANCED_SOURCE_CATALOG_OK', ['image','video','pdf','color','text','window','screen','device','audio','timer'].every(kind=>sourceCatalog.kinds.includes(kind)) && sourceCatalog.groups.length === 3, JSON.stringify(sourceCatalog));
+  check('COMPOSITOR_ADVANCED_SOURCE_CATALOG_OK', ['image','video','pdf','color','text','window','screen','device','audio','timer','lowerThird'].every(kind=>sourceCatalog.kinds.includes(kind)) && sourceCatalog.groups.length === 3, JSON.stringify(sourceCatalog));
+  const timerAndLowerThird = JSON.parse(await win.webContents.executeJavaScript(`JSON.stringify((()=>{
+    const restore={state:cloneState(S),program:cloneState(programState),selected:selectedLayerId,currentCue,selectedCue,cues:cloneState(cues)};
+    try{
+    const change=element=>element.dispatchEvent(new Event('change',{bubbles:true}));
+    const clickSource=kind=>{document.getElementById('btnAddSource').click();document.querySelector('[data-source-kind="'+kind+'"]').click();};
+    let timer=currentScene().layers.find(layer=>layer.type==='timer');
+    if(!timer){clickSource('timer');timer=selectedLayer();}
+    else document.querySelector('#layerList [data-layer-id="'+timer.id+'"] .layer-select')?.click();
+    const timerControlsVisible=!!document.getElementById('inspTimerWrap').getClientRects().length;
+    document.getElementById('inspTimerDuration').value='1:30';document.getElementById('inspTimerSet').click();
+    const setDurationMs=S.durationMs;
+    document.querySelector('[data-timer-source-adjust="10"]').click();
+    const adjustedDurationMs=S.durationMs;
+    document.querySelector('[data-timer-source-mode="countup"]').click();
+    const stopwatchMode=S.mode;
+    document.querySelector('[data-timer-source-mode="countdown"]').click();
+    document.getElementById('inspTimerStart').click();const started=S.running;
+    document.getElementById('inspTimerStart').click();const paused=!S.running;
+    document.getElementById('inspTimerMessage').value='Two minutes remaining';
+    document.getElementById('inspTimerMessageFlash').checked=true;
+    document.getElementById('inspTimerMessageSend').click();
+    const sentMessage={text:S.message.text,flash:S.message.flash};
+    document.getElementById('inspTimerMessageClear').click();
+    const messageCleared=S.message.text===''&&!S.message.flash;
+
+    clickSource('lowerThird');
+    const lowerThird=selectedLayer();
+    const lowerThirdControlsVisible=lowerThird?.type==='lowerThird'&&!!document.getElementById('inspLowerThirdWrap').getClientRects().length;
+    document.getElementById('inspLowerThirdDataMode').value='custom';change(document.getElementById('inspLowerThirdDataMode'));
+    document.getElementById('inspLowerThirdName').value='Ana Markovic';change(document.getElementById('inspLowerThirdName'));
+    document.getElementById('inspLowerThirdTitle').value='Creative Director';change(document.getElementById('inspLowerThirdTitle'));
+    document.getElementById('inspLowerThirdMeta').value='ShowSlate Conference';change(document.getElementById('inspLowerThirdMeta'));
+    document.getElementById('inspLowerThirdDuration').value='12';change(document.getElementById('inspLowerThirdDuration'));
+    renderStage('pv',S,Date.now());renderStage('pg',programState,Date.now());
+    const programBefore=JSON.stringify(programState.lowerThird||{});
+    const previewText=[document.getElementById('pvLtRuntime'),document.getElementById('pvLowerThird')].map(node=>node?.textContent||'').join(' ');
+    const previewOnly=previewText.includes('Ana Markovic')&&programBefore===JSON.stringify(programState.lowerThird||{});
+    document.getElementById('btnTakeLayer').click();
+    renderStage('pg',programState,Date.now());
+    const liveText=[document.getElementById('pgLtRuntime'),document.getElementById('pgLowerThird')].map(node=>node?.textContent||'').join(' ');
+    const taken=programState.lowerThird?.visible===true&&programState.lowerThird?.name==='Ana Markovic'&&liveText.includes('Ana Markovic');
+    document.getElementById('btnHideLayer').click();
+    const hidden=programState.lowerThird?.visible===false;
+    document.getElementById('inspLowerThirdStudio').click();
+    const studioVisible=document.body.classList.contains('lt-studio-open')&&!!document.getElementById('ltStudio').getClientRects().length;
+    document.getElementById('btnLtStudioClose').click();
+    const persistedLayer=selectedLayer();
+    const persisted=persistedLayer?.dataMode==='custom'&&persistedLayer?.speakerName==='Ana Markovic'&&persistedLayer?.speakerTitle==='Creative Director'&&persistedLayer?.speakerMeta==='ShowSlate Conference'&&persistedLayer?.durationSec===12;
+    const result={timer:{visible:timerControlsVisible,setDurationMs,adjustedDurationMs,stopwatchMode,started,paused,sentMessage,messageCleared},lowerThird:{catalog:!!document.querySelector('#sourceKindGrid [data-source-kind="lowerThird"]'),visible:lowerThirdControlsVisible,previewOnly,taken,hidden,studioVisible,persisted,type:lowerThird?.type}};
+    S=restore.state;programState=restore.program;selectedLayerId=restore.selected;currentCue=restore.currentCue;selectedCue=restore.selectedCue;cues=restore.cues;
+    lowerThirdSourcePreviewCache={key:'',state:null};monitorLowerThirdKeys={pv:'',pg:''};monitorSceneKeys={pv:'',pg:''};
+    renderScenesUI();renderInspector();renderStage('pv',S,Date.now());renderStage('pg',programState,Date.now());
+    return result;
+    }catch(error){return {error:String(error&&error.stack||error)};}
+  })())`));
+  if (timerAndLowerThird.error) throw new Error(`timer/lower-third operator workflow: ${timerAndLowerThird.error}`);
+  check('COMPOSITOR_TIMER_SOURCE_OPERATOR_CONTROLS_OK', timerAndLowerThird.timer.visible && timerAndLowerThird.timer.setDurationMs === 90000 && timerAndLowerThird.timer.adjustedDurationMs === 100000 && timerAndLowerThird.timer.stopwatchMode === 'countup' && timerAndLowerThird.timer.started && timerAndLowerThird.timer.paused && timerAndLowerThird.timer.sentMessage.text === 'Two minutes remaining' && timerAndLowerThird.timer.sentMessage.flash && timerAndLowerThird.timer.messageCleared, JSON.stringify(timerAndLowerThird.timer));
+  check('COMPOSITOR_LOWER_THIRD_SOURCE_PREVIEW_TAKE_HIDE_OK', timerAndLowerThird.lowerThird.catalog && timerAndLowerThird.lowerThird.visible && timerAndLowerThird.lowerThird.type === 'lowerThird' && timerAndLowerThird.lowerThird.previewOnly && timerAndLowerThird.lowerThird.taken && timerAndLowerThird.lowerThird.hidden && timerAndLowerThird.lowerThird.studioVisible && timerAndLowerThird.lowerThird.persisted, JSON.stringify(timerAndLowerThird.lowerThird));
   const advancedInspector = JSON.parse(await win.webContents.executeJavaScript(`JSON.stringify((()=>{
     const fire=(id,value,event='change')=>{const element=document.getElementById(id);if(element.type==='checkbox')element.checked=!!value;else element.value=String(value);element.dispatchEvent(new Event(event,{bubbles:true}));};
     fire('inspOrigin','top-left');fire('inspFlipX',true);fire('inspCropTop',8);fire('inspCropLeft',6);fire('inspObjectX',68,'input');fire('inspBlend','screen');fire('inspCornerRadius',12,'input');fire('inspBrightness',115,'input');fire('inspContrast',125,'input');fire('inspSaturation',135,'input');fire('inspHue',18,'input');
