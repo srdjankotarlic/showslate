@@ -5538,26 +5538,26 @@ app.whenReady().then(async () => {
           smokeCheck('SELECTED_DOES_NOT_CHANGE_LIVE_OK', false, 'ERR ' + e);
           smokeCheck('LIVE_TIMER_SURVIVES_SELECTION_OK', false, 'ERR ' + e);
         }
-        // GO nosi SELEKTOVANI red u LIVE i ažurira SVE izlaze konzistentno
+        // GO NEXT uvek nosi sledeći rundown red u LIVE, bez obzira na Preview selekciju.
         let goStr = '?';
         try {
           const outputForGo = await ensureSmokeOutput();
           goStr = await controlWin.webContents.executeJavaScript(`(function(){
-            go();   // selectedCue je 2 → transakcija
+            go();   // selectedCue je 2, ali sledeći rundown red je 1
             return JSON.stringify({live:currentCue, dur:S.durationMs,
               st0:cues[0].status, ae0:Number.isFinite(cues[0].actualEnd),
-              ad0:Number.isFinite(cues[0].actualDurationMs), st2:cues[2].status});
+              ad0:Number.isFinite(cues[0].actualDurationMs), st1:cues[1].status});
           })()`);
           const G = JSON.parse(goStr);
           let outSync = false;
           for (let k = 0; k < 12 && !outSync; k++) {
             await new Promise(r => setTimeout(r, 150));
             outSync = await outputForGo.webContents.executeJavaScript(
-              `!!(S && S.currentCue===2 && S.durationMs===180000)`).catch(() => false);
+              `!!(S && S.currentCue===1 && S.durationMs===240000)`).catch(() => false);
           }
           smokeCheck('GO_UPDATES_ALL_OUTPUTS_OK',
-            G.live === 2 && G.dur === 180000 && G.st0 === 'completed' && G.ae0 && G.ad0
-            && G.st2 === 'live' && outSync,
+            G.live === 1 && G.dur === 240000 && G.st0 === 'completed' && G.ae0 && G.ad0
+            && G.st1 === 'live' && outSync,
             goStr + ' outSync=' + outSync);
         } catch (e) { smokeCheck('GO_UPDATES_ALL_OUTPUTS_OK', false, 'ERR ' + e); }
         // ---------- FAZA 4+: zaštite, LT iz rundown-a, identify, statika, prevodi ----------
@@ -6117,7 +6117,7 @@ app.whenReady().then(async () => {
         })()`);
         smokeCheck('COMPACT_SELECTION_DOES_NOT_CHANGE_LIVE_OK',
           seldata.liveBefore === 0 && seldata.liveAfterSelect === 0, JSON.stringify(seldata));
-        smokeCheck('COMPACT_GO_UPDATES_LIVE_OK', seldata.liveAfterGo === 2, 'liveAfterGo=' + seldata.liveAfterGo);
+        smokeCheck('COMPACT_GO_UPDATES_LIVE_OK', seldata.liveAfterGo === 1, 'liveAfterGo=' + seldata.liveAfterGo);
         smokeCheck('COMPACT_TIMER_SURVIVES_DRAWER_OK',
           seldata.runningBefore === true && seldata.running1 === true && seldata.running2 === true && seldata.liveAfterDrawer === seldata.liveAfterSelect,
           JSON.stringify(seldata));

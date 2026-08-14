@@ -72,11 +72,22 @@ app.whenReady().then(async () => {
   const result = JSON.parse(await win.webContents.executeJavaScript(`(async function(){
     showMeta={id:'api-show',name:'API Demo',details:{}};
     S.goAutoStart=false;
-    cues=migrateCues([
+    const cueSeed=[
       {id:'cue-a',name:'Opening',durationMs:60000,speakerName:'Alex Host',speakerTitle:'Host'},
       {id:'cue-b',name:'Keynote',durationMs:120000,speakerName:'Maya Chen',speakerTitle:'Keynote Speaker'},
-      {id:'cue-c',name:'Closing',durationMs:60000,speakerName:'Sam Lee',speakerTitle:'Producer'}
-    ]);
+      {id:'cue-c',name:'Closing',durationMs:60000,speakerName:'Sam Lee',speakerTitle:'Producer'},
+      {id:'cue-d',name:'Strike',durationMs:30000,speakerName:'Taylor Ray',speakerTitle:'Stage Manager'}
+    ];
+    cues=migrateCues(JSON.parse(JSON.stringify(cueSeed)));
+    currentCue=-1; selectedCue=3; renderCues();
+    document.getElementById('btnGo').click();
+    const primaryStartedFirst=currentCue===0;
+    reorderCueById('cue-d','cue-b',false);
+    selectedCue=cues.findIndex(cue=>cue.id==='cue-c'); renderCues(); document.getElementById('btnGo').click();
+    const primaryIgnoredSelection=currentCue===1&&cues[currentCue].id==='cue-d';
+    cues.find(cue=>cue.id==='cue-b').status='skipped'; selectedCue=cues.findIndex(cue=>cue.id==='cue-c'); renderCues(); document.getElementById('btnGo').click();
+    const primarySkippedMarkedCue=cues[currentCue].id==='cue-c';
+    cues=migrateCues(JSON.parse(JSON.stringify(cueSeed)));
     currentCue=-1; selectedCue=1; renderCues();
     const goSelected=executeRemoteCommand({type:'goSelected'});
     const selectedWentLive=goSelected&&currentCue===1&&selectedCue===-1;
@@ -113,9 +124,10 @@ app.whenReady().then(async () => {
     const contentTaken=executeRemoteCommand({type:'contentTake',value:'cut'})&&programState.activeSceneId===holding.sceneId&&liveContentItemId===holding.id;
     executeRemoteCommand({type:'contentClear'});
     const contentCleared=liveContentItemId===''&&programState.activeSceneId==='scene-content-clear';
-    return JSON.stringify({selectedWentLive,nextIgnoredSelection,started,paused,adjusted,messageSent,messageCleared,blackoutOn,blackoutOff,selectedTemplate,usesLiveCue,hideStarted,replayed,newInstance:!!secondInstance&&secondInstance!==firstInstance,autoOn,autoOff,previewOnly,contentTaken,contentCleared});
+    return JSON.stringify({primaryStartedFirst,primaryIgnoredSelection,primarySkippedMarkedCue,selectedWentLive,nextIgnoredSelection,started,paused,adjusted,messageSent,messageCleared,blackoutOn,blackoutOff,selectedTemplate,usesLiveCue,hideStarted,replayed,newInstance:!!secondInstance&&secondInstance!==firstInstance,autoOn,autoOff,previewOnly,contentTaken,contentCleared});
   })()`));
 
+  check('PRIMARY_GO_NEXT_FOLLOWS_RUNDOWN_ORDER_OK', result.primaryStartedFirst && result.primaryIgnoredSelection && result.primarySkippedMarkedCue, JSON.stringify(result));
   check('CONTROL_API_GO_NEXT_AND_SELECTED_OK', result.selectedWentLive && result.nextIgnoredSelection, JSON.stringify(result));
   check('CONTROL_API_TIMER_MESSAGE_BLACKOUT_OK', result.started && result.paused && result.adjusted && result.messageSent && result.messageCleared && result.blackoutOn && result.blackoutOff, JSON.stringify(result));
   check('CONTROL_API_LT_TAKE_HIDE_REPLAY_OK', result.selectedTemplate && result.usesLiveCue && result.hideStarted && result.replayed && result.newInstance, JSON.stringify(result));
@@ -125,7 +137,7 @@ app.whenReady().then(async () => {
   check('CONTROL_API_STATUS_SNAPSHOT_OK', latestStatus.ready === true && latestStatus.lowerThird.canReplay === true && latestStatus.content.live === null && latestStatus.output.blackout === false, JSON.stringify(latestStatus));
   check('CONTROL_API_STATUS_EXCLUDES_LIBRARY_OK', latestStatus.lowerThird.library === undefined && latestStatus.token === undefined && latestStatus.license === undefined);
 
-  console.log('CONTROL_API_RENDERER_TESTS_OK ' + checks + '/8');
+  console.log('CONTROL_API_RENDERER_TESTS_OK ' + checks + '/9');
   win.destroy();
   fs.rmSync(profile, { recursive: true, force: true });
   app.quit();
