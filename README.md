@@ -52,9 +52,23 @@ The included **Conference Desk** workflow adds a rundown, LIVE/NEXT/GO, speaker 
 2. Select **Import Show Folder**, review media matches and assign the Audience display.
 3. Add any Confidence, Timer, Stream Graphics or Door Agenda destinations.
 4. Run **Preflight** and **Test outputs**. A route is not marked live until its renderer confirms the current revision.
-5. Enter **Live Mode**. Select the next cue, then press **GO**.
+5. Enter **Live Mode**. Trigger prepared scenes or clips from the performance deck, or select the next rundown cue and press **GO CUE**.
 
 Selecting a row prepares NEXT and never changes LIVE. GO creates one transaction and sends one consistent Program revision. The built-in **Load conference demo** action lets you try the workflow without preparing files first.
+
+## Live Mode performance deck
+
+Live Mode is a second, performance-focused way to operate the same ShowSlate show. It does not create a separate project or bypass Preview/Program safety: it turns every scene in the selected composition into a column and its ordered sources into clip cells, while continuing to use the same Program renderer, output routes and rundown.
+
+- **Preview First** prepares a scene without changing Program; **TAKE SCENE** sends it with the selected Cut or Fade transition.
+- **Direct** is an explicit temporary trigger mode for rehearsed VJ-style operation. Leaving Live Mode restores the normal Composer safety setting.
+- Trigger or hide one clip without replacing the rest of the current Program scene.
+- Pin a logo, event bug, camera frame or other layer so it survives scene changes.
+- Use the selected clip dock for Preview, Program or Both transport control when the source is playable media.
+- Keep conference cues available in the compact rundown strip with BACK and GO CUE.
+- Switch compositions without rebuilding the show; only scenes assigned to the active composition appear in its deck.
+
+Show editing and imports are locked while Live Mode is active. Return to **Composer** to create scenes, arrange layers, change sources or edit the rundown.
 
 ## Output roles
 

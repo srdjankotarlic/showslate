@@ -553,6 +553,8 @@
       name: cleanName(source.name || source.sourceName, type === 'capture' ? 'Video input' : type === 'audio' ? 'Audio input' : type === 'window' ? 'Window capture' : type[0].toUpperCase() + type.slice(1)),
       visible: source.visible !== false,
       locked: source.locked === true,
+      livePersistent: source.livePersistent === true,
+      liveSlot: cleanName(source.liveSlot, '').slice(0, 80),
       x: finite(source.x, 0, -100, 200),
       y: finite(source.y, 0, -100, 200),
       w: finite(source.w, 100, 1, 300),

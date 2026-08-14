@@ -3293,6 +3293,7 @@
 </style>
 <link rel="stylesheet" href="styles/pro-ui.css">
 <link rel="stylesheet" href="styles/compositor.css">
+<link rel="stylesheet" href="styles/live-mode.css">
 </head>
 <body>
 <div id="app-shell" class="mode-standard shell-layout">
@@ -3487,6 +3488,60 @@
         </div>
       </div>
     </div>
+
+    <section class="live-mode-workspace" id="liveModeWorkspace" data-testid="live-mode-workspace" aria-label="Live performance workspace" hidden>
+      <header class="live-mode-toolbar">
+        <div class="live-mode-identity">
+          <span class="live-mode-kicker" data-i18n="liveDeckKicker">PERFORMANCE DECK</span>
+          <label class="live-mode-composition"><span data-i18n="liveComposition">Composition</span><select id="liveModeComposition" aria-label="Live composition"></select></label>
+        </div>
+        <div class="live-mode-segment" role="group" aria-label="Clip trigger mode">
+          <button id="liveModePreviewFirst" type="button" data-live-trigger="preview" data-i18n="livePreviewFirst">PREVIEW FIRST</button>
+          <button id="liveModeDirect" type="button" data-live-trigger="direct" data-i18n="liveDirect">DIRECT</button>
+        </div>
+        <div class="live-mode-segment compact" role="group" aria-label="Scene transition">
+          <button id="liveModeCut" type="button" data-live-transition="cut" data-i18n="liveCut">CUT</button>
+          <button id="liveModeFade" type="button" data-live-transition="fade" data-i18n="liveFade">FADE</button>
+        </div>
+        <span class="live-mode-safety" id="liveModeSafety" aria-live="polite"></span>
+        <button id="liveModeTakeScene" class="primary live-mode-take-scene" type="button" data-i18n="liveTakeScene">TAKE SCENE</button>
+        <button id="liveModeBlack" class="danger live-mode-black" type="button" data-i18n="programBlack">BLACK</button>
+      </header>
+      <div class="live-mode-rundown-strip">
+        <span class="live-mode-cue-label live" data-i18n="liveLabel">LIVE</span><strong id="liveModeCueLive">—</strong>
+        <span class="live-mode-cue-label next" data-i18n="badgeNext">NEXT</span><strong id="liveModeCueNext">—</strong>
+        <button id="liveModeCueBack" type="button" data-i18n="operatorBack">BACK</button>
+        <button id="liveModeCueGo" class="live-mode-cue-go" type="button" data-i18n="liveGoCue">GO CUE</button>
+      </div>
+      <div class="live-mode-deck-scroll" id="liveModeDeckScroll" tabindex="0" aria-label="Scene and clip deck">
+        <div class="live-mode-deck" id="liveModeDeck"></div>
+      </div>
+      <footer class="live-mode-dock">
+        <div class="live-mode-selection">
+          <span data-i18n="liveSelectedClip">SELECTED CLIP</span>
+          <strong id="liveModeSelectedName">—</strong>
+          <small id="liveModeSelectedMeta">—</small>
+        </div>
+        <div class="live-mode-transport-target live-mode-segment compact" role="group" aria-label="Media transport target">
+          <button id="liveModeTargetPreview" type="button" data-live-target="preview" data-i18n="studioPreview">Preview</button>
+          <button id="liveModeTargetProgram" type="button" data-live-target="program" data-i18n="studioProgram">Program</button>
+          <button id="liveModeTargetBoth" type="button" data-live-target="both" data-i18n="mediaTargetBoth">Both</button>
+        </div>
+        <div class="live-mode-transport" role="group" aria-label="Clip transport">
+          <span class="live-mode-clock" id="liveModeClipClock">--:--.---</span>
+          <button id="liveModeRestart" type="button" data-live-command="restart" aria-label="Restart clip" data-i18n-title="mediaRestart" title="Restart clip">↶</button>
+          <button id="liveModePlay" type="button" data-live-command="play" aria-label="Play clip" data-i18n-title="mediaPlay" title="Play clip">▶</button>
+          <button id="liveModePause" type="button" data-live-command="pause" aria-label="Pause clip" data-i18n-title="mediaPause" title="Pause clip">Ⅱ</button>
+          <button id="liveModeStop" type="button" data-live-command="stop" aria-label="Stop clip" data-i18n-title="mediaStop" title="Stop clip">■</button>
+        </div>
+        <div class="live-mode-navigation" role="group" aria-label="Scene navigation">
+          <button id="liveModePrevious" type="button" data-i18n="livePrevious">PREVIOUS</button>
+          <button id="liveModeNext" type="button" data-i18n="liveNext">NEXT</button>
+        </div>
+        <button id="liveModeTakeClip" class="primary" type="button" data-i18n="liveTakeClip">TAKE CLIP</button>
+        <button id="liveModeHideClip" type="button" data-i18n="liveHideClip">HIDE CLIP</button>
+      </footer>
+    </section>
 
     <!-- compact operater: poruka govorniku inline (samo u compact modu) -->
     <div class="compact-msg" id="compactMsg">
@@ -4427,6 +4482,7 @@
 <script src="src/lower-third/resolve.js"></script>
 <script src="src/screen-content/model.js"></script>
 <script src="src/compositor/model.js"></script>
+<script src="src/live-mode/model.js"></script>
 <script src="src/compositor/media-transport.js"></script>
 <script src="src/live-input/consumer.js"></script>
 <script src="src/conference-desk/model.js"></script>
@@ -4458,6 +4514,7 @@ const PTCD = window.SHOWSLATE_CONFERENCE || {
   buildGoTransaction:(cue,options)=>({version:1,id:options.id||'',cueId:String(cue&&cue.id||''),createdAt:options.now||Date.now()})
 };
 const PTCOMP = window.ShowSlateCompositor;
+const PTLIVE = window.ShowSlateLiveMode;
 const PTMEDIA = window.ShowSlateMediaTransport;
 const liveInputStatuses = new Map();
 const liveInputConsumer = window.ShowSlateLiveInput ? new window.ShowSlateLiveInput.LiveInputConsumer(api,{
@@ -4484,6 +4541,7 @@ const I18N = {
     sources:'Izvori', tabRundown:'Rundown', sceneNamePrompt:'Naziv scene:', rename:'Preimenuj',
     canvasTitle:'Canvas — odnos stranica platna (i vertikalni ekrani)', fadeTitle:'Trajanje prelaza scene na izlazu', fadeCut:'Cut',
     lockLive:'Zaključaj program', lockTitle:'Štiti živ program: GO, RESET i preskakanje traže otključavanje; poruke i ±vreme rade', enterLiveMode:'Live režim', exitLiveMode:'Izađi iz Live',
+    liveDeckKicker:'PERFORMANCE DECK', liveComposition:'Kompozicija', livePreviewFirst:'PRVO PREVIEW', liveDirect:'DIREKTNO', liveCut:'CUT', liveFade:'FADE', liveSafeStatus:'Bezbedno: klik priprema Preview', liveDirectStatus:'Direktno: klik odmah menja Program', liveTakeScene:'PUSTI SCENU', liveSelectedClip:'IZABRANI KLIP', liveTakeClip:'PUSTI KLIP', liveHideClip:'SKLONI KLIP', livePrevious:'PRETHODNA', liveNext:'SLEDEĆA', livePersistent:'PIN', livePersistentHint:'Zadrži ovaj lejer preko sledeće scene', liveLayer:'LEJER {n}', liveEmptyClip:'PRAZNO', liveNoClips:'Ova kompozicija još nema izvore.', liveGoCue:'GO CUE',
     demoShow:'Učitaj konferencijski demo', identify:'Prepoznaj ekrane', identifyTitle:'Na svakom fizičkom ekranu prikaži veliki broj (3s)',
     liveLabel:'U PROGRAMU', goNextOnly:'SLEDEĆI RED', goNextOnlyTitle:'Ide na sledeći red u rundown-u, bez obzira na izabrani red.', operatorBack:'NAZAD', operatorBackTitle:'Pripremi prethodni rundown red u Preview-u bez promene Programa', programBlack:'CRNO', programBlackStatus:'CRNO', liveControls:'Live kontrole', liveControlsHint:'Sekundarne komande i trenutno stanje rundown-a.', statusTitle:'IZLAZI · STATUS',
     stStage:'Ekran govornika', stServer:'Mrežni prikazi (OBS · Backstage · Signal)', stRemote:'Telefon daljinski', stApi:'API / Companion',
@@ -4585,6 +4643,7 @@ const I18N = {
     sources:'Sources', tabRundown:'Rundown', sceneNamePrompt:'Scene name:', rename:'Rename',
     canvasTitle:'Canvas — output aspect ratio (incl. vertical screens)', fadeTitle:'Scene transition duration on outputs', fadeCut:'Cut',
     lockLive:'Lock Live', lockTitle:'Protects the live show: GO, RESET and skip require unlocking; messages and ±time still work', enterLiveMode:'Live Mode', exitLiveMode:'Exit Live',
+    liveDeckKicker:'PERFORMANCE DECK', liveComposition:'Composition', livePreviewFirst:'PREVIEW FIRST', liveDirect:'DIRECT', liveCut:'CUT', liveFade:'FADE', liveSafeStatus:'Safe: click prepares Preview', liveDirectStatus:'Direct: click changes Program immediately', liveTakeScene:'TAKE SCENE', liveSelectedClip:'SELECTED CLIP', liveTakeClip:'TAKE CLIP', liveHideClip:'HIDE CLIP', livePrevious:'PREVIOUS', liveNext:'NEXT', livePersistent:'PIN', livePersistentHint:'Keep this layer over the next scene', liveLayer:'LAYER {n}', liveEmptyClip:'EMPTY', liveNoClips:'This composition has no sources yet.', liveGoCue:'GO CUE',
     demoShow:'Load conference demo', identify:'Identify displays', identifyTitle:'Show a big number on every physical display (3s)',
     liveLabel:'LIVE', goNextOnly:'NEXT ROW', goNextOnlyTitle:'Advances to the next rundown row, regardless of the selected row.', operatorBack:'BACK', operatorBackTitle:'Prepare the previous rundown item in Preview without changing Program', programBlack:'BLACK', programBlackStatus:'BLACK', liveControls:'Live controls', liveControlsHint:'Secondary commands and current rundown status.', statusTitle:'OUTPUTS · STATUS',
     stStage:'Speaker screen', stServer:'Network views (OBS · Backstage · Signal)', stRemote:'Phone remote', stApi:'API / Companion',
@@ -4871,6 +4930,7 @@ function pushProgramState(st=outputSnapshot(S)){
   programState=cloneState(st);
   api.sendState(programState);
   refreshLayerProgramIndicators();
+  if(typeof renderLiveModeWorkspace==='function'&&conferenceLiveMode) renderLiveModeWorkspace();
 }
 function monitorVideoElement(prefix,layer){
   if(!layer)return null;
@@ -4973,9 +5033,9 @@ function insertProgramLayer(programScene, previewScene, layer){
   }
   programLayers.push(layer);
 }
-function takeSelectedLayer(){
+function takeSelectedLayer({allowDirect=false}={}){
   const layer=selectedLayer();
-  if(!layer || S.studioDirect) return false;
+  if(!layer || (S.studioDirect&&!allowDirect)) return false;
   const previewScene=currentScene();
   const next=cloneState(ensureProgramState());
   const programScene=activeScene(next);
@@ -5010,9 +5070,9 @@ function takeSelectedLayer(){
   publishControlStatus();
   return true;
 }
-function hideSelectedLayer(){
+function hideSelectedLayer({allowDirect=false}={}){
   const layer=selectedLayer();
-  if(!layer || S.studioDirect) return false;
+  if(!layer || (S.studioDirect&&!allowDirect)) return false;
   const next=cloneState(ensureProgramState());
   const live=findProgramLayer(layer,next);
   if(!live || live.visible===false) return false;
@@ -5413,6 +5473,7 @@ function render(){
   syncProgramVideoAudio();
   syncPairedVideoPlayback();
   updateVideoTransportUI(now);
+  updateLiveModeTransportUI(now);
   syncLiveInputService();
 
   updateStudioButtons();
@@ -5667,6 +5728,7 @@ function updateLiveInfo(){
   while(ni<cues.length && cues[ni] && cues[ni].status==='skipped') ni++;
   nx.textContent = (ni<cues.length && cues[ni]) ? (cues[ni].name||t('noName')) : '—';
   updateLowerThirdLiveSummary();
+  if(typeof renderLiveModeCueStatus==='function') renderLiveModeCueStatus();
 }
 function updateGoLabel(){
   const b=$('btnGo'); if(!b) return;
@@ -6872,6 +6934,7 @@ function sceneDirty(){
   applyCanvasAspect();
   renderContentItems();
   send();
+  if(conferenceLiveMode) renderLiveModeWorkspace();
 }
 function moveSceneLayer(layerId,delta){
   const sc=currentScene();
@@ -7398,6 +7461,7 @@ function selectComposition(compositionId,{save=true}={}){
   normalizeContentWorkflow();
   applyCanvasAspect();
   renderScenesUI(); renderContentItems(); renderCompositionWorkspace();
+  if(conferenceLiveMode) renderLiveModeWorkspace();
   if(save) saveSettings();
   return true;
 }
@@ -10863,9 +10927,248 @@ $('btnGo').addEventListener('click',go);
 $('btnGoNext').addEventListener('click',goNext);
 $('btnIdentify').addEventListener('click',()=>api.identifyDisplays&&api.identifyDisplays());
 let conferenceLiveMode=false;
+let liveModePreviousStudioDirect=false;
+let liveModeLastTransportPaint=0;
+let liveModePreferences=(()=>{
+  try{return PTLIVE.normalizePreferences(JSON.parse(localStorage.getItem('showslate_live_mode')||'{}'));}
+  catch(_){return PTLIVE.normalizePreferences();}
+})();
+
+function persistLiveModePreferences(){
+  localStorage.setItem('showslate_live_mode',JSON.stringify(liveModePreferences));
+}
+function liveModeScenes(){
+  ensureScenes();
+  return scenesForComposition(S.activeCompositionId);
+}
+function liveModeContentForScene(sceneId){
+  return contentItems.find(item=>String(item.sceneId)===String(sceneId||''))||null;
+}
+function liveModeProgramLayer(layer,sceneId,program=ensureProgramState()){
+  if(!layer)return null;
+  const scene=activeScene(program);
+  return scene&&Array.isArray(scene.layers)?scene.layers.find(row=>row&&row.visible!==false&&(
+    String(row.id||'')===String(layer.id||'') ||
+    (String(row.programSourceLayerId||'')===String(layer.id||'')&&(!row.programSourceSceneId||String(row.programSourceSceneId)===String(sceneId||'')))
+  ))||null:null;
+}
+function selectLiveModeScene(sceneId,{takeDirect=false}={}){
+  const scene=liveModeScenes().find(row=>String(row.id)===String(sceneId||''));
+  if(!scene)return false;
+  const item=liveModeContentForScene(scene.id);
+  if(item)selectContentItem(item.id,{previewOnly:true,reveal:false});
+  else{
+    S.activeSceneId=scene.id;
+    ensureScenes();applyCanvasAspect();
+    monitorSceneKeys.pv='';stageKeys.pv='';lastKey='';
+    renderContentItems();renderScenesUI();saveSettings();
+  }
+  const preferred=(scene.layers||[]).find(layer=>layer.id===selectedLayerId)||(scene.layers||[]).at(-1)||null;
+  selectLayer(preferred&&preferred.id);
+  renderLiveModeWorkspace();
+  if(takeDirect)return takeLiveModeScene(scene.id);
+  return true;
+}
+function selectLiveModeClip(sceneId,layerId){
+  const scene=liveModeScenes().find(row=>String(row.id)===String(sceneId||''));
+  const layer=scene&&(scene.layers||[]).find(row=>String(row.id)===String(layerId||''));
+  if(!layer)return false;
+  selectLiveModeScene(scene.id);
+  selectLayer(layer.id);
+  renderLiveModeWorkspace();
+  if(liveModePreferences.triggerMode==='direct')return takeSelectedLayer({allowDirect:true});
+  return true;
+}
+function takeLiveModeScene(sceneId=S.activeSceneId){
+  const scene=liveModeScenes().find(row=>String(row.id)===String(sceneId||''));
+  if(!scene)return false;
+  if(String(S.activeSceneId)!==String(scene.id))selectLiveModeScene(scene.id);
+  const current=ensureProgramState();
+  const next=outputSnapshot(S);
+  next.activeSceneId=scene.id;
+  next.blackout=!!current.blackout;
+  next.sceneFadeMs=liveModePreferences.transition==='cut'?0:Math.max(120,Number(S.sceneFadeMs)||300);
+  prepareVideoSceneForTake(next);
+  const nextScene=activeScene(next),currentSceneLive=activeScene(current);
+  const merged=PTLIVE.mergePersistentLayers(nextScene,currentSceneLive);
+  const nextSceneIndex=(next.scenes||[]).findIndex(row=>String(row.id)===String(scene.id));
+  if(nextSceneIndex>=0)next.scenes.splice(nextSceneIndex,1,merged.scene);
+  if(liveModePreferences.transition==='fade'){
+    $('studio')?.classList.add('taking');
+    setTimeout(()=>$('studio')?.classList.remove('taking'),320);
+  }
+  const item=liveModeContentForScene(scene.id);
+  if(item){selectedContentItemId=item.id;liveContentItemId=item.id;}
+  else liveContentItemId='';
+  pushProgramState(next);
+  const layer=selectedLayer();
+  if(layer&&layer.type==='video'&&liveModeProgramLayer(layer,scene.id,next))videoTransportTarget='both';
+  monitorSceneKeys={pv:'',pg:''};
+  renderContentItems();renderStage('pv',S,Date.now());renderStage('pg',next,Date.now());
+  saveSettings();updateStudioButtons();publishControlStatus();
+  return true;
+}
+function setLiveModeLayerPersistent(sceneId,layerId,enabled){
+  const scene=liveModeScenes().find(row=>String(row.id)===String(sceneId||''));
+  const layer=scene&&(scene.layers||[]).find(row=>String(row.id)===String(layerId||''));
+  if(!layer)return false;
+  layer.livePersistent=!!enabled;
+  const next=cloneState(ensureProgramState());
+  const live=liveModeProgramLayer(layer,scene.id,next);
+  if(live)live.livePersistent=!!enabled;
+  if(live)pushProgramState(next);
+  selectedLayerId=layer.id;
+  sceneDirty();
+  return true;
+}
+function liveModeClipThumbnail(parent,cell){
+  const thumb=document.createElement('span');thumb.className='live-mode-clip-thumb';
+  if(cell.type==='image'&&cell.thumbnail){
+    const image=document.createElement('img');image.src=mediaSrc(cell.thumbnail);image.alt='';thumb.appendChild(image);
+  }else if(cell.type==='color'){
+    const scene=liveModeScenes().find(row=>row.id===cell.sceneId),layer=scene&&(scene.layers||[]).find(row=>row.id===cell.id);
+    thumb.style.background=layer&&(layer.color||layer.bg)||'#20242c';thumb.textContent='#';
+  }else thumb.textContent=cell.type.slice(0,5).toUpperCase();
+  parent.appendChild(thumb);
+}
+function renderLiveModeCueStatus(){
+  const live=$('liveModeCueLive'),next=$('liveModeCueNext');
+  if(!live||!next)return;
+  const active=currentCue>=0&&cues[currentCue]?cues[currentCue]:null;
+  let nextIndex=currentCue+1;
+  while(nextIndex<cues.length&&cues[nextIndex]&&cues[nextIndex].status==='skipped')nextIndex++;
+  live.textContent=active?(active.name||t('noName')):'\u2014';
+  next.textContent=nextIndex<cues.length?(cues[nextIndex].name||t('noName')):'\u2014';
+  $('liveModeCueBack').disabled=previousCuePreviewIndex()<0;
+  $('liveModeCueGo').disabled=!cues.length||(currentCue>=cues.length-1&&selectedCue<0);
+}
+function renderLiveModeWorkspace(){
+  const workspace=$('liveModeWorkspace'),deckRoot=$('liveModeDeck');
+  if(!workspace||!deckRoot)return;
+  const deckScroll=$('liveModeDeckScroll');
+  const previousScroll={left:deckScroll.scrollLeft,top:deckScroll.scrollTop};
+  const compositionSelect=$('liveModeComposition');
+  const compositions=ensureCompositions()&&S.compositions||[];
+  const selection=String(S.activeCompositionId||'');
+  const preserveScroll=deckRoot.dataset.compositionId===selection;
+  deckRoot.dataset.compositionId=selection;
+  compositionSelect.innerHTML='';
+  compositions.forEach(composition=>{
+    const option=document.createElement('option');option.value=composition.id;
+    const canvas=PTCOMP.normalizeCanvas(composition.canvas);option.textContent=`${composition.name} \u00b7 ${canvas.width}\u00d7${canvas.height}`;
+    compositionSelect.appendChild(option);
+  });
+  compositionSelect.value=selection;
+  document.querySelectorAll('[data-live-trigger]').forEach(button=>{
+    const active=button.dataset.liveTrigger===liveModePreferences.triggerMode;
+    button.classList.toggle('active',active);button.classList.toggle('direct-active',active&&button.dataset.liveTrigger==='direct');
+    button.setAttribute('aria-pressed',active?'true':'false');
+  });
+  document.querySelectorAll('[data-live-transition]').forEach(button=>{
+    const active=button.dataset.liveTransition===liveModePreferences.transition;
+    button.classList.toggle('active',active);button.setAttribute('aria-pressed',active?'true':'false');
+  });
+  const safety=$('liveModeSafety');
+  safety.textContent=t(liveModePreferences.triggerMode==='direct'?'liveDirectStatus':'liveSafeStatus');
+  safety.classList.toggle('direct',liveModePreferences.triggerMode==='direct');
+  const program=ensureProgramState(),programScene=activeScene(program);
+  $('liveModeBlack').classList.toggle('on',!!program.blackout);
+  const scenes=liveModeScenes();
+  const deck=PTLIVE.buildDeck(scenes,{previewSceneId:S.activeSceneId,programSceneId:programScene&&programScene.id});
+  deckRoot.style.setProperty('--live-scene-count',String(Math.max(1,deck.scenes.length)));
+  deckRoot.innerHTML='';
+  const corner=document.createElement('div');corner.className='live-mode-corner';
+  const cornerTitle=document.createElement('strong');cornerTitle.textContent=t('liveDeckKicker');
+  const cornerMeta=document.createElement('span');cornerMeta.textContent=`${deck.scenes.length} ${t('scenes').toLowerCase()} \u00b7 ${deck.rowCount} ${t('sources').toLowerCase()}`;
+  corner.append(cornerTitle,cornerMeta);deckRoot.appendChild(corner);
+  deck.scenes.forEach(scene=>{
+    const head=document.createElement('div');head.className='live-mode-scene-head'+(scene.activePreview?' preview':'')+(scene.activeProgram?' live':'');
+    head.dataset.sceneId=scene.id;
+    const thumb=document.createElement('div');thumb.className='live-mode-scene-thumb';
+    const item=liveModeContentForScene(scene.id);if(item)contentThumbnail(thumb,item);else thumb.textContent=String(scene.index+1).padStart(2,'0');
+    const select=document.createElement('button');select.type='button';select.className='live-mode-scene-button';select.dataset.sceneId=scene.id;
+    select.setAttribute('aria-label',`${scene.name} — ${liveModePreferences.triggerMode==='direct'?t('liveDirect'):t('studioPreview')}`);
+    const name=document.createElement('strong');name.textContent=scene.name;
+    const meta=document.createElement('span');meta.textContent=scene.activeProgram?t('badgeLive'):scene.activePreview?t('badgeSelected'):`${scene.layerCount} ${t('sources').toLowerCase()}`;
+    select.append(name,meta);select.addEventListener('click',()=>selectLiveModeScene(scene.id,{takeDirect:liveModePreferences.triggerMode==='direct'}));
+    const take=document.createElement('button');take.type='button';take.className='live-mode-scene-take';take.dataset.sceneId=scene.id;take.textContent='TAKE';
+    take.title=t('liveTakeScene');take.addEventListener('click',event=>{event.stopPropagation();takeLiveModeScene(scene.id);});
+    head.append(thumb,select,take);deckRoot.appendChild(head);
+  });
+  if(!deck.scenes.length){
+    const empty=document.createElement('div');empty.className='live-mode-empty-deck';empty.textContent=t('liveNoClips');deckRoot.appendChild(empty);
+  }else if(!deck.rows.length){
+    const empty=document.createElement('div');empty.className='live-mode-empty-deck';empty.style.gridColumn=`1 / span ${deck.scenes.length+1}`;empty.textContent=t('liveNoClips');deckRoot.appendChild(empty);
+  }
+  deck.rows.forEach(row=>{
+    const label=document.createElement('div');label.className='live-mode-layer-head';
+    const strong=document.createElement('strong');strong.textContent=uiText('liveLayer',{n:row.index+1});
+    const small=document.createElement('span');small.textContent=row.index===0?(lang==='sr'?'NAPRED':'FRONT'):(lang==='sr'?'SLOJ':'STACK');
+    label.append(strong,small);deckRoot.appendChild(label);
+    row.cells.forEach(cell=>{
+      if(!cell){const empty=document.createElement('div');empty.className='live-mode-cell empty';empty.textContent=t('liveEmptyClip');deckRoot.appendChild(empty);return;}
+      const sourceScene=scenes.find(scene=>String(scene.id)===String(cell.sceneId));
+      const sourceLayer=sourceScene&&(sourceScene.layers||[]).find(layer=>String(layer.id)===String(cell.id));
+      const live=!!liveModeProgramLayer(sourceLayer,cell.sceneId,program);
+      const selected=String(S.activeSceneId)===String(cell.sceneId)&&String(selectedLayerId||'')===String(cell.id);
+      const box=document.createElement('div');box.className='live-mode-cell'+(selected?' preview':'')+(live?' live':'');
+      box.dataset.sceneId=cell.sceneId;box.dataset.layerId=cell.id;
+      const clip=document.createElement('button');clip.type='button';clip.className='live-mode-clip';clip.dataset.sceneId=cell.sceneId;clip.dataset.layerId=cell.id;clip.setAttribute('aria-pressed',selected?'true':'false');
+      clip.setAttribute('aria-label',`${cell.sceneName} — ${cell.name}`);
+      liveModeClipThumbnail(clip,cell);
+      const clipName=document.createElement('strong');clipName.textContent=cell.name;
+      const clipMeta=document.createElement('span');clipMeta.textContent=live?t('badgeLive'):cell.type;
+      clip.append(clipName,clipMeta);clip.addEventListener('click',()=>selectLiveModeClip(cell.sceneId,cell.id));
+      const persistent=document.createElement('label');persistent.className='live-mode-persistent';persistent.title=t('livePersistentHint');
+      const checkbox=document.createElement('input');checkbox.type='checkbox';checkbox.checked=cell.persistent;checkbox.dataset.sceneId=cell.sceneId;checkbox.dataset.layerId=cell.id;
+      checkbox.setAttribute('aria-label',`${t('livePersistent')}: ${cell.name}`);
+      checkbox.addEventListener('change',()=>setLiveModeLayerPersistent(cell.sceneId,cell.id,checkbox.checked));
+      const pin=document.createElement('span');pin.textContent=t('livePersistent');persistent.append(checkbox,pin);
+      box.append(clip,persistent);deckRoot.appendChild(box);
+    });
+  });
+  const layer=selectedLayer();
+  $('liveModeSelectedName').textContent=layer?(layer.name||layer.sourceName||layer.type):'\u2014';
+  $('liveModeSelectedMeta').textContent=layer?`${currentScene().name} \u00b7 ${String(layer.type||'source').toUpperCase()}${layer.livePersistent?' \u00b7 PIN':''}`:'\u2014';
+  $('liveModeTakeClip').disabled=!layer;
+  const liveLayer=layer&&liveModeProgramLayer(layer,currentScene().id,program);
+  $('liveModeHideClip').disabled=!liveLayer;
+  renderLiveModeCueStatus();updateLiveModeTransportUI(Date.now(),true);
+  if(preserveScroll)requestAnimationFrame(()=>{
+    deckScroll.scrollLeft=Math.min(previousScroll.left,Math.max(0,deckScroll.scrollWidth-deckScroll.clientWidth));
+    deckScroll.scrollTop=Math.min(previousScroll.top,Math.max(0,deckScroll.scrollHeight-deckScroll.clientHeight));
+  });
+}
+function updateLiveModeTransportUI(now=Date.now(),force=false){
+  if(!conferenceLiveMode||(!force&&now-liveModeLastTransportPaint<80))return;
+  liveModeLastTransportPaint=now;
+  const layer=selectedLayer(),isVideo=!!layer&&layer.type==='video';
+  const live=layer&&liveModeProgramLayer(layer,currentScene().id),hasProgram=!!live&&live.type==='video';
+  if(!hasProgram&&videoTransportTarget!=='preview')videoTransportTarget='preview';
+  document.querySelectorAll('[data-live-target]').forEach(button=>{
+    const target=button.dataset.liveTarget;
+    button.disabled=!isVideo||((target==='program'||target==='both')&&!hasProgram);
+    button.classList.toggle('active',isVideo&&target===videoTransportTarget);
+  });
+  document.querySelectorAll('[data-live-command]').forEach(button=>button.disabled=!isVideo);
+  const clock=$('liveModeClipClock');
+  if(!isVideo){clock.textContent='--:--.---';return;}
+  const actual=videoActualState(videoReferenceRow(),now);
+  clock.textContent=actual?`${formatMediaSeconds(actual.position)} / ${actual.duration?formatMediaSeconds(actual.duration):'--:--.---'}`:'--:--.---';
+}
 function setConferenceLiveMode(enabled){
-  conferenceLiveMode=!!enabled;
+  const next=!!enabled,changed=next!==conferenceLiveMode;
+  if(changed&&next){
+    liveModePreviousStudioDirect=!!S.studioDirect;
+    S.studioDirect=false;
+    if(cueEditorOpen)setCueEditorOpen(false);
+    closeTopbarMenu();closeDrawers();
+  }else if(changed&&!next){
+    S.studioDirect=liveModePreviousStudioDirect;
+  }
+  conferenceLiveMode=next;
   document.body.classList.toggle('conference-live-mode',conferenceLiveMode);
+  const workspace=$('liveModeWorkspace');if(workspace)workspace.hidden=!conferenceLiveMode;
   const button=$('btnConferenceLive');
   if(button){
     button.classList.toggle('active',conferenceLiveMode);
@@ -10875,11 +11178,29 @@ function setConferenceLiveMode(enabled){
     button.setAttribute('aria-label',button.title);
   }
   ['btnNewShow','btnImportShowFolder','btnShowImport','btnCueNew','btnCueImport','btnCueAdd','btnCueEdit','btnCueSave'].forEach(id=>{
-    const element=$(id); if(element) element.disabled=conferenceLiveMode;
+    const element=$(id);if(element)element.disabled=conferenceLiveMode;
   });
-  if(conferenceLiveMode&&cueEditorOpen) setCueEditorOpen(false);
+  updateStudioButtons();refreshLayerProgramIndicators();
+  if(conferenceLiveMode){renderLiveModeWorkspace();requestAnimationFrame(()=>workspace&&workspace.focus({preventScroll:true}));}
 }
 $('btnConferenceLive')?.addEventListener('click',()=>setConferenceLiveMode(!conferenceLiveMode));
+document.querySelectorAll('[data-live-trigger]').forEach(button=>button.addEventListener('click',()=>{
+  liveModePreferences=PTLIVE.normalizePreferences({...liveModePreferences,triggerMode:button.dataset.liveTrigger});persistLiveModePreferences();renderLiveModeWorkspace();
+}));
+document.querySelectorAll('[data-live-transition]').forEach(button=>button.addEventListener('click',()=>{
+  liveModePreferences=PTLIVE.normalizePreferences({...liveModePreferences,transition:button.dataset.liveTransition});persistLiveModePreferences();renderLiveModeWorkspace();
+}));
+$('liveModeComposition')?.addEventListener('change',event=>{selectComposition(event.target.value);renderLiveModeWorkspace();});
+$('liveModeTakeScene')?.addEventListener('click',()=>takeLiveModeScene());
+$('liveModeBlack')?.addEventListener('click',()=>setProgramBlackout(!ensureProgramState().blackout));
+$('liveModeCueBack')?.addEventListener('click',preparePreviousCue);
+$('liveModeCueGo')?.addEventListener('click',go);
+$('liveModePrevious')?.addEventListener('click',()=>{const scene=PTLIVE.sceneAtOffset(liveModeScenes(),S.activeSceneId,-1);if(scene)selectLiveModeScene(scene.id);});
+$('liveModeNext')?.addEventListener('click',()=>{const scene=PTLIVE.sceneAtOffset(liveModeScenes(),S.activeSceneId,1);if(scene)selectLiveModeScene(scene.id);});
+$('liveModeTakeClip')?.addEventListener('click',()=>takeSelectedLayer({allowDirect:true}));
+$('liveModeHideClip')?.addEventListener('click',()=>hideSelectedLayer({allowDirect:true}));
+document.querySelectorAll('[data-live-target]').forEach(button=>button.addEventListener('click',()=>{setVideoTransportTarget(button.dataset.liveTarget);updateLiveModeTransportUI(Date.now(),true);}));
+document.querySelectorAll('[data-live-command]').forEach(button=>button.addEventListener('click',()=>{commandVideoTargets(button.dataset.liveCommand);updateLiveModeTransportUI(Date.now(),true);}));
 $('chkLock').addEventListener('change',e=>{
   liveLocked=e.target.checked;
   document.body.classList.toggle('live-locked', liveLocked);
@@ -11464,6 +11785,7 @@ function selectLayer(id){
   renderInspector();
   updateLayerProgramControls();
   renderStage('pv',S,Date.now());
+  if(conferenceLiveMode) renderLiveModeWorkspace();
 }
 function selectedLayer(){
   const sc=currentScene();

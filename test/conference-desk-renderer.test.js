@@ -118,6 +118,13 @@ ipcMain.handle('identify-displays', () => 1);
 ipcMain.handle('qr', () => '');
 ipcMain.handle('share-info', () => ({}));
 ipcMain.handle('live-input-statuses', () => []);
+ipcMain.handle('live-input-devices', () => ({ cameras: [], microphones: [] }));
+ipcMain.handle('live-input-permissions', () => ({ camera: 'granted', microphone: 'granted', screen: 'granted' }));
+ipcMain.handle('live-input-configure', (event, definitions) => ({ ok: true, count: Array.isArray(definitions) ? definitions.length : 0 }));
+ipcMain.handle('live-input-restart', () => ({ ok: true }));
+ipcMain.handle('live-input-subscribe', () => ({ ok: false, error: 'conference renderer test has no media hub' }));
+ipcMain.handle('live-input-signal-to-hub', () => ({ ok: false }));
+ipcMain.on('live-input-unsubscribe', () => {});
 
 app.whenReady().then(async () => {
   repository = new ShowRepository({ userDataDir: profile, appMetadata: { commit: 'conference-desk-ui' } });
@@ -216,10 +223,84 @@ app.whenReady().then(async () => {
   const liveMode = JSON.parse(await controller.webContents.executeJavaScript(`(function(){document.getElementById('btnConferenceLive').click();return JSON.stringify({active:document.body.classList.contains('conference-live-mode'),importDisabled:document.getElementById('btnCueImport').disabled,newDisabled:document.getElementById('btnNewShow').disabled,goDisabled:document.getElementById('btnGo').disabled,pressed:document.getElementById('btnConferenceLive').getAttribute('aria-pressed')});})()`));
   check('CONFERENCE_LIVE_MODE_VISIBLE_AND_SAFE_OK', liveMode.active && liveMode.importDisabled && liveMode.newDisabled && !liveMode.goDisabled && liveMode.pressed === 'true', JSON.stringify(liveMode));
 
+  const liveFixture = JSON.parse(await controller.webContents.executeJavaScript(`JSON.stringify((function(){
+    const composition=activeComposition();
+    const fixture=[
+      PTCOMP.normalizeScene({id:'live-test-base',name:'Live Base',compositionId:composition.id,layers:[
+        {id:'live-test-background',type:'color',name:'Base Background',color:'#17304d',visible:true,x:0,y:0,w:100,h:100,opacity:1},
+        {id:'live-test-bug',type:'text',name:'Event Bug',text:'SHOWSLATE LIVE',liveSlot:'event-bug',visible:true,x:72,y:5,w:24,h:10,opacity:1}
+      ]}),
+      PTCOMP.normalizeScene({id:'live-test-camera',name:'Camera Look',compositionId:composition.id,layers:[
+        {id:'live-test-camera-fill',type:'color',name:'Camera Fill',color:'#4d1f2d',visible:true,x:0,y:0,w:100,h:100,opacity:1}
+      ]})
+    ];
+    S.scenes=S.scenes.filter(scene=>!fixture.some(row=>row.id===scene.id)).concat(fixture);
+    contentItems=contentItems.filter(item=>!fixture.some(row=>row.id===item.sceneId));
+    fixture.forEach(scene=>contentItems.push({id:'content-'+scene.id,name:scene.name,type:'scene',sceneId:scene.id,assetId:'',page:1}));
+    normalizeContentWorkflow();renderContentItems();renderScenesUI();renderLiveModeWorkspace();
+    return {sceneColumns:document.querySelectorAll('.live-mode-scene-head').length,clipCells:document.querySelectorAll('.live-mode-cell[data-layer-id]').length,dockVisible:getComputedStyle(document.querySelector('.live-mode-dock')).display!=='none'};
+  })())`));
+  check('LIVE_MODE_WORKSPACE_SHOWS_SCENES_LAYERS_AND_TRANSPORT_OK', liveFixture.sceneColumns >= 2 && liveFixture.clipCells >= 3 && liveFixture.dockVisible, JSON.stringify(liveFixture));
+
+  const safePreview = JSON.parse(await controller.webContents.executeJavaScript(`JSON.stringify((function(){
+    const before=activeScene(ensureProgramState()).id;
+    document.querySelector('.live-mode-scene-button[data-scene-id="live-test-base"]').click();
+    return {before,preview:S.activeSceneId,program:activeScene(ensureProgramState()).id};
+  })())`));
+  check('LIVE_MODE_SCENE_CLICK_PREVIEWS_WITHOUT_CHANGING_PROGRAM_OK', safePreview.preview === 'live-test-base' && safePreview.program === safePreview.before, JSON.stringify(safePreview));
+  await new Promise(resolve => setTimeout(resolve, 120));
+  fs.writeFileSync(path.join(artifactDirectory, 'live-mode-performance-deck.png'), (await controller.webContents.capturePage()).toPNG());
+
+  const baseTake = JSON.parse(await controller.webContents.executeJavaScript(`JSON.stringify((function(){
+    document.getElementById('liveModeTakeScene').click();
+    return {preview:S.activeSceneId,program:activeScene(ensureProgramState()).id,fade:ensureProgramState().sceneFadeMs};
+  })())`));
+  check('LIVE_MODE_TAKE_SCENE_USES_SHARED_PROGRAM_ENGINE_OK', baseTake.preview === 'live-test-base' && baseTake.program === 'live-test-base' && baseTake.fade >= 120, JSON.stringify(baseTake));
+
+  const persistentTake = JSON.parse(await controller.webContents.executeJavaScript(`JSON.stringify((function(){
+    const pin=document.querySelector('.live-mode-cell[data-scene-id="live-test-base"][data-layer-id="live-test-bug"] input');
+    pin.checked=true;pin.dispatchEvent(new Event('change',{bubbles:true}));
+    document.querySelector('.live-mode-scene-button[data-scene-id="live-test-camera"]').click();
+    const beforeTake={preview:S.activeSceneId,program:activeScene(ensureProgramState()).id};
+    document.getElementById('liveModeTakeScene').click();
+    const scene=activeScene(ensureProgramState());
+    return {beforeTake,program:scene.id,layers:scene.layers.map(layer=>({id:layer.id,source:layer.programSourceLayerId||'',persistent:layer.livePersistent,visible:layer.visible!==false}))};
+  })())`));
+  check('LIVE_MODE_PINNED_LAYER_SURVIVES_SCENE_CHANGE_OK', persistentTake.beforeTake.preview === 'live-test-camera' && persistentTake.beforeTake.program === 'live-test-base' && persistentTake.program === 'live-test-camera' && persistentTake.layers.some(layer=>layer.id === 'live-test-bug' && layer.persistent && layer.visible) && !persistentTake.layers.some(layer=>layer.id === 'live-test-background'), JSON.stringify(persistentTake));
+
+  const clipTake = JSON.parse(await controller.webContents.executeJavaScript(`JSON.stringify((function(){
+    document.querySelector('.live-mode-clip[data-scene-id="live-test-base"][data-layer-id="live-test-background"]').click();
+    const before=activeScene(ensureProgramState()).id;
+    document.getElementById('liveModeTakeClip').click();
+    let scene=activeScene(ensureProgramState());
+    const live=scene.layers.find(layer=>layer.programSourceLayerId==='live-test-background');
+    document.getElementById('liveModeHideClip').click();
+    scene=activeScene(ensureProgramState());
+    const hidden=scene.layers.find(layer=>layer.programSourceLayerId==='live-test-background');
+    return {before,after:scene.id,taken:!!live&&live.visible!==false,hidden:!!hidden&&hidden.visible===false};
+  })())`));
+  check('LIVE_MODE_CLIP_TAKE_AND_HIDE_PRESERVE_PROGRAM_SCENE_OK', clipTake.before === 'live-test-camera' && clipTake.after === 'live-test-camera' && clipTake.taken && clipTake.hidden, JSON.stringify(clipTake));
+
+  const direct = JSON.parse(await controller.webContents.executeJavaScript(`JSON.stringify((function(){
+    document.getElementById('liveModeDirect').click();
+    document.querySelector('.live-mode-scene-button[data-scene-id="live-test-base"]').click();
+    return {mode:liveModePreferences.triggerMode,preview:S.activeSceneId,program:activeScene(ensureProgramState()).id,directPersisted:S.studioDirect};
+  })())`));
+  check('LIVE_MODE_DIRECT_TRIGGER_IS_EXPLICIT_AND_IMMEDIATE_OK', direct.mode === 'direct' && direct.preview === 'live-test-base' && direct.program === 'live-test-base' && direct.directPersisted === false, JSON.stringify(direct));
+
+  const liveOutputAcknowledged = await waitFor(async () => {
+    if (!lastAck || lastAck.revision !== revision) return false;
+    return output.webContents.executeJavaScript(`S && S.activeSceneId==='live-test-base'`);
+  });
+  const outputLiveScene = stateEvents.at(-1) && stateEvents.at(-1).state;
+  const outputRendererScene = await output.webContents.executeJavaScript(`S && S.activeSceneId`);
+  check('LIVE_MODE_PROGRAM_TAKE_REACHES_OUTPUT_TRANSPORT_OK', liveOutputAcknowledged && !!outputLiveScene && outputLiveScene.activeSceneId === 'live-test-base' && outputRendererScene === 'live-test-base', JSON.stringify({scene:outputLiveScene&&outputLiveScene.activeSceneId,outputRendererScene,lastAck:lastAck&&lastAck.revision,revision}));
+
   controller.setBounds(smokeDisplay.clampToWorkArea({ width: 900, height: 600 }, target.workArea));
   await new Promise(resolve => setTimeout(resolve, 220));
-  const compact = JSON.parse(await controller.webContents.executeJavaScript(`JSON.stringify((()=>{const button=document.getElementById('btnConferenceLive').getBoundingClientRect();return {vw:innerWidth,vh:innerHeight,button:{left:button.left,right:button.right,top:button.top,bottom:button.bottom},go:document.getElementById('btnGo').getBoundingClientRect().bottom};})())`));
-  check('CONFERENCE_LIVE_CONTROLS_REMAIN_REACHABLE_900X600_OK', compact.button.left >= 0 && compact.button.right <= compact.vw && compact.button.top >= 0 && compact.button.bottom <= compact.vh && compact.go <= compact.vh, JSON.stringify(compact));
+  const compact = JSON.parse(await controller.webContents.executeJavaScript(`JSON.stringify((()=>{const rect=id=>{const row=document.getElementById(id).getBoundingClientRect();return {left:row.left,right:row.right,top:row.top,bottom:row.bottom,width:row.width,height:row.height};};const dock=document.querySelector('.live-mode-dock').getBoundingClientRect();return {vw:innerWidth,vh:innerHeight,button:rect('btnConferenceLive'),go:rect('liveModeCueGo'),deck:rect('liveModeDeckScroll'),dock:{left:dock.left,right:dock.right,top:dock.top,bottom:dock.bottom,width:dock.width,height:dock.height}};})())`));
+  const compactRows = [compact.button, compact.go, compact.deck, compact.dock];
+  check('CONFERENCE_LIVE_CONTROLS_REMAIN_REACHABLE_900X600_OK', compactRows.every(row=>row.width>0&&row.height>0&&row.left>=0&&row.right<=compact.vw&&row.top>=0&&row.bottom<=compact.vh), JSON.stringify(compact));
   fs.writeFileSync(path.join(artifactDirectory, 'live-mode-900x600.png'), (await controller.webContents.capturePage()).toPNG());
 
   await controller.webContents.executeJavaScript(`(async function(){
@@ -227,7 +308,7 @@ app.whenReady().then(async () => {
     await flushShowAutosave({reason:'conference-ui-test-finish',force:true});
     showAutosaveReady=false;
   })()`);
-  console.log(`CONFERENCE_DESK_RENDERER_TESTS_OK ${checks}/13`);
+  console.log(`CONFERENCE_DESK_RENDERER_TESTS_OK count=${checks}`);
   controller.destroy();
   output.destroy();
   fs.rmSync(profile, { recursive: true, force: true });

@@ -200,17 +200,17 @@ app.whenReady().then(async () => {
   })()`));
   win.webContents.reload();
   const reloadReady = await waitFor(() => win.webContents.executeJavaScript('showAutosaveReady===true && lastDisplays.length>0'));
-  const reloadState = reloadReady ? JSON.parse(await win.webContents.executeJavaScript(`(async()=>{
+  const reloadItem = reloadReady ? JSON.parse(await win.webContents.executeJavaScript(`(()=>{
     const item=contentItemById(${JSON.stringify(state.ids.holding)});
     if(!item) return JSON.stringify({item:false,previewRendered:false});
     selectContentItem(item.id);
-    await new Promise(resolve=>setTimeout(resolve,120));
+    return JSON.stringify({item:true});
+  })()`)) : {item:false};
+  const reloadPreviewRendered = reloadItem.item && await waitFor(() => win.webContents.executeJavaScript(`(()=>{
     const previewText=document.querySelector('#pvScene .pv-scene-text');
-    return JSON.stringify({
-      item:true,
-      previewRendered:!!previewText && previewText.textContent==='WELCOME' && getComputedStyle(previewText).display!=='none' && getComputedStyle(document.getElementById('pvStage')).display==='none'
-    });
-  })()`)) : {item:false,previewRendered:false};
+    return !!previewText && previewText.textContent==='WELCOME' && getComputedStyle(previewText).display!=='none' && getComputedStyle(document.getElementById('pvStage')).display==='none';
+  })()`));
+  const reloadState = { item: reloadItem.item, previewRendered: reloadPreviewRendered };
   check('SCREEN_CONTENT_VISIBLE_IN_STANDARD_UI_OK', state.normalUi, JSON.stringify(state));
   check('RUNDOWN_SCENE_ON_GO_USER_FLOW_OK', state.rundownSceneFlow, JSON.stringify(state));
   check('SCREEN_CONTENT_SELECT_PREVIEW_ONLY_OK', state.selectedSafe && state.timerSafe, JSON.stringify(state));

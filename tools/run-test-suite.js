@@ -11,6 +11,7 @@ const groups = {
     'test:show-package',
     'test:show-preflight',
     'test:conference-desk',
+    'test:live-mode',
     'test:show-folder-import',
     'test:media-library',
     'test:screen-content',
