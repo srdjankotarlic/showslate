@@ -10929,6 +10929,7 @@ $('btnIdentify').addEventListener('click',()=>api.identifyDisplays&&api.identify
 let conferenceLiveMode=false;
 let liveModePreviousStudioDirect=false;
 let liveModeLastTransportPaint=0;
+const liveModeVideoPosterCache=new Map();
 let liveModePreferences=(()=>{
   try{return PTLIVE.normalizePreferences(JSON.parse(localStorage.getItem('showslate_live_mode')||'{}'));}
   catch(_){return PTLIVE.normalizePreferences();}
@@ -11021,14 +11022,49 @@ function setLiveModeLayerPersistent(sceneId,layerId,enabled){
   sceneDirty();
   return true;
 }
-function liveModeClipThumbnail(parent,cell){
+function loadLiveModeVideoPoster(layer,image){
+  const source=String(layer&&layer.src||'');
+  if(!source)return;
+  const cached=liveModeVideoPosterCache.get(source);
+  if(cached){image.src=cached;return;}
+  if(cached===null)return;
+  liveModeVideoPosterCache.set(source,null);
+  const video=document.createElement('video');
+  video.muted=true;video.preload='metadata';video.playsInline=true;
+  const release=()=>{try{video.pause();video.removeAttribute('src');video.load();}catch(_){};};
+  const fail=()=>{liveModeVideoPosterCache.delete(source);release();};
+  video.addEventListener('error',fail,{once:true});
+  video.addEventListener('loadedmetadata',()=>{
+    try{video.currentTime=Math.min(Math.max(0.05,Number(layer.inPoint)||0.05),Math.max(0.05,(Number(video.duration)||1)-0.05));}
+    catch(_){fail();}
+  },{once:true});
+  video.addEventListener('seeked',()=>{
+    try{
+      const width=240,height=Math.max(80,Math.round(width*(video.videoHeight||9)/(video.videoWidth||16)));
+      const canvas=document.createElement('canvas');canvas.width=width;canvas.height=height;
+      canvas.getContext('2d',{alpha:false}).drawImage(video,0,0,width,height);
+      const poster=canvas.toDataURL('image/jpeg',.72);liveModeVideoPosterCache.set(source,poster);image.src=poster;
+    }catch(_){liveModeVideoPosterCache.delete(source);}
+    release();
+  },{once:true});
+  video.src=mediaSrc(source);
+}
+function liveModeClipThumbnail(parent,cell,layer){
   const thumb=document.createElement('span');thumb.className='live-mode-clip-thumb';
-  if(cell.type==='image'&&cell.thumbnail){
-    const image=document.createElement('img');image.src=mediaSrc(cell.thumbnail);image.alt='';thumb.appendChild(image);
+  const previewSource=String(cell.thumbnail||(cell.type==='image'&&layer&&layer.src)||'');
+  if(previewSource){
+    const image=document.createElement('img');image.src=mediaSrc(previewSource);image.alt='';thumb.appendChild(image);
+  }else if(cell.type==='video'&&layer&&layer.src){
+    const image=document.createElement('img');image.alt='';thumb.appendChild(image);loadLiveModeVideoPoster(layer,image);
   }else if(cell.type==='color'){
-    const scene=liveModeScenes().find(row=>row.id===cell.sceneId),layer=scene&&(scene.layers||[]).find(row=>row.id===cell.id);
     thumb.style.background=layer&&(layer.color||layer.bg)||'#20242c';thumb.textContent='#';
-  }else thumb.textContent=cell.type.slice(0,5).toUpperCase();
+  }else if(cell.type==='text'){
+    thumb.classList.add('text-preview');thumb.textContent=String(layer&&layer.text||cell.name||'TEXT').slice(0,80);
+  }else if(cell.type==='timer'){
+    thumb.classList.add('timer-preview');thumb.textContent='10:00';
+  }else{
+    thumb.classList.add('type-preview');thumb.textContent=cell.type.slice(0,5).toUpperCase();
+  }
   parent.appendChild(thumb);
 }
 function renderLiveModeCueStatus(){
@@ -11084,16 +11120,15 @@ function renderLiveModeWorkspace(){
   deck.scenes.forEach(scene=>{
     const head=document.createElement('div');head.className='live-mode-scene-head'+(scene.activePreview?' preview':'')+(scene.activeProgram?' live':'');
     head.dataset.sceneId=scene.id;
-    const thumb=document.createElement('div');thumb.className='live-mode-scene-thumb';
-    const item=liveModeContentForScene(scene.id);if(item)contentThumbnail(thumb,item);else thumb.textContent=String(scene.index+1).padStart(2,'0');
     const select=document.createElement('button');select.type='button';select.className='live-mode-scene-button';select.dataset.sceneId=scene.id;
     select.setAttribute('aria-label',`${scene.name} — ${liveModePreferences.triggerMode==='direct'?t('liveDirect'):t('studioPreview')}`);
     const name=document.createElement('strong');name.textContent=scene.name;
     const meta=document.createElement('span');meta.textContent=scene.activeProgram?t('badgeLive'):scene.activePreview?t('badgeSelected'):`${scene.layerCount} ${t('sources').toLowerCase()}`;
     select.append(name,meta);select.addEventListener('click',()=>selectLiveModeScene(scene.id,{takeDirect:liveModePreferences.triggerMode==='direct'}));
-    const take=document.createElement('button');take.type='button';take.className='live-mode-scene-take';take.dataset.sceneId=scene.id;take.textContent='TAKE';
+    const take=document.createElement('button');take.type='button';take.className='live-mode-scene-take';take.dataset.sceneId=scene.id;take.textContent='▶';
+    take.setAttribute('aria-label',`${t('liveTakeScene')}: ${scene.name}`);
     take.title=t('liveTakeScene');take.addEventListener('click',event=>{event.stopPropagation();takeLiveModeScene(scene.id);});
-    head.append(thumb,select,take);deckRoot.appendChild(head);
+    head.append(take,select);deckRoot.appendChild(head);
   });
   if(!deck.scenes.length){
     const empty=document.createElement('div');empty.className='live-mode-empty-deck';empty.textContent=t('liveNoClips');deckRoot.appendChild(empty);
@@ -11115,7 +11150,7 @@ function renderLiveModeWorkspace(){
       box.dataset.sceneId=cell.sceneId;box.dataset.layerId=cell.id;
       const clip=document.createElement('button');clip.type='button';clip.className='live-mode-clip';clip.dataset.sceneId=cell.sceneId;clip.dataset.layerId=cell.id;clip.setAttribute('aria-pressed',selected?'true':'false');
       clip.setAttribute('aria-label',`${cell.sceneName} — ${cell.name}`);
-      liveModeClipThumbnail(clip,cell);
+      liveModeClipThumbnail(clip,cell,sourceLayer);
       const clipName=document.createElement('strong');clipName.textContent=cell.name;
       const clipMeta=document.createElement('span');clipMeta.textContent=live?t('badgeLive'):cell.type;
       clip.append(clipName,clipMeta);clip.addEventListener('click',()=>selectLiveModeClip(cell.sceneId,cell.id));

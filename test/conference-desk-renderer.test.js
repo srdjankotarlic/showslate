@@ -238,9 +238,14 @@ app.whenReady().then(async () => {
     contentItems=contentItems.filter(item=>!fixture.some(row=>row.id===item.sceneId));
     fixture.forEach(scene=>contentItems.push({id:'content-'+scene.id,name:scene.name,type:'scene',sceneId:scene.id,assetId:'',page:1}));
     normalizeContentWorkflow();renderContentItems();renderScenesUI();renderLiveModeWorkspace();
-    return {sceneColumns:document.querySelectorAll('.live-mode-scene-head').length,clipCells:document.querySelectorAll('.live-mode-cell[data-layer-id]').length,dockVisible:getComputedStyle(document.querySelector('.live-mode-dock')).display!=='none'};
+    const head=document.querySelector('.live-mode-scene-head').getBoundingClientRect();
+    const cell=document.querySelector('.live-mode-cell[data-layer-id]').getBoundingClientRect();
+    const clip=document.querySelector('.live-mode-cell[data-layer-id] .live-mode-clip').getBoundingClientRect();
+    const pin=getComputedStyle(document.querySelector('.live-mode-cell[data-layer-id] .live-mode-persistent'));
+    return {sceneColumns:document.querySelectorAll('.live-mode-scene-head').length,clipCells:document.querySelectorAll('.live-mode-cell[data-layer-id]').length,dockVisible:getComputedStyle(document.querySelector('.live-mode-dock')).display!=='none',head:{w:head.width,h:head.height},cell:{w:cell.width,h:cell.height},clip:{w:clip.width,h:clip.height},pinPosition:pin.position};
   })())`));
   check('LIVE_MODE_WORKSPACE_SHOWS_SCENES_LAYERS_AND_TRANSPORT_OK', liveFixture.sceneColumns >= 2 && liveFixture.clipCells >= 3 && liveFixture.dockVisible, JSON.stringify(liveFixture));
+  check('LIVE_MODE_DECK_USES_COMPACT_CLIP_FIRST_MATRIX_OK', liveFixture.head.h <= 50 && liveFixture.cell.h <= 100 && liveFixture.clip.w >= liveFixture.cell.w - 8 && liveFixture.clip.h >= liveFixture.cell.h - 8 && liveFixture.pinPosition === 'absolute', JSON.stringify(liveFixture));
 
   const safePreview = JSON.parse(await controller.webContents.executeJavaScript(`JSON.stringify((function(){
     const before=activeScene(ensureProgramState()).id;

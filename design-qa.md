@@ -136,3 +136,37 @@
 - P3: a future dedicated calibration view could temporarily hide all non-mapping controls when an operator is standing at the projection surface. It is not needed for the requested workflow.
 
 final result: passed
+
+## Live Mode Compact Performance Matrix
+
+**Comparison Target**
+
+- Source visual truth: `/Users/srdjankotarlic/Desktop/Screenshot 2026-08-14 at 02.19.17.png`.
+- Rendered implementation: `/Users/srdjankotarlic/Documents/New project/protimer-studio-release/artifacts/generated/conference-desk/live-mode-performance-deck.png`.
+- Responsive implementation: `/Users/srdjankotarlic/Documents/New project/protimer-studio-release/artifacts/generated/conference-desk/live-mode-900x600.png`.
+- State: Live Mode, Preview First, one scene and one clip selected, Program active.
+- Density normalization: the source is a focused deck crop while the implementation is a full application capture, so fidelity was judged on the corresponding matrix region.
+
+**Full-View Comparison Evidence**
+
+- Scenes are compact columns and source layers are rows, matching the reference's scan direction.
+- Each source occupies a large thumbnail cell with its name in a fixed bottom strip.
+- Preview and Program remain above the matrix because they are part of ShowSlate's live safety model.
+
+**Focused Region Comparison Evidence**
+
+- Automated geometry confirms 144 x 46 scene headers and 144 x 96 source cells.
+- Clip surfaces fill their cells and persistent-layer controls appear only on hover, focus, or when enabled.
+- Blue Preview, green Program, and amber Direct states remain visible without adding separate cards.
+
+**Comparison History**
+
+- Earlier P1: oversized scene headers, per-scene TAKE buttons, and persistent PIN controls made the deck sparse. Fixed with compact column headers, a top trigger strip, full-cell clip buttons, and on-demand PIN controls.
+- Earlier P2: Preview and Program dominated the vertical layout. Fixed by reserving the larger share of Live Mode for the deck.
+- Earlier P2: video cells could fall back to a generic VIDEO label. Fixed with a lazy one-frame poster cache that does not start Program playback or keep decoders alive.
+
+**Residual P3 Polish**
+
+- Live capture sources display their source type until the input is active. A future low-rate live thumbnail service could improve this without opening extra consumers.
+
+final result: passed
