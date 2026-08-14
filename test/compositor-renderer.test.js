@@ -20,6 +20,8 @@ let configuredInputs = [];
 let deviceDiscoveryMode = 'ready';
 let screenPermissionMode = 'granted';
 let privacySettingsRequests = [];
+let showDocumentSaveRequests = [];
+let showDocumentOpenRequests = 0;
 
 function check(name, condition, detail = '') {
   console.log(`${name}=${!!condition}${detail ? ` ${detail}` : ''}`);
@@ -59,6 +61,14 @@ ipcMain.handle('show-storage-status', () => ({ ...repository.getStatus(), autosa
 ipcMain.handle('show-storage-save', (event, payload) => repository.save(payload.document, { reason: payload.reason }));
 ipcMain.handle('show-storage-load-current', () => repository.loadCurrent());
 ipcMain.handle('show-storage-recover', (event, choice) => repository.resolveRecovery(choice));
+ipcMain.handle('show-document-status', () => ({ ok: true, path: '', name: '' }));
+ipcMain.handle('show-document-save', (event, payload) => {
+  showDocumentSaveRequests.push(JSON.parse(JSON.stringify(payload || {})));
+  const suffix = payload && payload.saveAs ? ' Copy' : '';
+  return { ok: true, path: path.join(profile, `Conference Desk Demo${suffix}.showslate`), name: `Conference Desk Demo${suffix}.showslate` };
+});
+ipcMain.handle('show-document-open', () => { showDocumentOpenRequests++; return { ok: false, canceled: true }; });
+ipcMain.on('show-document-clear-path', () => {});
 ipcMain.handle('show-preflight-inspect', () => ({ overall: 'warning', checks: [], counts: { ok: 0, warning: 1, blocking: 0 } }));
 ipcMain.handle('show-package-export', () => ({ ok: false, canceled: true }));
 ipcMain.handle('show-package-import', () => ({ ok: false, canceled: true }));
@@ -131,6 +141,23 @@ app.whenReady().then(async () => {
   check('COMPOSITOR_SAFE_PREVIEW_DEFAULT_AND_LAYER_CONTROLS_OK', opened.directProgram === false && opened.layerTakeVisible && opened.layerHideVisible && opened.settingsText === 'Settings' && opened.settingsAria === 'Settings', JSON.stringify(opened));
   const sceneControls = JSON.parse(await win.webContents.executeJavaScript(`JSON.stringify((()=>{const ids=['canvasSceneSelect','btnCanvasSceneAdd','btnCanvasSceneDuplicate','btnCanvasSceneDelete'];return {visible:ids.every(id=>document.getElementById(id).getClientRects().length>0),options:document.getElementById('canvasSceneSelect').options.length,duplicateTitle:document.getElementById('btnCanvasSceneDuplicate').title};})())`));
   check('COMPOSITOR_SCENE_CONTROLS_VISIBLE_OK', sceneControls.visible && sceneControls.options >= 1 && sceneControls.duplicateTitle.length > 0, JSON.stringify(sceneControls));
+
+  const showMenuInitial = JSON.parse(await win.webContents.executeJavaScript(`JSON.stringify((()=>{
+    window.alert=()=>{};window.confirm=()=>true;
+    const button=document.getElementById('btnShowFileMenu');button.click();
+    const menu=document.getElementById('showFileMenu');
+    return {buttonVisible:button.getClientRects().length>0,menuVisible:menu.getClientRects().length>0,expanded:button.getAttribute('aria-expanded'),hidden:menu.getAttribute('aria-hidden'),items:menu.querySelectorAll('[role="menuitem"]').length,name:document.getElementById('showFileMenuName').textContent.trim(),path:document.getElementById('showFileMenuPath').textContent.trim()};
+  })())`));
+  await win.webContents.executeJavaScript(`document.getElementById('btnShowSave').click()`);
+  if (!await waitFor(() => showDocumentSaveRequests.length === 1)) throw new Error('Save Show did not invoke show-document-save');
+  const firstSavePath = await win.webContents.executeJavaScript(`document.getElementById('showFileMenuPath').textContent.trim()`);
+  await win.webContents.executeJavaScript(`document.getElementById('btnShowFileMenu').click();document.getElementById('btnShowSaveAs').click()`);
+  if (!await waitFor(() => showDocumentSaveRequests.length === 2)) throw new Error('Save Show As did not invoke show-document-save');
+  const saveAsPath = await win.webContents.executeJavaScript(`document.getElementById('showFileMenuPath').textContent.trim()`);
+  await win.webContents.executeJavaScript(`document.getElementById('btnShowFileMenu').click();document.getElementById('btnShowOpen').click()`);
+  if (!await waitFor(() => showDocumentOpenRequests === 1)) throw new Error('Open Show did not invoke show-document-open');
+  const showMenuFinal = JSON.parse(await win.webContents.executeJavaScript(`JSON.stringify({open:document.body.classList.contains('show-file-open'),expanded:document.getElementById('btnShowFileMenu').getAttribute('aria-expanded')})`));
+  check('SHOW_FILE_MENU_SAVE_SAVE_AS_OPEN_VISIBLE_OK', showMenuInitial.buttonVisible && showMenuInitial.menuVisible && showMenuInitial.expanded === 'true' && showMenuInitial.hidden === 'false' && showMenuInitial.items === 3 && showMenuInitial.name.length > 0 && firstSavePath.endsWith('.showslate') && saveAsPath.endsWith(' Copy.showslate') && showDocumentSaveRequests[0].saveAs === false && showDocumentSaveRequests[1].saveAs === true && !showMenuFinal.open && showMenuFinal.expanded === 'false', JSON.stringify({showMenuInitial,firstSavePath,saveAsPath,showMenuFinal}));
 
   const compositionWorkflow = JSON.parse(await win.webContents.executeJavaScript(`(async()=>{
     const wait=async fn=>{const started=Date.now();while(Date.now()-started<1800){if(fn())return true;await new Promise(resolve=>setTimeout(resolve,25));}return false;};
@@ -671,15 +698,29 @@ app.whenReady().then(async () => {
   screenPermissionMode = 'granted';
   check('COMPOSITOR_PRIVACY_SETTINGS_RECOVERY_VISIBLE_OK', screenPermissionAction.actionVisible && screenPermissionAction.message.includes('Screen Recording') && screenPermissionAction.actionText.includes('settings') && privacySettingsRequests.includes('screen'), JSON.stringify({ screenPermissionAction, privacySettingsRequests }));
 
-  const hiddenSource = JSON.parse(await win.webContents.executeJavaScript(`JSON.stringify((()=>{
+  const hiddenSource = JSON.parse(await win.webContents.executeJavaScript(`(async()=>{
     const layer=selectedLayer(); const inputId=layer.inputId;
-    const findToggle=()=>[...document.querySelectorAll('#layerList .layer-row')].find(row=>row.querySelector('.layer-name')?.textContent===layer.name)?.querySelector('.vis');
-    let toggle=findToggle(); toggle.checked=false; toggle.dispatchEvent(new Event('change',{bubbles:true}));
+    if(layer.visible===false){layer.visible=true;sceneDirty();await new Promise(resolve=>setTimeout(resolve,30));}
+    const findToggle=()=>document.querySelector('#layerList .layer-row[data-layer-id="'+layer.id+'"] .vis');
+    const findPreviewLayer=()=>document.querySelector('#pvScene .pv-scene-layer[data-layer-id="'+layer.id+'"]');
+    const programBefore=JSON.stringify(programState.scenes);
+    let toggle=findToggle();
+    const initialPressed=toggle?.getAttribute('aria-pressed')==='true';
+    const previewBefore=!!findPreviewLayer();
+    toggle?.click(); await new Promise(resolve=>setTimeout(resolve,40));
+    toggle=findToggle();
     const retainedWhileHidden=S.liveInputs.some(input=>input.id===inputId);
-    toggle=findToggle(); toggle.checked=true; toggle.dispatchEvent(new Event('change',{bubbles:true}));
-    return {retainedWhileHidden,retainedAfterShow:S.liveInputs.some(input=>input.id===inputId),visible:selectedLayer().visible,inputId};
-  })())`));
+    const previewHidden=!findPreviewLayer();
+    const hidden=selectedLayer().visible===false;
+    const hiddenPressed=toggle?.getAttribute('aria-pressed')==='false';
+    toggle?.click(); await new Promise(resolve=>setTimeout(resolve,40));
+    toggle=findToggle();
+    const previewRestored=!!findPreviewLayer();
+    const visiblePressed=toggle?.getAttribute('aria-pressed')==='true';
+    return JSON.stringify({retainedWhileHidden,retainedAfterShow:S.liveInputs.some(input=>input.id===inputId),visible:selectedLayer().visible,inputId,initialPressed,previewBefore,previewHidden,hidden,hiddenPressed,previewRestored,visiblePressed,programUnchanged:programBefore===JSON.stringify(programState.scenes)});
+  })()`));
   check('COMPOSITOR_HIDDEN_LIVE_LAYER_RETAINS_SOURCE_OK', hiddenSource.retainedWhileHidden && hiddenSource.retainedAfterShow && hiddenSource.visible, JSON.stringify(hiddenSource));
+  check('COMPOSITOR_LAYER_VISIBILITY_BUTTON_PREVIEW_ONLY_OK', hiddenSource.initialPressed && hiddenSource.previewBefore && hiddenSource.previewHidden && hiddenSource.hidden && hiddenSource.hiddenPressed && hiddenSource.previewRestored && hiddenSource.visiblePressed && hiddenSource.programUnchanged, JSON.stringify(hiddenSource));
 
   const replaced = JSON.parse(await win.webContents.executeJavaScript(`(async()=>{
     const before=selectedLayer(); const transform={id:before.id,inputId:before.inputId,x:before.x,y:before.y,w:before.w,h:before.h,opacity:before.opacity,rotation:before.rotation};

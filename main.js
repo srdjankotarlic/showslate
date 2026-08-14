@@ -8,6 +8,7 @@ const { spawnSync } = require('child_process');
 
 const lowerThirdPackage = require('./src/lower-third/package.js');
 const showPackage = require('./src/show-storage/package.js');
+const showDocumentFile = require('./src/show-storage/document-file.js');
 const showPreflight = require('./src/show-storage/preflight.js');
 const controlApi = require('./src/control-api/commands.js');
 const outputRouting = require('./src/output-routing/model.js');
@@ -161,6 +162,7 @@ let stateRevision = 0;
 let primaryDelivery = { lastDispatchRevision: 0, lastDispatchAt: 0, ackRevision: 0, ackAt: 0, ackCueId: '', ackTransactionId: '' };
 let showRepository = null;
 let showStorageReady = null;
+let activeShowDocumentPath = '';
 let cleanQuitInProgress = false;
 let cleanQuitComplete = false;
 let rendererCrashed = false;
@@ -1397,6 +1399,65 @@ ipcMain.handle('show-storage-load-current', async () => {
 ipcMain.handle('show-storage-recover', async (event, choice) => {
   if (showStorageReady) await showStorageReady;
   return showRepository ? showRepository.resolveRecovery(String(choice || '')) : { ok: false, error: 'Show storage is unavailable' };
+});
+ipcMain.handle('show-document-status', event => {
+  if (!controlWin || controlWin.isDestroyed() || event.sender.id !== controlWin.webContents.id) return { ok: false, error: 'unauthorized' };
+  return { ok: true, path: activeShowDocumentPath, name: activeShowDocumentPath ? path.basename(activeShowDocumentPath) : '' };
+});
+ipcMain.handle('show-document-save', async (event, payload) => {
+  try {
+    if (!controlWin || controlWin.isDestroyed() || event.sender.id !== controlWin.webContents.id) return { ok: false, error: 'unauthorized' };
+    const document = payload && payload.document;
+    const saveAs = !!(payload && payload.saveAs);
+    const showName = String(document && document.show && document.show.name || 'Untitled Show')
+      .replace(/[^A-Za-z0-9 _.-]+/g, '').trim().slice(0, 100) || 'Untitled Show';
+    let destination = '';
+    if (SMOKE && payload && payload.testPath) destination = path.resolve(String(payload.testPath));
+    else if (!saveAs && activeShowDocumentPath) destination = activeShowDocumentPath;
+    else {
+      const picked = await dialog.showSaveDialog(controlWin, {
+        title: saveAs ? 'Save ShowSlate Show As' : 'Save ShowSlate Show',
+        defaultPath: showName + showDocumentFile.SHOW_DOCUMENT_EXTENSION,
+        filters: [{ name: 'ShowSlate Project', extensions: ['showslate'] }]
+      });
+      if (picked.canceled || !picked.filePath) return { ok: false, canceled: true };
+      destination = picked.filePath;
+    }
+    const result = await showDocumentFile.writeShowDocumentFile({
+      file: destination,
+      document,
+      appMetadata: getBuildInfo()
+    });
+    if (result.ok) activeShowDocumentPath = result.path;
+    return result;
+  } catch (error) {
+    return { ok: false, error: String(error && error.message || error), code: error.code || 'SHOW_SAVE_FAILED' };
+  }
+});
+ipcMain.handle('show-document-open', async (event, payload) => {
+  try {
+    if (!controlWin || controlWin.isDestroyed() || event.sender.id !== controlWin.webContents.id) return { ok: false, error: 'unauthorized' };
+    let source = '';
+    if (SMOKE && payload && payload.testPath) source = path.resolve(String(payload.testPath));
+    else {
+      const picked = await dialog.showOpenDialog(controlWin, {
+        title: 'Open ShowSlate Show',
+        properties: ['openFile'],
+        filters: [{ name: 'ShowSlate Project', extensions: ['showslate'] }]
+      });
+      if (picked.canceled || !picked.filePaths[0]) return { ok: false, canceled: true };
+      source = picked.filePaths[0];
+    }
+    const result = await showDocumentFile.readShowDocumentFile(source);
+    if (result.ok) activeShowDocumentPath = result.path;
+    return result;
+  } catch (error) {
+    return { ok: false, error: String(error && error.message || error), code: error.code || 'SHOW_OPEN_FAILED' };
+  }
+});
+ipcMain.on('show-document-clear-path', event => {
+  if (!controlWin || controlWin.isDestroyed() || event.sender.id !== controlWin.webContents.id) return;
+  activeShowDocumentPath = '';
 });
 ipcMain.handle('show-package-export', async (event, payload) => {
   try {

@@ -3,6 +3,7 @@ const fs = require('fs');
 const os = require('os');
 const path = require('path');
 const { ShowRepository, validateShowDocument } = require('../src/show-storage/repository.js');
+const { writeShowDocumentFile, readShowDocumentFile } = require('../src/show-storage/document-file.js');
 
 const fsp = fs.promises;
 let passed = 0;
@@ -82,6 +83,17 @@ async function prepareCrash(root, nowRef) {
   check('SHOW_REPOSITORY_CORRUPTION_REJECTED_OK', !corrupt.ok && (await repo.listBackups()).length === backupCountBeforeCorrupt);
   await fsp.rm(root, { recursive: true, force: true });
 
+  const documentRoot = await makeRoot();
+  const documentPath = path.join(documentRoot, 'Conference opening');
+  const documentSave = await writeShowDocumentFile({ file: documentPath, document: documentFor('Conference opening'), appMetadata: { commit: 'project-file-test' } });
+  const documentOpen = await readShowDocumentFile(documentSave.path);
+  check('SHOW_DOCUMENT_FILE_SAVE_OPEN_ROUNDTRIP_OK', documentSave.ok && documentSave.path.endsWith('.showslate') && documentOpen.ok && documentOpen.document.show.name === 'Conference opening' && documentOpen.document.app.commit === 'project-file-test');
+  const invalidPath = path.join(documentRoot, 'invalid.showslate');
+  await fsp.writeFile(invalidPath, '{"schemaVersion":99,"show":{"rundown":[]}}');
+  const invalidOpen = await readShowDocumentFile(invalidPath);
+  check('SHOW_DOCUMENT_FILE_INVALID_PROJECT_REJECTED_OK', !invalidOpen.ok && /schemaVersion/.test(invalidOpen.error));
+  await fsp.rm(documentRoot, { recursive: true, force: true });
+
   const crashRoot = await makeRoot();
   const crashClock = { value: Date.now() };
   await prepareCrash(crashRoot, crashClock);
@@ -105,7 +117,7 @@ async function prepareCrash(root, nowRef) {
   check('SHOW_REPOSITORY_CLEAN_EXIT_NO_RECOVERY_OK', !cleanStatus.recoveryAvailable);
   await fsp.rm(baselineRoot, { recursive: true, force: true });
 
-  console.log('SHOW_REPOSITORY_TESTS_OK ' + passed + '/10');
+  console.log('SHOW_REPOSITORY_TESTS_OK ' + passed + '/12');
 })().catch((error) => {
   console.error(error && error.stack || error);
   process.exit(1);
