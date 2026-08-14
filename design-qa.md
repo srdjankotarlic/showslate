@@ -144,26 +144,31 @@ final result: passed
 - Source visual truth: `/Users/srdjankotarlic/Desktop/Screenshot 2026-08-14 at 02.19.17.png`.
 - Rendered implementation: `/Users/srdjankotarlic/Documents/New project/protimer-studio-release/artifacts/generated/conference-desk/live-mode-performance-deck.png`.
 - Responsive implementation: `/Users/srdjankotarlic/Documents/New project/protimer-studio-release/artifacts/generated/conference-desk/live-mode-900x600.png`.
+- Normalized focused comparison: `/Users/srdjankotarlic/Documents/New project/protimer-studio-release/artifacts/generated/design-qa/live-mode-reference-comparison.png`.
+- Source pixels: 1586 x 588. Full implementation pixels: 2560 x 1536 at a 1280 x 768 CSS viewport and 2x density. Responsive implementation pixels: 1800 x 1136 at a 900 x 568 CSS viewport and 2x density.
 - State: Live Mode, Preview First, one scene and one clip selected, Program active.
 - Density normalization: the source is a focused deck crop while the implementation is a full application capture, so fidelity was judged on the corresponding matrix region.
 
 **Full-View Comparison Evidence**
 
-- Scenes are compact columns and source layers are rows, matching the reference's scan direction.
-- Each source occupies a large thumbnail cell with its name in a fixed bottom strip.
-- Preview and Program remain above the matrix because they are part of ShowSlate's live safety model.
+- Scenes are compact 132 px columns and source layers are 72 px rows, matching the reference's scan direction.
+- Cells form a continuous 1 px matrix rather than isolated cards; each source keeps its thumbnail above a fixed 18 px name strip.
+- Preview and Program remain above the matrix because they are part of ShowSlate's live safety model, but their band is reduced to 26% so the deck is the dominant surface.
 
 **Focused Region Comparison Evidence**
 
-- Automated geometry confirms 144 x 46 scene headers and 144 x 96 source cells.
+- Automated geometry confirms 132 x 36 scene headers and 132 x 72 source cells, with a 1 px gap between the header and first source row.
 - Clip surfaces fill their cells and persistent-layer controls appear only on hover, focus, or when enabled.
 - Blue Preview, green Program, and amber Direct states remain visible without adding separate cards.
+- The 900 x 568 CSS viewport keeps seven scene columns reachable through the matrix scroll surface while TAKE SCENE, BLACK, GO CUE, TAKE CLIP, and HIDE CLIP remain visible.
 
 **Comparison History**
 
 - Earlier P1: oversized scene headers, per-scene TAKE buttons, and persistent PIN controls made the deck sparse. Fixed with compact column headers, a top trigger strip, full-cell clip buttons, and on-demand PIN controls.
 - Earlier P2: Preview and Program dominated the vertical layout. Fixed by reserving the larger share of Live Mode for the deck.
 - Earlier P2: video cells could fall back to a generic VIDEO label. Fixed with a lazy one-frame poster cache that does not start Program playback or keep decoders alive.
+- Packaged verification found a P1 layout collision: generic `live` and `preview` classes inherited legacy monitor sizing and stretched one active column to 270 px. Fixed with scoped `is-live` / `is-preview` states, explicit grid coordinates for every scene/source cell, and a geometry regression that rejects unequal rows or dead space.
+- Reference comparison found a P2 density mismatch: 3 px card gaps, 144 x 82 cells, a 32% monitor band, and large toolbars made the deck feel like a dashboard rather than a performance matrix. Fixed with a 1 px continuous grid, 132 x 72 cells, 18 px label strips, a 26% monitor band, compact toolbars, and quiet empty slots.
 
 **Residual P3 Polish**
 

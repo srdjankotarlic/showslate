@@ -11114,12 +11114,14 @@ function renderLiveModeWorkspace(){
   deckRoot.style.setProperty('--live-scene-count',String(Math.max(1,deck.scenes.length)));
   deckRoot.innerHTML='';
   const corner=document.createElement('div');corner.className='live-mode-corner';
-  const cornerTitle=document.createElement('strong');cornerTitle.textContent=t('liveDeckKicker');
+  corner.style.gridColumn='1';corner.style.gridRow='1';
+  const cornerTitle=document.createElement('strong');cornerTitle.textContent='DECK';cornerTitle.title=t('liveDeckKicker');
   const cornerMeta=document.createElement('span');cornerMeta.textContent=`${deck.scenes.length} ${t('scenes').toLowerCase()} \u00b7 ${deck.rowCount} ${t('sources').toLowerCase()}`;
   corner.append(cornerTitle,cornerMeta);deckRoot.appendChild(corner);
-  deck.scenes.forEach(scene=>{
-    const head=document.createElement('div');head.className='live-mode-scene-head'+(scene.activePreview?' preview':'')+(scene.activeProgram?' live':'');
+  deck.scenes.forEach((scene,sceneIndex)=>{
+    const head=document.createElement('div');head.className='live-mode-scene-head'+(scene.activePreview?' is-preview':'')+(scene.activeProgram?' is-live':'');
     head.dataset.sceneId=scene.id;
+    head.style.gridColumn=String(sceneIndex+2);head.style.gridRow='1';
     const select=document.createElement('button');select.type='button';select.className='live-mode-scene-button';select.dataset.sceneId=scene.id;
     select.setAttribute('aria-label',`${scene.name} — ${liveModePreferences.triggerMode==='direct'?t('liveDirect'):t('studioPreview')}`);
     const name=document.createElement('strong');name.textContent=scene.name;
@@ -11135,19 +11137,22 @@ function renderLiveModeWorkspace(){
   }else if(!deck.rows.length){
     const empty=document.createElement('div');empty.className='live-mode-empty-deck';empty.style.gridColumn=`1 / span ${deck.scenes.length+1}`;empty.textContent=t('liveNoClips');deckRoot.appendChild(empty);
   }
-  deck.rows.forEach(row=>{
+  deck.rows.forEach((row,rowIndex)=>{
     const label=document.createElement('div');label.className='live-mode-layer-head';
+    label.style.gridColumn='1';label.style.gridRow=String(rowIndex+2);
     const strong=document.createElement('strong');strong.textContent=uiText('liveLayer',{n:row.index+1});
     const small=document.createElement('span');small.textContent=row.index===0?(lang==='sr'?'NAPRED':'FRONT'):(lang==='sr'?'SLOJ':'STACK');
     label.append(strong,small);deckRoot.appendChild(label);
-    row.cells.forEach(cell=>{
-      if(!cell){const empty=document.createElement('div');empty.className='live-mode-cell empty';empty.textContent=t('liveEmptyClip');deckRoot.appendChild(empty);return;}
+    row.cells.forEach((cell,sceneIndex)=>{
+      const gridColumn=String(sceneIndex+2),gridRow=String(rowIndex+2);
+      if(!cell){const empty=document.createElement('div');empty.className='live-mode-cell empty';empty.style.gridColumn=gridColumn;empty.style.gridRow=gridRow;empty.setAttribute('aria-label',t('liveEmptyClip'));deckRoot.appendChild(empty);return;}
       const sourceScene=scenes.find(scene=>String(scene.id)===String(cell.sceneId));
       const sourceLayer=sourceScene&&(sourceScene.layers||[]).find(layer=>String(layer.id)===String(cell.id));
       const live=!!liveModeProgramLayer(sourceLayer,cell.sceneId,program);
       const selected=String(S.activeSceneId)===String(cell.sceneId)&&String(selectedLayerId||'')===String(cell.id);
-      const box=document.createElement('div');box.className='live-mode-cell'+(selected?' preview':'')+(live?' live':'');
+      const box=document.createElement('div');box.className='live-mode-cell'+(selected?' is-preview':'')+(live?' is-live':'');
       box.dataset.sceneId=cell.sceneId;box.dataset.layerId=cell.id;
+      box.style.gridColumn=gridColumn;box.style.gridRow=gridRow;
       const clip=document.createElement('button');clip.type='button';clip.className='live-mode-clip';clip.dataset.sceneId=cell.sceneId;clip.dataset.layerId=cell.id;clip.setAttribute('aria-pressed',selected?'true':'false');
       clip.setAttribute('aria-label',`${cell.sceneName} — ${cell.name}`);
       liveModeClipThumbnail(clip,cell,sourceLayer);
