@@ -11798,6 +11798,50 @@ function audioCapableLayers(){
   const scene=currentScene();
   return (scene&&Array.isArray(scene.layers)?scene.layers:[]).filter(layer=>layer&&['video','window','capture','audio'].includes(layer.type));
 }
+function audioControlTargets(layer){
+  if(!layer)return {preview:null,program:null};
+  const previewScene=currentScene();
+  const preview=(previewScene&&Array.isArray(previewScene.layers)?previewScene.layers:[]).find(row=>row===layer||row.id===layer.id)||null;
+  const state=ensureProgramState();
+  const program=preview?findProgramLayer(preview,state):((activeScene(state)?.layers||[]).find(row=>row===layer||row.id===layer.id)||null);
+  return {preview,program};
+}
+function copyLiveInputDefinitionToProgram(layer){
+  const {preview,program}=audioControlTargets(layer);
+  if(!preview||!program||!preview.inputId)return false;
+  const definition=liveInputDefinition(preview.inputId);if(!definition)return false;
+  programState.liveInputs=PTCOMP.normalizeLiveInputs(programState.liveInputs||[]).filter(row=>row.id!==definition.id);
+  programState.liveInputs.push(cloneState(definition));
+  return true;
+}
+function mutateAudioControl(layer,mutator,{persist=false,renderMixer=false,renderSourceInspector=false,syncDefinition=false}={}){
+  const targets=audioControlTargets(layer),changed=[];
+  [targets.preview,targets.program].forEach(target=>{
+    if(!target||changed.includes(target))return;
+    mutator(target);changed.push(target);
+  });
+  if(!changed.length)return targets;
+  if(syncDefinition)copyLiveInputDefinitionToProgram(targets.preview||layer);
+  if(targets.program){
+    api.sendState(programState);
+    renderStage('pg',programState,Date.now());
+  }else if(S.studioDirect&&targets.preview){
+    programState=outputSnapshot(S);
+    api.sendState(programState);
+    renderStage('pg',programState,Date.now());
+    targets.program=findProgramLayer(targets.preview,programState);
+  }
+  if(targets.preview){
+    meterRecordForLayer(targets.preview);
+    syncAudioMonitorPlayer(targets.preview,audioStreamForLayer(targets.preview));
+  }
+  syncProgramVideoAudio();
+  refreshLayerProgramIndicators();
+  if(persist)saveSettings();
+  if(renderMixer)renderAudioMixer();
+  if(renderSourceInspector)renderInspector();
+  return targets;
+}
 function audioLayerMuted(layer){
   return layer.type==='video'?layer.muted!==false:layer.audioEnabled===false;
 }
@@ -12047,7 +12091,9 @@ function updateAudioInputForLayer(layer,deviceId){
   const device=audioDeviceInventory.find(row=>row.kind==='audioinput'&&row.deviceId===deviceId);
   definition.audioDeviceId=String(deviceId||'');definition.audioDeviceLabel=device&&device.label||'';definition.withAudio=!!deviceId;
   if(definition.type==='audio'&&!deviceId)return;
-  layer.audioEnabled=!!deviceId;S.liveInputs=PTCOMP.normalizeLiveInputs(S.liveInputs);liveInputConfigKey='';sceneDirty();
+  S.liveInputs=PTCOMP.normalizeLiveInputs(S.liveInputs);liveInputConfigKey='';
+  mutateAudioControl(layer,target=>{target.audioEnabled=!!deviceId;},{persist:true,syncDefinition:true});
+  sceneDirty();
 }
 function renderAudioMixer(){
   const root=$('audioMixerRows'),empty=$('audioMixerEmpty'),count=$('audioMixerCount');if(!root||!empty||!count)return;
@@ -12082,22 +12128,24 @@ function audioLayerFromMixerEvent(event){
 $('audioMixerRows')?.addEventListener('input',event=>{
   if(!event.target.classList.contains('audio-fader'))return;
   const layer=audioLayerFromMixerEvent(event);if(!layer)return;
-  layer.volume=(+event.target.value)/100;
-  if(layer.type==='video')layer.videoAudioConfigured=true;
-  const label=event.target.closest('.audio-channel')?.querySelector('.audio-fader-value');if(label)label.textContent=audioDbLabel(audioVolumeDb(layer.volume));
-  syncAudioMonitorPlayer(layer,audioStreamForLayer(layer));
+  const volume=(+event.target.value)/100;
+  mutateAudioControl(layer,target=>{target.volume=volume;if(target.type==='video')target.videoAudioConfigured=true;});
+  const label=event.target.closest('.audio-channel')?.querySelector('.audio-fader-value');if(label)label.textContent=audioDbLabel(audioVolumeDb(volume));
 });
 $('audioMixerRows')?.addEventListener('change',event=>{
   const layer=audioLayerFromMixerEvent(event);if(!layer)return;
-  if(event.target.classList.contains('audio-fader'))sceneDirty();
-  if(event.target.classList.contains('audio-monitoring')){layer.audioMonitoring=event.target.value;if(layer.type==='video')layer.videoAudioConfigured=true;sceneDirty();}
+  if(event.target.classList.contains('audio-fader'))saveSettings();
+  if(event.target.classList.contains('audio-monitoring'))mutateAudioControl(layer,target=>{target.audioMonitoring=event.target.value;if(target.type==='video')target.videoAudioConfigured=true;},{persist:true,renderMixer:true,renderSourceInspector:true});
   if(event.target.classList.contains('audio-input-device'))updateAudioInputForLayer(layer,event.target.value);
 });
 $('audioMixerRows')?.addEventListener('click',event=>{
   const button=event.target.closest('.audio-mute');if(!button)return;
   const layer=audioLayerFromMixerEvent(event);if(!layer)return;
-  if(layer.type==='video'){layer.videoAudioConfigured=true;layer.muted=layer.muted===false;}else layer.audioEnabled=layer.audioEnabled===false;
-  sceneDirty();
+  const nextMuted=!audioLayerMuted(layer);
+  mutateAudioControl(layer,target=>{
+    if(target.type==='video'){target.videoAudioConfigured=true;target.muted=nextMuted;}
+    else target.audioEnabled=!nextMuted;
+  },{persist:true,renderMixer:true,renderSourceInspector:true});
 });
 $('audioProgramRoute')?.addEventListener('change',event=>setProgramAudioRoute(event.target.value));
 $('audioProgramDevice')?.addEventListener('change',event=>{S.programAudioDeviceId=event.target.value;programAudioSinkId=null;outputConfigs.forEach(config=>{if(config.liveAudio)config.audioOutputDeviceId=S.programAudioDeviceId;});pushAudioRoutingState();});
@@ -12583,15 +12631,23 @@ $('inspItalic').addEventListener('change',e=>inspApply(L=>{if(L.type==='text')L.
 $('inspUnderline').addEventListener('change',e=>inspApply(L=>{if(L.type==='text')L.underline=e.target.checked;}));
 $('inspSourceColor').addEventListener('input',e=>inspApply(L=>{if(L.type==='color'){L.color=e.target.value;L.bg=e.target.value;}}));
 $('inspMediaReplace').addEventListener('click',()=>{const L=selectedLayer();if(!L||!['image','video','pdf'].includes(L.type))return;mediaReplaceLayerId=L.id;$('sceneMediaFile').accept=L.type==='image'?'image/*':L.type==='video'?'video/*':'application/pdf,.pdf';$('sceneMediaFile').click();});
-$('inspLiveAudio').addEventListener('change',e=>inspApply(L=>{
-  if(!(L.type==='window'||L.type==='capture'||L.type==='audio'))return;
-  L.audioEnabled=e.target.checked;
-  if(L.type==='window'&&e.target.checked){
-    const definition=liveInputDefinition(L.inputId);
+$('inspLiveAudio').addEventListener('change',event=>{
+  const layer=selectedLayer();if(!layer||!['window','capture','audio'].includes(layer.type))return;
+  const enabled=event.target.checked;
+  if(layer.type==='window'&&enabled){
+    const definition=liveInputDefinition(layer.inputId);
     if(definition&&!definition.withAudio){definition.withAudio=true;S.liveInputs=PTCOMP.normalizeLiveInputs(S.liveInputs);liveInputConfigKey='';}
   }
-}));
-$('inspLiveVolume').addEventListener('input',e=>inspApply(L=>{if(L.type==='window'||L.type==='capture'||L.type==='audio')L.volume=(+e.target.value)/100;}));
+  mutateAudioControl(layer,target=>{target.audioEnabled=enabled;},{persist:true,renderMixer:true,renderSourceInspector:true,syncDefinition:true});
+});
+$('inspLiveVolume').addEventListener('input',event=>{
+  const layer=selectedLayer();if(!layer||!['window','capture','audio'].includes(layer.type))return;
+  const volume=(+event.target.value)/100;
+  mutateAudioControl(layer,target=>{target.volume=volume;});
+  const row=document.querySelector(`#audioMixerRows [data-audio-layer-id="${CSS.escape(String(layer.id||''))}"]`);
+  if(row){const fader=row.querySelector('.audio-fader'),label=row.querySelector('.audio-fader-value');if(fader)fader.value=String(Math.round(volume*100));if(label)label.textContent=audioDbLabel(audioVolumeDb(volume));}
+});
+$('inspLiveVolume').addEventListener('change',()=>saveSettings());
 document.querySelectorAll('[data-video-target]').forEach(button=>button.addEventListener('click',()=>setVideoTransportTarget(button.dataset.videoTarget)));
 $('inspVideoRestart').addEventListener('click',()=>commandVideoTargets('restart'));
 $('inspVideoPlay').addEventListener('click',()=>commandVideoTargets('play'));
