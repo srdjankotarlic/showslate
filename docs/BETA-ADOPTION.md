@@ -1,6 +1,6 @@
 # ShowSlate Live Compositor public beta plan
 
-The immediate objective is not a large download number. It is to learn whether a real single-room operator can prepare, preflight and run a conference without manually synchronizing a spreadsheet, timer, media folder and speaker graphics.
+The immediate objective is not a large download number. It is to learn whether a real small-room event team can prepare, preflight and run a conference without manually synchronizing a spreadsheet, timer, media folder and speaker graphics.
 
 ## First validation cohort
 

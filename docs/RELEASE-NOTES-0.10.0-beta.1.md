@@ -1,6 +1,6 @@
 # ShowSlate Conference Desk 0.10.0 Beta 1
 
-This beta turns ShowSlate into a focused, local-first **Conference Desk** for one room operator. The app now imports a schedule and media folder, assigns purpose-built output roles, runs conference-specific preflight and applies the prepared cue through one GO transaction.
+This beta turns ShowSlate into a focused, local-first **Conference Desk** for small conference-room teams. The app now imports a schedule and media folder, assigns purpose-built output roles, runs conference-specific preflight and applies the prepared cue through one GO transaction.
 
 ## Download the app
 

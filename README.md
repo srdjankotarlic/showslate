@@ -28,6 +28,7 @@
 
 > [!WARNING]
 > **Mac-first public beta / work in progress.** The packaged Apple Silicon Mac app has been exercised through real operator and recording workflows. Windows packages build in native CI, but have not yet been manually validated on physical Windows hardware. ShowSlate is not production-certified: evaluate it off-air and test the exact computer, displays, media, capture devices, audio route and fallback before a live event.
+> ShowSlate can be one component in a staffed production system. It is not intended to replace specialist crew roles, redundant signal paths or independent backup hardware.
 
 ![ShowSlate Live Compositor operator workspace](docs/images/live-compositor-workspace.png)
 
@@ -37,11 +38,11 @@ The included **Conference Desk** workflow adds a rundown, LIVE/NEXT/GO, speaker 
 
 ## Is ShowSlate the right tool?
 
-Choose ShowSlate when one operator needs to prepare scenes, run a conference-style cue list and control several local room screens without an account or subscription. It is especially suited to small conferences, corporate meetings, education, community venues and rehearsed event playback.
+Choose ShowSlate when a small event team needs to prepare scenes, run a conference-style cue list and coordinate several local room screens without an account or subscription. It is especially suited to small conferences, corporate meetings, education, community venues and rehearsed event playback.
 
 | Tool | Best fit | Where ShowSlate differs |
 |---|---|---|
-| **ShowSlate** | Local event visuals, cues, timers, lower thirds and several room displays | One free workflow joins rundown, layered scenes, Preview/Program, recording and output routing. |
+| **ShowSlate** | Local event visuals, cues, timers, lower thirds and several room displays | A free workflow joins rundown, layered scenes, Preview/Program, recording and output routing. |
 | **OBS Studio** | Streaming, encoding, recording, filters and plugin-based broadcast workflows | Keep OBS for streaming; ShowSlate is organized around room screens and event cues. |
 | **Resolume Arena** | High-performance VJ playback, effects and advanced projection mapping | Arena is the mature specialist; ShowSlate is simpler, free and conference-oriented. |
 | **ProPresenter** | Polished presentation, worship, lyrics and stage-display workflows | ProPresenter has a deeper presentation ecosystem; ShowSlate is a general layered local compositor. |
@@ -203,7 +204,7 @@ Supported folder media includes PNG, JPEG, WebP, GIF, AVIF, BMP, SVG, MP4, WebM,
 
 ## Deliberate scope
 
-ShowSlate can arrange and locally record live and media sources for room displays, but it is not a streaming encoder, multibus audio mixer, NDI router, PTZ controller or multi-room cloud platform. Keep OBS, vMix or dedicated production hardware where live streaming, broadcast-grade multitrack recording, advanced audio or complex switching is required. The product remains focused on dependable visual composition, show control and straightforward Program capture for one operator and a small set of local destinations.
+ShowSlate can arrange and locally record live and media sources for room displays, but it is not a streaming encoder, multibus audio mixer, NDI router, PTZ controller or multi-room cloud platform. Keep OBS, vMix or dedicated production hardware where live streaming, broadcast-grade multitrack recording, advanced audio or complex switching is required. The product remains focused on dependable visual composition, show control and straightforward Program capture for small event teams and a small set of local destinations. In larger or show-critical productions, use it as one component of a staffed, redundant signal chain rather than the only control point.
 
 External OBS/vMix alpha behavior is not certified in this beta. Test the exact show computer, displays, network, media and capture path off-air before every event. Show-critical productions still need an independent fallback timer and rundown.
 

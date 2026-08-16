@@ -3,6 +3,8 @@
 This beta adds clean local Program recording and completes a substantial operator-workflow update. ShowSlate can now build and run layered scenes, switch Preview to Program, route independent display canvases, operate a compact Live Mode deck and record the resulting Program with enabled Program audio.
 
 > **Mac-first work in progress:** this is an evaluation build for off-air testing. The packaged Apple Silicon Mac app has completed the operator and recording checks described below. Windows packages build in native CI but have not yet been manually validated on physical Windows hardware. ShowSlate is not production-certified: rehearse the exact computer, displays, storage, media, capture devices, audio route and fallback before a live event.
+>
+> ShowSlate may be used as one component in a staffed production, but this beta does not replace specialist crew roles, redundant signal paths or independent backup hardware.
 
 ## Download
 
