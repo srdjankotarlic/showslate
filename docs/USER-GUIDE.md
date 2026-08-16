@@ -115,6 +115,22 @@ Window, display and capture-device streams are local to the desktop app. They ap
 
 If Preflight warns about a Canvas/output aspect mismatch, the scene can be stretched by that destination. Either match the Canvas to the destination or confirm that the non-matching format is intentional.
 
+## Recording Program
+
+Select **Record Program** in the main header to capture the clean Program canvas without the operator interface. The control turns active and shows elapsed time while recording; select it again to stop and finalize the file.
+
+Open **Settings > Recording** before the show:
+
+1. Choose the save folder and a filename prefix.
+2. Choose **Match Program canvas**, 1080p, 1440p, 4K or a custom width and height.
+3. Choose 24, 25, 30, 50 or 60 fps.
+4. Choose **Automatic**, MP4/H.264 or WebM. Automatic prefers MP4 when the current system encoder supports it and otherwise uses WebM.
+5. Choose a quality preset or enter a custom video bitrate.
+6. Enable **Include Program audio** only when the required video, capture or audio layers are already enabled in Program; choose the audio bitrate.
+7. Confirm the free-space readout, then make a short rehearsal recording and inspect both picture and sound in another player.
+
+Recording follows Program changes and blackout. It does not capture Preview, the controller interface or hidden operator tools. Files are written incrementally, but recording duration is still limited by free storage, encoder performance and the selected resolution, frame rate and bitrate. Use a fast local drive and do not depend on an untested first recording during a live event.
+
 ## Speaker timing and messages
 
 Open **Settings > Timing** when a scene needs countdown, stopwatch or clock controls. The timer remains available as a scene source and supports warning colors, overtime, progress, chimes and scheduled start without occupying the permanent live workspace.
@@ -178,4 +194,5 @@ English is the default. English and Serbian have full interface coverage. The ot
 - Identify displays, apply routing and run Preflight.
 - Test GO, START, BLACKOUT, messages, lower thirds and every output role.
 - Test every live window/device source, Program-audio route and stream-capture path separately when used.
+- Make a short Program recording, stop it, then verify its image, sound, duration and save location in another player.
 - Keep a fallback timer and a copy of the rundown available.

@@ -3,20 +3,23 @@
 - The public Mac beta has an ad-hoc bundle signature and is not Apple Developer ID signed or notarized. macOS can require explicit approval in Privacy & Security on first launch.
 - The Mac beta is Apple Silicon only. Intel Mac packages are not currently published.
 - The public Windows x64 installer and portable app are unsigned. Windows SmartScreen can show an Unknown publisher warning, and broader physical Windows hardware testing is still required.
-- `0.11.0-beta.1` uses Electron 43.1.1. Local source and packaged evidence is limited to the displays and hardware listed in [PUBLIC-BETA-VERIFICATION.md](PUBLIC-BETA-VERIFICATION.md); this does not replace physical Windows or additional venue display-chain testing.
+- `0.12.0-beta.1` uses Electron 43.1.1. Local source and packaged evidence is limited to the displays and hardware listed in [PUBLIC-BETA-VERIFICATION.md](PUBLIC-BETA-VERIFICATION.md); this does not replace physical Windows or additional venue display-chain testing.
 - Fail-closed stable candidate and publication workflows are present, but no signed stable artifact exists until real Apple and Windows credentials pass native verification and exact candidate artifacts pass the retained hardware/operator evidence gate.
 - OBS and vMix browser-source workflows have not received a complete manual integration pass. Do not treat them as certified integrations.
 - MP4 playback and WebM VP8/VP9 decode and internal alpha compositing are covered by source and packaged Electron tests. Reliable alpha in external production software still depends on that application's codec and browser pipeline and is not certified in this beta.
 - Window/display capture and camera/UVC capture inputs work only in the desktop app and its Electron output windows. Browser/OBS URL outputs do not receive those local streams.
 - Capture-device compatibility depends on operating-system and UVC drivers. Re-select and test each real device on the show computer; a synthetic capture test does not certify every physical card.
 - Preview is always muted. Source audio is optional, off by default and limited to one local Program output; ShowSlate is not a multibus audio mixer.
+- Record Program uses the encoders available through Electron and the operating system. Automatic mode prefers MP4/H.264 and falls back to WebM, so the final container and codec can differ between computers.
+- Recording is a single composited Program capture, not isolated tracks, multibus audio, replay, streaming or broadcast redundancy. Long-duration, 4K and 50/60 fps recording must be rehearsed with the exact media, outputs, disk and hardware.
+- A recording needs enough free disk space to finalize safely. ShowSlate writes chunks incrementally, but it cannot protect against a full, disconnected or failed destination drive.
 - Window and device identifiers are machine-local and can change after moving or importing a show. Scene geometry persists, but the operator can need to use **Change source**.
 - Live playback has no fixed ShowSlate file-size cap. Files over 512 MB are linked and range-streamed from their original location; moving, renaming, disconnecting or unmounting that source makes it unavailable. Portable show/template packages still cap embedded assets at 200 MB and do not include disk-linked media.
 - ShowSlate preserves the original media bytes and does not transcode. Smooth playback still depends on codec support, source-disk throughput, hardware decoding, resolution, frame rate, active layer/output count and available GPU/RAM. Very large still images can exceed decode or texture limits even when the file itself imports successfully.
 - Different Canvas and output aspect ratios can stretch the composed scene. Preflight warns but does not block an intentional mismatch.
 - Projector mapping provides four-corner perspective correction, a bounded linear mesh up to 4 x 4 cells, polygon masks, calibration patterns and manual edge-blend controls. It does not provide spline/Bezier warping, automatic camera calibration, projector color matching or automatic multi-projector overlap calibration.
 - Automated tests prove separate Input Selection and Output Mapping state, multiple surfaces on one destination, perspective and mesh rendering, masks, calibration patterns and complete-Program transforms. They cannot prove alignment, brightness, focus, latency, lens behavior or color on every real projector, LED processor or physical surface.
-- NDI, streaming/encoding and cloud collaboration remain outside this beta scope.
+- NDI, live-stream encoding and cloud collaboration remain outside this beta scope.
 - The product coordinates one conference room. Multi-room synchronization, registration systems, advanced camera switching, audio mixing, PTZ, DMX and streaming are not included.
 - Show-folder import reads CSV, TSV or text schedules. Excel `.xlsx`/`.xls` files must be exported to CSV/TSV or pasted into the wizard.
 - Automatic media matching is intentionally conservative. Confirm every matched and unmatched asset before GO.

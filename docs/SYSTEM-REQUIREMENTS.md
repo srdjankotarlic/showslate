@@ -2,14 +2,14 @@
 
 ## Release status
 
-ShowSlate Live Compositor `0.11.0-beta.1` targets Apple Silicon Macs and Windows x64. Windows packages are produced in CI but still need broader real-hardware feedback.
+ShowSlate Live Compositor `0.12.0-beta.1` targets Apple Silicon Macs and Windows x64. Windows packages are produced in CI but still need broader real-hardware feedback.
 
 ## macOS release candidate
 
 - Apple Silicon Mac (`arm64`).
 - macOS 13 Ventura or later recommended.
 - 8 GB RAM minimum; 16 GB recommended, and 32 GB recommended for UHD/large stills, several video layers or multiple outputs.
-- 500 MB free disk space for the app, plus space for show media and backups.
+- 500 MB free disk space for the app, plus space for show media, backups and Program recordings. High-bitrate or long recordings can require many gigabytes.
 - 1280x800 recommended controller workspace; the responsive UI is tested down to 900x600.
 - One or more external displays for speaker, confidence or venue output workflows.
 - A dedicated show computer is strongly recommended when several output roles or video/PDF media are active.
@@ -21,7 +21,7 @@ Intel Macs are not part of the current release candidate.
 
 - Windows 10 or Windows 11, 64-bit.
 - 8 GB RAM minimum; 16 GB recommended.
-- 500 MB free disk space, plus show media.
+- 500 MB free disk space, plus show media and Program recordings.
 - 1280x800 recommended controller workspace.
 
 Windows is a beta target. Verify the installer or portable build on the exact show computer before using it at an event.
@@ -50,6 +50,12 @@ Container support does not guarantee every codec profile. Hardware-decodable MP4
 Schedules must be CSV, TSV or text. Export an Excel workbook to CSV/TSV or paste its rows into the setup wizard.
 
 Codec support is not the same as guaranteed alpha behavior in every external production application. Test every final media asset on the actual show computer and output path before doors open.
+
+## Program recording
+
+ShowSlate records the Program canvas through the encoders exposed by the bundled Electron/operating-system media stack. Automatic mode prefers MP4/H.264 and falls back to WebM when MP4 is unavailable. Exact format support can therefore differ by platform and hardware.
+
+Recording 1080p30 is the practical starting point. 1440p, 4K and 50/60 fps require substantially more GPU, CPU, storage throughput and free disk space, especially while decoding several videos or driving multiple outputs. Use a fast local SSD, close non-show applications and make a timed rehearsal with the final Canvas, media, audio route and expected show duration.
 
 ## Production recommendation
 

@@ -4,9 +4,9 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="google-site-verification" content="8XQrjWTrPu_H5qRAX91drrvps-Gkw1Ywux-kTV5GHx0">
-  <title>ShowSlate Live Compositor | Layered Scenes and Multi-Display Show Control</title>
-  <meta name="description" content="Free open-source live compositor for layered scenes, Preview/Program switching, multi-display canvases and four-corner projector mapping. Public beta.">
-  <meta name="keywords" content="live compositor software, projector mapping software, projection mapping beta, LED wall canvas software, multi display output software, window capture software, capture card display software, preview program switcher, event show control, conference room control software, speaker timer, lower third software, run of show software, offline show control">
+  <title>ShowSlate Live Compositor | Scenes, Program Recording and Multi-Display Output</title>
+  <meta name="description" content="Free open-source live compositor for layered scenes, Preview/Program switching, local Program recording, multi-display output and projector mapping.">
+  <meta name="keywords" content="live compositor software, program recording software, projector mapping software, projection mapping beta, LED wall canvas software, multi display output software, window capture software, capture card display software, preview program switcher, event show control, conference room control software, speaker timer, lower third software, run of show software, offline show control">
   <meta name="author" content="Srdjan Kotarlic">
   <meta name="robots" content="index,follow,max-image-preview:large,max-snippet:-1,max-video-preview:-1">
   <meta name="theme-color" content="#101419">
@@ -22,16 +22,16 @@
   <meta property="og:type" content="website">
   <meta property="og:site_name" content="ShowSlate">
   <meta property="og:locale" content="en_US">
-  <meta property="og:title" content="ShowSlate Live Compositor | Layered Scenes and Multi-Display Control">
-  <meta property="og:description" content="Build layered scenes, prepare Preview, TAKE to Program and route independent canvases with optional four-corner projector mapping. Public beta and work in progress.">
+  <meta property="og:title" content="ShowSlate Live Compositor | Scenes, Recording and Multi-Display Control">
+  <meta property="og:description" content="Build layered scenes, prepare Preview, TAKE to Program, record locally and route independent canvases with optional projector mapping.">
   <meta property="og:url" content="https://srdjankotarlic.github.io/showslate/">
   <meta property="og:image" content="https://srdjankotarlic.github.io/showslate/assets/social-preview.png">
   <meta property="og:image:width" content="1600">
   <meta property="og:image:height" content="900">
   <meta property="og:image:alt" content="ShowSlate Live Compositor operator workspace">
   <meta name="twitter:card" content="summary_large_image">
-  <meta name="twitter:title" content="ShowSlate Live Compositor | Layered Scenes and Multi-Display Control">
-  <meta name="twitter:description" content="Compose media and live inputs, TAKE to Program and route independent display canvases with four-corner projector mapping. Public beta.">
+  <meta name="twitter:title" content="ShowSlate Live Compositor | Scenes, Recording and Multi-Display Control">
+  <meta name="twitter:description" content="Compose media and live inputs, TAKE to Program, record locally and route independent display canvases. Public beta.">
   <meta name="twitter:image" content="https://srdjankotarlic.github.io/showslate/assets/social-preview.png">
 
   <script type="application/ld+json">
@@ -43,20 +43,21 @@
     "applicationCategory": "MultimediaApplication",
     "applicationSubCategory": "Local-first live compositor and show control software",
     "operatingSystem": "macOS, Windows 10, Windows 11",
-    "softwareVersion": "0.11.0-beta.1",
-    "description": "Free open-source live compositor with layered scenes, Preview and Program switching, independent multi-display canvases and four-corner projector mapping. Public beta and work in progress.",
+    "softwareVersion": "0.12.0-beta.1",
+    "description": "Free open-source live compositor with layered scenes, Preview and Program switching, local Program recording, independent multi-display canvases and projector mapping. Public beta and work in progress.",
     "url": "https://srdjankotarlic.github.io/showslate/",
     "sameAs": "https://github.com/srdjankotarlic/showslate",
     "softwareHelp": "https://github.com/srdjankotarlic/showslate/discussions",
     "downloadUrl": [
-      "https://github.com/srdjankotarlic/showslate/releases/download/v0.11.0-beta.1/ShowSlate-0.11.0-beta.1-arm64.dmg",
-      "https://github.com/srdjankotarlic/showslate/releases/download/v0.11.0-beta.1/ShowSlate-Setup-0.11.0-beta.1.exe"
+      "https://github.com/srdjankotarlic/showslate/releases/download/v0.12.0-beta.1/ShowSlate-0.12.0-beta.1-arm64.dmg",
+      "https://github.com/srdjankotarlic/showslate/releases/download/v0.12.0-beta.1/ShowSlate-Setup-0.12.0-beta.1.exe"
     ],
     "softwareRequirements": "Apple Silicon Mac, or Windows 10/11 x64",
     "featureList": [
       "Custom-resolution Canvas with reusable layered scenes",
       "Window, display, camera and UVC capture-card sources",
       "Preview and Program scene switching with local source audio safeguards",
+      "Local Program recording with configurable resolution, frame rate, format and audio",
       "Simultaneous multi-display Program routing with an independent Canvas for every destination",
       "Four-corner projector mapping with an adjustable calibration grid",
       "Conference show-folder import with schedule and media matching",
@@ -125,6 +126,11 @@
         "@type": "Question",
         "name": "Can ShowSlate capture a window or video capture card?",
         "acceptedAnswer": {"@type": "Answer", "text": "Yes in the desktop app. Add a window, display, camera or standard UVC capture card as a Canvas layer. Local live streams appear in ShowSlate desktop output windows, not in browser or OBS URL outputs."}
+      },
+      {
+        "@type": "Question",
+        "name": "Can ShowSlate record Program?",
+        "acceptedAnswer": {"@type": "Answer", "text": "Yes. Record Program captures the Program canvas locally without the operator interface. Settings include save folder, resolution, frame rate, format, quality and enabled Program audio."}
       }
     ]
   }
@@ -155,10 +161,10 @@
       <div class="hero-content">
         <p class="eyebrow">Free, local-first and open source</p>
         <h1 id="hero-title">ShowSlate</h1>
-        <p class="hero-lead">Build layered scenes from media, color, text, windows and capture devices. Prepare them in Preview, TAKE to Program and route local displays from one operator workspace.</p>
+        <p class="hero-lead">Build layered scenes from media, color, text, windows and capture devices. Prepare them in Preview, TAKE to Program, record locally and route displays from one operator workspace.</p>
         <div class="hero-actions">
-          <a class="button primary" href="https://github.com/srdjankotarlic/showslate/releases/download/v0.11.0-beta.1/ShowSlate-0.11.0-beta.1-arm64.dmg">Download for Mac</a>
-          <a class="button secondary" href="https://github.com/srdjankotarlic/showslate/releases/download/v0.11.0-beta.1/ShowSlate-Setup-0.11.0-beta.1.exe">Download for Windows</a>
+          <a class="button primary" href="https://github.com/srdjankotarlic/showslate/releases/download/v0.12.0-beta.1/ShowSlate-0.12.0-beta.1-arm64.dmg">Download for Mac</a>
+          <a class="button secondary" href="https://github.com/srdjankotarlic/showslate/releases/download/v0.12.0-beta.1/ShowSlate-Setup-0.12.0-beta.1.exe">Download for Windows</a>
         </div>
         <div class="hero-facts" aria-label="Product facts">
           <span>Mac and Windows</span>
@@ -178,7 +184,7 @@
           <p class="eyebrow">Built for the live operator</p>
           <h2 id="problem-title">One visual Program, prepared before it goes live.</h2>
         </div>
-        <p>Small productions often need media playback, live inputs, simple graphics, timing and several displays without the weight of a full broadcast system. ShowSlate brings those visual tasks into one local Preview/Program workflow while leaving encoding and advanced audio to the tools built for them.</p>
+        <p>Small productions often need media playback, live inputs, simple graphics, timing, a clean local recording and several displays without the weight of a full broadcast system. ShowSlate brings those tasks into one local Preview/Program workflow while leaving streaming and advanced audio to the tools built for them.</p>
       </div>
     </section>
 
@@ -199,8 +205,8 @@
           </article>
           <article>
             <span>03</span>
-            <h3>TAKE and route</h3>
-            <p>Send the complete scene to Program, route independent output canvases and align a projector with four-corner mapping when needed.</p>
+            <h3>TAKE, record and route</h3>
+            <p>Send the scene to Program, capture the clean Program locally, route independent output canvases and map a projector when needed.</p>
           </article>
         </div>
       </div>
@@ -281,6 +287,11 @@
             <h3>Projector mapping</h3>
             <p>Give each route its own Canvas and scaling, then align four corner points over an adjustable calibration grid.</p>
           </article>
+          <article>
+            <span class="feature-number">07</span>
+            <h3>Record Program</h3>
+            <p>Capture the clean Program locally with selected resolution, frame rate, format, quality and enabled Program audio.</p>
+          </article>
         </div>
         <p class="download-guidance"><strong>Beta scope:</strong> the mapper handles practical four-corner correction for simple irregular surfaces. Complex masks, arbitrary meshes, automatic camera calibration and projector color matching are not included yet.</p>
       </div>
@@ -324,7 +335,7 @@
               <li>Open it and drag ShowSlate to Applications.</li>
               <li>Approve the first launch in Privacy &amp; Security if macOS asks.</li>
             </ol>
-            <a class="button primary" href="https://github.com/srdjankotarlic/showslate/releases/download/v0.11.0-beta.1/ShowSlate-0.11.0-beta.1-arm64.dmg">Download macOS DMG</a>
+            <a class="button primary" href="https://github.com/srdjankotarlic/showslate/releases/download/v0.12.0-beta.1/ShowSlate-0.12.0-beta.1-arm64.dmg">Download macOS DMG</a>
           </article>
           <article>
             <div class="platform-head"><h3>Windows</h3><span>x64 beta</span></div>
@@ -333,16 +344,16 @@
               <li>Run the installer and follow the prompts.</li>
               <li>Allow private-network access for browser and remote views.</li>
             </ol>
-            <a class="button primary" href="https://github.com/srdjankotarlic/showslate/releases/download/v0.11.0-beta.1/ShowSlate-Setup-0.11.0-beta.1.exe">Download Windows Setup</a>
+            <a class="button primary" href="https://github.com/srdjankotarlic/showslate/releases/download/v0.12.0-beta.1/ShowSlate-Setup-0.12.0-beta.1.exe">Download Windows Setup</a>
             <details class="advanced-download">
               <summary>Need a no-install version?</summary>
-              <p>The <a href="https://github.com/srdjankotarlic/showslate/releases/download/v0.11.0-beta.1/ShowSlate-0.11.0-beta.1-portable.exe">portable EXE</a> is intended for advanced users who cannot install software.</p>
+              <p>The <a href="https://github.com/srdjankotarlic/showslate/releases/download/v0.12.0-beta.1/ShowSlate-0.12.0-beta.1-portable.exe">portable EXE</a> is intended for advanced users who cannot install software.</p>
             </details>
           </article>
         </div>
         <div class="integrity-note">
           <strong>Verify your download.</strong>
-          <span>The beta is unsigned. Download only from this repository and compare <a href="https://github.com/srdjankotarlic/showslate/releases/download/v0.11.0-beta.1/SHA256SUMS.txt"><code>SHA256SUMS.txt</code></a> when needed. See the <a href="https://github.com/srdjankotarlic/showslate/releases/tag/v0.11.0-beta.1">release details</a> before overriding an operating-system warning. The previous <a href="https://github.com/srdjankotarlic/showslate/releases/tag/v0.10.0-beta.1">0.10 beta</a> remains available.</span>
+          <span>The beta is unsigned. Download only from this repository and compare <a href="https://github.com/srdjankotarlic/showslate/releases/download/v0.12.0-beta.1/SHA256SUMS.txt"><code>SHA256SUMS.txt</code></a> when needed. See the <a href="https://github.com/srdjankotarlic/showslate/releases/tag/v0.12.0-beta.1">release details</a> before overriding an operating-system warning. The previous <a href="https://github.com/srdjankotarlic/showslate/releases/tag/v0.11.0-beta.1">0.11 beta</a> remains available.</span>
         </div>
       </div>
     </section>
@@ -391,6 +402,10 @@
           <details>
             <summary>Can it capture a window, camera or video capture card?</summary>
             <p>Yes in the desktop app. Add a chosen window, display, camera or standard UVC capture card as a Canvas layer. Local live streams appear in ShowSlate desktop output windows, not in browser or OBS URL outputs.</p>
+          </details>
+          <details>
+            <summary>Can it record the Program output?</summary>
+            <p>Yes. Select Record Program in the top bar to capture the clean Program locally without the operator interface. Settings include save folder, resolution, frame rate, format, quality and enabled Program audio.</p>
           </details>
           <details>
             <summary>Can it map Program to an irregular projector surface?</summary>

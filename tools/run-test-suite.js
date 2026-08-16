@@ -19,6 +19,7 @@ const groups = {
     'test:control-api',
     'test:report',
     'test:output-routing',
+    'test:recording',
     'test:release-signing',
     'test:release-evidence',
     'test:localization',

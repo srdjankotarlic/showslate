@@ -1,6 +1,19 @@
 # Public Beta Verification
 
-Verified for the `0.11.0-beta.1` release candidate through 2026-08-11. This page separates what was exercised on the tested Mac from what was only automated, built or structurally inspected.
+Verified for the `0.12.0-beta.1` release candidate through 2026-08-16. This page separates what was exercised on the tested Mac from what was only automated, built or structurally inspected.
+
+## 2026-08-16 Program recording verification
+
+The full source display smoke and a freshly packaged Apple Silicon application smoke both completed with `SMOKE_OK` on the explicitly selected `HP E24u G5` display. Recording model checks passed `5/5`, the Composer renderer checks passed `68/68` and all eight renderer suites passed.
+
+A normal packaged-app workflow was then operated through the visible interface: the test video was connected to a scene, enabled for Program audio, taken to Program, recorded from the main **Record Program** control and stopped from the same control. The resulting 37.9-second MP4 was inspected independently with FFprobe/FFmpeg:
+
+- H.264 video at 1920x1080 and approximately 29 fps;
+- AAC stereo audio at 48 kHz;
+- measured audio at approximately -21.1 dB mean and -17.6 dB peak;
+- an extracted frame contained the exact clean Program test pattern rather than Preview or the operator interface.
+
+This proves one complete MP4/H.264 plus AAC recording path on the tested Apple Silicon Mac. It does not certify every codec, Windows encoder, long-duration recording, 4K/60 workload, destination drive or failure-recovery condition.
 
 ## 2026-08-13 advanced mapping development verification
 
@@ -29,7 +42,7 @@ This proves ShowSlate's per-route configuration, full-Program renderer transform
 
 ## Physical Mac verification
 
-The complete source smoke and a fresh packaged Apple Silicon `.app` smoke both passed on the explicitly selected `Built-in Retina Display`. The test resolver fails closed if that display is missing or ambiguous and does not fall back to another monitor.
+The `0.12.0-beta.1` complete source smoke and fresh packaged Apple Silicon `.app` smoke both passed on the explicitly selected `HP E24u G5`. Earlier release evidence on this page also covers the `Built-in Retina Display` and `PHL 243V7`. The test resolver fails closed if the configured display is missing or ambiguous and does not silently fall back to another monitor.
 
 The verified Conference Desk workflow includes:
 
@@ -55,10 +68,10 @@ The live-input service also passed its targeted synthetic-stream test. A hidden 
 
 ## Automated evidence
 
-- `npm test`: all 16 module scripts passed, together with free-build, icon and public-site checks.
+- The full module test command passed together with free-build, icon and public-site checks.
 - Visible Electron renderer suite: all eight workflow scripts passed.
 - Conference Desk renderer: `13/13` checks passed.
-- Canvas/compositor renderer: `16/16` checks passed, including 900x600 reachability, layer order, hidden-source retention, visible privacy-settings recovery actions, transform persistence and Preview/TAKE isolation.
+- Canvas/compositor renderer: `68/68` checks passed, including recording UI, 900x600 reachability, layer order, hidden-source retention, visible privacy-settings recovery actions, transform persistence and Preview/TAKE isolation.
 - Targeted live-input and multi-output checks passed, including simultaneous Program routes, fail-closed missing-display handling and the one-Program-audio-route guard.
 - Responsive beta usability matrix: `56/56` checks passed at 1440x900, 1280x800, 1024x700 and 900x600.
 - Public website renderer: `7/7` desktop/mobile checks passed with no horizontal overflow and all local product images loaded.
@@ -75,8 +88,9 @@ The compositor beta is published as an experimental prerelease after automated c
 
 ### Proven on physical hardware
 
-- Apple Silicon macOS application on the Mac's Built-in Retina Display.
+- Apple Silicon macOS application on the tested Built-in Retina, PHL 243V7 and HP E24u G5 display configurations.
 - Source and packaged output routing, custom Canvas/layer composition, local network renderer and lower-third/media workflows.
+- Packaged local Program recording to MP4/H.264 with AAC audio on the tested Mac.
 
 ### Built natively and structurally inspected, not physically certified
 
@@ -91,7 +105,8 @@ The compositor beta is published as an experimental prerelease after automated c
 - A manual normal-UI run reached the real window/display source picker on 2026-08-09, but macOS Screen Recording access was disabled. The blocked state and its direct System Settings action are verified; a real captured frame is still not claimed until access is enabled and the app is restarted.
 - Physical camera or UVC capture-card compatibility, including device audio, drivers, source formats and HDCP behavior.
 - External OBS/vMix video-alpha integration. Internal Electron alpha compositing is proven, but that does not certify another application's browser/media pipeline.
-- NDI, camera switching, streaming/encoding, multibus audio mixing or cloud collaboration.
+- Windows Program recording, long-duration recording, redundant recording and sustained 4K/60 capture.
+- NDI, camera switching, live-stream encoding, multibus audio mixing or cloud collaboration.
 - Independent operator adoption or production certification.
 
 Window/display and device capture are local to ShowSlate and its desktop output windows. They are not sent through the browser/OBS URL. Preview is always muted, and only one local Program destination can carry live-input audio at a time.

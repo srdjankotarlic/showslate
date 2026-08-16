@@ -6,13 +6,16 @@ const path = require('path');
 const root = path.resolve(__dirname, '..');
 const siteDir = path.join(root, 'site');
 const indexPath = path.join(siteDir, 'index.html');
+const packageJson = JSON.parse(fs.readFileSync(path.join(root, 'package.json'), 'utf8'));
+const releaseVersion = packageJson.version;
+const releaseTag = `v${releaseVersion}`;
 const html = fs.readFileSync(indexPath, 'utf8');
 const readme = fs.readFileSync(path.join(root, 'README.md'), 'utf8');
-const releaseNotes = fs.readFileSync(path.join(root, 'docs', 'RELEASE-NOTES-0.11.0-beta.1.md'), 'utf8');
+const releaseNotes = fs.readFileSync(path.join(root, 'docs', `RELEASE-NOTES-${releaseVersion}.md`), 'utf8');
 const failures = [];
 
-const macInstallerUrl = 'https://github.com/srdjankotarlic/showslate/releases/download/v0.11.0-beta.1/ShowSlate-0.11.0-beta.1-arm64.dmg';
-const windowsInstallerUrl = 'https://github.com/srdjankotarlic/showslate/releases/download/v0.11.0-beta.1/ShowSlate-Setup-0.11.0-beta.1.exe';
+const macInstallerUrl = `https://github.com/srdjankotarlic/showslate/releases/download/${releaseTag}/ShowSlate-${releaseVersion}-arm64.dmg`;
+const windowsInstallerUrl = `https://github.com/srdjankotarlic/showslate/releases/download/${releaseTag}/ShowSlate-Setup-${releaseVersion}.exe`;
 
 const requiredSnippets = [
   '<meta name="google-site-verification"',
@@ -21,7 +24,7 @@ const requiredSnippets = [
   '<meta name="twitter:card" content="summary_large_image">',
   '"@type": "SoftwareApplication"',
   '"@type": "FAQPage"',
-  'https://github.com/srdjankotarlic/showslate/releases/tag/v0.11.0-beta.1',
+  `https://github.com/srdjankotarlic/showslate/releases/tag/${releaseTag}`,
   'https://github.com/srdjankotarlic/showslate/discussions',
   macInstallerUrl,
   windowsInstallerUrl,
@@ -32,6 +35,7 @@ const requiredSnippets = [
   'Custom Canvas',
   'Window capture',
   'Capture devices',
+  'Record Program',
   "GitHub's automatic <code>Source code</code>",
 ];
 

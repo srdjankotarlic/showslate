@@ -31,7 +31,7 @@
 
 ![ShowSlate Live Compositor operator workspace](docs/images/live-compositor-workspace.png)
 
-ShowSlate builds a visual Program from reusable layered scenes on one Mac or Windows PC. Combine pictures, video, PDF pages, colors, text, a timer, application windows, displays, cameras and UVC capture devices; prepare the result in **Preview**, use **TAKE** to send it to **Program**, then route Program to one or more local displays. Every destination can use its own output Canvas, resolution and scaling mode, with optional multi-surface projector mapping for irregular projection areas.
+ShowSlate builds a visual Program from reusable layered scenes on one Mac or Windows PC. Combine pictures, video, PDF pages, colors, text, a timer, application windows, displays, cameras and UVC capture devices; prepare the result in **Preview**, use **TAKE** to send it to **Program**, then route or record Program. Every destination can use its own output Canvas, resolution and scaling mode, with optional multi-surface projector mapping for irregular projection areas.
 
 The included **Conference Desk** workflow adds a rundown, LIVE/NEXT/GO, speaker timing, cue-driven lower thirds, show-folder import and role-based room displays. It is intended for conferences, corporate events, education, community venues, houses of worship and small AV teams that need more structure than a media player but less complexity than a broadcast switcher.
 
@@ -45,6 +45,7 @@ The included **Conference Desk** workflow adds a rundown, LIVE/NEXT/GO, speaker 
 4. Open **Outputs**, assign each destination to an explicit display, choose fullscreen/window placement and set its independent output Canvas, resolution and scaling.
 5. For projectors or LED processors, open **Map projector**, create one or more surfaces, choose source pixels in **Input Selection**, then align them in **Output Mapping** before applying the route.
 6. Enable Program audio on at most one local output when a video or capture source needs sound.
+7. Select **Record Program** in the top bar when the final Program should be captured locally. Recording settings are under **Settings > Recording**.
 
 ## The room workflow
 
@@ -114,6 +115,21 @@ Set a standard, square, vertical, UHD or custom Canvas resolution and frame rate
 
 Live capture is local to the ShowSlate desktop app and its desktop output windows. Browser/OBS URLs do not carry local window, display or capture-card streams. Program audio is off by default and can be enabled on only one local output to prevent echo and feedback.
 
+## Record Program
+
+Select **Record Program** in the main header to capture the exact Program canvas without the operator interface. The button shows elapsed time while recording and stops the same recording when selected again.
+
+Open **Settings > Recording** to choose:
+
+- save folder and filename prefix;
+- Program, 1080p, 1440p, 4K or custom output dimensions;
+- 24, 25, 30, 50 or 60 fps;
+- automatic format selection, MP4/H.264 or WebM;
+- quality preset or a custom video bitrate;
+- whether enabled Program audio is included, plus its audio bitrate.
+
+ShowSlate prefers MP4/H.264 when the installed Electron/operating-system encoder supports it and falls back to WebM in Automatic mode. Recordings are written incrementally rather than held as one complete file in memory. Keep enough free disk space, record to a fast local drive and rehearse the exact resolution, frame rate, media and audio route before an event.
+
 ### Full-quality and large media
 
 ShowSlate does not resize, recompress or transcode imported pictures and videos. Media up to 512 MB is normally cloned or copied into the app library; larger files are linked to their original disk location and streamed in byte ranges, so multi-gigabyte video does not need to be loaded into RAM or duplicated on the internal drive. Keep linked files and their external drive connected at the same path for the entire show.
@@ -126,10 +142,10 @@ Playback has no fixed ShowSlate file-size cap. The practical limit is the show c
 
 | Your computer | Recommended download | Install |
 |---|---|---|
-| Apple Silicon Mac (M1 or newer) | **[ShowSlate-0.11.0-beta.1-arm64.dmg](https://github.com/srdjankotarlic/showslate/releases/download/v0.11.0-beta.1/ShowSlate-0.11.0-beta.1-arm64.dmg)** | Open the DMG and drag **ShowSlate** to Applications. |
-| Windows 10/11 x64 | **[ShowSlate-Setup-0.11.0-beta.1.exe](https://github.com/srdjankotarlic/showslate/releases/download/v0.11.0-beta.1/ShowSlate-Setup-0.11.0-beta.1.exe)** | Run Setup and follow the installer. |
+| Apple Silicon Mac (M1 or newer) | **[ShowSlate-0.12.0-beta.1-arm64.dmg](https://github.com/srdjankotarlic/showslate/releases/download/v0.12.0-beta.1/ShowSlate-0.12.0-beta.1-arm64.dmg)** | Open the DMG and drag **ShowSlate** to Applications. |
+| Windows 10/11 x64 | **[ShowSlate-Setup-0.12.0-beta.1.exe](https://github.com/srdjankotarlic/showslate/releases/download/v0.12.0-beta.1/ShowSlate-Setup-0.12.0-beta.1.exe)** | Run Setup and follow the installer. |
 
-The [portable Windows EXE](https://github.com/srdjankotarlic/showslate/releases/download/v0.11.0-beta.1/ShowSlate-0.11.0-beta.1-portable.exe) is an advanced no-install option. The previous [`0.10.0-beta.1`](https://github.com/srdjankotarlic/showslate/releases/tag/v0.10.0-beta.1) release remains available for comparison and rollback.
+The [portable Windows EXE](https://github.com/srdjankotarlic/showslate/releases/download/v0.12.0-beta.1/ShowSlate-0.12.0-beta.1-portable.exe) is an advanced no-install option. The previous [`0.11.0-beta.1`](https://github.com/srdjankotarlic/showslate/releases/tag/v0.11.0-beta.1) release remains available for comparison and rollback.
 
 <details>
 <summary><strong>First-launch security warning</strong></summary>
@@ -138,7 +154,7 @@ The public beta is not yet Apple-notarized or Windows Authenticode-signed.
 
 - On macOS, confirm the app came from this repository, then use **System Settings > Privacy & Security > Open Anyway** if required.
 - On Windows, SmartScreen may show **Unknown publisher**. Continue only for the installer downloaded from this repository.
-- Optional integrity hashes are in [SHA256SUMS.txt](https://github.com/srdjankotarlic/showslate/releases/download/v0.11.0-beta.1/SHA256SUMS.txt).
+- Optional integrity hashes are in [SHA256SUMS.txt](https://github.com/srdjankotarlic/showslate/releases/download/v0.12.0-beta.1/SHA256SUMS.txt).
 
 </details>
 
@@ -164,6 +180,7 @@ Supported folder media includes PNG, JPEG, WebP, GIF, AVIF, BMP, SVG, MP4, WebM,
 - Screen content for images, video, PDF pages, text, logos, timer and blank states.
 - Custom-resolution Composer with reusable scenes, ordered layers, Preview/Program switching and drag/resize editing.
 - Window/display capture and camera/UVC capture-card layers with optional local Program audio.
+- Local Program recording with selectable resolution, frame rate, format, quality, save location and enabled Program audio.
 - Lower Third Studio with cue-driven dynamic fields, shapes, logos, images and muted video.
 - Explicit multi-display routing with per-destination Canvas settings, render acknowledgements and unavailable-display blocking.
 - Multi-surface projector mapping with separate input/output transforms, perspective or linear-mesh warp, polygon masks, calibration patterns and manual edge-blend controls.
@@ -173,7 +190,7 @@ Supported folder media includes PNG, JPEG, WebP, GIF, AVIF, BMP, SVG, MP4, WebM,
 
 ## Deliberate scope
 
-ShowSlate can arrange live and media sources for local displays, but it is not a streaming encoder, multibus audio mixer, NDI router, PTZ controller or multi-room cloud platform. Keep OBS, vMix or dedicated production hardware where recording, streaming, broadcast audio or advanced switching is required. The product remains focused on dependable visual composition and show control for one operator and a small set of local destinations.
+ShowSlate can arrange and locally record live and media sources for room displays, but it is not a streaming encoder, multibus audio mixer, NDI router, PTZ controller or multi-room cloud platform. Keep OBS, vMix or dedicated production hardware where live streaming, broadcast-grade multitrack recording, advanced audio or complex switching is required. The product remains focused on dependable visual composition, show control and straightforward Program capture for one operator and a small set of local destinations.
 
 External OBS/vMix alpha behavior is not certified in this beta. Test the exact show computer, displays, network, media and capture path off-air before every event. Show-critical productions still need an independent fallback timer and rundown.
 
@@ -188,6 +205,7 @@ External OBS/vMix alpha behavior is not certified in this beta. Test the exact s
 - [Testing](docs/TESTING.md)
 - [Signing and release](docs/SIGNING-AND-RELEASE.md)
 - [Public beta verification](docs/PUBLIC-BETA-VERIFICATION.md)
+- [0.12.0 beta release notes](docs/RELEASE-NOTES-0.12.0-beta.1.md)
 - [Architecture](ARCHITECTURE.md)
 - [Privacy](docs/PRIVACY.md)
 

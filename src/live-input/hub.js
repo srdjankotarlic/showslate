@@ -81,12 +81,68 @@
     }, 1800));
   }
 
+  function waitForStableVideoFrame(stream, timeoutMs = 3500) {
+    const track = stream && stream.getVideoTracks && stream.getVideoTracks()[0];
+    if (!track) return Promise.reject(new Error('The selected source did not provide a video track.'));
+    return new Promise((resolve, reject) => {
+      const video = document.createElement('video');
+      let timer = null;
+      let poll = null;
+      let stableKey = '';
+      let stableSince = 0;
+      let settled = false;
+      const cleanup = () => {
+        clearTimeout(timer);
+        clearInterval(poll);
+        track.removeEventListener('ended', onEnded);
+        video.removeAttribute('src');
+        video.srcObject = null;
+      };
+      const finish = (error, value) => {
+        if (settled) return;
+        settled = true;
+        cleanup();
+        if (error) reject(error);
+        else resolve(value);
+      };
+      const onEnded = () => finish(new Error('The selected source ended before its first frame was ready.'));
+      const probe = () => {
+        if (video.readyState < HTMLMediaElement.HAVE_CURRENT_DATA) return;
+        const width = Math.round(Number(video.videoWidth) || 0);
+        const height = Math.round(Number(video.videoHeight) || 0);
+        if (!width || !height) return;
+        const key = `${width}x${height}`;
+        if (key !== stableKey) {
+          stableKey = key;
+          stableSince = performance.now();
+          return;
+        }
+        if (performance.now() - stableSince >= 300) finish(null, { width, height });
+      };
+      track.addEventListener('ended', onEnded, { once: true });
+      video.muted = true;
+      video.playsInline = true;
+      video.autoplay = true;
+      video.srcObject = stream;
+      video.addEventListener('loadeddata', probe);
+      video.addEventListener('resize', probe);
+      video.addEventListener('playing', probe);
+      poll = setInterval(probe, 40);
+      timer = setTimeout(() => {
+        const settings = typeof track.getSettings === 'function' ? track.getSettings() : {};
+        finish(new Error(`The selected source did not produce a stable video frame (${Number(settings.width) || 0}x${Number(settings.height) || 0}).`));
+      }, timeoutMs);
+      Promise.resolve(video.play()).catch(() => {});
+    });
+  }
+
   function desktopStream(definition) {
     if (!definition.desktopSourceId) return Promise.reject(new Error('Choose a window or screen first.'));
     const capture = async () => {
       const selection = await api.liveHubSelectDesktopSource(definition.desktopSourceId, definition.desktopSourceName || definition.name, definition.withAudio === true);
       if (!selection || selection.ok !== true) throw new Error('The selected window is no longer available.');
       if (selection.sourceId) definition.desktopSourceId = selection.sourceId;
+      if (selection.sourceName) definition.desktopSourceName = selection.sourceName;
       const stream = await navigator.mediaDevices.getDisplayMedia({
         video: {
           frameRate: { ideal: definition.fps, max: definition.fps }
@@ -97,8 +153,17 @@
       if (videoTrack && typeof videoTrack.applyConstraints === 'function') {
         await videoTrack.applyConstraints({ frameRate: { ideal: definition.fps, max: definition.fps } }).catch(() => {});
       }
-      captureMetadata.set(stream, { captureMode: 'desktop-native', formatFallback: false });
-      return stream;
+      try {
+        const frame = await waitForStableVideoFrame(stream);
+        captureMetadata.set(stream, {
+          captureMode: 'desktop-native', formatFallback: false,
+          firstFrameWidth: frame.width, firstFrameHeight: frame.height
+        });
+        return stream;
+      } catch (error) {
+        stopTracks(stream);
+        throw error;
+      }
     };
     const result = desktopCaptureQueue.then(capture, capture);
     desktopCaptureQueue = result.then(() => undefined, () => undefined);
@@ -242,22 +307,25 @@
     return stream;
   }
 
-  async function startInput(inputId) {
+  async function startInput(inputId, options = {}) {
     const id = String(inputId || '');
     const definition = definitions.get(id);
     if (!definition || !definition.active) return null;
     const existing = inputs.get(id);
-    if (existing && streamReadyForDefinition(existing.stream, definition)) return existing.stream;
+    const existingReady = !!(existing && streamReadyForDefinition(existing.stream, definition));
+    const restart = options.restart === true;
+    const preserveExisting = restart && existingReady;
+    if (existingReady && !restart) return existing.stream;
     const pending = startTasks.get(id);
     if (pending) return pending;
     const previousFailure = failedStarts.get(id);
-    if (previousFailure) throw previousFailure;
+    if (previousFailure && !restart) throw previousFailure;
 
     const generation = (startGenerations.get(id) || 0) + 1;
     startGenerations.set(id, generation);
     const task = (async () => {
-      closeInput(id, 'starting');
-      status(id, 'starting', { name: definition.name, type: definition.type });
+      if (!preserveExisting) closeInput(id, 'starting');
+      status(id, restart ? 'restarting' : 'starting', { name: definition.name, type: definition.type });
       try {
         const captureTask = definition.type === 'window'
           ? desktopStream(definition)
@@ -271,6 +339,11 @@
           stopTracks(stream);
           throw new Error('Capture start was replaced by a newer request.');
         }
+        if (preserveExisting && inputs.get(id) !== existing) {
+          stopTracks(stream);
+          throw new Error('Capture restart was replaced by a newer request.');
+        }
+        if (preserveExisting) closeInput(id, 'restarting');
         const record = { definition, stream, startedAt: Date.now() };
         inputs.set(id, record);
         failedStarts.delete(id);
@@ -284,8 +357,8 @@
         const settings = videoTrack && typeof videoTrack.getSettings === 'function' ? videoTrack.getSettings() : {};
         const audioSettings = audioTrack && typeof audioTrack.getSettings === 'function' ? audioTrack.getSettings() : {};
         const metadata = captureMetadata.get(stream) || {};
-        const actualWidth = Number(settings.width) || 0;
-        const actualHeight = Number(settings.height) || 0;
+        const actualWidth = Number(metadata.firstFrameWidth) || Number(settings.width) || 0;
+        const actualHeight = Number(metadata.firstFrameHeight) || Number(settings.height) || 0;
         const actualFrameRate = Number(settings.frameRate) || 0;
         const formatMatched = definition.type === 'audio' ? true : !!(
           actualWidth === Number(definition.width)
@@ -321,8 +394,10 @@
       } catch (error) {
         if (startGenerations.get(id) === generation) {
           const failure = error instanceof Error ? error : new Error(String(error || 'Capture failed.'));
-          failedStarts.set(id, failure);
-          status(id, 'error', { name: definition.name, type: definition.type, error: failure.message });
+          if (!preserveExisting || inputs.get(id) !== existing || !streamReadyForDefinition(existing.stream, definition)) {
+            failedStarts.set(id, failure);
+            status(id, 'error', { name: definition.name, type: definition.type, error: failure.message });
+          }
         }
         throw error;
       }
@@ -561,8 +636,21 @@
       if (command.type === 'restart') {
         invalidateStart(command.inputId);
         failedStarts.delete(String(command.inputId || ''));
-        closeInput(command.inputId, 'restarting');
-        await startInput(command.inputId);
+        try {
+          await startInput(command.inputId, { restart: true });
+        } catch (error) {
+          const id = String(command.inputId || '');
+          const definition = definitions.get(id);
+          const existing = inputs.get(id);
+          if (definition && existing && streamReadyForDefinition(existing.stream, definition)) {
+            status(id, 'live', {
+              name: definition.name, type: definition.type,
+              error: `Restart failed; the previous signal is still live. ${String(error && error.message || error)}`
+            });
+          } else {
+            throw error;
+          }
+        }
       }
     } catch (error) {
       status(command.inputId, 'error', { error: String(error && error.message || error) });

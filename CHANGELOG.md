@@ -2,7 +2,7 @@
 
 All notable changes to ShowSlate are documented here.
 
-## Unreleased
+## 0.12.0-beta.1 - 2026-08-16
 
 ### Added
 
@@ -10,6 +10,10 @@ All notable changes to ShowSlate are documented here.
 - Added perspective and bounded 4 x 4 linear-mesh warp, draggable mesh points, polygon masks, surface Solo/visibility/opacity and per-surface output placement.
 - Added continuous Grid, Checker and Crosshair calibration patterns with optional surface identification labels.
 - Added manual edge-overlap, blend-gamma and black-level controls for adjacent projector alignment.
+- Added clean local Program recording from the main header, with elapsed status and incremental writes to disk.
+- Added recording settings for destination folder, filename prefix, Program/1080p/1440p/4K/custom resolution, frame rate, format, quality, video bitrate, Program audio and audio bitrate.
+- Added a compact Live Mode performance deck backed by the same compositions, scenes, sources, Preview/Program renderer and rundown as Composer.
+- Added show-file save/load, professional video transport, explicit Preview/Program audio routing, large disk-linked media streaming and UHD/4K60 source profiles.
 
 ### Fixed
 
@@ -17,6 +21,10 @@ All notable changes to ShowSlate are documented here.
 - Kept calibration patterns continuous across mesh cells and applied polygon/edge masks once to the mapped surface.
 - Kept the mapping inspector fully hidden when the active composition has no projector surfaces, including the 900x600 layout.
 - Made explicit smoke-test display environment settings override an older local display configuration.
+- Synchronized video transport between Preview and Program while preserving independent Preview safety.
+- Routed mixer volume and mute controls into the live Program audio graph.
+- Kept GO NEXT advancing through the saved rundown order and source visibility aligned with the visible layer controls.
+- Kept the complete settings and timing controls reachable in the 900x600 compact drawer.
 
 ## 0.11.0-beta.1 - 2026-08-11
 

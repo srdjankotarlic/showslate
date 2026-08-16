@@ -223,6 +223,15 @@ app.whenReady().then(async () => {
   const liveMode = JSON.parse(await controller.webContents.executeJavaScript(`(function(){document.getElementById('btnConferenceLive').click();return JSON.stringify({active:document.body.classList.contains('conference-live-mode'),importDisabled:document.getElementById('btnCueImport').disabled,newDisabled:document.getElementById('btnNewShow').disabled,goDisabled:document.getElementById('btnGo').disabled,pressed:document.getElementById('btnConferenceLive').getAttribute('aria-pressed')});})()`));
   check('CONFERENCE_LIVE_MODE_VISIBLE_AND_SAFE_OK', liveMode.active && liveMode.importDisabled && liveMode.newDisabled && !liveMode.goDisabled && liveMode.pressed === 'true', JSON.stringify(liveMode));
 
+  const liveModeGoCue = JSON.parse(await controller.webContents.executeJavaScript(`JSON.stringify((function(){
+    setSidebarView('slides');
+    const before=currentCue,expected=nextRunnableCueIndex();
+    const expectedId=expected>=0&&cues[expected]?cues[expected].id:'';
+    document.getElementById('liveModeCueGo').click();
+    return {before,expected,after:currentCue,expectedId,afterId:cues[currentCue]&&cues[currentCue].id,sceneSidebar:sceneSidebarActive()};
+  })())`));
+  check('LIVE_MODE_GO_CUE_ADVANCES_RUNDOWN_FROM_SCENES_CONTEXT_OK', liveModeGoCue.sceneSidebar && liveModeGoCue.expected >= 0 && liveModeGoCue.after === liveModeGoCue.expected && liveModeGoCue.afterId === liveModeGoCue.expectedId, JSON.stringify(liveModeGoCue));
+
   const liveFixture = JSON.parse(await controller.webContents.executeJavaScript(`JSON.stringify((function(){
     const composition=activeComposition();
     const fixture=[

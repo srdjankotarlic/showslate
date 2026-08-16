@@ -19,6 +19,9 @@
   const FONT_FAMILIES = new Set(['system', 'mono', 'serif', 'display']);
   const TEXT_ALIGNS = new Set(['left', 'center', 'right']);
   const VERTICAL_ALIGNS = new Set(['top', 'center', 'bottom']);
+  const COLOR_FILL_TYPES = new Set(['solid', 'linear', 'radial']);
+  const IMAGE_SAMPLING_MODES = new Set(['smooth', 'pixelated']);
+  const TEXT_TRANSFORMS = new Set(['none', 'uppercase', 'lowercase']);
   const WARP_CORNERS = Object.freeze(['topLeft', 'topRight', 'bottomRight', 'bottomLeft']);
   const WARP_MODES = new Set(['perspective', 'mesh']);
   const TEST_PATTERNS = new Set(['grid', 'checker', 'crosshair']);
@@ -350,6 +353,10 @@
     const input = normalizeMappingInput(source.input || source, canvas);
     const output = normalizeMappingOutput(source.output);
     const blend = source.blend && typeof source.blend === 'object' ? source.blend : {};
+    const outputIds = [...new Set([
+      ...(Array.isArray(source.outputIds) ? source.outputIds : []),
+      source.outputId
+    ].map(value => id(value, '')).filter(Boolean))];
     return {
       schemaVersion: SCHEMA_VERSION,
       mappingVersion: 2,
@@ -357,7 +364,8 @@
       name: cleanName(source.name, `Projector ${index + 1}`),
       enabled: source.enabled !== false,
       solo: source.solo === true,
-      outputId: id(source.outputId, ''),
+      outputId: outputIds[0] || '',
+      outputIds,
       input,
       output,
       // Legacy aliases remain in saved shows and API payloads during the beta.
@@ -580,6 +588,11 @@
     };
     if (isColor) {
       layer.color = cleanColor(source.color || source.bg, '#20242c');
+      layer.fillType = COLOR_FILL_TYPES.has(source.fillType) ? source.fillType : 'solid';
+      layer.color2 = cleanColor(source.color2, '#4f6f8f');
+      layer.gradientAngle = finite(source.gradientAngle, 90, -360, 360);
+      layer.gradientCenterX = finite(source.gradientCenterX, 50, 0, 100);
+      layer.gradientCenterY = finite(source.gradientCenterY, 50, 0, 100);
       layer.bg = layer.color;
     }
     if (isLive) {
@@ -607,6 +620,7 @@
     if (type === 'image') {
       layer.sourceWidth = integer(source.sourceWidth, 0, 0, 16384);
       layer.sourceHeight = integer(source.sourceHeight, 0, 0, 16384);
+      layer.imageSampling = IMAGE_SAMPLING_MODES.has(source.imageSampling) ? source.imageSampling : 'smooth';
     }
     if (type === 'text') {
       layer.text = String(source.text ?? source.name ?? '').slice(0, 4000);
@@ -619,6 +633,17 @@
       layer.verticalAlign = VERTICAL_ALIGNS.has(source.verticalAlign) ? source.verticalAlign : 'center';
       layer.italic = source.italic === true;
       layer.underline = source.underline === true;
+      layer.lineHeight = finite(source.lineHeight, 1.05, 0.7, 3);
+      layer.letterSpacing = finite(source.letterSpacing, 0, 0, 1);
+      layer.textTransform = TEXT_TRANSFORMS.has(source.textTransform) ? source.textTransform : 'none';
+      layer.textPadding = finite(source.textPadding, 1.5, 0, 20);
+      layer.strokeWidth = finite(source.strokeWidth, 0, 0, 10);
+      layer.strokeColor = cleanColor(source.strokeColor, '#000000');
+      layer.shadowEnabled = source.shadowEnabled === true;
+      layer.shadowColor = cleanColor(source.shadowColor, '#000000');
+      layer.shadowBlur = finite(source.shadowBlur, 8, 0, 40);
+      layer.shadowX = finite(source.shadowX, 0, -40, 40);
+      layer.shadowY = finite(source.shadowY, 2, -40, 40);
     }
     if (type === 'lowerThird') {
       const cleanText = (value, limit = 240) => String(value ?? '').replace(/[\u0000-\u001f\u007f]/g, ' ').trim().slice(0, limit);
@@ -649,6 +674,31 @@
       clipPath: `inset(${crop.top}% ${crop.right}% ${crop.bottom}% ${crop.left}%)`,
       borderRadius: `${layer.cornerRadius}%`,
       objectPosition: `${layer.objectPositionX}% ${layer.objectPositionY}%`
+    };
+  }
+
+  function layerFillStyle(raw = {}) {
+    const layer = normalizeLayer({ ...raw, type: 'color' });
+    if (layer.fillType === 'linear') {
+      return `linear-gradient(${layer.gradientAngle}deg, ${layer.color} 0%, ${layer.color2} 100%)`;
+    }
+    if (layer.fillType === 'radial') {
+      return `radial-gradient(circle at ${layer.gradientCenterX}% ${layer.gradientCenterY}%, ${layer.color} 0%, ${layer.color2} 100%)`;
+    }
+    return layer.color;
+  }
+
+  function layerTextVisualStyle(raw = {}) {
+    const layer = normalizeLayer({ ...raw, type: 'text' });
+    return {
+      lineHeight: String(layer.lineHeight),
+      letterSpacing: `${layer.letterSpacing}em`,
+      textTransform: layer.textTransform,
+      padding: `${layer.textPadding}%`,
+      WebkitTextStroke: layer.strokeWidth > 0 ? `${layer.strokeWidth}px ${layer.strokeColor}` : '0px transparent',
+      textShadow: layer.shadowEnabled
+        ? `${layer.shadowX}px ${layer.shadowY}px ${layer.shadowBlur}px ${layer.shadowColor}`
+        : 'none'
     };
   }
 
@@ -735,6 +785,8 @@
     mediaTransportCommand,
     normalizeCrop,
     layerVisualStyle,
+    layerFillStyle,
+    layerTextVisualStyle,
     normalizeScene,
     referencedLiveInputIds,
     activeLiveInputIds,

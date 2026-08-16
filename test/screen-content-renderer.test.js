@@ -167,6 +167,14 @@ app.whenReady().then(async () => {
     const sceneReordered=sceneDragged && contentItems.map(item=>item.id).join(',')===[deck.id,timer.id,holding.id].join(',') && S.scenes[0].id===deck.sceneId && programState.activeSceneId===programBeforeSceneReorder;
     reorderContentItemById(deck.id,holding.id,true);
     const normalUi=slidesTabVisible && document.getElementById('sidebarSlidesPane').classList.contains('active') && sceneUi.tab==='SCENES' && sceneUi.rows===3 && sceneUi.thumbnails===3 && sceneUi.numbered && sceneUi.metadata && sceneUi.newScene && sceneUi.duplicate && sceneUi.rename && sceneUi.oneTake && sceneUi.cutRemoved && sceneUi.switcher && sceneUi.middleColumnRemoved && sceneUi.monitorHeadersRemoved && sceneUi.screensFillMonitors && sceneUi.sortable && sceneReordered && sceneUi.rundownCount==='0' && sceneUi.sceneCount==='3';
+    selectContentItem(holding.id,{previewOnly:true});
+    document.getElementById('btnSceneLibraryRename').click();
+    await new Promise(resolve=>setTimeout(resolve,45));
+    const renameModalVisible=document.getElementById('modalOverlay').classList.contains('open');
+    document.getElementById('modalInput').value='Welcome renamed';
+    document.getElementById('modalOk').click();
+    await new Promise(resolve=>setTimeout(resolve,45));
+    const sceneRenameWorked=renameModalVisible&&sceneForContent(contentItemById(holding.id)).name==='Welcome renamed'&&contentItemById(holding.id).name==='Welcome renamed'&&document.querySelector('#slidesList .slide-row[data-content-id="'+holding.id+'"] .slide-name')?.textContent==='Welcome renamed';
     selectContentItem(holding.id);
     const selectedSafe=programState.activeSceneId===timer.sceneId && S.activeSceneId===holding.sceneId && liveContentItemId===timer.id;
     await new Promise(resolve=>setTimeout(resolve,120));
@@ -186,7 +194,7 @@ app.whenReady().then(async () => {
     renderContentItems();
     await new Promise(resolve=>setTimeout(resolve,280));
     document.querySelector('#slidesList .slide-row[data-content-id="'+holding.id+'"]').click();
-    const sceneCardPreviewSafe=programState.activeSceneId===timer.sceneId && liveContentItemId===timer.id && S.activeSceneId===holding.sceneId && selectedContentItemId===holding.id;
+    const sceneCardDirectWorked=programState.activeSceneId===holding.sceneId && liveContentItemId===holding.id && S.activeSceneId===holding.sceneId && selectedContentItemId===holding.id;
     S.studioDirect=false; selectContentItem(deck.id);
     cues=migrateCues([{id:'content-cue',name:'Sponsor segment',durationMs:60000,contentItemId:deck.id,autoTakeContentOnGo:true}]);
     currentCue=-1; selectedCue=0; saveCues(); renderCues();
@@ -196,7 +204,7 @@ app.whenReady().then(async () => {
     renderStage('pg',programState,Date.now());
     const clearWorked=liveContentItemId==='' && programState.activeSceneId==='scene-content-clear' && document.getElementById('pgScene').textContent.trim()==='';
     const saved=await flushShowAutosave({reason:'screen-content-test',force:true});
-    return JSON.stringify({normalUi,sceneUi,sceneReordered,rundownSceneFlow,cueReordered,backPrepared,selectedSafe,previewRendered,timerSafe,takeWorked,directWorked,sceneCardPreviewSafe,pageWorked,goWorked,clearWorked,saved,ids:{timer:timer.id,holding:holding.id,deck:deck.id}});
+    return JSON.stringify({normalUi,sceneUi,sceneReordered,sceneRenameWorked,rundownSceneFlow,cueReordered,backPrepared,selectedSafe,previewRendered,timerSafe,takeWorked,directWorked,sceneCardDirectWorked,pageWorked,goWorked,clearWorked,saved,ids:{timer:timer.id,holding:holding.id,deck:deck.id}});
   })()`));
   win.webContents.reload();
   const reloadReady = await waitFor(() => win.webContents.executeJavaScript('showAutosaveReady===true && lastDisplays.length>0'));
@@ -212,10 +220,11 @@ app.whenReady().then(async () => {
   })()`));
   const reloadState = { item: reloadItem.item, previewRendered: reloadPreviewRendered };
   check('SCREEN_CONTENT_VISIBLE_IN_STANDARD_UI_OK', state.normalUi, JSON.stringify(state));
+  check('SCREEN_CONTENT_RENAME_FROM_VISIBLE_UI_OK', state.sceneRenameWorked, JSON.stringify(state));
   check('RUNDOWN_SCENE_ON_GO_USER_FLOW_OK', state.rundownSceneFlow, JSON.stringify(state));
   check('SCREEN_CONTENT_SELECT_PREVIEW_ONLY_OK', state.selectedSafe && state.timerSafe, JSON.stringify(state));
   check('SCREEN_CONTENT_SCENE_CARD_RENDERS_PREVIEW_OK', state.previewRendered && reloadReady && reloadState.previewRendered, JSON.stringify({state,reloadReady,reloadState}));
-  check('SCREEN_CONTENT_DIRECT_PROGRAM_SCENE_SELECT_OK', state.directWorked && state.sceneCardPreviewSafe, JSON.stringify(state));
+  check('SCREEN_CONTENT_DIRECT_PROGRAM_SCENE_SELECT_OK', state.directWorked && state.sceneCardDirectWorked, JSON.stringify(state));
   check('SCREEN_CONTENT_TAKE_AND_CLEAR_OK', state.takeWorked && state.clearWorked, JSON.stringify(state));
   check('SCREEN_CONTENT_PDF_DECK_NAV_OK', state.pageWorked, JSON.stringify(state));
   check('SCREEN_CONTENT_CUE_AUTO_TAKE_ON_GO_OK', state.goWorked, JSON.stringify(state));
@@ -294,7 +303,13 @@ app.whenReady().then(async () => {
   await new Promise(resolve => setTimeout(resolve, 160));
   fs.writeFileSync(path.join(artifactDirectory, 'rundown-900x600.png'), (await win.webContents.capturePage()).toPNG());
 
-  console.log('SCREEN_CONTENT_RENDERER_TESTS_OK ' + checks + '/12');
+  await win.webContents.executeJavaScript(`(async()=>{
+    const result=await flushShowAutosave({reason:'screen-content-test-cleanup',force:true});
+    showAutosaveReady=false;
+    if(showAutosaveTimer){clearTimeout(showAutosaveTimer);showAutosaveTimer=null;}
+    return result;
+  })()`);
+  console.log('SCREEN_CONTENT_RENDERER_TESTS_OK ' + checks + '/13');
   win.destroy();
   fs.rmSync(profile, { recursive: true, force: true });
   app.quit();

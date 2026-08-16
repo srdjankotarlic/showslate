@@ -93,6 +93,7 @@ function normalizeConfig(config, index = 0, context = {}) {
   const gridSize = numberInRange(source.gridSize, 3, 1, 12);
   const gridCell = numberInRange(source.gridCell, 0, 0, gridSize * gridSize - 1);
   const displayId = Number(source.displayId || fallback.id);
+  const projection = normalizeProjection(source.projection);
   const normalized = {
     id: String(source.id || `out-${context.now || Date.now()}-${index}`),
     name: String(source.name || `Output ${index + 1}`),
@@ -114,7 +115,8 @@ function normalizeConfig(config, index = 0, context = {}) {
     gridCell,
     compositionId: String(source.compositionId || ''),
     mappingId: String(source.mappingId || ''),
-    projection: normalizeProjection(source.projection),
+    mappingEnabled: source.mappingEnabled === true || (source.mappingEnabled == null && !!projection),
+    projection,
     outputCanvas: normalizeOutputCanvas(source.outputCanvas),
     frameless: mode === 'fullscreen' || mode === 'custom' || mode === 'grid' || !!source.frameless
   };

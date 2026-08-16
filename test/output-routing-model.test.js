@@ -55,12 +55,19 @@ const projected = routing.normalizeConfig({
     }
   }
 }, 1, { displays, controlDisplayId: 1 });
-check('OUTPUT_MODEL_PROJECTOR_MAPPING_PRESERVED_OK', projected.compositionId === 'composition-led' && projected.mappingId === 'mapping-left' && projected.projection.width === 2688 && projected.projection.canvasWidth === 5376 && projected.projection.blend.right === 96 && projected.projection.warp.enabled && projected.projection.warp.grid.columns === 10);
+check('OUTPUT_MODEL_PROJECTOR_MAPPING_PRESERVED_OK', projected.mappingEnabled === true && projected.compositionId === 'composition-led' && projected.mappingId === 'mapping-left' && projected.projection.width === 2688 && projected.projection.canvasWidth === 5376 && projected.projection.blend.right === 96 && projected.projection.warp.enabled && projected.projection.warp.grid.columns === 10);
 
 const square = routing.normalizeConfig({
   id: 'route-square', displayId: 3, mode: 'window', outputCanvas: { width: 1000, height: 1000, fps: 30, fit: 'cover' }
 }, 2, { displays, controlDisplayId: 1 });
 check('OUTPUT_MODEL_INDEPENDENT_DESTINATION_CANVASES_OK', projected.outputCanvas.width === 1920 && projected.outputCanvas.height === 1080 && projected.outputCanvas.fit === 'contain' && square.outputCanvas.width === 1000 && square.outputCanvas.height === 1000 && square.outputCanvas.fit === 'cover');
+check('OUTPUT_MODEL_DIRECT_PROGRAM_DEFAULT_OK', square.mappingEnabled === false && square.projection === null);
+
+const explicitDirect = routing.normalizeConfig({
+  id: 'route-direct', displayId: 3, mappingEnabled: false,
+  projection: { id: 'legacy-surface', compositionId: 'composition-main', canvasWidth: 1920, canvasHeight: 1080 }
+}, 3, { displays, controlDisplayId: 1 });
+check('OUTPUT_MODEL_EXPLICIT_DIRECT_OVERRIDES_LEGACY_MAPPING_OK', explicitDirect.mappingEnabled === false && explicitDirect.projection !== null);
 
 const multiSurface = routing.normalizeConfig({
   id: 'route-multi', displayId: 3, projection: {
@@ -71,7 +78,7 @@ const multiSurface = routing.normalizeConfig({
       { id: 'surface-b', compositionId: 'composition-main', canvasWidth: 1920, canvasHeight: 1080, input: {x:960,y:0,width:960,height:1080}, output: {x:50,y:0,width:50,height:100}, warp: {enabled:true,mode:'mesh',mesh:{columns:2,rows:1}} }
     ]
   }
-}, 3, { displays, controlDisplayId: 1 });
+}, 4, { displays, controlDisplayId: 1 });
 check('OUTPUT_MODEL_MULTI_SURFACE_ROUTE_PRESERVED_OK', multiSurface.projection.surfaces.length === 2 && multiSurface.projection.surfaces[1].input.x === 960 && multiSurface.projection.surfaces[1].output.x === 50 && multiSurface.projection.surfaces[1].warp.mode === 'mesh');
 
 console.log(`OUTPUT_ROUTING_MODEL_TESTS_OK count=${checks}`);

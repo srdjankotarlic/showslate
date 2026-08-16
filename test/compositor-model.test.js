@@ -19,17 +19,17 @@ check('COMPOSITOR_MULTIPLE_COMPOSITIONS_AND_PROJECTOR_MAPPING_OK', () => {
   const compositions = compositor.normalizeCompositions([
     { id: 'main', name: 'Main', canvas: { width: 1920, height: 1080 } },
     { id: 'led', name: 'LED Wall', canvas: { width: 5376, height: 768, fps: 50 }, mappings: [
-      { id: 'left', name: 'Left projector', outputId: 'output-left', x: 0, y: 0, width: 2688, height: 768, blend: { right: 96 } },
+      { id: 'left', name: 'Left projector', outputIds: ['output-left', 'output-mirror'], x: 0, y: 0, width: 2688, height: 768, blend: { right: 96 } },
       { id: 'right', name: 'Right projector', outputId: 'output-right', x: 2688, y: 0, width: 99999, height: 99999, blend: { left: 96 } }
     ] }
   ]);
   assert.strictEqual(compositions.length, 2);
   assert.deepStrictEqual(compositions[1].canvas, { schemaVersion: 1, width: 5376, height: 768, fps: 50, background: '#000000', transparent: false });
   assert.deepStrictEqual(
-    compositions[1].mappings.map(mapping => ({ id: mapping.id, outputId: mapping.outputId, x: mapping.input.x, width: mapping.input.width, height: mapping.input.height })),
+    compositions[1].mappings.map(mapping => ({ id: mapping.id, outputId: mapping.outputId, outputIds: mapping.outputIds, x: mapping.input.x, width: mapping.input.width, height: mapping.input.height })),
     [
-      { id: 'left', outputId: 'output-left', x: 0, width: 2688, height: 768 },
-      { id: 'right', outputId: 'output-right', x: 2688, width: 2688, height: 768 }
+      { id: 'left', outputId: 'output-left', outputIds: ['output-left', 'output-mirror'], x: 0, width: 2688, height: 768 },
+      { id: 'right', outputId: 'output-right', outputIds: ['output-right'], x: 2688, width: 2688, height: 768 }
     ]
   );
 });
@@ -124,6 +124,33 @@ check('COMPOSITOR_ADVANCED_LAYER_STYLE_NORMALIZES_OK', () => {
 check('COMPOSITOR_TEXT_STYLE_NORMALIZES_OK', () => {
   const layer = compositor.normalizeLayer({ type: 'text', text: 'Speaker name', fontFamily: 'mono', fontWeight: 800, textAlign: 'left', verticalAlign: 'bottom', italic: true, underline: true });
   assert.deepStrictEqual({ fontFamily: layer.fontFamily, fontWeight: layer.fontWeight, textAlign: layer.textAlign, verticalAlign: layer.verticalAlign, italic: layer.italic, underline: layer.underline }, { fontFamily: 'mono', fontWeight: 800, textAlign: 'left', verticalAlign: 'bottom', italic: true, underline: true });
+});
+
+check('COMPOSITOR_SOURCE_SPECIFIC_VISUAL_CONTROLS_OK', () => {
+  const color = compositor.normalizeLayer({
+    type: 'color', fillType: 'radial', color: '#102030', color2: '#90a0b0',
+    gradientCenterX: 28, gradientCenterY: 72
+  });
+  assert.strictEqual(compositor.layerFillStyle(color), 'radial-gradient(circle at 28% 72%, #102030 0%, #90a0b0 100%)');
+
+  const image = compositor.normalizeLayer({ type: 'image', sourceWidth: 4096, sourceHeight: 2160, imageSampling: 'pixelated' });
+  assert.deepStrictEqual(
+    { width: image.sourceWidth, height: image.sourceHeight, sampling: image.imageSampling },
+    { width: 4096, height: 2160, sampling: 'pixelated' }
+  );
+
+  const text = compositor.normalizeLayer({
+    type: 'text', lineHeight: 1.4, letterSpacing: 0.08, textTransform: 'uppercase', textPadding: 4,
+    strokeWidth: 2, strokeColor: '#112233', shadowEnabled: true, shadowColor: '#000000',
+    shadowBlur: 12, shadowX: 3, shadowY: 5
+  });
+  const style = compositor.layerTextVisualStyle(text);
+  assert.deepStrictEqual(
+    { lineHeight: style.lineHeight, spacing: style.letterSpacing, transform: style.textTransform, padding: style.padding },
+    { lineHeight: '1.4', spacing: '0.08em', transform: 'uppercase', padding: '4%' }
+  );
+  assert.strictEqual(style.WebkitTextStroke, '2px #112233');
+  assert.strictEqual(style.textShadow, '3px 5px 12px #000000');
 });
 
 check('COMPOSITOR_LIVE_INPUT_DEVICE_AUDIO_OK', () => {

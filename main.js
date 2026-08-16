@@ -17,6 +17,7 @@ const showFolderImport = require('./src/conference-desk/import.js');
 const { ShowRepository } = require('./src/show-storage/repository.js');
 const { migrateLegacyUserData } = require('./src/brand/migrate-user-data.js');
 const compositor = require('./src/compositor/model.js');
+const recording = require('./src/recording/model.js');
 const { MediaLibrary, SUPPORTED_MEDIA_MIME } = require('./src/media-library/library.js');
 const { parseByteRange } = require('./src/media-library/range.js');
 
@@ -153,6 +154,9 @@ let outputFrameless = false;     // da li je bez okvira (providan ili grid)
 let outputTargetId = null;       // na kom monitoru je Ekran
 let outputConfigs = [];          // dodatni profesionalni izlazi (multi-display)
 const auxOutputs = new Map();    // id -> { win, config, frameless, transparent }
+let recordingOutput = null;      // exact-size, off-desktop Program renderer used only for recording
+let recordingSession = null;     // active disk writer and capture metadata
+let lastRecordingPath = '';
 let liveInputHubWin = null;
 let liveInputHubReady = false;
 let pendingDesktopSource = null;
@@ -172,6 +176,180 @@ let liveQuitConfirmed = false;
 let liveQuitPromptOpen = false;
 let controlCloseFlowInProgress = false;
 
+function recordingSettingsFile() {
+  return path.join(app.getPath('userData'), 'recording-settings.json');
+}
+
+function defaultRecordingDirectory() {
+  return path.join(app.getPath('videos'), 'ShowSlate Recordings');
+}
+
+function recordingSettingsStatus(input = {}) {
+  const settings = recording.normalizeSettings({ ...input, directory: input.directory || defaultRecordingDirectory() });
+  let freeBytes = 0;
+  try {
+    fs.mkdirSync(settings.directory, { recursive: true });
+    const stats = fs.statfsSync(settings.directory);
+    freeBytes = Number(stats.bavail) * Number(stats.bsize);
+  } catch (_) {}
+  return { ...settings, freeBytes: Number.isFinite(freeBytes) ? Math.max(0, freeBytes) : 0 };
+}
+
+function loadRecordingSettings() {
+  try {
+    return recordingSettingsStatus(JSON.parse(fs.readFileSync(recordingSettingsFile(), 'utf8')));
+  } catch (_) {
+    return recordingSettingsStatus({});
+  }
+}
+
+function saveRecordingSettings(input) {
+  const settings = recordingSettingsStatus(input);
+  const destination = recordingSettingsFile();
+  const temp = destination + '.tmp-' + process.pid;
+  fs.mkdirSync(path.dirname(destination), { recursive: true });
+  fs.writeFileSync(temp, JSON.stringify(settings, null, 2), { mode: 0o600 });
+  fs.renameSync(temp, destination);
+  return settings;
+}
+
+function uniqueRecordingPath(directory, filename) {
+  const ext = path.extname(filename);
+  const stem = path.basename(filename, ext);
+  for (let index = 0; index < 10000; index++) {
+    const suffix = index ? `-${index + 1}` : '';
+    const candidate = path.join(directory, `${stem}${suffix}${ext}`);
+    if (!fs.existsSync(candidate) && !fs.existsSync(candidate + '.part')) return candidate;
+  }
+  throw new Error('Could not allocate a unique recording filename.');
+}
+
+function closeRecordingOutput() {
+  const rec = recordingOutput;
+  recordingOutput = null;
+  try { if (rec && rec.win && !rec.win.isDestroyed()) rec.win.destroy(); } catch (_) {}
+}
+
+function dispatchRecordingState(state) {
+  const rec = recordingOutput;
+  if (!rec || !rec.win || rec.win.isDestroyed()) return false;
+  rec.lastDispatchRevision = stateRevision;
+  rec.lastDispatchAt = Date.now();
+  rec.win.webContents.send('state', outputPayload(state, 'recording', 'audience', stateRevision, {
+    liveAudio: false,
+    audioOwnedByController: true,
+    outputCanvas: { width: rec.width, height: rec.height, fps: rec.fps, fit: 'contain' }
+  }));
+  return true;
+}
+
+async function waitForRecordingRenderer(rec, timeoutMs = 5000) {
+  const deadline = Date.now() + timeoutMs;
+  let lastMedia = { total: 0, ready: 0 };
+  while (Date.now() < deadline) {
+    const acknowledged = rec.ackRevision >= rec.lastDispatchRevision && rec.lastDispatchRevision > 0;
+    try {
+      lastMedia = await rec.win.webContents.executeJavaScript(`(() => {
+        const media = [...document.querySelectorAll('#sceneRoot video')];
+        const ready = media.filter(node => node.readyState >= 2 && node.videoWidth > 0 && node.videoHeight > 0).length;
+        return { total: media.length, ready };
+      })()`);
+    } catch (_) {}
+    if (acknowledged && lastMedia.ready >= lastMedia.total) return { ready: true, media: lastMedia };
+    await new Promise(resolve => setTimeout(resolve, 50));
+  }
+  return { ready: false, media: lastMedia };
+}
+
+async function createRecordingOutput(dimensions, fps) {
+  closeRecordingOutput();
+  const width = Math.max(320, Math.min(7680, Math.round(Number(dimensions.width) || 1920)));
+  const height = Math.max(180, Math.min(4320, Math.round(Number(dimensions.height) || 1080)));
+  const displayBounds = screen.getAllDisplays().map(display => display.bounds);
+  const parkedX = Math.min(...displayBounds.map(bounds => bounds.x)) - width - 128;
+  const parkedY = Math.min(...displayBounds.map(bounds => bounds.y)) - height - 128;
+  const win = new BrowserWindow({
+    x: parkedX, y: parkedY, width, height, useContentSize: true, show: false, skipTaskbar: true,
+    paintWhenInitiallyHidden: true,
+    title: 'ShowSlate — Recording Program',
+    backgroundColor: '#000000', frame: false, focusable: false,
+    enableLargerThanScreen: true,
+    webPreferences: {
+      preload: path.join(__dirname, 'preload.js'), contextIsolation: true,
+      nodeIntegration: false, backgroundThrottling: false
+    }
+  });
+  const rec = {
+    win, width, height, fps,
+    lastDispatchRevision: 0, lastDispatchAt: 0, ackRevision: 0, ackAt: 0,
+    ackCueId: '', ackTransactionId: ''
+  };
+  recordingOutput = rec;
+  watchLiveInputConsumer(win);
+  win.on('closed', () => { if (recordingOutput === rec) recordingOutput = null; });
+  await win.loadFile('output.html', { query: { routeId: 'recording', outputRole: 'audience', recording: '1' } });
+  if (recordingOutput !== rec || win.isDestroyed()) throw new Error('Recording renderer closed before it was ready.');
+  win.setContentSize(width, height, false);
+  win.setPosition(parkedX, parkedY, false);
+  win.setIgnoreMouseEvents(true);
+  win.showInactive();
+  if (lastState) dispatchRecordingState(lastState);
+  const readiness = await waitForRecordingRenderer(rec);
+  return { rec, readiness };
+}
+
+function closeRecordingWriter(sessionRecord) {
+  return new Promise((resolve, reject) => {
+    const stream = sessionRecord && sessionRecord.stream;
+    if (!stream || stream.writableFinished || stream.closed) { resolve(); return; }
+    if (stream.destroyed) {
+      reject(sessionRecord.streamError || new Error('Recording file stream closed before it finished.'));
+      return;
+    }
+    const cleanup = () => {
+      stream.removeListener('finish', onFinish);
+      stream.removeListener('error', onError);
+    };
+    const onFinish = () => { cleanup(); resolve(); };
+    const onError = error => { cleanup(); reject(error); };
+    stream.once('finish', onFinish);
+    stream.once('error', onError);
+    stream.end();
+  });
+}
+
+function destroyRecordingWriter(sessionRecord) {
+  return new Promise(resolve => {
+    const stream = sessionRecord && sessionRecord.stream;
+    if (!stream || stream.closed) { resolve(); return; }
+    const finish = () => {
+      stream.removeListener('close', finish);
+      resolve();
+    };
+    stream.once('close', finish);
+    try { stream.destroy(); }
+    catch (_) { finish(); }
+  });
+}
+
+async function abortRecordingSession(options = {}) {
+  const sessionRecord = recordingSession;
+  recordingSession = null;
+  closeRecordingOutput();
+  if (!sessionRecord) return { ok: true, aborted: true };
+  await destroyRecordingWriter(sessionRecord);
+  if (options.preserve && sessionRecord.bytes > 0) {
+    const incomplete = sessionRecord.finalPath.replace(/(\.[^.]+)$/, '.incomplete$1');
+    try { fs.renameSync(sessionRecord.tempPath, incomplete); return { ok: false, aborted: true, preservedPath: incomplete }; } catch (_) {}
+  }
+  try { fs.unlinkSync(sessionRecord.tempPath); } catch (_) {}
+  return { ok: true, aborted: true };
+}
+
+function hasActiveRecording() {
+  return !!recordingSession;
+}
+
 function hasActiveOutputWindows() {
   if (outputWin && !outputWin.isDestroyed()) return true;
   for (const rec of auxOutputs.values()) {
@@ -181,15 +359,16 @@ function hasActiveOutputWindows() {
 }
 
 async function confirmStopOutputsAndQuit() {
-  if (SMOKE || liveQuitConfirmed || !hasActiveOutputWindows()) return true;
+  if (SMOKE || liveQuitConfirmed || (!hasActiveOutputWindows() && !hasActiveRecording())) return true;
   if (liveQuitPromptOpen) return false;
   liveQuitPromptOpen = true;
   try {
+    const recordingActive = hasActiveRecording();
     const result = await dialog.showMessageBox(controlWin && !controlWin.isDestroyed() ? controlWin : null, {
       type: 'warning',
-      title: 'Program output is live',
-      message: 'Stop all outputs and quit ShowSlate?',
-      detail: 'The audience Program feed will close immediately.',
+      title: recordingActive ? 'Program recording is active' : 'Program output is live',
+      message: recordingActive ? 'Stop recording, close outputs and quit ShowSlate?' : 'Stop all outputs and quit ShowSlate?',
+      detail: recordingActive ? 'ShowSlate will finalize the current recording before it quits.' : 'The audience Program feed will close immediately.',
       buttons: ['Keep Running', 'Stop Outputs and Quit'],
       defaultId: 0,
       cancelId: 0,
@@ -197,6 +376,15 @@ async function confirmStopOutputsAndQuit() {
       noLink: true
     });
     if (result.response !== 1) return false;
+    if (recordingActive && controlWin && !controlWin.isDestroyed()) {
+      try {
+        await controlWin.webContents.executeJavaScript(
+          `window.__ptStopProgramRecording ? window.__ptStopProgramRecording({reason:'quit'}) : Promise.resolve({ok:false})`
+        );
+      } catch (_) {
+        await abortRecordingSession({ preserve: true });
+      }
+    }
     liveQuitConfirmed = true;
     return true;
   } finally {
@@ -219,6 +407,7 @@ function trustedLiveInputConsumer(sender) {
   if (!sender || sender.isDestroyed()) return false;
   if (controlWin && !controlWin.isDestroyed() && controlWin.webContents.id === sender.id) return true;
   if (outputWin && !outputWin.isDestroyed() && outputWin.webContents.id === sender.id) return true;
+  if (recordingOutput && recordingOutput.win && !recordingOutput.win.isDestroyed() && recordingOutput.win.webContents.id === sender.id) return true;
   for (const rec of auxOutputs.values()) {
     if (rec && rec.win && !rec.win.isDestroyed() && rec.win.webContents.id === sender.id) return true;
   }
@@ -232,7 +421,7 @@ function sendLiveHubCommand(command) {
 }
 
 function broadcastLiveInputStatus(payload) {
-  const windows = [controlWin, outputWin, ...[...auxOutputs.values()].map(rec => rec && rec.win)];
+  const windows = [controlWin, outputWin, recordingOutput && recordingOutput.win, ...[...auxOutputs.values()].map(rec => rec && rec.win)];
   windows.forEach(win => {
     if (win && !win.isDestroyed()) win.webContents.send('live-input-status', payload);
   });
@@ -254,11 +443,15 @@ function setupLiveInputPermissions() {
   ses.setPermissionCheckHandler((wc, permission) => {
     if (!wc || wc.isDestroyed()) return false;
     const hub = liveInputHubWin && !liveInputHubWin.isDestroyed() && wc.id === liveInputHubWin.webContents.id;
-    return !!hub && ['media', 'display-capture'].includes(permission);
+    const recorder = controlWin && !controlWin.isDestroyed() && wc.id === controlWin.webContents.id && !!recordingSession;
+    return (!!hub && ['media', 'display-capture'].includes(permission))
+      || (!!recorder && ['media', 'display-capture'].includes(permission));
   });
   ses.setPermissionRequestHandler((wc, permission, callback) => {
     const hub = liveInputHubWin && !liveInputHubWin.isDestroyed() && wc && wc.id === liveInputHubWin.webContents.id;
-    callback(!!hub && ['media', 'display-capture'].includes(permission));
+    const recorder = controlWin && !controlWin.isDestroyed() && wc && wc.id === controlWin.webContents.id && !!recordingSession;
+    callback((!!hub && ['media', 'display-capture'].includes(permission))
+      || (!!recorder && ['media', 'display-capture'].includes(permission)));
   });
   ses.setDisplayMediaRequestHandler(async (request, callback) => {
     try {
@@ -659,7 +852,7 @@ function outputPayload(state, routeId, role, revision = stateRevision, routeConf
       id: String(routeId || 'primary'),
       role: normalizedRole,
       liveAudio: routeConfig.liveAudio === true,
-      audioOwnedByController: true,
+      audioOwnedByController: routeConfig.audioOwnedByController !== false,
       audioOutputDeviceId: String(routeConfig.audioOutputDeviceId || state && state.programAudioDeviceId || ''),
       compositionId: String(routeConfig.compositionId || ''),
       mappingId: String(routeConfig.mappingId || ''),
@@ -697,6 +890,7 @@ function sendStateToOutputs(state) {
   for (const rec of auxOutputs.values()) {
     dispatchAuxState(rec, state);
   }
+  dispatchRecordingState(state);
 }
 function pushDisplays() { broadcast('displays', displayList()); }
 function outputRuntimeSnapshot() {
@@ -779,6 +973,8 @@ function createControlWindow() {
   });
   controlWin.on('closed', () => {
     controlWin = null;
+    if (recordingSession) abortRecordingSession({ preserve: true }).catch(() => {});
+    else closeRecordingOutput();
     if (outputWin && !outputWin.isDestroyed()) outputWin.destroy();
     for (const rec of auxOutputs.values()) {
       try { if (rec.win && !rec.win.isDestroyed()) rec.win.destroy(); } catch (e) {}
@@ -1132,6 +1328,7 @@ ipcMain.on('state', (e, s) => {
       }
     }
   }
+  dispatchRecordingState(s);
   pushOutputState();
   pushSSE(s);
 });
@@ -1144,6 +1341,9 @@ ipcMain.on('output-rendered', (event, payload) => {
   if (outputWin && !outputWin.isDestroyed() && outputWin.webContents.id === senderId) {
     delivery = primaryDelivery;
     expectedRouteId = 'primary';
+  } else if (recordingOutput && recordingOutput.win && !recordingOutput.win.isDestroyed() && recordingOutput.win.webContents.id === senderId) {
+    delivery = recordingOutput;
+    expectedRouteId = 'recording';
   } else {
     for (const rec of auxOutputs.values()) {
       if (rec && rec.win && !rec.win.isDestroyed() && rec.win.webContents.id === senderId) {
@@ -1209,6 +1409,143 @@ ipcMain.handle('output-open', () => !!outputWin || auxOutputs.size > 0);
 ipcMain.handle('network-info', () => networkInfo());
 ipcMain.handle('output-configs', () => outputConfigs);
 ipcMain.handle('build-info', () => getBuildInfo());
+ipcMain.handle('recording-settings', event => {
+  if (!controlWin || controlWin.isDestroyed() || event.sender.id !== controlWin.webContents.id) return { ok: false, error: 'unauthorized' };
+  return { ok: true, settings: loadRecordingSettings(), active: hasActiveRecording(), lastPath: lastRecordingPath };
+});
+ipcMain.handle('recording-save-settings', (event, payload) => {
+  try {
+    if (!controlWin || controlWin.isDestroyed() || event.sender.id !== controlWin.webContents.id) return { ok: false, error: 'unauthorized' };
+    return { ok: true, settings: saveRecordingSettings(payload && payload.settings || {}) };
+  } catch (error) {
+    return { ok: false, error: String(error && error.message || error) };
+  }
+});
+ipcMain.handle('recording-choose-directory', async event => {
+  try {
+    if (!controlWin || controlWin.isDestroyed() || event.sender.id !== controlWin.webContents.id) return { ok: false, error: 'unauthorized' };
+    const current = loadRecordingSettings();
+    const picked = await dialog.showOpenDialog(controlWin, {
+      title: 'Choose ShowSlate Recording Folder',
+      defaultPath: current.directory,
+      properties: ['openDirectory', 'createDirectory']
+    });
+    if (picked.canceled || !picked.filePaths[0]) return { ok: false, canceled: true };
+    const settings = saveRecordingSettings({ ...current, directory: path.resolve(picked.filePaths[0]) });
+    return { ok: true, settings };
+  } catch (error) {
+    return { ok: false, error: String(error && error.message || error) };
+  }
+});
+ipcMain.handle('recording-open-directory', async event => {
+  if (!controlWin || controlWin.isDestroyed() || event.sender.id !== controlWin.webContents.id) return { ok: false, error: 'unauthorized' };
+  const directory = loadRecordingSettings().directory;
+  try { fs.mkdirSync(directory, { recursive: true }); } catch (_) {}
+  const error = await shell.openPath(directory);
+  return error ? { ok: false, error } : { ok: true, directory };
+});
+ipcMain.handle('recording-reveal-last', event => {
+  if (!controlWin || controlWin.isDestroyed() || event.sender.id !== controlWin.webContents.id) return { ok: false, error: 'unauthorized' };
+  if (!lastRecordingPath || !fs.existsSync(lastRecordingPath)) return { ok: false, error: 'No completed recording is available.' };
+  shell.showItemInFolder(lastRecordingPath);
+  return { ok: true, path: lastRecordingPath };
+});
+ipcMain.handle('recording-prepare', async (event, payload) => {
+  if (!controlWin || controlWin.isDestroyed() || event.sender.id !== controlWin.webContents.id) return { ok: false, error: 'unauthorized' };
+  if (recordingSession) return { ok: false, error: 'A Program recording is already active.', code: 'RECORDING_ACTIVE' };
+  const mimeType = String(payload && payload.mimeType || '').slice(0, 120);
+  if (!/^video\/(webm|mp4)(?:;|$)/i.test(mimeType)) return { ok: false, error: 'Unsupported recording format.', code: 'RECORDING_FORMAT' };
+  const settings = recordingSettingsStatus(payload && payload.settings || loadRecordingSettings());
+  const dimensions = recording.resolveDimensions(settings, payload && payload.programCanvas || {});
+  if (settings.freeBytes && settings.freeBytes < 512 * 1024 * 1024) {
+    return { ok: false, error: 'Less than 512 MB is available in the recording folder.', code: 'RECORDING_DISK_LOW' };
+  }
+  try {
+    fs.mkdirSync(settings.directory, { recursive: true });
+    const filename = recording.recordingFilename(settings, mimeType);
+    const finalPath = uniqueRecordingPath(settings.directory, filename);
+    const tempPath = finalPath + '.part';
+    const stream = fs.createWriteStream(tempPath, { flags: 'wx', highWaterMark: 8 * 1024 * 1024, mode: 0o600 });
+    const sessionId = crypto.randomUUID();
+    recordingSession = {
+      id: sessionId, stream, streamError: null, finalPath, tempPath, mimeType,
+      settings, dimensions, bytes: 0, nextSequence: 0, startedAt: Date.now()
+    };
+    stream.on('error', error => { if (recordingSession && recordingSession.id === sessionId) recordingSession.streamError = error; });
+    const { rec, readiness } = await createRecordingOutput(dimensions, settings.fps);
+    const mediaSourceId = rec.win.getMediaSourceId();
+    const [renderWidth, renderHeight] = rec.win.getContentSize();
+    if (renderWidth !== dimensions.width || renderHeight !== dimensions.height) {
+      throw new Error(`Program renderer size is ${renderWidth}×${renderHeight}; expected ${dimensions.width}×${dimensions.height}.`);
+    }
+    return {
+      ok: true, sessionId, mediaSourceId, chromeMediaSource: 'desktop', mimeType, settings, dimensions,
+      videoBitsPerSecond: recording.computedVideoBitrate(settings, dimensions),
+      audioBitsPerSecond: settings.audioBitrateKbps * 1000,
+      renderReady: readiness.ready,
+      renderMedia: readiness.media,
+      filePath: finalPath
+    };
+  } catch (error) {
+    await abortRecordingSession();
+    return { ok: false, error: String(error && error.message || error), code: error.code || 'RECORDING_PREPARE_FAILED' };
+  }
+});
+ipcMain.handle('recording-write-chunk', async (event, payload) => {
+  if (!controlWin || controlWin.isDestroyed() || event.sender.id !== controlWin.webContents.id) return { ok: false, error: 'unauthorized' };
+  const sessionRecord = recordingSession;
+  if (!sessionRecord || String(payload && payload.sessionId || '') !== sessionRecord.id) return { ok: false, error: 'Recording session is not active.' };
+  const sequence = Math.max(0, Math.round(Number(payload && payload.sequence) || 0));
+  if (sequence !== sessionRecord.nextSequence) return { ok: false, error: `Recording chunk out of order (${sequence}, expected ${sessionRecord.nextSequence}).` };
+  if (sessionRecord.streamError) return { ok: false, error: String(sessionRecord.streamError.message || sessionRecord.streamError) };
+  const data = payload && payload.data;
+  let buffer;
+  try {
+    if (Buffer.isBuffer(data)) buffer = data;
+    else if (data instanceof ArrayBuffer) buffer = Buffer.from(data);
+    else if (ArrayBuffer.isView(data)) buffer = Buffer.from(data.buffer, data.byteOffset, data.byteLength);
+    else if (data && data.type === 'Buffer' && Array.isArray(data.data)) buffer = Buffer.from(data.data);
+    else throw new Error('Invalid recording chunk.');
+  } catch (error) {
+    return { ok: false, error: String(error.message || error) };
+  }
+  if (!buffer.length) return { ok: true, sequence, bytes: sessionRecord.bytes };
+  try {
+    await new Promise((resolve, reject) => sessionRecord.stream.write(buffer, error => error ? reject(error) : resolve()));
+    sessionRecord.bytes += buffer.length;
+    sessionRecord.nextSequence += 1;
+    return { ok: true, sequence, bytes: sessionRecord.bytes };
+  } catch (error) {
+    sessionRecord.streamError = error;
+    return { ok: false, error: String(error && error.message || error), code: error.code || 'RECORDING_WRITE_FAILED' };
+  }
+});
+ipcMain.handle('recording-finish', async (event, payload) => {
+  if (!controlWin || controlWin.isDestroyed() || event.sender.id !== controlWin.webContents.id) return { ok: false, error: 'unauthorized' };
+  const sessionRecord = recordingSession;
+  if (!sessionRecord || String(payload && payload.sessionId || '') !== sessionRecord.id) return { ok: false, error: 'Recording session is not active.' };
+  try {
+    await closeRecordingWriter(sessionRecord);
+    if (sessionRecord.streamError) throw sessionRecord.streamError;
+    if (!sessionRecord.bytes) throw new Error('The recording produced no media data.');
+    fs.renameSync(sessionRecord.tempPath, sessionRecord.finalPath);
+    recordingSession = null;
+    closeRecordingOutput();
+    lastRecordingPath = sessionRecord.finalPath;
+    return {
+      ok: true, path: sessionRecord.finalPath, bytes: sessionRecord.bytes,
+      durationMs: Math.max(0, Date.now() - sessionRecord.startedAt), mimeType: sessionRecord.mimeType
+    };
+  } catch (error) {
+    await abortRecordingSession({ preserve: true });
+    return { ok: false, error: String(error && error.message || error), code: error.code || 'RECORDING_FINALIZE_FAILED' };
+  }
+});
+ipcMain.handle('recording-abort', async (event, payload) => {
+  if (!controlWin || controlWin.isDestroyed() || event.sender.id !== controlWin.webContents.id) return { ok: false, error: 'unauthorized' };
+  if (recordingSession && String(payload && payload.sessionId || '') && String(payload.sessionId) !== recordingSession.id) return { ok: false, error: 'Recording session does not match.' };
+  return abortRecordingSession({ preserve: payload && payload.preserve === true });
+});
 ipcMain.handle('live-input-desktop-sources', async (event) => {
   if (!controlWin || controlWin.isDestroyed() || event.sender.id !== controlWin.webContents.id) return [];
   let rows = [];
@@ -2130,6 +2467,32 @@ async function runLiveInputSmoke(waitLoad, options = {}) {
     const value = JSON.parse(await outputWin.webContents.executeJavaScript(`JSON.stringify((function(){const video=document.querySelector('video[data-live-input-id=${JSON.stringify(inputId)}]');return {exists:!!video,readyState:video?video.readyState:0,currentTime:video?video.currentTime:0,paused:video?video.paused:null};})())`));
     return {...value, baseline:program.currentTime, ok:value.exists&&value.readyState>=2&&value.paused===false&&value.currentTime>program.currentTime+0.04};
   }, 3000);
+  const restartBefore = JSON.parse(await liveInputHubWin.webContents.executeJavaScript(`JSON.stringify((function(){
+    const record=window.liveCapture.inputs.get(${JSON.stringify(inputId)});
+    const track=record&&record.stream&&record.stream.getVideoTracks()[0];
+    return {startedAt:Number(record&&record.startedAt)||0,streamId:String(record&&record.stream&&record.stream.id||''),trackId:String(track&&track.id||'')};
+  })())`));
+  sendLiveHubCommand({ type: 'restart', inputId });
+  const restart = await waitUntil(async () => {
+    const hubState = JSON.parse(await liveInputHubWin.webContents.executeJavaScript(`JSON.stringify((function(){
+      const record=window.liveCapture.inputs.get(${JSON.stringify(inputId)});
+      const track=record&&record.stream&&record.stream.getVideoTracks()[0];
+      return {startedAt:Number(record&&record.startedAt)||0,streamId:String(record&&record.stream&&record.stream.id||''),trackId:String(track&&track.id||''),settings:track?track.getSettings():null};
+    })())`));
+    const outputState = JSON.parse(await outputWin.webContents.executeJavaScript(`JSON.stringify((function(){
+      const video=document.querySelector('video[data-live-input-id=${JSON.stringify(inputId)}]');
+      return {ready:!!(video&&video.srcObject&&video.readyState>=2),width:video?video.videoWidth:0,height:video?video.videoHeight:0,currentTime:video?video.currentTime:0};
+    })())`));
+    const row = liveInputStatuses.get(inputId) || null;
+    const replaced = hubState.startedAt > restartBefore.startedAt
+      && !!hubState.streamId && hubState.streamId !== restartBefore.streamId
+      && !!hubState.trackId && hubState.trackId !== restartBefore.trackId;
+    return { ok: !!(replaced && row && row.state === 'live' && outputState.ready && outputState.width === width && outputState.height === height), hubState, outputState, row };
+  }, 12000);
+  const restartMoving = restart.ok ? await waitUntil(async () => {
+    const value = JSON.parse(await outputWin.webContents.executeJavaScript(`JSON.stringify((function(){const video=document.querySelector('video[data-live-input-id=${JSON.stringify(inputId)}]');return {ready:!!(video&&video.readyState>=2),currentTime:video?video.currentTime:0};})())`));
+    return { ...value, baseline: restart.outputState.currentTime, ok: value.ready && value.currentTime > restart.outputState.currentTime + 0.04 };
+  }, 3000) : { ok: false, error: 'restart-not-ready' };
   await sleep(options.width >= 3840 && options.fps >= 60 ? 3500 : 900);
   const [previewReceiverBefore, programReceiverBefore, programSenderBefore] = await Promise.all([
     receiverStats(controlWin), receiverStats(outputWin), senderStats(liveInputHubWin, outputWin.webContents.id)
@@ -2156,7 +2519,7 @@ async function runLiveInputSmoke(waitLoad, options = {}) {
   return {
     ok: service.ok && preview.ok && program.ok && visual.ok,
     inputId, sceneId, width, height, fps, qualityProfile,
-    setup, service, hubMedia, preview, previewLater, beforeTake, program, programLater, previewReceiver, programReceiver, programSender, visual,
+    setup, service, hubMedia, preview, previewLater, beforeTake, program, programLater, restartBefore, restart, restartMoving, previewReceiver, programReceiver, programSender, visual,
     previewMoving: previewLater.ok === true,
     programMoving: programLater.ok === true
   };
@@ -2590,7 +2953,7 @@ app.whenReady().then(async () => {
         if (LIVE_INPUT_SMOKE_ONLY || LIVE_INPUT_UHD60_SMOKE_ONLY) {
           const uhd60 = LIVE_INPUT_UHD60_SMOKE_ONLY;
           const expected = uhd60
-            ? { width:3840, height:2160, fps:60, suffix:'uhd60', programFps:55 }
+            ? { width:3840, height:2160, fps:60, suffix:'uhd60', programFps:55, qualityProfile:'quality' }
             : { width:1920, height:1080, fps:60, suffix:'fhd60', programFps:45 };
           const live = await runLiveInputSmoke(waitLoad, expected);
           const prefix = uhd60 ? 'LIVE_INPUT_UHD60' : 'LIVE_INPUT';
@@ -2601,6 +2964,7 @@ app.whenReady().then(async () => {
           smokeCheck(prefix + '_PROGRAM_FRAME_RATE_OK', live.previewReceiver&&live.previewReceiver.decodedFps>=24&&live.programReceiver&&live.programReceiver.decodedFps>=expected.programFps&&live.programReceiver.width===expected.width&&live.programReceiver.height===expected.height, JSON.stringify({preview:live.previewReceiver,program:live.programReceiver,sender:live.programSender}));
           smokeCheck('LIVE_INPUT_PREVIEW_DOES_NOT_CHANGE_PROGRAM_OK', live.setup&&live.beforeTake&&live.setup.previewScene!==live.setup.programScene&&live.beforeTake.scene===live.setup.programScene&&!live.beforeTake.liveVideo, JSON.stringify({setup:live.setup,beforeTake:live.beforeTake}));
           smokeCheck('LIVE_INPUT_TAKE_SENDS_EXPECTED_SCENE_OK', live.program&&live.program.ok&&live.program.fullFormat===true&&live.program.width===expected.width&&live.program.height===expected.height&&live.program.scene===live.sceneId&&live.programMoving, JSON.stringify(live.program||live));
+          smokeCheck(prefix + '_RESTART_REATTACHES_PROGRAM_OK', live.restart&&live.restart.ok&&live.restartMoving&&live.restartMoving.ok, JSON.stringify({before:live.restartBefore,restart:live.restart,moving:live.restartMoving}));
           smokeCheck('LIVE_INPUT_PROGRAM_AUDIO_DEFAULT_MUTED_OK', live.program&&live.program.audioTracks===1&&live.program.muted===true, JSON.stringify(live.program||live));
           smokeCheck('LIVE_INPUT_PROGRAM_PIXELS_OK', live.visual&&live.visual.ok, JSON.stringify(live.visual||live));
           console.log((uhd60 ? 'LIVE_INPUT_UHD60_TARGETED_OK' : 'LIVE_INPUT_TARGETED_OK') + '=' + (smokeFailures.length === 0));
@@ -6723,7 +7087,7 @@ app.whenReady().then(async () => {
 });
 
 app.on('before-quit', (event) => {
-  if (!SMOKE && !rendererCrashed && !liveQuitConfirmed && hasActiveOutputWindows()) {
+  if (!SMOKE && !rendererCrashed && !liveQuitConfirmed && (hasActiveOutputWindows() || hasActiveRecording())) {
     event.preventDefault();
     if (!liveQuitPromptOpen) {
       confirmStopOutputsAndQuit().then(confirmed => {

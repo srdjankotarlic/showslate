@@ -22,6 +22,13 @@ let screenPermissionMode = 'granted';
 let privacySettingsRequests = [];
 let showDocumentSaveRequests = [];
 let showDocumentOpenRequests = 0;
+let recordingSettingsState = {
+  directory: path.join(profile, 'Recordings'),
+  filePrefix: 'ShowSlate Recording',
+  resolution: 'program', width: 1920, height: 1080, fps: 30,
+  format: 'auto', quality: 'high', videoBitrateMbps: 16,
+  includeAudio: true, audioBitrateKbps: 192, freeBytes: 8 * 1024 * 1024 * 1024
+};
 
 function check(name, condition, detail = '') {
   console.log(`${name}=${!!condition}${detail ? ` ${detail}` : ''}`);
@@ -114,6 +121,15 @@ ipcMain.handle('live-input-restart', () => ({ ok: true }));
 ipcMain.handle('live-input-statuses', () => []);
 ipcMain.handle('live-input-subscribe', () => ({ ok: false, error: 'renderer test has no media hub' }));
 ipcMain.handle('live-input-signal-to-hub', () => ({ ok: false }));
+ipcMain.handle('recording-settings', () => ({ ok: true, settings: { ...recordingSettingsState }, active: false, lastPath: '' }));
+ipcMain.handle('recording-save-settings', (event, payload) => {
+  recordingSettingsState = { ...recordingSettingsState, ...(payload && payload.settings || {}) };
+  return { ok: true, settings: { ...recordingSettingsState } };
+});
+ipcMain.handle('recording-choose-directory', () => ({ ok: false, canceled: true }));
+ipcMain.handle('recording-open-directory', () => ({ ok: true, directory: recordingSettingsState.directory }));
+ipcMain.handle('recording-reveal-last', () => ({ ok: false, error: 'No completed recording is available.' }));
+ipcMain.handle('recording-abort', () => ({ ok: true, aborted: true }));
 
 app.whenReady().then(async () => {
   repository = new ShowRepository({ userDataDir: profile, appMetadata: { commit: 'compositor-ui' } });
@@ -141,6 +157,32 @@ app.whenReady().then(async () => {
   check('COMPOSITOR_SAFE_PREVIEW_DEFAULT_AND_LAYER_CONTROLS_OK', opened.directProgram === false && opened.layerTakeVisible && opened.layerHideVisible && opened.settingsText === 'Settings' && opened.settingsAria === 'Settings', JSON.stringify(opened));
   const sceneControls = JSON.parse(await win.webContents.executeJavaScript(`JSON.stringify((()=>{const ids=['canvasSceneSelect','btnCanvasSceneAdd','btnCanvasSceneDuplicate','btnCanvasSceneDelete'];return {visible:ids.every(id=>document.getElementById(id).getClientRects().length>0),options:document.getElementById('canvasSceneSelect').options.length,duplicateTitle:document.getElementById('btnCanvasSceneDuplicate').title};})())`));
   check('COMPOSITOR_SCENE_CONTROLS_VISIBLE_OK', sceneControls.visible && sceneControls.options >= 1 && sceneControls.duplicateTitle.length > 0, JSON.stringify(sceneControls));
+
+  const recordingUi = JSON.parse(await win.webContents.executeJavaScript(`(async()=>{
+    const top=document.getElementById('btnRecordProgram');
+    const visible=top.getClientRects().length>0;
+    document.getElementById('btnSettingsDrawer').click();
+    document.querySelector('#setupTabs [data-pane="record"]').click();
+    await new Promise(resolve=>setTimeout(resolve,80));
+    const panel=document.getElementById('pane-record');
+    const required=['recordingDirectory','recordingFilePrefix','recordingResolution','recordingFps','recordingFormat','recordingQuality','recordingIncludeAudio','recordingAudioBitrate','btnRecordingStart'];
+    const controlsVisible=required.every(id=>document.getElementById(id).getClientRects().length>0);
+    const resolution=document.getElementById('recordingResolution');
+    const quality=document.getElementById('recordingQuality');
+    const audio=document.getElementById('recordingIncludeAudio');
+    resolution.value='custom'; resolution.dispatchEvent(new Event('change',{bubbles:true}));
+    quality.value='custom'; quality.dispatchEvent(new Event('change',{bubbles:true}));
+    audio.checked=false; audio.dispatchEvent(new Event('change',{bubbles:true}));
+    document.getElementById('recordingWidth').value='2560';
+    document.getElementById('recordingWidth').dispatchEvent(new Event('input',{bubbles:true}));
+    await new Promise(resolve=>setTimeout(resolve,300));
+    const result={visible,panelVisible:panel.classList.contains('active')&&panel.getClientRects().length>0,controlsVisible,customSize:!document.getElementById('recordingCustomSize').hidden,customBitrate:!document.getElementById('recordingBitrateField').hidden,audioBitrateHidden:document.getElementById('recordingAudioBitrateField').hidden,topLabel:top.textContent.trim(),width:Number(document.getElementById('recordingWidth').value)};
+    document.getElementById('btnSettingsDrawer').click();
+    document.getElementById('btnCompositor').click();
+    return JSON.stringify(result);
+  })()`));
+  check('RECORD_PROGRAM_VISIBLE_FROM_NORMAL_UI_OK', recordingUi.visible && recordingUi.topLabel.includes('Record'), JSON.stringify(recordingUi));
+  check('RECORDING_SETTINGS_COMPLETE_AND_PERSIST_OK', recordingUi.panelVisible && recordingUi.controlsVisible && recordingUi.customSize && recordingUi.customBitrate && recordingUi.audioBitrateHidden && recordingUi.width === 2560 && Number(recordingSettingsState.width) === 2560 && recordingSettingsState.resolution === 'custom' && recordingSettingsState.quality === 'custom' && recordingSettingsState.includeAudio === false, JSON.stringify({ ...recordingUi, persisted: recordingSettingsState }));
 
   const showMenuInitial = JSON.parse(await win.webContents.executeJavaScript(`JSON.stringify((()=>{
     window.alert=()=>{};window.confirm=()=>true;
@@ -186,15 +228,18 @@ app.whenReady().then(async () => {
     change(document.getElementById('canvasFps'));
     outputConfigs=[
       normalizeOutputConfigUI({id:'projection-test',name:'Left projector',enabled:true,displayId:lastDisplays[0].id,mode:'fullscreen',outputCanvas:{width:1920,height:1080,fps:50,fit:'contain'}},0),
-      normalizeOutputConfigUI({id:'projection-square',name:'Square LED relay',enabled:true,displayId:lastDisplays[0].id,mode:'window',outputCanvas:{width:1000,height:1000,fps:30,fit:'cover'}},1)
+      normalizeOutputConfigUI({id:'projection-square',name:'Square LED relay',enabled:true,displayId:lastDisplays[0].id,mode:'window',outputCanvas:{width:1000,height:1000,fps:30,fit:'cover'}},1),
+      normalizeOutputConfigUI({id:'projection-direct',name:'Direct confidence',enabled:true,displayId:lastDisplays[0].id,mode:'window',outputCanvas:{width:1280,height:720,fps:30,fit:'contain'}},2)
     ];
     renderOutputRows();
     document.getElementById('btnMappingAdd').click();
     const inspectorVisible=await wait(()=>!document.getElementById('mappingInspector').hidden);
-    const applyBlockedUnassigned=document.getElementById('btnCompositionApply').disabled;
-    const unassignedStatus=document.getElementById('compositionSaveStatus').textContent.trim();
+    const applyAllowsUnassignedDraft=!document.getElementById('btnCompositionApply').disabled;
+    const draftStatus=document.getElementById('compositionSaveStatus').textContent.trim();
+    const chooseOutput=id=>{const field=document.querySelector('#mappingOutputList input[data-output-id="'+id+'"]');field.checked=true;change(field);};
+    chooseOutput('projection-test');
+    chooseOutput('projection-square');
     document.getElementById('mappingName').value='Left LED processor';
-    document.getElementById('mappingOutput').value='projection-test';
     document.getElementById('mappingX').value='0';
     document.getElementById('mappingY').value='0';
     document.getElementById('mappingWidth').value='2688';
@@ -251,6 +296,8 @@ app.whenReady().then(async () => {
     const composition=cloneState(activeComposition());
     const mapping=cloneState(composition.mappings[0]);
     const projected=projectedOutputConfig(outputConfigs[0]);
+    const projectedSquare=projectedOutputConfig(outputConfigs[1]);
+    const projectedDirect=projectedOutputConfig(outputConfigs[2]);
     const advanced=cloneState(composition.mappings.find(row=>row.id===secondMappingId));
     const editor={
       inputModeVisible:document.getElementById('btnMappingInputMode').getClientRects().length>0,
@@ -265,7 +312,7 @@ app.whenReady().then(async () => {
     document.getElementById('btnCompositionClose').click();
     button.click();
     const reopened=await wait(()=>document.getElementById('compositionWorkspace').classList.contains('open'));
-    const persisted=activeComposition().id===composition.id&&activeComposition().canvas.width===5376&&activeComposition().mappings[0]?.outputId==='projection-test';
+    const persisted=activeComposition().id===composition.id&&activeComposition().canvas.width===5376&&activeComposition().mappings[0]?.outputIds?.includes('projection-test')&&activeComposition().mappings[0]?.outputIds?.includes('projection-square');
     document.getElementById('btnCompositionClose').click();
     document.getElementById('btnOpenOut').click();
     const routerVisible=await wait(()=>document.getElementById('outputRouterOverlay').classList.contains('open'));
@@ -275,19 +322,30 @@ app.whenReady().then(async () => {
       height:Number(row.querySelector('.out-canvas-h').value),
       fit:row.querySelector('.out-canvas-fit').value,
       mapping:row.querySelector('.output-mapping-state').textContent.trim(),
-      mapVisible:row.querySelector('.out-map').getClientRects().length>0
+      mapVisible:row.querySelector('.out-map').getClientRects().length>0,
+      directPressed:row.querySelector('.out-feed-direct').getAttribute('aria-pressed'),
+      mappedPressed:row.querySelector('.out-feed-mapped').getAttribute('aria-pressed')
     }));
     document.querySelector('.output-route-editor[data-route-id="projection-test"] .out-map').click();
     const mapEntryOpened=await wait(()=>document.getElementById('compositionWorkspace').classList.contains('open')&&selectedProjectorMappingId===mapping.id);
     const cornerHandles=[...document.querySelectorAll('.mapping-surface.selected .mapping-corner-handle')].filter(node=>getComputedStyle(node).display!=='none').length;
-    return JSON.stringify({topButtonVisible,singleTopEntry,opened,panes,modalOpened,inspectorVisible,applyBlockedUnassigned,unassignedStatus,applyReadyAssigned,reopened,persisted,routerVisible,routeCanvases,mapEntryOpened,cornerHandles,compositionId:composition.id,compositionCount:S.compositions.length,sceneCount:scenesForComposition(composition.id).length,canvas:composition.canvas,mapping,advanced,editor,firstMappingId,secondMappingId,projected,overlayInside:document.querySelector('.composition-workspace-dialog').getBoundingClientRect().right<=innerWidth+1});
+    const fallbackRoute=outputConfigs.find(config=>config.id==='projection-direct');
+    const fallbackMapping=PTCOMP.normalizeProjectorMapping({id:'mapping-direct-fallback-test',name:'Direct fallback test',outputIds:[fallbackRoute.id],input:{x:0,y:0,width:composition.canvas.width,height:composition.canvas.height}},activeComposition().mappings.length,composition.canvas);
+    activeComposition().mappings.push(fallbackMapping);fallbackRoute.mappingEnabled=true;selectedProjectorMappingId=fallbackMapping.id;renderCompositionWorkspace();
+    const fallbackCheckbox=document.querySelector('#mappingOutputList input[data-output-id="projection-direct"]');
+    fallbackCheckbox.checked=false;change(fallbackCheckbox);
+    const directAfterLastSurfaceUnassigned=fallbackRoute.mappingEnabled===false&&!outputMappingForRoute(fallbackRoute.id)&&projectedOutputConfig(fallbackRoute).projection===null;
+    activeComposition().mappings=activeComposition().mappings.filter(row=>row.id!==fallbackMapping.id);
+    return JSON.stringify({topButtonVisible,singleTopEntry,opened,panes,modalOpened,inspectorVisible,applyAllowsUnassignedDraft,draftStatus,applyReadyAssigned,reopened,persisted,routerVisible,routeCanvases,mapEntryOpened,cornerHandles,directAfterLastSurfaceUnassigned,compositionId:composition.id,compositionCount:S.compositions.length,sceneCount:scenesForComposition(composition.id).length,canvas:composition.canvas,mapping,advanced,editor,firstMappingId,secondMappingId,projected,projectedSquare,projectedDirect,overlayInside:document.querySelector('.composition-workspace-dialog').getBoundingClientRect().right<=innerWidth+1});
   })()`));
   check('COMPOSITION_WORKSPACE_VISIBLE_FROM_TOP_NAV_OK', compositionWorkflow.topButtonVisible && compositionWorkflow.singleTopEntry && compositionWorkflow.opened && compositionWorkflow.panes && compositionWorkflow.modalOpened && compositionWorkflow.inspectorVisible && compositionWorkflow.reopened && compositionWorkflow.overlayInside, JSON.stringify(compositionWorkflow));
-  check('COMPOSITION_MAPPING_APPLY_REQUIRES_VALID_ROUTE_OK', compositionWorkflow.applyBlockedUnassigned && compositionWorkflow.unassignedStatus.includes('assign') && compositionWorkflow.applyReadyAssigned, JSON.stringify({blocked:compositionWorkflow.applyBlockedUnassigned,status:compositionWorkflow.unassignedStatus,ready:compositionWorkflow.applyReadyAssigned}));
+  check('COMPOSITION_UNASSIGNED_SURFACE_STAYS_OPTIONAL_DRAFT_OK', compositionWorkflow.applyAllowsUnassignedDraft && compositionWorkflow.draftStatus.toLowerCase().includes('draft') && compositionWorkflow.applyReadyAssigned, JSON.stringify({allowed:compositionWorkflow.applyAllowsUnassignedDraft,status:compositionWorkflow.draftStatus,ready:compositionWorkflow.applyReadyAssigned}));
   check('COMPOSITION_CUSTOM_LED_MULTI_PROJECTOR_MAPPING_OK', compositionWorkflow.persisted && compositionWorkflow.compositionCount >= 2 && compositionWorkflow.sceneCount >= 1 && compositionWorkflow.canvas.width === 5376 && compositionWorkflow.canvas.height === 768 && compositionWorkflow.canvas.fps === 50 && compositionWorkflow.mapping.width === 2688 && compositionWorkflow.mapping.height === 768 && compositionWorkflow.mapping.blend.right === 96 && compositionWorkflow.mapping.warp.enabled && compositionWorkflow.mapping.warp.grid.visible && compositionWorkflow.mapping.warp.grid.columns === 10 && compositionWorkflow.mapping.warp.corners.topLeft.x === 4 && compositionWorkflow.projected.compositionId === compositionWorkflow.compositionId && compositionWorkflow.projected.projection.width === 2688 && compositionWorkflow.projected.projection.warp.enabled && compositionWorkflow.cornerHandles === 4, JSON.stringify(compositionWorkflow));
   check('COMPOSITION_ADVANCED_OUTPUT_INPUT_OUTPUT_EDITOR_OK', compositionWorkflow.editor.inputModeVisible && compositionWorkflow.editor.outputModeActive && compositionWorkflow.editor.surfaceTabs === 2 && compositionWorkflow.editor.visibleSurfaces === 2 && compositionWorkflow.editor.meshHandles === 9 && compositionWorkflow.editor.meshLines === 12 && compositionWorkflow.editor.maskHandles === 4 && ['auto','scroll'].includes(compositionWorkflow.editor.inspectorScroll) && compositionWorkflow.advanced.input.x === 2688 && compositionWorkflow.advanced.output.x === 50 && compositionWorkflow.advanced.output.width === 50 && compositionWorkflow.advanced.warp.mode === 'mesh' && compositionWorkflow.advanced.mask.enabled, JSON.stringify(compositionWorkflow.editor));
   check('COMPOSITION_MULTI_SURFACE_ROUTE_PAYLOAD_OK', compositionWorkflow.projected.projection.surfaces.length === 2 && compositionWorkflow.projected.projection.surfaces[0].output.width === 50 && compositionWorkflow.projected.projection.surfaces[1].input.x === 2688 && compositionWorkflow.projected.projection.surfaces[1].output.x === 50 && compositionWorkflow.projected.projection.surfaces[1].warp.mode === 'mesh' && compositionWorkflow.projected.projection.surfaces[1].mask.enabled, JSON.stringify(compositionWorkflow.projected.projection.surfaces));
-  check('OUTPUT_ROUTER_MULTI_CANVAS_AND_MAPPING_ENTRY_OK', compositionWorkflow.routerVisible && compositionWorkflow.mapEntryOpened && compositionWorkflow.routeCanvases.length === 2 && compositionWorkflow.routeCanvases[0].width === 1920 && compositionWorkflow.routeCanvases[0].height === 1080 && compositionWorkflow.routeCanvases[0].fit === 'contain' && compositionWorkflow.routeCanvases[0].mapping === 'Mapping active' && compositionWorkflow.routeCanvases[1].width === 1000 && compositionWorkflow.routeCanvases[1].height === 1000 && compositionWorkflow.routeCanvases[1].fit === 'cover' && compositionWorkflow.routeCanvases.every(route=>route.mapVisible), JSON.stringify(compositionWorkflow.routeCanvases));
+  check('COMPOSITION_ONE_SURFACE_TARGETS_MULTIPLE_OUTPUTS_OK', compositionWorkflow.mapping.outputIds.length === 2 && compositionWorkflow.projectedSquare.projection.surfaces.length === 2 && compositionWorkflow.projectedDirect.projection === null && compositionWorkflow.projectedDirect.mappingEnabled === false, JSON.stringify({targets:compositionWorkflow.mapping.outputIds,square:compositionWorkflow.projectedSquare.projection,direct:compositionWorkflow.projectedDirect}));
+  check('OUTPUT_ROUTER_DIRECT_AND_MAPPED_FEEDS_ARE_EXPLICIT_OK', compositionWorkflow.routerVisible && compositionWorkflow.mapEntryOpened && compositionWorkflow.routeCanvases.length === 3 && compositionWorkflow.routeCanvases[0].width === 1920 && compositionWorkflow.routeCanvases[0].height === 1080 && compositionWorkflow.routeCanvases[0].fit === 'contain' && compositionWorkflow.routeCanvases[0].mapping === 'Mapping active' && compositionWorkflow.routeCanvases[0].mappedPressed === 'true' && compositionWorkflow.routeCanvases[1].width === 1000 && compositionWorkflow.routeCanvases[1].height === 1000 && compositionWorkflow.routeCanvases[1].fit === 'cover' && compositionWorkflow.routeCanvases[1].mappedPressed === 'true' && compositionWorkflow.routeCanvases[2].mapping === 'Direct Program' && compositionWorkflow.routeCanvases[2].directPressed === 'true' && compositionWorkflow.routeCanvases.every(route=>route.mapVisible), JSON.stringify(compositionWorkflow.routeCanvases));
+  check('COMPOSITION_LAST_SURFACE_UNASSIGN_RETURNS_OUTPUT_TO_DIRECT_OK', compositionWorkflow.directAfterLastSurfaceUnassigned, JSON.stringify(compositionWorkflow));
   await win.webContents.executeJavaScript(`(()=>{selectedProjectorMappingId=${JSON.stringify(compositionWorkflow.secondMappingId)};setMappingWorkspaceMode('output');renderCompositionWorkspace();})()`);
   await new Promise(resolve => setTimeout(resolve, 180));
   fs.writeFileSync(path.join(artifactDirectory, 'composition-workspace-1280x800.png'), (await win.webContents.capturePage()).toPNG());
@@ -316,8 +374,9 @@ app.whenReady().then(async () => {
       activeCompositionId:'composition-main',activeSceneId:'scene-main',
       canvas:{width:5376,height:768,fps:50,background:'#000000',transparent:false},
       scenes:[{id:'scene-main',name:'Mapped Program',compositionId:'composition-main',layers:[
-        {id:'background',type:'color',name:'Background',visible:true,color:'#16324d',x:0,y:0,w:100,h:100,opacity:1},
-        {id:'title',type:'text',name:'Mapped Program',visible:true,text:'MAPPED PROGRAM',color:'#ffffff',bg:'transparent',x:8,y:36,w:84,h:28,opacity:1,fontSize:9},
+        {id:'background',type:'color',name:'Background',visible:true,color:'#16324d',fillType:'linear',color2:'#46708f',gradientAngle:38,x:0,y:0,w:100,h:100,opacity:1},
+        {id:'image',type:'image',name:'Pixel reference',visible:true,src:'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw==',imageSampling:'pixelated',x:2,y:2,w:4,h:4,opacity:1},
+        {id:'title',type:'text',name:'Mapped Program',visible:true,text:'Mapped Program',color:'#ffffff',bg:'transparent',x:8,y:36,w:84,h:28,opacity:1,fontSize:9,lineHeight:1.35,letterSpacing:.06,textTransform:'uppercase',textPadding:3,strokeWidth:1,strokeColor:'#102030',shadowEnabled:true,shadowColor:'#000000',shadowBlur:8,shadowX:2,shadowY:3},
         {id:'timer',type:'timer',name:'Timer',visible:true,x:68,y:5,w:27,h:18,opacity:1}
       ]}],
       mode:'countdown',running:false,durationMs:600000,remMs:600000,endAt:0,startAt:0,elapsedMs:0,overtime:true,
@@ -330,16 +389,20 @@ app.whenReady().then(async () => {
     applyState(state);
     await new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)));
     const surface=document.getElementById('programSurface'),content=document.getElementById('programContent'),grid=document.getElementById('projectionCalibration');
+    const background=content.querySelector('[data-layer-id="background"] .scene-layer-content');
+    const image=content.querySelector('[data-layer-id="image"] img');
+    const title=content.querySelector('[data-layer-id="title"] .scene-text');
     const style=getComputedStyle(surface),contentStyle=getComputedStyle(content),gridStyle=getComputedStyle(grid),rect=surface.getBoundingClientRect();
     const contentMatrix=new DOMMatrix(contentStyle.transform);
     return JSON.stringify({
       surface:{width:parseFloat(surface.style.width),height:parseFloat(surface.style.height),boundsWidth:rect.width,boundsHeight:rect.height,transform:style.transform,mask:style.webkitMaskImage||style.maskImage},
       content:{transform:contentStyle.transform,scaleX:contentMatrix.a,scaleY:contentMatrix.d,translateX:contentMatrix.e,translateY:contentMatrix.f,children:content.children.length,containsLowerThird:content.contains(document.getElementById('lowerThird'))},
       grid:{display:gridStyle.display,size:gridStyle.backgroundSize,opacity:gridStyle.opacity,parent:grid.parentElement.id},
-      canvas:{width:surface.dataset.canvasWidth,height:surface.dataset.canvasHeight,fit:surface.dataset.canvasFit,warp:surface.dataset.warp}
+      canvas:{width:surface.dataset.canvasWidth,height:surface.dataset.canvasHeight,fit:surface.dataset.canvasFit,warp:surface.dataset.warp},
+      sourceStyles:{background:background?.style.background||'',imageRendering:image?.style.imageRendering||'',lineHeight:title?.style.lineHeight||'',letterSpacing:title?.style.letterSpacing||'',textTransform:title?.style.textTransform||'',stroke:title?.style.webkitTextStroke||'',shadow:title?.style.textShadow||''}
     });
   })()`));
-  check('OUTPUT_RENDERER_FULL_PROGRAM_WARP_AND_CALIBRATION_GRID_OK', outputGeometry.surface.width === outputGeometry.surface.height && outputGeometry.surface.width >= 600 && outputGeometry.surface.transform !== 'none' && outputGeometry.surface.mask !== 'none' && outputGeometry.content.scaleX === 2 && outputGeometry.content.scaleY === 1 && Math.abs(outputGeometry.content.translateX + outputGeometry.surface.width) < 0.5 && outputGeometry.content.translateY === 0 && outputGeometry.content.containsLowerThird && outputGeometry.grid.display === 'block' && outputGeometry.grid.size.includes('10%') && outputGeometry.grid.parent === 'programSurface' && outputGeometry.canvas.width === '1000' && outputGeometry.canvas.height === '1000' && outputGeometry.canvas.fit === 'contain' && outputGeometry.canvas.warp === 'on', JSON.stringify(outputGeometry));
+  check('OUTPUT_RENDERER_FULL_PROGRAM_WARP_AND_CALIBRATION_GRID_OK', outputGeometry.surface.width === outputGeometry.surface.height && outputGeometry.surface.width >= 600 && outputGeometry.surface.transform !== 'none' && outputGeometry.surface.mask !== 'none' && outputGeometry.content.scaleX === 2 && outputGeometry.content.scaleY === 1 && Math.abs(outputGeometry.content.translateX + outputGeometry.surface.width) < 0.5 && outputGeometry.content.translateY === 0 && outputGeometry.content.containsLowerThird && outputGeometry.grid.display === 'block' && outputGeometry.grid.size.includes('10%') && outputGeometry.grid.parent === 'programSurface' && outputGeometry.canvas.width === '1000' && outputGeometry.canvas.height === '1000' && outputGeometry.canvas.fit === 'contain' && outputGeometry.canvas.warp === 'on' && outputGeometry.sourceStyles.background.includes('linear-gradient') && outputGeometry.sourceStyles.imageRendering === 'pixelated' && outputGeometry.sourceStyles.lineHeight === '1.35' && outputGeometry.sourceStyles.letterSpacing === '0.06em' && outputGeometry.sourceStyles.textTransform === 'uppercase' && outputGeometry.sourceStyles.stroke.includes('1px') && outputGeometry.sourceStyles.shadow.includes('8px'), JSON.stringify(outputGeometry));
   fs.writeFileSync(path.join(artifactDirectory, 'projector-mapped-output-1280x720.png'), (await outputRendererWin.webContents.capturePage()).toPNG());
   const advancedOutput = JSON.parse(await outputRendererWin.webContents.executeJavaScript(`(async()=>{
     const base={
@@ -608,6 +671,11 @@ app.whenReady().then(async () => {
     const sentMessage={text:S.message.text,flash:S.message.flash};
     document.getElementById('inspTimerMessageClear').click();
     const messageCleared=S.message.text===''&&!S.message.flash;
+    const fire=(id,value,event='change')=>{const element=document.getElementById(id);if(element.type==='checkbox')element.checked=!!value;else element.value=String(value);element.dispatchEvent(new Event(event,{bubbles:true}));};
+    fire('inspTimerBg','#112233','input');fire('inspTimerFg','#f4f7fb','input');fire('inspTimerFont','serif');
+    fire('inspTimerWarnColors',true);fire('inspTimerProgress',true);fire('inspTimerOvertime',false);fire('inspTimerFlashZero',true);
+    fire('inspTimerYellow','2:00');fire('inspTimerRed','0:30');fire('inspTimerYellowColor','#f0b429','input');fire('inspTimerRedColor','#e34850','input');
+    const displayOptions={bg:S.bgColor,fg:S.fgColor,font:S.font,warnings:S.useWarnColors,progress:S.showProgress,overtime:S.overtime,flashZero:S.flashZero,yellow:S.yellowSec,red:S.redSec,yellowColor:S.warnYellow,redColor:S.warnRed};
 
     clickSource('lowerThird');
     const lowerThird=selectedLayer();
@@ -617,22 +685,25 @@ app.whenReady().then(async () => {
     document.getElementById('inspLowerThirdTitle').value='Creative Director';change(document.getElementById('inspLowerThirdTitle'));
     document.getElementById('inspLowerThirdMeta').value='ShowSlate Conference';change(document.getElementById('inspLowerThirdMeta'));
     document.getElementById('inspLowerThirdDuration').value='12';change(document.getElementById('inspLowerThirdDuration'));
+    lowerThird.visible=false;sceneDirty();renderInspector();
+    const sourceActionsVisible=['inspLowerThirdPreview','inspLowerThirdTake','inspLowerThirdHide'].every(id=>document.getElementById(id).getClientRects().length>0);
+    document.getElementById('inspLowerThirdPreview').click();
     renderStage('pv',S,Date.now());renderStage('pg',programState,Date.now());
     const programBefore=JSON.stringify(programState.lowerThird||{});
     const previewText=[document.getElementById('pvLtRuntime'),document.getElementById('pvLowerThird')].map(node=>node?.textContent||'').join(' ');
     const previewOnly=previewText.includes('Ana Markovic')&&programBefore===JSON.stringify(programState.lowerThird||{});
-    document.getElementById('btnTakeLayer').click();
+    document.getElementById('inspLowerThirdTake').click();
     renderStage('pg',programState,Date.now());
     const liveText=[document.getElementById('pgLtRuntime'),document.getElementById('pgLowerThird')].map(node=>node?.textContent||'').join(' ');
     const taken=programState.lowerThird?.visible===true&&programState.lowerThird?.name==='Ana Markovic'&&liveText.includes('Ana Markovic');
-    document.getElementById('btnHideLayer').click();
+    document.getElementById('inspLowerThirdHide').click();
     const hidden=programState.lowerThird?.visible===false;
     document.getElementById('inspLowerThirdStudio').click();
     const studioVisible=document.body.classList.contains('lt-studio-open')&&!!document.getElementById('ltStudio').getClientRects().length;
     document.getElementById('btnLtStudioClose').click();
     const persistedLayer=selectedLayer();
     const persisted=persistedLayer?.dataMode==='custom'&&persistedLayer?.speakerName==='Ana Markovic'&&persistedLayer?.speakerTitle==='Creative Director'&&persistedLayer?.speakerMeta==='ShowSlate Conference'&&persistedLayer?.durationSec===12;
-    const result={timer:{visible:timerControlsVisible,setDurationMs,adjustedDurationMs,stopwatchMode,started,paused,sentMessage,messageCleared},lowerThird:{catalog:!!document.querySelector('#sourceKindGrid [data-source-kind="lowerThird"]'),visible:lowerThirdControlsVisible,previewOnly,taken,hidden,studioVisible,persisted,type:lowerThird?.type}};
+    const result={timer:{visible:timerControlsVisible,setDurationMs,adjustedDurationMs,stopwatchMode,started,paused,sentMessage,messageCleared,displayOptions},lowerThird:{catalog:!!document.querySelector('#sourceKindGrid [data-source-kind="lowerThird"]'),visible:lowerThirdControlsVisible,sourceActionsVisible,previewOnly,taken,hidden,studioVisible,persisted,type:lowerThird?.type}};
     S=restore.state;programState=restore.program;selectedLayerId=restore.selected;currentCue=restore.currentCue;selectedCue=restore.selectedCue;cues=restore.cues;
     lowerThirdSourcePreviewCache={key:'',state:null};monitorLowerThirdKeys={pv:'',pg:''};monitorSceneKeys={pv:'',pg:''};
     renderScenesUI();renderInspector();renderStage('pv',S,Date.now());renderStage('pg',programState,Date.now());
@@ -640,16 +711,82 @@ app.whenReady().then(async () => {
     }catch(error){return {error:String(error&&error.stack||error)};}
   })())`));
   if (timerAndLowerThird.error) throw new Error(`timer/lower-third operator workflow: ${timerAndLowerThird.error}`);
-  check('COMPOSITOR_TIMER_SOURCE_OPERATOR_CONTROLS_OK', timerAndLowerThird.timer.visible && timerAndLowerThird.timer.setDurationMs === 90000 && timerAndLowerThird.timer.adjustedDurationMs === 100000 && timerAndLowerThird.timer.stopwatchMode === 'countup' && timerAndLowerThird.timer.started && timerAndLowerThird.timer.paused && timerAndLowerThird.timer.sentMessage.text === 'Two minutes remaining' && timerAndLowerThird.timer.sentMessage.flash && timerAndLowerThird.timer.messageCleared, JSON.stringify(timerAndLowerThird.timer));
-  check('COMPOSITOR_LOWER_THIRD_SOURCE_PREVIEW_TAKE_HIDE_OK', timerAndLowerThird.lowerThird.catalog && timerAndLowerThird.lowerThird.visible && timerAndLowerThird.lowerThird.type === 'lowerThird' && timerAndLowerThird.lowerThird.previewOnly && timerAndLowerThird.lowerThird.taken && timerAndLowerThird.lowerThird.hidden && timerAndLowerThird.lowerThird.studioVisible && timerAndLowerThird.lowerThird.persisted, JSON.stringify(timerAndLowerThird.lowerThird));
+  check('COMPOSITOR_TIMER_SOURCE_OPERATOR_CONTROLS_OK', timerAndLowerThird.timer.visible && timerAndLowerThird.timer.setDurationMs === 90000 && timerAndLowerThird.timer.adjustedDurationMs === 100000 && timerAndLowerThird.timer.stopwatchMode === 'countup' && timerAndLowerThird.timer.started && timerAndLowerThird.timer.paused && timerAndLowerThird.timer.sentMessage.text === 'Two minutes remaining' && timerAndLowerThird.timer.sentMessage.flash && timerAndLowerThird.timer.messageCleared && timerAndLowerThird.timer.displayOptions.bg === '#112233' && timerAndLowerThird.timer.displayOptions.fg === '#f4f7fb' && timerAndLowerThird.timer.displayOptions.font === 'serif' && timerAndLowerThird.timer.displayOptions.warnings && timerAndLowerThird.timer.displayOptions.progress && !timerAndLowerThird.timer.displayOptions.overtime && timerAndLowerThird.timer.displayOptions.flashZero && timerAndLowerThird.timer.displayOptions.yellow === 120 && timerAndLowerThird.timer.displayOptions.red === 30, JSON.stringify(timerAndLowerThird.timer));
+  check('COMPOSITOR_LOWER_THIRD_SOURCE_PREVIEW_TAKE_HIDE_OK', timerAndLowerThird.lowerThird.catalog && timerAndLowerThird.lowerThird.visible && timerAndLowerThird.lowerThird.type === 'lowerThird' && timerAndLowerThird.lowerThird.sourceActionsVisible && timerAndLowerThird.lowerThird.previewOnly && timerAndLowerThird.lowerThird.taken && timerAndLowerThird.lowerThird.hidden && timerAndLowerThird.lowerThird.studioVisible && timerAndLowerThird.lowerThird.persisted, JSON.stringify(timerAndLowerThird.lowerThird));
+  const sourceInspector = JSON.parse(await win.webContents.executeJavaScript(`JSON.stringify((()=>{
+    const restore={state:cloneState(S),program:cloneState(programState),selected:selectedLayerId,inputKey:liveInputConfigKey};
+    try{
+      const fire=(id,value,event='change')=>{const element=document.getElementById(id);if(element.type==='checkbox')element.checked=!!value;else element.value=String(value);element.dispatchEvent(new Event(event,{bubbles:true}));};
+      const select=id=>{selectedLayerId=id;renderScenesUI();renderInspector();};
+      const imageSource='data:image/svg+xml,'+encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="800"><rect width="1200" height="800" fill="#2673c9"/></svg>');
+      const scene=PTCOMP.normalizeScene({id:'source-inspector-scene',name:'Source Inspector QA',layers:[
+        {id:'inspector-color',type:'color',name:'Gradient background'},
+        {id:'inspector-image',type:'image',name:'Product still',src:imageSource,sourceWidth:1200,sourceHeight:800,w:60,h:60},
+        {id:'inspector-text',type:'text',name:'Session title',text:'Live production',w:70,h:22,y:10},
+        {id:'inspector-pdf',type:'pdf',name:'Deck',src:'about:blank',page:1},
+        {id:'inspector-capture',type:'capture',name:'Camera A',inputId:'inspector-live-input',audioEnabled:false,volume:1,audioMonitoring:'off'}
+      ]});
+      const input=PTCOMP.normalizeLiveInput({id:'inspector-live-input',type:'device',name:'Capture card',videoDeviceId:'video-card-1',audioDeviceId:'audio-card-1',withAudio:true,width:1920,height:1080,fps:30,captureMode:'low-latency',qualityProfile:'auto',autoReconnect:true});
+      S.canvas=PTCOMP.normalizeCanvas({width:1920,height:1080,fps:60});
+      S.scenes=[scene];S.activeSceneId=scene.id;S.liveInputs=[input];S.studioDirect=false;selectedLayerId='inspector-color';
+      programState=cloneState(S);monitorSceneKeys={pv:'',pg:''};renderScenesUI();renderInspector();renderStage('pv',S,Date.now());renderStage('pg',programState,Date.now());
+
+      fire('inspColorFillType','radial');fire('inspSourceColor','#102030','input');fire('inspSourceColor2','#90a0b0','input');fire('inspGradientCenterX',28,'input');fire('inspGradientCenterY',72,'input');
+      renderStage('pv',S,Date.now());
+      const colorLayer=selectedLayer(),colorPreview=document.querySelector('#pvScene [data-layer-id="inspector-color"] .pv-scene-layer-content');
+      const colorPreviewBackground=colorPreview?.style.background||'';
+      const colorProgramBefore=PTCOMP.normalizeLayer(findProgramLayer(colorLayer)).fillType;
+      takeSelectedLayer();renderStage('pg',programState,Date.now());
+      const colorProgram=document.querySelector('#pgScene [data-layer-id="inspector-color"] .pv-scene-layer-content');
+
+      select('inspector-text');fire('inspLineHeight',1.4);fire('inspLetterSpacing',0.08);fire('inspTextTransform','uppercase');fire('inspTextPadding',4,'input');fire('inspStrokeWidth',2,'input');fire('inspStrokeColor','#112233','input');fire('inspShadowEnabled',true);fire('inspShadowColor','#000000','input');fire('inspShadowBlur',12,'input');fire('inspShadowX',3);fire('inspShadowY',5);
+      renderStage('pv',S,Date.now());
+      const textLayer=selectedLayer(),textPreview=document.querySelector('#pvScene [data-layer-id="inspector-text"] .pv-scene-text');
+      takeSelectedLayer();renderStage('pg',programState,Date.now());
+      const textProgram=document.querySelector('#pgScene [data-layer-id="inspector-text"] .pv-scene-text');
+
+      select('inspector-image');fire('inspImageSampling','pixelated');document.getElementById('inspMediaMatchAspect').click();
+      const matched={w:selectedLayer().w,h:selectedLayer().h};
+      document.getElementById('inspImageOneToOne').click();renderStage('pv',S,Date.now());
+      const oneToOne={w:selectedLayer().w,h:selectedLayer().h};
+      const imagePreview=document.querySelector('#pvScene [data-layer-id="inspector-image"] img');
+      const image={visible:!!document.getElementById('inspImageWrap').getClientRects().length,dimensions:document.getElementById('inspImageDimensions').textContent,sampling:selectedLayer().imageSampling,rendering:imagePreview?.style.imageRendering||'',matched,oneToOne,canvas:PTCOMP.normalizeCanvas(S.canvas),source:{width:1200,height:800}};
+
+      select('inspector-pdf');document.getElementById('inspPdfNext').click();document.getElementById('inspPdfNext').click();document.getElementById('inspPdfPrevious').click();
+      const pdf={visible:!!document.getElementById('inspPdfWrap').getClientRects().length,page:selectedLayer().page,input:Number(document.getElementById('inspPdfPage').value)};
+
+      select('inspector-capture');fire('inspLiveAutoReconnect',false);fire('inspLiveQualityProfile','quality');fire('inspLiveWidth',3840);fire('inspLiveHeight',2160);fire('inspLiveFps',59.94);fire('inspLiveCaptureMode','compatible');fire('inspLiveAudio',true);fire('inspLiveMonitoring','monitor-only');fire('inspLiveVolume',45,'input');document.getElementById('inspLiveVolume').dispatchEvent(new Event('change',{bubbles:true}));
+      const definition=S.liveInputs.find(row=>row.id==='inspector-live-input'),captureLayer=selectedLayer();
+      const live={visible:!!document.getElementById('inspLiveWrap').getClientRects().length,definition,layer:{audioEnabled:captureLayer.audioEnabled,audioMonitoring:captureLayer.audioMonitoring,volume:captureLayer.volume},formatControls:['inspLiveWidth','inspLiveHeight','inspLiveFps','inspLiveCaptureMode'].every(id=>document.getElementById(id).getClientRects().length>0)};
+
+      const result={
+        color:{fillType:colorLayer.fillType,preview:colorPreviewBackground,programBefore:colorProgramBefore,program:colorProgram?.style.background||'',programType:PTCOMP.normalizeLayer(findProgramLayer(colorLayer)).fillType},
+        text:{lineHeight:textLayer.lineHeight,letterSpacing:textLayer.letterSpacing,textTransform:textLayer.textTransform,padding:textLayer.textPadding,stroke:textLayer.strokeWidth,shadow:textLayer.shadowEnabled,preview:{lineHeight:textPreview?.style.lineHeight,spacing:textPreview?.style.letterSpacing,transform:textPreview?.style.textTransform,stroke:textPreview?.style.webkitTextStroke,shadow:textPreview?.style.textShadow},program:{lineHeight:textProgram?.style.lineHeight,spacing:textProgram?.style.letterSpacing,transform:textProgram?.style.textTransform,stroke:textProgram?.style.webkitTextStroke,shadow:textProgram?.style.textShadow}},
+        image,pdf,live
+      };
+      S=restore.state;programState=restore.program;selectedLayerId=restore.selected;liveInputConfigKey=restore.inputKey;monitorSceneKeys={pv:'',pg:''};renderScenesUI();renderInspector();renderStage('pv',S,Date.now());renderStage('pg',programState,Date.now());
+      return result;
+    }catch(error){S=restore.state;programState=restore.program;selectedLayerId=restore.selected;liveInputConfigKey=restore.inputKey;monitorSceneKeys={pv:'',pg:''};renderScenesUI();renderInspector();return {error:String(error&&error.stack||error)};}
+  })())`));
+  if (sourceInspector.error) throw new Error(`source inspector controls: ${sourceInspector.error}`);
+  check('COMPOSITOR_SOURCE_SPECIFIC_INSPECTOR_CONTROLS_OK', sourceInspector.color.fillType === 'radial' && sourceInspector.color.programBefore === 'solid' && sourceInspector.color.programType === 'radial' && sourceInspector.color.preview.includes('radial-gradient') && sourceInspector.color.program.includes('radial-gradient') && sourceInspector.text.lineHeight === 1.4 && sourceInspector.text.letterSpacing === 0.08 && sourceInspector.text.textTransform === 'uppercase' && sourceInspector.text.padding === 4 && sourceInspector.text.stroke === 2 && sourceInspector.text.shadow, JSON.stringify({color:sourceInspector.color,text:sourceInspector.text}));
+  check('COMPOSITOR_SOURCE_SPECIFIC_PREVIEW_PROGRAM_RENDER_OK', sourceInspector.text.preview.lineHeight === '1.4' && sourceInspector.text.preview.spacing === '0.08em' && sourceInspector.text.preview.transform === 'uppercase' && sourceInspector.text.preview.stroke.includes('2px') && sourceInspector.text.preview.shadow.includes('12px') && sourceInspector.text.program.lineHeight === sourceInspector.text.preview.lineHeight && sourceInspector.text.program.spacing === sourceInspector.text.preview.spacing && sourceInspector.text.program.transform === sourceInspector.text.preview.transform, JSON.stringify(sourceInspector.text));
+  const matchedImageHeight=sourceInspector.image.matched.w*(sourceInspector.image.canvas.width/sourceInspector.image.canvas.height)/(sourceInspector.image.source.width/sourceInspector.image.source.height);
+  const oneToOneImageWidth=sourceInspector.image.source.width/sourceInspector.image.canvas.width*100;
+  const oneToOneImageHeight=sourceInspector.image.source.height/sourceInspector.image.canvas.height*100;
+  check('COMPOSITOR_IMAGE_PDF_AND_LIVE_SOURCE_CONTROLS_OK', sourceInspector.image.visible && sourceInspector.image.dimensions === '1200×800' && sourceInspector.image.sampling === 'pixelated' && sourceInspector.image.rendering === 'pixelated' && Math.abs(sourceInspector.image.matched.h - matchedImageHeight) < .01 && Math.abs(sourceInspector.image.oneToOne.w - oneToOneImageWidth) < .01 && Math.abs(sourceInspector.image.oneToOne.h - oneToOneImageHeight) < .01 && sourceInspector.pdf.visible && sourceInspector.pdf.page === 2 && sourceInspector.pdf.input === 2 && sourceInspector.live.visible && sourceInspector.live.formatControls && sourceInspector.live.definition.width === 3840 && sourceInspector.live.definition.height === 2160 && Math.abs(sourceInspector.live.definition.fps - 59.94) < .001 && sourceInspector.live.definition.qualityProfile === 'quality' && sourceInspector.live.definition.captureMode === 'compatible' && sourceInspector.live.definition.autoReconnect === false && sourceInspector.live.layer.audioEnabled && sourceInspector.live.layer.audioMonitoring === 'monitor-only' && Math.abs(sourceInspector.live.layer.volume - .45) < .001, JSON.stringify({image:sourceInspector.image,pdf:sourceInspector.pdf,live:sourceInspector.live}));
   const advancedInspector = JSON.parse(await win.webContents.executeJavaScript(`JSON.stringify((()=>{
     const fire=(id,value,event='change')=>{const element=document.getElementById(id);if(element.type==='checkbox')element.checked=!!value;else element.value=String(value);element.dispatchEvent(new Event(event,{bubbles:true}));};
-    fire('inspOrigin','top-left');fire('inspFlipX',true);fire('inspCropTop',8);fire('inspCropLeft',6);fire('inspObjectX',68,'input');fire('inspBlend','screen');fire('inspCornerRadius',12,'input');fire('inspBrightness',115,'input');fire('inspContrast',125,'input');fire('inspSaturation',135,'input');fire('inspHue',18,'input');
+    fire('inspOrigin','top-left');fire('inspFlipX',true);fire('inspCropTop',8);fire('inspCropLeft',6);fire('inspObjectX',68,'input');fire('inspOpacity',99,'input');fire('inspBlend','screen');fire('inspCornerRadius',12,'input');fire('inspBrightness',115,'input');fire('inspContrast',125,'input');fire('inspSaturation',135,'input');fire('inspHue',18,'input');fire('inspBlur',2,'input');
     renderStage('pv',S,Date.now());const layer=selectedLayer();const box=document.querySelector('#pvScene [data-layer-id="'+layer.id+'"]');const content=box&&box.querySelector('.pv-scene-layer-content');
-    const result={layer:{origin:layer.transformOrigin,flipX:layer.flipX,crop:layer.crop,objectX:layer.objectPositionX,blend:layer.blendMode,radius:layer.cornerRadius,brightness:layer.brightness,contrast:layer.contrast,saturation:layer.saturation,hue:layer.hue},style:{transform:box&&box.style.transform,origin:box&&box.style.transformOrigin,blend:box&&box.style.mixBlendMode,clip:content&&content.style.clipPath,filter:content&&content.style.filter,radius:content&&content.style.borderRadius},sections:document.querySelectorAll('#inspector .inspector-section').length};
-    Object.assign(layer,{transformOrigin:'center',flipX:false,crop:{top:0,right:0,bottom:0,left:0},objectPositionX:50,blendMode:'normal',cornerRadius:0,brightness:1,contrast:1,saturation:1,hue:0});sceneDirty();selectLayer(layer.id);return result;
+    const result={layer:{origin:layer.transformOrigin,flipX:layer.flipX,crop:layer.crop,objectX:layer.objectPositionX,opacity:layer.opacity,blend:layer.blendMode,radius:layer.cornerRadius,brightness:layer.brightness,contrast:layer.contrast,saturation:layer.saturation,hue:layer.hue,blur:layer.blur},style:{transform:box&&box.style.transform,origin:box&&box.style.transformOrigin,blend:box&&box.style.mixBlendMode,clip:content&&content.style.clipPath,filter:content&&content.style.filter,radius:content&&content.style.borderRadius},sections:document.querySelectorAll('#inspector .inspector-section').length};
+    document.getElementById('inspResetAppearance').click();
+    const resetLayer=selectedLayer();
+    result.reset={opacity:resetLayer.opacity,blend:resetLayer.blendMode,radius:resetLayer.cornerRadius,brightness:resetLayer.brightness,contrast:resetLayer.contrast,saturation:resetLayer.saturation,hue:resetLayer.hue,blur:resetLayer.blur,input:Number(document.getElementById('inspOpacity').value)};
+    Object.assign(resetLayer,{transformOrigin:'center',flipX:false,crop:{top:0,right:0,bottom:0,left:0},objectPositionX:50,blendMode:'normal',cornerRadius:0,brightness:1,contrast:1,saturation:1,hue:0});sceneDirty();selectLayer(resetLayer.id);return result;
   })())`));
   check('COMPOSITOR_ADVANCED_INSPECTOR_RENDER_OK', advancedInspector.layer.origin === 'top-left' && advancedInspector.layer.flipX && advancedInspector.layer.crop.top === 8 && advancedInspector.layer.crop.left === 6 && advancedInspector.layer.objectX === 68 && advancedInspector.layer.blend === 'screen' && advancedInspector.layer.radius === 12 && advancedInspector.style.transform.includes('scale(-1, 1)') && advancedInspector.style.origin === '0% 0%' && advancedInspector.style.blend === 'screen' && advancedInspector.style.clip.includes('8%') && advancedInspector.style.filter.includes('brightness(1.15)') && advancedInspector.style.radius === '12%' && advancedInspector.sections >= 4, JSON.stringify(advancedInspector));
+  check('COMPOSITOR_APPEARANCE_RESET_RESTORES_DEFAULTS_OK', advancedInspector.layer.opacity === .99 && advancedInspector.layer.blur === 2 && advancedInspector.reset.opacity === 1 && advancedInspector.reset.blend === 'normal' && advancedInspector.reset.radius === 0 && advancedInspector.reset.brightness === 1 && advancedInspector.reset.contrast === 1 && advancedInspector.reset.saturation === 1 && advancedInspector.reset.hue === 0 && advancedInspector.reset.blur === 0 && advancedInspector.reset.input === 100, JSON.stringify(advancedInspector));
   const layerSelection = JSON.parse(await win.webContents.executeJavaScript(`JSON.stringify((()=>{
     document.activeElement?.blur(); selectLayer(null);
     const disabledOpacity=Number(getComputedStyle(document.getElementById('btnTakeLayer')).opacity);
@@ -980,9 +1117,11 @@ app.whenReady().then(async () => {
   const compact = JSON.parse(await win.webContents.executeJavaScript(`JSON.stringify((()=>{
     const root=document.getElementById('panelSources'); const inspector=document.getElementById('inspector'); const actionElement=document.getElementById('inspDelete'); actionElement.scrollIntoView({block:'center'});
     const panel=root.getBoundingClientRect(); const add=document.getElementById('btnAddSource').getBoundingClientRect(); const action=actionElement.getBoundingClientRect(); const preview=document.getElementById('preview').getBoundingClientRect(); const program=document.getElementById('program').getBoundingClientRect(); const inspectorRect=inspector.getBoundingClientRect();
-    return {vw:innerWidth,vh:innerHeight,panel:{left:panel.left,right:panel.right,top:panel.top,bottom:panel.bottom},add:{left:add.left,right:add.right,top:add.top,bottom:add.bottom},action:{left:action.left,right:action.right,top:action.top,bottom:action.bottom},preview:{left:preview.left,right:preview.right,top:preview.top,bottom:preview.bottom},program:{left:program.left,right:program.right,top:program.top,bottom:program.bottom},inspector:{left:inspectorRect.left,right:inspectorRect.right,top:inspectorRect.top,bottom:inspectorRect.bottom,scrollTop:inspector.scrollTop,scrollable:inspector.scrollHeight>inspector.clientHeight}};
+    const inspectorControls=[...inspector.querySelectorAll('button,input,select,textarea')].filter(node=>{const style=getComputedStyle(node),rect=node.getBoundingClientRect();return style.display!=='none'&&style.visibility!=='hidden'&&rect.width>0&&rect.height>0;});
+    const controlsInside=inspectorControls.every(node=>{const rect=node.getBoundingClientRect();return rect.left>=inspectorRect.left-1&&rect.right<=inspectorRect.right+1;});
+    return {vw:innerWidth,vh:innerHeight,panel:{left:panel.left,right:panel.right,top:panel.top,bottom:panel.bottom},add:{left:add.left,right:add.right,top:add.top,bottom:add.bottom},action:{left:action.left,right:action.right,top:action.top,bottom:action.bottom},preview:{left:preview.left,right:preview.right,top:preview.top,bottom:preview.bottom},program:{left:program.left,right:program.right,top:program.top,bottom:program.bottom},inspector:{left:inspectorRect.left,right:inspectorRect.right,top:inspectorRect.top,bottom:inspectorRect.bottom,scrollTop:inspector.scrollTop,scrollable:inspector.scrollHeight>inspector.clientHeight,controls:inspectorControls.length,controlsInside}};
   })())`));
-  check('COMPOSITOR_900X600_CONTROLS_REACHABLE_OK', compact.panel.left >= 0 && compact.panel.right <= compact.vw + 1 && compact.add.left >= 0 && compact.add.right <= compact.vw + 1 && compact.preview.right > compact.preview.left && compact.preview.bottom > compact.preview.top && compact.program.right > compact.program.left && compact.program.bottom > compact.program.top && compact.inspector.scrollable && compact.inspector.scrollTop > 0 && compact.action.left >= compact.inspector.left && compact.action.right <= compact.inspector.right + 1 && compact.action.top >= compact.inspector.top && compact.action.bottom <= compact.inspector.bottom + 1, JSON.stringify(compact));
+  check('COMPOSITOR_900X600_CONTROLS_REACHABLE_OK', compact.panel.left >= 0 && compact.panel.right <= compact.vw + 1 && compact.add.left >= 0 && compact.add.right <= compact.vw + 1 && compact.preview.right > compact.preview.left && compact.preview.bottom > compact.preview.top && compact.program.right > compact.program.left && compact.program.bottom > compact.program.top && compact.inspector.scrollable && compact.inspector.scrollTop > 0 && compact.inspector.controls > 0 && compact.inspector.controlsInside && compact.action.left >= compact.inspector.left && compact.action.right <= compact.inspector.right + 1 && compact.action.top >= compact.inspector.top && compact.action.bottom <= compact.inspector.bottom + 1, JSON.stringify(compact));
   const compactUtility = JSON.parse(await win.webContents.executeJavaScript(`JSON.stringify((()=>{
     document.body.classList.add('dr-right'); const utility=document.getElementById('utilitySidebar'); utility.scrollTop=0;
     const status=document.querySelector('.card-status').getBoundingClientRect(); const scenes=document.querySelector('.card-scenes').getBoundingClientRect(); const rows=[...document.querySelectorAll('.card-status .strow')].map(row=>row.getBoundingClientRect());
