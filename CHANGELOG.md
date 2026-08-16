@@ -2,7 +2,7 @@
 
 All notable changes to ShowSlate are documented here.
 
-## 0.12.0-beta.1 - 2026-08-16
+## 0.12.0-beta.2 - 2026-08-16
 
 ### Added
 
@@ -25,6 +25,7 @@ All notable changes to ShowSlate are documented here.
 - Routed mixer volume and mute controls into the live Program audio graph.
 - Kept GO NEXT advancing through the saved rundown order and source visibility aligned with the visible layer controls.
 - Kept the complete settings and timing controls reachable in the 900x600 compact drawer.
+- Made the large linked-media restart assertion portable across Windows and macOS path representations while retaining the above-4 GB byte-range read check.
 
 ## 0.11.0-beta.1 - 2026-08-11
 

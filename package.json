@@ -1,7 +1,7 @@
 {
   "name": "showslate",
   "productName": "ShowSlate",
-  "version": "0.12.0-beta.1",
+  "version": "0.12.0-beta.2",
   "description": "Open-source live compositor with layered scenes, Preview/Program switching, multi-display canvases and projector mapping",
   "main": "main.js",
   "author": "Srdjan Kotarlic",

@@ -1,6 +1,6 @@
 # Public Beta Verification
 
-Verified for the `0.12.0-beta.1` release candidate through 2026-08-16. This page separates what was exercised on the tested Mac from what was only automated, built or structurally inspected.
+Verified for the `0.12.0-beta.2` release candidate through 2026-08-16. This page separates what was exercised on the tested Mac from what was only automated, built or structurally inspected.
 
 ## 2026-08-16 Program recording verification
 
@@ -42,7 +42,7 @@ This proves ShowSlate's per-route configuration, full-Program renderer transform
 
 ## Physical Mac verification
 
-The `0.12.0-beta.1` complete source smoke and fresh packaged Apple Silicon `.app` smoke both passed on the explicitly selected `HP E24u G5`. Earlier release evidence on this page also covers the `Built-in Retina Display` and `PHL 243V7`. The test resolver fails closed if the configured display is missing or ambiguous and does not silently fall back to another monitor.
+The `0.12.0-beta.2` complete source smoke and fresh packaged Apple Silicon `.app` smoke both passed on the explicitly selected `HP E24u G5`. Earlier release evidence on this page also covers the `Built-in Retina Display` and `PHL 243V7`. The test resolver fails closed if the configured display is missing or ambiguous and does not silently fall back to another monitor.
 
 The verified Conference Desk workflow includes:
 

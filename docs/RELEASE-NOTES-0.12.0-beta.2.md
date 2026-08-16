@@ -1,4 +1,4 @@
-# ShowSlate Live Compositor 0.12.0 Beta 1
+# ShowSlate Live Compositor 0.12.0 Beta 2
 
 This beta adds clean local Program recording and completes a substantial operator-workflow update. ShowSlate can now build and run layered scenes, switch Preview to Program, route independent display canvases, operate a compact Live Mode deck and record the resulting Program with enabled Program audio.
 
@@ -8,10 +8,10 @@ This beta adds clean local Program recording and completes a substantial operato
 
 | Platform | Recommended package |
 |---|---|
-| Apple Silicon Mac (M1 or newer) | [`ShowSlate-0.12.0-beta.1-arm64.dmg`](https://github.com/srdjankotarlic/showslate/releases/download/v0.12.0-beta.1/ShowSlate-0.12.0-beta.1-arm64.dmg) |
-| Windows 10/11 x64 | [`ShowSlate-Setup-0.12.0-beta.1.exe`](https://github.com/srdjankotarlic/showslate/releases/download/v0.12.0-beta.1/ShowSlate-Setup-0.12.0-beta.1.exe) |
+| Apple Silicon Mac (M1 or newer) | [`ShowSlate-0.12.0-beta.2-arm64.dmg`](https://github.com/srdjankotarlic/showslate/releases/download/v0.12.0-beta.2/ShowSlate-0.12.0-beta.2-arm64.dmg) |
+| Windows 10/11 x64 | [`ShowSlate-Setup-0.12.0-beta.2.exe`](https://github.com/srdjankotarlic/showslate/releases/download/v0.12.0-beta.2/ShowSlate-Setup-0.12.0-beta.2.exe) |
 
-The [portable Windows EXE](https://github.com/srdjankotarlic/showslate/releases/download/v0.12.0-beta.1/ShowSlate-0.12.0-beta.1-portable.exe) is an advanced no-install option. `SHA256SUMS.txt` is included with the release. The previous [`0.11.0-beta.1`](https://github.com/srdjankotarlic/showslate/releases/tag/v0.11.0-beta.1) packages remain available for comparison and rollback.
+The [portable Windows EXE](https://github.com/srdjankotarlic/showslate/releases/download/v0.12.0-beta.2/ShowSlate-0.12.0-beta.2-portable.exe) is an advanced no-install option. `SHA256SUMS.txt` is included with the release. The previous [`0.11.0-beta.1`](https://github.com/srdjankotarlic/showslate/releases/tag/v0.11.0-beta.1) packages remain available for comparison and rollback.
 
 GitHub's automatic **Source code** ZIP and TAR.GZ files are developer archives and will not install ShowSlate. Download one of the named packages above.
 
@@ -50,7 +50,7 @@ GitHub's automatic **Source code** ZIP and TAR.GZ files are developer archives a
 - The packaged Apple Silicon application completed the full display smoke with `SMOKE_OK`.
 - Recording model tests completed `5/5`; Composer renderer tests completed `68/68`; all eight renderer suites passed.
 - A real packaged-app operator run recorded the exact Program test pattern as a 1920x1080 MP4/H.264 file with AAC stereo audio at 48 kHz. The 37.9-second file was decoded and inspected independently with FFmpeg.
-- The installed Desktop application reports `0.12.0-beta.1` and passes strict local code-signature verification.
+- The installed Desktop application reports `0.12.0-beta.2` and passes strict local code-signature verification.
 
 ## Important limits
 

@@ -142,10 +142,10 @@ Playback has no fixed ShowSlate file-size cap. The practical limit is the show c
 
 | Your computer | Recommended download | Install |
 |---|---|---|
-| Apple Silicon Mac (M1 or newer) | **[ShowSlate-0.12.0-beta.1-arm64.dmg](https://github.com/srdjankotarlic/showslate/releases/download/v0.12.0-beta.1/ShowSlate-0.12.0-beta.1-arm64.dmg)** | Open the DMG and drag **ShowSlate** to Applications. |
-| Windows 10/11 x64 | **[ShowSlate-Setup-0.12.0-beta.1.exe](https://github.com/srdjankotarlic/showslate/releases/download/v0.12.0-beta.1/ShowSlate-Setup-0.12.0-beta.1.exe)** | Run Setup and follow the installer. |
+| Apple Silicon Mac (M1 or newer) | **[ShowSlate-0.12.0-beta.2-arm64.dmg](https://github.com/srdjankotarlic/showslate/releases/download/v0.12.0-beta.2/ShowSlate-0.12.0-beta.2-arm64.dmg)** | Open the DMG and drag **ShowSlate** to Applications. |
+| Windows 10/11 x64 | **[ShowSlate-Setup-0.12.0-beta.2.exe](https://github.com/srdjankotarlic/showslate/releases/download/v0.12.0-beta.2/ShowSlate-Setup-0.12.0-beta.2.exe)** | Run Setup and follow the installer. |
 
-The [portable Windows EXE](https://github.com/srdjankotarlic/showslate/releases/download/v0.12.0-beta.1/ShowSlate-0.12.0-beta.1-portable.exe) is an advanced no-install option. The previous [`0.11.0-beta.1`](https://github.com/srdjankotarlic/showslate/releases/tag/v0.11.0-beta.1) release remains available for comparison and rollback.
+The [portable Windows EXE](https://github.com/srdjankotarlic/showslate/releases/download/v0.12.0-beta.2/ShowSlate-0.12.0-beta.2-portable.exe) is an advanced no-install option. The previous [`0.11.0-beta.1`](https://github.com/srdjankotarlic/showslate/releases/tag/v0.11.0-beta.1) release remains available for comparison and rollback.
 
 <details>
 <summary><strong>First-launch security warning</strong></summary>
@@ -154,7 +154,7 @@ The public beta is not yet Apple-notarized or Windows Authenticode-signed.
 
 - On macOS, confirm the app came from this repository, then use **System Settings > Privacy & Security > Open Anyway** if required.
 - On Windows, SmartScreen may show **Unknown publisher**. Continue only for the installer downloaded from this repository.
-- Optional integrity hashes are in [SHA256SUMS.txt](https://github.com/srdjankotarlic/showslate/releases/download/v0.12.0-beta.1/SHA256SUMS.txt).
+- Optional integrity hashes are in [SHA256SUMS.txt](https://github.com/srdjankotarlic/showslate/releases/download/v0.12.0-beta.2/SHA256SUMS.txt).
 
 </details>
 
@@ -205,7 +205,7 @@ External OBS/vMix alpha behavior is not certified in this beta. Test the exact s
 - [Testing](docs/TESTING.md)
 - [Signing and release](docs/SIGNING-AND-RELEASE.md)
 - [Public beta verification](docs/PUBLIC-BETA-VERIFICATION.md)
-- [0.12.0 beta release notes](docs/RELEASE-NOTES-0.12.0-beta.1.md)
+- [0.12.0 beta release notes](docs/RELEASE-NOTES-0.12.0-beta.2.md)
 - [Architecture](ARCHITECTURE.md)
 - [Privacy](docs/PRIVACY.md)
 
