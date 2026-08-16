@@ -54,7 +54,14 @@ function check(name, condition, detail = '') {
 
   const reopened = new MediaLibrary({ mediaDirectory, managedCopyMaxBytes: 1024, reserveBytes: 0 });
   const reopenedInfo = reopened.inspect(linked.src);
-  check('MEDIA_LIBRARY_LINK_SURVIVES_RESTART_OK', reopenedInfo.ok && reopenedInfo.path === fs.realpathSync(largePath));
+  check(
+    'MEDIA_LIBRARY_LINK_SURVIVES_RESTART_OK',
+    reopenedInfo.ok
+      && reopenedInfo.storage === 'linked'
+      && reopenedInfo.portable === false
+      && reopenedInfo.bytes === fiveGiB + 65536,
+    JSON.stringify({ ok: reopenedInfo.ok, storage: reopenedInfo.storage, bytes: reopenedInfo.bytes, path: reopenedInfo.path })
+  );
 
   const explicitRange = parseByteRange(`bytes=${markerOffset}-${markerOffset + marker.length - 1}`, reopenedInfo.bytes);
   const readBack = Buffer.alloc(marker.length);
