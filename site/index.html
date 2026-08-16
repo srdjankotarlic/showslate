@@ -4,8 +4,8 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="google-site-verification" content="8XQrjWTrPu_H5qRAX91drrvps-Gkw1Ywux-kTV5GHx0">
-  <title>ShowSlate Live Compositor | Scenes, Program Recording and Multi-Display Output</title>
-  <meta name="description" content="Free open-source live compositor for layered scenes, Preview/Program switching, local Program recording, multi-display output and projector mapping.">
+  <title>ShowSlate | Free Mac Live Event Compositor and Show Control</title>
+  <meta name="description" content="Free Mac-first live event compositor for layered scenes, Preview/Program switching, recording, conference cues and multiple local displays.">
   <meta name="keywords" content="live compositor software, program recording software, projector mapping software, projection mapping beta, LED wall canvas software, multi display output software, window capture software, capture card display software, preview program switcher, event show control, conference room control software, speaker timer, lower third software, run of show software, offline show control">
   <meta name="author" content="Srdjan Kotarlic">
   <meta name="robots" content="index,follow,max-image-preview:large,max-snippet:-1,max-video-preview:-1">
@@ -22,16 +22,16 @@
   <meta property="og:type" content="website">
   <meta property="og:site_name" content="ShowSlate">
   <meta property="og:locale" content="en_US">
-  <meta property="og:title" content="ShowSlate Live Compositor | Scenes, Recording and Multi-Display Control">
-  <meta property="og:description" content="Build layered scenes, prepare Preview, TAKE to Program, record locally and route independent canvases with optional projector mapping.">
+  <meta property="og:title" content="ShowSlate | Mac-first Live Event Compositor">
+  <meta property="og:description" content="Prepare layered scenes and conference cues in Preview, TAKE them to Program, record locally and route multiple venue displays.">
   <meta property="og:url" content="https://srdjankotarlic.github.io/showslate/">
   <meta property="og:image" content="https://srdjankotarlic.github.io/showslate/assets/social-preview.png">
   <meta property="og:image:width" content="1600">
   <meta property="og:image:height" content="900">
   <meta property="og:image:alt" content="ShowSlate Live Compositor operator workspace">
   <meta name="twitter:card" content="summary_large_image">
-  <meta name="twitter:title" content="ShowSlate Live Compositor | Scenes, Recording and Multi-Display Control">
-  <meta name="twitter:description" content="Compose media and live inputs, TAKE to Program, record locally and route independent display canvases. Public beta.">
+  <meta name="twitter:title" content="ShowSlate | Mac-first Live Event Compositor">
+  <meta name="twitter:description" content="One local workflow for scenes, conference cues, Preview/Program, recording and venue displays. Free public beta.">
   <meta name="twitter:image" content="https://srdjankotarlic.github.io/showslate/assets/social-preview.png">
 
   <script type="application/ld+json">
@@ -42,9 +42,9 @@
     "alternateName": "ShowSlate Live Compositor",
     "applicationCategory": "MultimediaApplication",
     "applicationSubCategory": "Local-first live compositor and show control software",
-    "operatingSystem": "macOS, Windows 10, Windows 11",
+    "operatingSystem": "macOS on Apple Silicon (primary verified beta); Windows 10/11 x64 (experimental beta)",
     "softwareVersion": "0.12.0-beta.2",
-    "description": "Free open-source live compositor with layered scenes, Preview and Program switching, local Program recording, independent multi-display canvases and projector mapping. Public beta and work in progress.",
+    "description": "Free Mac-first live event compositor and show control with layered scenes, Preview and Program switching, local Program recording, conference cues, independent multi-display canvases and projector mapping.",
     "url": "https://srdjankotarlic.github.io/showslate/",
     "sameAs": "https://github.com/srdjankotarlic/showslate",
     "softwareHelp": "https://github.com/srdjankotarlic/showslate/discussions",
@@ -52,7 +52,7 @@
       "https://github.com/srdjankotarlic/showslate/releases/download/v0.12.0-beta.2/ShowSlate-0.12.0-beta.2-arm64.dmg",
       "https://github.com/srdjankotarlic/showslate/releases/download/v0.12.0-beta.2/ShowSlate-Setup-0.12.0-beta.2.exe"
     ],
-    "softwareRequirements": "Apple Silicon Mac, or Windows 10/11 x64",
+    "softwareRequirements": "Apple Silicon Mac for the primary tested beta. Windows 10/11 x64 packages are experimental and await physical hardware validation.",
     "featureList": [
       "Custom-resolution Canvas with reusable layered scenes",
       "Window, display, camera and UVC capture-card sources",
@@ -105,7 +105,7 @@
       {
         "@type": "Question",
         "name": "Which installer should I download?",
-        "acceptedAnswer": {"@type": "Answer", "text": "Apple Silicon Mac users should download the ARM64 DMG. Windows 10 or 11 x64 users should download the Setup EXE. GitHub Source code archives do not install the app."}
+        "acceptedAnswer": {"@type": "Answer", "text": "The primary tested beta is the Apple Silicon Mac ARM64 DMG. The Windows Setup EXE is an experimental build that passes native CI but still needs physical Windows validation. GitHub Source code archives do not install the app."}
       },
       {
         "@type": "Question",
@@ -159,21 +159,21 @@
     <section class="hero" id="top" aria-labelledby="hero-title">
       <div class="hero-shade" aria-hidden="true"></div>
       <div class="hero-content">
-        <p class="eyebrow">Free, local-first and open source</p>
+        <p class="eyebrow">Mac-first public beta · free and open source</p>
         <h1 id="hero-title">ShowSlate</h1>
-        <p class="hero-lead">Build layered scenes from media, color, text, windows and capture devices. Prepare them in Preview, TAKE to Program, record locally and route displays from one operator workspace.</p>
+        <p class="hero-lead">Run layered media, live inputs and conference cues across local venue screens from one Preview/Program workspace.</p>
         <div class="hero-actions">
-          <a class="button primary" href="https://github.com/srdjankotarlic/showslate/releases/download/v0.12.0-beta.2/ShowSlate-0.12.0-beta.2-arm64.dmg">Download for Mac</a>
-          <a class="button secondary" href="https://github.com/srdjankotarlic/showslate/releases/download/v0.12.0-beta.2/ShowSlate-Setup-0.12.0-beta.2.exe">Download for Windows</a>
+          <a class="button primary" href="https://github.com/srdjankotarlic/showslate/releases/download/v0.12.0-beta.2/ShowSlate-0.12.0-beta.2-arm64.dmg">Download for Mac · Apple Silicon</a>
+          <a class="button secondary" href="#workflow">See how it works</a>
         </div>
         <div class="hero-facts" aria-label="Product facts">
-          <span>Mac and Windows</span>
+          <span>Apple Silicon Mac verified</span>
           <span>Works offline</span>
           <span>No account</span>
           <span>MIT License</span>
-          <span>Public beta / WIP</span>
         </div>
-        <p class="hero-beta-note"><strong>Actively developed:</strong> expect bugs and unfinished hardware workflows. Evaluate it off-air, test the exact signal chain and keep a fallback for live events.</p>
+        <p class="hero-beta-note"><strong>Public beta:</strong> the packaged Mac app is the primary tested build. Expect unfinished hardware workflows, rehearse the exact signal chain and keep a fallback for live events.</p>
+        <p class="windows-note"><strong>Windows x64 is experimental.</strong> Native CI packages pass, but physical Windows operator and hardware validation is still needed. <a href="https://github.com/srdjankotarlic/showslate/releases/download/v0.12.0-beta.2/ShowSlate-Setup-0.12.0-beta.2.exe">Download Windows Setup for off-air testing.</a></p>
         <p class="edition-link">Need only a simple countdown and OBS timer overlay? <a href="https://srdjankotarlic.github.io/protimer/">Use ProTimer instead.</a></p>
       </div>
     </section>
@@ -182,9 +182,33 @@
       <div class="section-inner problem-layout">
         <div>
           <p class="eyebrow">Built for the live operator</p>
-          <h2 id="problem-title">One visual Program, prepared before it goes live.</h2>
+          <h2 id="problem-title">One operator. One prepared Program. Several room screens.</h2>
         </div>
-        <p>Small productions often need media playback, live inputs, simple graphics, timing, a clean local recording and several displays without the weight of a full broadcast system. ShowSlate brings those tasks into one local Preview/Program workflow while leaving streaming and advanced audio to the tools built for them.</p>
+        <p>Small productions often need media playback, live inputs, speaker graphics, timing, a clean recording and several displays, but not a full broadcast or VJ system. ShowSlate joins those tasks in one local workflow while leaving streaming, advanced audio and complex visual effects to specialist tools.</p>
+      </div>
+    </section>
+
+    <section class="positioning" aria-labelledby="positioning-title">
+      <div class="section-inner">
+        <p class="eyebrow">Where ShowSlate fits</p>
+        <h2 id="positioning-title">A focused bridge between a media player and a full production suite</h2>
+        <div class="positioning-grid">
+          <article class="positioning-primary">
+            <span class="fit-label">Choose ShowSlate</span>
+            <h3>Small local live events</h3>
+            <p>Conference cues, layered scenes, Preview/Program, timers, lower thirds, recording and several venue displays in one free offline app.</p>
+          </article>
+          <article>
+            <span class="fit-label">Keep OBS</span>
+            <h3>Streaming and encoding</h3>
+            <p>OBS remains the stronger choice for streaming, filters, plugins and mature broadcast recording workflows.</p>
+          </article>
+          <article>
+            <span class="fit-label">Keep specialist suites</span>
+            <h3>VJ or presentation depth</h3>
+            <p>Resolume Arena and ProPresenter remain more mature for advanced live visuals, mapping, worship and presentation ecosystems.</p>
+          </article>
+        </div>
       </div>
     </section>
 
@@ -324,27 +348,28 @@
 
     <section class="install" id="install" aria-labelledby="install-title">
       <div class="section-inner">
-        <p class="eyebrow">Public evaluation beta</p>
-        <h2 id="install-title">Download one installer</h2>
-        <p class="download-guidance"><strong>Choose the recommended file for your computer.</strong> GitHub's automatic <code>Source code</code> ZIP and TAR.GZ files are for developers and will not install ShowSlate.</p>
+        <p class="eyebrow">Mac-first public beta</p>
+        <h2 id="install-title">Install ShowSlate</h2>
+        <p class="download-guidance"><strong>Most users need one file only: the Mac DMG.</strong> GitHub's automatic <code>Source code</code> ZIP and TAR.GZ files are for developers and will not install ShowSlate.</p>
         <div class="install-grid">
-          <article>
-            <div class="platform-head"><h3>macOS</h3><span>Apple Silicon</span></div>
+          <article class="primary-platform">
+            <div class="platform-head"><h3>macOS</h3><span class="status-verified">Primary tested beta</span></div>
             <ol class="install-steps">
               <li>Download the DMG for an M1 or newer Mac.</li>
               <li>Open it and drag ShowSlate to Applications.</li>
               <li>Approve the first launch in Privacy &amp; Security if macOS asks.</li>
             </ol>
-            <a class="button primary" href="https://github.com/srdjankotarlic/showslate/releases/download/v0.12.0-beta.2/ShowSlate-0.12.0-beta.2-arm64.dmg">Download macOS DMG</a>
+            <a class="button primary" href="https://github.com/srdjankotarlic/showslate/releases/download/v0.12.0-beta.2/ShowSlate-0.12.0-beta.2-arm64.dmg">Download ShowSlate for Mac</a>
           </article>
-          <article>
-            <div class="platform-head"><h3>Windows</h3><span>x64 beta</span></div>
+          <article class="experimental-platform">
+            <div class="platform-head"><h3>Windows</h3><span class="status-experimental">Experimental beta</span></div>
+            <p class="platform-caveat">Built and checked in native Windows CI, but not yet manually validated on physical Windows hardware.</p>
             <ol class="install-steps">
               <li>Download Setup for Windows 10 or 11 x64.</li>
               <li>Run the installer and follow the prompts.</li>
-              <li>Allow private-network access for browser and remote views.</li>
+              <li>Test it off-air and report the computer, GPU and capture hardware used.</li>
             </ol>
-            <a class="button primary" href="https://github.com/srdjankotarlic/showslate/releases/download/v0.12.0-beta.2/ShowSlate-Setup-0.12.0-beta.2.exe">Download Windows Setup</a>
+            <a class="button secondary" href="https://github.com/srdjankotarlic/showslate/releases/download/v0.12.0-beta.2/ShowSlate-Setup-0.12.0-beta.2.exe">Download experimental Windows Setup</a>
             <details class="advanced-download">
               <summary>Need a no-install version?</summary>
               <p>The <a href="https://github.com/srdjankotarlic/showslate/releases/download/v0.12.0-beta.2/ShowSlate-0.12.0-beta.2-portable.exe">portable EXE</a> is intended for advanced users who cannot install software.</p>
@@ -393,7 +418,7 @@
           </details>
           <details>
             <summary>Which file should I download?</summary>
-            <p>Apple Silicon Mac users need the ARM64 DMG. Windows 10/11 x64 users should choose the Setup EXE. GitHub Source code archives are not installers.</p>
+            <p>The primary tested beta is the Apple Silicon Mac ARM64 DMG. The Windows Setup EXE is experimental and still needs physical hardware validation. GitHub Source code archives are not installers.</p>
           </details>
           <details>
             <summary>Does it replace OBS, vMix or a video switcher?</summary>

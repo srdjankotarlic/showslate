@@ -46,12 +46,13 @@ app.whenReady().then(async () => {
     const hero=document.querySelector('.hero').getBoundingClientRect();
     const next=document.querySelector('.problem-band').getBoundingClientRect();
     const title=document.querySelector('h1').getBoundingClientRect();
-    const downloads=[...document.querySelectorAll('.hero-actions a')].map(link=>link.href);
-    return {width:innerWidth,height:innerHeight,scrollY,scrollWidth:document.documentElement.scrollWidth,heroTop:hero.top,heroBottom:hero.bottom,nextTop:next.top,title:{left:title.left,right:title.right,top:title.top,bottom:title.bottom},downloads,images:[...document.images].map(image=>({src:image.getAttribute('src'),ok:image.naturalWidth>0}))};
+    const heroLinks=[...document.querySelectorAll('.hero-actions a')].map(link=>link.href);
+    const installerLinks=[...document.querySelectorAll('a[href*="/releases/download/"]')].map(link=>link.href);
+    return {width:innerWidth,height:innerHeight,scrollY,scrollWidth:document.documentElement.scrollWidth,heroTop:hero.top,heroBottom:hero.bottom,nextTop:next.top,title:{left:title.left,right:title.right,top:title.top,bottom:title.bottom},heroLinks,installerLinks,images:[...document.images].map(image=>({src:image.getAttribute('src'),ok:image.naturalWidth>0}))};
   })())`));
   check('SITE_DESKTOP_NO_HORIZONTAL_OVERFLOW_OK', desktop.scrollWidth <= desktop.width, JSON.stringify(desktop));
   check('SITE_DESKTOP_HERO_AND_NEXT_SECTION_OK', desktop.scrollY === 0 && desktop.heroTop >= 0 && desktop.title.left >= 0 && desktop.title.right <= desktop.width && desktop.title.top >= 0 && desktop.title.bottom <= desktop.height && desktop.nextTop > 0 && desktop.nextTop < desktop.height, JSON.stringify(desktop));
-  check('SITE_DOWNLOADS_AND_REAL_IMAGES_OK', desktop.downloads.every(url=>url.includes(`v${releaseVersion}`)) && desktop.images.every(image=>image.ok), JSON.stringify(desktop.images));
+  check('SITE_DOWNLOADS_AND_REAL_IMAGES_OK', desktop.heroLinks[0].includes(`v${releaseVersion}`) && desktop.installerLinks.some(url=>url.endsWith('.dmg')) && desktop.installerLinks.some(url=>url.endsWith('.exe')) && desktop.installerLinks.every(url=>url.includes(`v${releaseVersion}`)) && desktop.images.every(image=>image.ok), JSON.stringify({heroLinks:desktop.heroLinks,installerLinks:desktop.installerLinks,images:desktop.images}));
   fs.writeFileSync(path.join(artifacts, 'desktop.png'), (await window.webContents.capturePage()).toPNG());
 
   window.setBounds(smokeDisplay.clampToWorkArea({ width: 390, height: 844 }, target.workArea));

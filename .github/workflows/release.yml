@@ -133,12 +133,12 @@ jobs:
           test -f "$notes_file"
 
           gh release create "${GITHUB_REF_NAME}" \
-            "${mac_asset}#macOS Apple Silicon installer (recommended)" \
-            "${windows_setup}#Windows x64 installer (recommended)" \
-            "${windows_portable}#Windows x64 portable app (advanced)" \
+            "${mac_asset}#macOS Apple Silicon installer (primary tested beta)" \
+            "${windows_setup}#Windows x64 installer (experimental; physical validation needed)" \
+            "${windows_portable}#Windows x64 portable app (experimental; advanced)" \
             "${checksums}#Optional SHA-256 checksums" \
             --repo "${GITHUB_REPOSITORY}" \
             --prerelease \
             --verify-tag \
-            --title "ShowSlate ${GITHUB_REF_NAME}" \
+            --title "ShowSlate ${GITHUB_REF_NAME} - Mac-first public beta" \
             --notes-file "$notes_file"

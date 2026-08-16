@@ -5,21 +5,21 @@
 <h1 align="center">ShowSlate</h1>
 
 <p align="center">
-  A local-first live compositor for layered scenes, Preview/Program switching, show control and multiple display outputs.
+  Mac-first live event compositor and show control for layered scenes, Preview/Program switching, recording and multiple local displays.
 </p>
 
 <p align="center">
   <a href="https://github.com/srdjankotarlic/showslate/actions/workflows/ci.yml"><img alt="CI" src="https://github.com/srdjankotarlic/showslate/actions/workflows/ci.yml/badge.svg"></a>
   <a href="https://github.com/srdjankotarlic/showslate/releases"><img alt="Latest release" src="https://img.shields.io/github/v/release/srdjankotarlic/showslate?include_prereleases&label=beta"></a>
   <a href="LICENSE"><img alt="MIT License" src="https://img.shields.io/badge/license-MIT-2f81f7"></a>
-  <img alt="macOS Apple Silicon" src="https://img.shields.io/badge/macOS-Apple%20Silicon-111827">
-  <img alt="Windows x64 beta" src="https://img.shields.io/badge/Windows-x64%20beta-2563eb">
+  <img alt="macOS Apple Silicon verified beta" src="https://img.shields.io/badge/macOS-verified%20beta-238636">
+  <img alt="Windows x64 experimental beta" src="https://img.shields.io/badge/Windows-experimental%20beta-b78103">
 </p>
 
 <p align="center">
   <a href="https://srdjankotarlic.github.io/showslate/"><strong>Product page</strong></a>
   ·
-  <a href="#download-one-installer"><strong>Download</strong></a>
+  <a href="#install-showslate"><strong>Download</strong></a>
   ·
   <a href="docs/CONFERENCE-DESK.md"><strong>Conference workflow</strong></a>
   ·
@@ -27,13 +27,26 @@
 </p>
 
 > [!WARNING]
-> **Public beta / work in progress.** ShowSlate is actively developed and still has known bugs and unfinished hardware workflows. It is interesting and usable for evaluation, demos and off-air testing, but it is not production-certified. Test the exact computer, displays, media, capture devices and fallback plan before using it at a live event.
+> **Mac-first public beta / work in progress.** The packaged Apple Silicon Mac app has been exercised through real operator and recording workflows. Windows packages build in native CI, but have not yet been manually validated on physical Windows hardware. ShowSlate is not production-certified: evaluate it off-air and test the exact computer, displays, media, capture devices, audio route and fallback before a live event.
 
 ![ShowSlate Live Compositor operator workspace](docs/images/live-compositor-workspace.png)
 
-ShowSlate builds a visual Program from reusable layered scenes on one Mac or Windows PC. Combine pictures, video, PDF pages, colors, text, a timer, application windows, displays, cameras and UVC capture devices; prepare the result in **Preview**, use **TAKE** to send it to **Program**, then route or record Program. Every destination can use its own output Canvas, resolution and scaling mode, with optional multi-surface projector mapping for irregular projection areas.
+ShowSlate is a local show-control workspace for small live productions. Build a visual Program from reusable layered scenes, prepare it privately in **Preview**, use **TAKE** to send it live, then record or route Program to one or more local displays. A scene can combine pictures, video, PDF pages, colors, text, a timer, application windows, displays, cameras and UVC capture devices. Every destination can use its own Canvas, resolution and scaling mode, with optional multi-surface projector mapping.
 
 The included **Conference Desk** workflow adds a rundown, LIVE/NEXT/GO, speaker timing, cue-driven lower thirds, show-folder import and role-based room displays. It is intended for conferences, corporate events, education, community venues, houses of worship and small AV teams that need more structure than a media player but less complexity than a broadcast switcher.
+
+## Is ShowSlate the right tool?
+
+Choose ShowSlate when one operator needs to prepare scenes, run a conference-style cue list and control several local room screens without an account or subscription. It is especially suited to small conferences, corporate meetings, education, community venues and rehearsed event playback.
+
+| Tool | Best fit | Where ShowSlate differs |
+|---|---|---|
+| **ShowSlate** | Local event visuals, cues, timers, lower thirds and several room displays | One free workflow joins rundown, layered scenes, Preview/Program, recording and output routing. |
+| **OBS Studio** | Streaming, encoding, recording, filters and plugin-based broadcast workflows | Keep OBS for streaming; ShowSlate is organized around room screens and event cues. |
+| **Resolume Arena** | High-performance VJ playback, effects and advanced projection mapping | Arena is the mature specialist; ShowSlate is simpler, free and conference-oriented. |
+| **ProPresenter** | Polished presentation, worship, lyrics and stage-display workflows | ProPresenter has a deeper presentation ecosystem; ShowSlate is a general layered local compositor. |
+
+ShowSlate is not a replacement for every one of these products. Its useful niche is the space between a simple media player or timer and a full broadcast, VJ or presentation suite.
 
 > Need only a large countdown, OBS overlay, phone remote and simple rundown? Use the smaller **[ProTimer](https://github.com/srdjankotarlic/protimer)**. Choose ShowSlate when you need layered scenes, Preview/Program switching, live inputs or several controlled outputs.
 
@@ -136,16 +149,16 @@ ShowSlate does not resize, recompress or transcode imported pictures and videos.
 
 Playback has no fixed ShowSlate file-size cap. The practical limit is the show computer, codec and media: prefer a fast local SSD, hardware-decodable MP4/H.264 or HEVC where supported, and rehearse the exact resolution, frame rate and output count. Very large still images must still be decoded into GPU/RAM memory. Portable `.showslate-show` and `.showslate-lt` packages intentionally remain limited to 200 MB per embedded asset; disk-linked media is not silently embedded.
 
-## Download one installer
+## Install ShowSlate
 
-> **Choose one recommended installer for your computer.** GitHub's automatic `Source code` ZIP and TAR.GZ files are developer archives and will not install the app.
+> **Most users need one file only.** On an Apple Silicon Mac, download the DMG below. GitHub's automatic `Source code` ZIP and TAR.GZ files are developer archives and will not install the app.
 
-| Your computer | Recommended download | Install |
-|---|---|---|
-| Apple Silicon Mac (M1 or newer) | **[ShowSlate-0.12.0-beta.2-arm64.dmg](https://github.com/srdjankotarlic/showslate/releases/download/v0.12.0-beta.2/ShowSlate-0.12.0-beta.2-arm64.dmg)** | Open the DMG and drag **ShowSlate** to Applications. |
-| Windows 10/11 x64 | **[ShowSlate-Setup-0.12.0-beta.2.exe](https://github.com/srdjankotarlic/showslate/releases/download/v0.12.0-beta.2/ShowSlate-Setup-0.12.0-beta.2.exe)** | Run Setup and follow the installer. |
+| Status | Your computer | Download | Install |
+|---|---|---|---|
+| **Primary tested beta** | Apple Silicon Mac (M1 or newer) | **[Download ShowSlate DMG](https://github.com/srdjankotarlic/showslate/releases/download/v0.12.0-beta.2/ShowSlate-0.12.0-beta.2-arm64.dmg)** | Open the DMG and drag **ShowSlate** to Applications. |
+| **Experimental, unverified on physical hardware** | Windows 10/11 x64 | [Download Windows Setup](https://github.com/srdjankotarlic/showslate/releases/download/v0.12.0-beta.2/ShowSlate-Setup-0.12.0-beta.2.exe) | Run Setup and follow the installer; use it off-air and report hardware results. |
 
-The [portable Windows EXE](https://github.com/srdjankotarlic/showslate/releases/download/v0.12.0-beta.2/ShowSlate-0.12.0-beta.2-portable.exe) is an advanced no-install option. The previous [`0.11.0-beta.1`](https://github.com/srdjankotarlic/showslate/releases/tag/v0.11.0-beta.1) release remains available for comparison and rollback.
+The [portable Windows EXE](https://github.com/srdjankotarlic/showslate/releases/download/v0.12.0-beta.2/ShowSlate-0.12.0-beta.2-portable.exe) is an advanced no-install option and carries the same unverified Windows status. The previous [`0.11.0-beta.1`](https://github.com/srdjankotarlic/showslate/releases/tag/v0.11.0-beta.1) release remains available for comparison and rollback.
 
 <details>
 <summary><strong>First-launch security warning</strong></summary>

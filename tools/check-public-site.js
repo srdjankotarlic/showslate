@@ -36,6 +36,8 @@ const requiredSnippets = [
   'Window capture',
   'Capture devices',
   'Record Program',
+  'Mac-first public beta',
+  'Experimental beta',
   "GitHub's automatic <code>Source code</code>",
 ];
 
@@ -60,7 +62,10 @@ for (const [name, content] of [
   ['release notes', releaseNotes],
 ]) {
   if (!content.includes(macInstallerUrl)) failures.push(`${name} is missing the recommended macOS installer`);
-  if (!content.includes(windowsInstallerUrl)) failures.push(`${name} is missing the recommended Windows installer`);
+  if (!content.includes(windowsInstallerUrl)) failures.push(`${name} is missing the experimental Windows installer`);
+  if (!/Windows[\s\S]{0,220}(?:experimental|physical (?:Windows )?(?:hardware )?validation)/i.test(content)) {
+    failures.push(`${name} does not identify the Windows package as experimental or physically unverified`);
+  }
   if (!/Source code[\s\S]{0,180}(?:will not install|do not contain an installer)/i.test(content)) {
     failures.push(`${name} does not warn that GitHub source archives are not installers`);
   }

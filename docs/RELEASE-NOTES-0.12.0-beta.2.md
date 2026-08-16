@@ -2,16 +2,16 @@
 
 This beta adds clean local Program recording and completes a substantial operator-workflow update. ShowSlate can now build and run layered scenes, switch Preview to Program, route independent display canvases, operate a compact Live Mode deck and record the resulting Program with enabled Program audio.
 
-> **Work in progress:** this is an evaluation build for off-air testing. It is not production-certified. Rehearse the exact computer, displays, storage, media, capture devices, audio route and fallback before a live event.
+> **Mac-first work in progress:** this is an evaluation build for off-air testing. The packaged Apple Silicon Mac app has completed the operator and recording checks described below. Windows packages build in native CI but have not yet been manually validated on physical Windows hardware. ShowSlate is not production-certified: rehearse the exact computer, displays, storage, media, capture devices, audio route and fallback before a live event.
 
 ## Download
 
-| Platform | Recommended package |
-|---|---|
-| Apple Silicon Mac (M1 or newer) | [`ShowSlate-0.12.0-beta.2-arm64.dmg`](https://github.com/srdjankotarlic/showslate/releases/download/v0.12.0-beta.2/ShowSlate-0.12.0-beta.2-arm64.dmg) |
-| Windows 10/11 x64 | [`ShowSlate-Setup-0.12.0-beta.2.exe`](https://github.com/srdjankotarlic/showslate/releases/download/v0.12.0-beta.2/ShowSlate-Setup-0.12.0-beta.2.exe) |
+| Status | Platform | Package |
+|---|---|---|
+| **Primary tested beta** | Apple Silicon Mac (M1 or newer) | [`ShowSlate-0.12.0-beta.2-arm64.dmg`](https://github.com/srdjankotarlic/showslate/releases/download/v0.12.0-beta.2/ShowSlate-0.12.0-beta.2-arm64.dmg) |
+| **Experimental, physical validation needed** | Windows 10/11 x64 | [`ShowSlate-Setup-0.12.0-beta.2.exe`](https://github.com/srdjankotarlic/showslate/releases/download/v0.12.0-beta.2/ShowSlate-Setup-0.12.0-beta.2.exe) |
 
-The [portable Windows EXE](https://github.com/srdjankotarlic/showslate/releases/download/v0.12.0-beta.2/ShowSlate-0.12.0-beta.2-portable.exe) is an advanced no-install option. `SHA256SUMS.txt` is included with the release. The previous [`0.11.0-beta.1`](https://github.com/srdjankotarlic/showslate/releases/tag/v0.11.0-beta.1) packages remain available for comparison and rollback.
+The [portable Windows EXE](https://github.com/srdjankotarlic/showslate/releases/download/v0.12.0-beta.2/ShowSlate-0.12.0-beta.2-portable.exe) is an advanced no-install option with the same experimental status. `SHA256SUMS.txt` is included with the release. The previous [`0.11.0-beta.1`](https://github.com/srdjankotarlic/showslate/releases/tag/v0.11.0-beta.1) packages remain available for comparison and rollback.
 
 GitHub's automatic **Source code** ZIP and TAR.GZ files are developer archives and will not install ShowSlate. Download one of the named packages above.
 
@@ -55,7 +55,7 @@ GitHub's automatic **Source code** ZIP and TAR.GZ files are developer archives a
 ## Important limits
 
 - The Mac package is ad-hoc signed and not notarized. The Windows packages are unsigned. Operating systems can show an unknown-developer warning.
-- Windows packages are produced and tested in native CI, but this release still needs broader physical Windows operator and hardware feedback.
+- Windows packages are produced and checked in native CI, but this release has not been manually validated on a physical Windows computer. Treat Windows as experimental and use it off-air until that changes.
 - Recording codecs depend on the encoders available through Electron and the operating system. Test the exact requested format before relying on it.
 - Record Program creates one composited Program file. It is not multitrack recording, replay, streaming or redundant broadcast capture.
 - 4K, 50/60 fps, several simultaneous videos and multiple outputs can exceed the practical limits of a given computer or drive.

@@ -44,7 +44,7 @@ I built ShowSlate as a local live compositor for small productions that need lay
 
 Import a CSV/TSV and its media, assign Audience/Confidence/Timer/Stream/Door outputs, run preflight, then use one GO to update the live cue, timer, linked content and lower third.
 
-It is free, open source and local-first for Apple Silicon Mac and Windows x64:
+It is free, open source and local-first. Apple Silicon Mac is the primary tested beta; the Windows x64 build is experimental and still needs physical hardware validation:
 https://srdjankotarlic.github.io/showslate/
 
 I am looking for room operators willing to try the built-in demo off-air and tell me where the workflow is unclear or wrong. It is a public beta, unsigned, and external OBS/vMix alpha capture is not certified.
