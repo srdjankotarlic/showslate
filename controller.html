@@ -4344,10 +4344,10 @@
           </div>
         </section>
         <section class="wizard-pane" data-wizard-pane="1">
-          <h3 data-i18n="wizardRundownTitle">Import the rundown</h3><p data-i18n="wizardRundownBody">Paste rows from Excel/Sheets or load CSV/TSV. Use name, duration and optional note columns.</p>
+          <h3 data-i18n="wizardRundownTitle">Import the rundown</h3><p data-i18n="wizardRundownBody">Add at least one valid row by pasting from Excel/Sheets or loading CSV/TSV. Use name, duration and optional note columns.</p>
           <div class="flow-inline"><button id="btnWizardShowFolder" class="primary" data-i18n="wizardChooseFolder">Import Show Folder…</button><button id="btnWizardRundownFile" class="ghost" data-i18n="wizardChooseFile">Choose CSV…</button><input id="wizardRundownFile" type="file" accept=".csv,.txt,.tsv" hidden></div>
           <div class="flow-preview" id="wizardFolderStatus" data-i18n="wizardNoFolder">No show folder imported.</div>
-          <label class="flow-field" style="margin-top:10px"><textarea id="wizardRundownText" spellcheck="false" placeholder="Opening,10:00,Host welcome&#10;Keynote,30:00,Main stage"></textarea></label>
+          <label class="flow-field" style="margin-top:10px"><textarea id="wizardRundownText" spellcheck="false" data-i18n-ph="wizardRundownExample" placeholder="Opening,10:00,Host welcome&#10;Keynote,30:00,Main stage"></textarea></label>
           <div class="flow-preview" id="wizardRundownPreview" data-testid="wizard-rundown-preview">0 cues</div>
         </section>
         <section class="wizard-pane" data-wizard-pane="2">
@@ -4822,7 +4822,7 @@ const I18N = {
     newShow:'Novi show…', importShowFolder:'Uvezi show folder…', preflight:'Preflight', wizardEyebrow:'CONFERENCE DESK', wizardTitle:'Postavi konferencijsku salu',
     wizardStepDetails:'Podaci', wizardStepRundown:'Rundown', wizardStepScreens:'Ekrani', wizardStepBranding:'Brending', wizardStepContent:'Sadržaj', wizardStepTest:'Provera', wizardStepFinish:'Kraj',
     wizardDetailsTitle:'Podaci o show-u', wizardDetailsBody:'Dajte produkciji jasno ime kako bi autosave, izveštaji i prenosivi paketi bili lako prepoznatljivi.', wizardShowName:'Naziv show-a', wizardClient:'Klijent / organizacija', wizardVenue:'Lokacija', wizardDate:'Datum događaja', wizardStartTime:'Planirani početak',
-    wizardRundownTitle:'Uvezi raspored i materijale', wizardRundownBody:'Uvezite folder sa CSV/TSV rasporedom i medijima, nalepite redove iz Excel-a/Sheets-a ili izaberite samo CSV.', wizardChooseFolder:'Uvezi show folder…', wizardChooseFile:'Izaberi CSV…', wizardNoFolder:'Show folder nije uvezen.', wizardFolderReady:'{name} · {assets} medijskih fajlova spremno', wizardFolderFailed:'Show folder nije mogao da se uveze.', wizardImportSummary:'{cues} tačaka · {matched}/{assets} medija povezano · {errors} preskočenih redova', wizardRowsSkipped:'preskočenih redova', wizardWarnings:'upozorenja',
+    wizardRundownTitle:'Uvezi raspored i materijale', wizardRundownBody:'Dodajte bar jedan ispravan red: uvezite folder sa CSV/TSV rasporedom i medijima, nalepite redove iz Excel-a/Sheets-a ili izaberite samo CSV.', wizardRundownExample:'Otvaranje,10:00,Pozdrav domaćina\nPredavanje,30:00,Glavna bina', wizardChooseFolder:'Uvezi show folder…', wizardChooseFile:'Izaberi CSV…', wizardNoFolder:'Show folder nije uvezen.', wizardFolderReady:'{name} · {assets} medijskih fajlova spremno', wizardFolderFailed:'Show folder nije mogao da se uveze.', wizardImportSummary:'{cues} tačaka · {matched}/{assets} medija povezano · {errors} preskočenih redova', wizardRowsSkipped:'preskočenih redova', wizardWarnings:'upozorenja',
     wizardScreensTitle:'Dodeli Audience izlaz', wizardScreensBody:'Izaberite gde se otvara prikaz za publiku. Dodatne Confidence, Timer, Stream i Door uloge podešavaju se u Outputs.', wizardDisplay:'Ekran', wizardOutputMode:'Režim izlaza', wizardCanvas:'Platno', wizardWidth:'Širina', wizardHeight:'Visina',
     wizardBrandingTitle:'Brending i potpis', wizardBrandingBody:'Postavite osnovni izgled i izaberite template za automatske potpise.', wizardLogo:'Logo show-a', wizardChooseLogo:'Izaberi logo…', wizardNoLogo:'Logo nije izabran',
     wizardContentTitle:'Početni sadržaj ekrana', wizardContentBody:'Pripremite jednostavnu holding poruku. Slajdove i vezani sadržaj možete dodati posle postavke.', wizardHoldingText:'Holding tekst', wizardOpeningTimer:'Početni tajmer', wizardInitialView:'Početni prikaz',
@@ -4933,7 +4933,7 @@ const I18N = {
     newShow:'New Show…', importShowFolder:'Import Show Folder…', preflight:'Preflight', wizardEyebrow:'CONFERENCE DESK', wizardTitle:'Set up a conference room',
     wizardStepDetails:'Details', wizardStepRundown:'Rundown', wizardStepScreens:'Screens', wizardStepBranding:'Branding', wizardStepContent:'Content', wizardStepTest:'Test', wizardStepFinish:'Finish',
     wizardDetailsTitle:'Show details', wizardDetailsBody:'Name this production so autosaves, reports and portable packages are easy to recognize.', wizardShowName:'Show name', wizardClient:'Client / organization', wizardVenue:'Venue', wizardDate:'Event date', wizardStartTime:'Planned start',
-    wizardRundownTitle:'Import the schedule and media', wizardRundownBody:'Import a folder containing a CSV/TSV schedule and media, paste rows from Excel/Sheets, or choose a schedule file only.', wizardChooseFolder:'Import Show Folder…', wizardChooseFile:'Choose CSV…', wizardNoFolder:'No show folder imported.', wizardFolderReady:'{name} · {assets} media files ready', wizardFolderFailed:'The show folder could not be imported.', wizardImportSummary:'{cues} cues · {matched}/{assets} media matched · {errors} skipped rows', wizardRowsSkipped:'rows skipped', wizardWarnings:'warnings',
+    wizardRundownTitle:'Import the schedule and media', wizardRundownBody:'Add at least one valid row: import a folder containing a CSV/TSV schedule and media, paste rows from Excel/Sheets, or choose a schedule file only.', wizardRundownExample:'Opening,10:00,Host welcome\nKeynote,30:00,Main stage', wizardChooseFolder:'Import Show Folder…', wizardChooseFile:'Choose CSV…', wizardNoFolder:'No show folder imported.', wizardFolderReady:'{name} · {assets} media files ready', wizardFolderFailed:'The show folder could not be imported.', wizardImportSummary:'{cues} cues · {matched}/{assets} media matched · {errors} skipped rows', wizardRowsSkipped:'rows skipped', wizardWarnings:'warnings',
     wizardScreensTitle:'Assign the Audience output', wizardScreensBody:'Choose where the audience feed opens. Additional Confidence, Timer, Stream and Door roles are configured in Outputs.', wizardDisplay:'Display', wizardOutputMode:'Output mode', wizardCanvas:'Canvas', wizardWidth:'Width', wizardHeight:'Height',
     wizardBrandingTitle:'Branding and lower third', wizardBrandingBody:'Set a restrained base look and choose the template used by AUTO lower thirds.', wizardLogo:'Show logo', wizardChooseLogo:'Choose logo…', wizardNoLogo:'No logo selected',
     wizardContentTitle:'Default screen content', wizardContentBody:'Prepare a simple holding message. Slides and linked content can be added after setup.', wizardHoldingText:'Holding text', wizardOpeningTimer:'Opening timer', wizardInitialView:'Initial view',
@@ -6499,6 +6499,7 @@ function updateWizardRundownPreview(){
     : textVars(t('wizardCueCount'),{n:count})+(parsed.errors.length?` · ${parsed.errors.length} ${t('wizardRowsSkipped')}`:'');
   el.classList.toggle('good',count>0);
   el.classList.toggle('bad',!count&&!!$('wizardRundownText').value.trim());
+  if(count>0&&wizardStep===1&&$('wizardError').textContent===t('wizardRundownRequired')) $('wizardError').textContent='';
 }
 function updateWizardFolderStatus(){
   const box=$('wizardFolderStatus'); if(!box) return;

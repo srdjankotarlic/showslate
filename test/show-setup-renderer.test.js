@@ -103,14 +103,18 @@ app.whenReady().then(async () => {
   check('SHOW_WIZARD_VISIBLE_FROM_NORMAL_UI_OK', opened.visibleButton && opened.visibleImport && opened.visiblePreflight && opened.open, JSON.stringify(opened));
   check('SHOW_WIZARD_CONTROL_DISPLAY_DEFAULTS_TO_WINDOW_OK', opened.outputMode === 'window' && opened.outputWidth <= Math.min(1280, Math.floor(opened.displayWidth * 0.8)) && opened.outputHeight <= Math.min(720, Math.floor(opened.displayHeight * 0.8)) && Math.abs(opened.outputWidth / opened.outputHeight - 16 / 9) < 0.01, JSON.stringify(opened));
   check('SHOW_WIZARD_STARTER_TEMPLATE_DEFAULT_OK', opened.templateName === 'Starter Template', JSON.stringify(opened));
-  await win.webContents.executeJavaScript(`
+  const rundownValidation = JSON.parse(await win.webContents.executeJavaScript(`(function(){
     document.getElementById('wizardShowName').value='Beta Conference';
     document.getElementById('wizardClient').value='Demo Client';
     document.getElementById('wizardVenue').value='Main Hall';
     setWizardStep(1);
+    wizardStepValid(1);
+    const before=document.getElementById('wizardError').textContent;
     document.getElementById('wizardRundownText').value='Opening,10:00,Host welcome\\nKeynote,30:00,Main stage';
     document.getElementById('wizardRundownText').dispatchEvent(new Event('input',{bubbles:true}));
-  `);
+    return JSON.stringify({before,after:document.getElementById('wizardError').textContent,preview:document.getElementById('wizardRundownPreview').textContent,placeholder:document.getElementById('wizardRundownText').placeholder});
+  })()`));
+  check('SHOW_WIZARD_RUNDOWN_VALIDATION_RECOVERS_OK', rundownValidation.before === 'Import at least one valid rundown row.' && rundownValidation.after === '' && rundownValidation.preview === '2 valid cues' && rundownValidation.placeholder.includes('Opening,10:00'), JSON.stringify(rundownValidation));
   await new Promise(resolve => setTimeout(resolve, 140));
   fs.mkdirSync(artifactDirectory, { recursive: true });
   fs.writeFileSync(path.join(artifactDirectory, 'wizard-1280x800.png'), (await win.webContents.capturePage()).toPNG());
@@ -143,7 +147,7 @@ app.whenReady().then(async () => {
   const disk = await repository.loadCurrent();
   check('SHOW_WIZARD_AUTOSAVE_PERSISTS_OK', disk.ok && disk.document.show.name === 'Beta Conference' && disk.document.show.rundown.length === 2);
 
-  console.log('SHOW_SETUP_RENDERER_TESTS_OK ' + checks + '/9');
+  console.log('SHOW_SETUP_RENDERER_TESTS_OK ' + checks + '/10');
   win.destroy();
   fs.rmSync(profile, { recursive: true, force: true });
   app.quit();
