@@ -30,10 +30,11 @@ const waitFor = async (fn, timeout = 6000) => {
 };
 
 function displayRows() {
-  return screen.getAllDisplays().map(display => ({
-    id: display.id, label: display.label, width: display.bounds.width, height: display.bounds.height,
-    primary: display.id === screen.getPrimaryDisplay().id, hasControl: display.id === target.id, hasOutput: false
-  }));
+  if (!target) return [];
+  return [{
+    id: target.id, label: target.label, width: target.bounds.width, height: target.bounds.height,
+    primary: true, hasControl: true, hasOutput: false
+  }];
 }
 
 ipcMain.on('state', () => {});
@@ -79,13 +80,29 @@ app.whenReady().then(async () => {
   if (!await waitFor(() => win.webContents.executeJavaScript('showAutosaveReady===true && lastDisplays.length>0'))) throw new Error('controller did not initialize');
 
   const opened = JSON.parse(await win.webContents.executeJavaScript(`(async function(){
-    document.getElementById('btnTb').click();
-    const visibleButton=!!document.querySelector('#tbMenu #btnNewShow');
+    const qaTemplate=ltDefaultTemplate('Manual QA Lower Third');
+    ltLibrary={schemaVersion:1,activeTemplateId:qaTemplate.id,templates:[qaTemplate],updatedAt:new Date().toISOString()};
+    document.getElementById('btnShowFileMenu').click();
+    const visibleButton=!!document.querySelector('#showFileMenu #btnNewShow')&&document.getElementById('btnNewShow').getClientRects().length>0;
+    const visibleImport=!!document.querySelector('#showFileMenu #btnImportShowFolder')&&document.getElementById('btnImportShowFolder').getClientRects().length>0;
+    const visiblePreflight=!!document.querySelector('#showFileMenu #btnPreflight')&&document.getElementById('btnPreflight').getClientRects().length>0;
     document.getElementById('btnNewShow').click();
     await new Promise(r=>setTimeout(r,80));
-    return JSON.stringify({visibleButton,open:document.getElementById('newShowOverlay').classList.contains('open')});
+    const selectedDisplay=lastDisplays.find(display=>String(display.id)===document.getElementById('wizardDisplay').value);
+    return JSON.stringify({
+      visibleButton,visibleImport,visiblePreflight,
+      open:document.getElementById('newShowOverlay').classList.contains('open'),
+      outputMode:document.getElementById('wizardOutputMode').value,
+      outputWidth:Number(document.getElementById('wizardWidth').value),
+      outputHeight:Number(document.getElementById('wizardHeight').value),
+      displayWidth:Number(selectedDisplay?.width)||0,
+      displayHeight:Number(selectedDisplay?.height)||0,
+      templateName:document.getElementById('wizardLtTemplate').selectedOptions[0]?.textContent||''
+    });
   })()`));
-  check('SHOW_WIZARD_VISIBLE_FROM_NORMAL_UI_OK', opened.visibleButton && opened.open, JSON.stringify(opened));
+  check('SHOW_WIZARD_VISIBLE_FROM_NORMAL_UI_OK', opened.visibleButton && opened.visibleImport && opened.visiblePreflight && opened.open, JSON.stringify(opened));
+  check('SHOW_WIZARD_CONTROL_DISPLAY_DEFAULTS_TO_WINDOW_OK', opened.outputMode === 'window' && opened.outputWidth <= Math.min(1280, Math.floor(opened.displayWidth * 0.8)) && opened.outputHeight <= Math.min(720, Math.floor(opened.displayHeight * 0.8)) && Math.abs(opened.outputWidth / opened.outputHeight - 16 / 9) < 0.01, JSON.stringify(opened));
+  check('SHOW_WIZARD_STARTER_TEMPLATE_DEFAULT_OK', opened.templateName === 'Starter Template', JSON.stringify(opened));
   await win.webContents.executeJavaScript(`
     document.getElementById('wizardShowName').value='Beta Conference';
     document.getElementById('wizardClient').value='Demo Client';
@@ -114,16 +131,19 @@ app.whenReady().then(async () => {
     document.getElementById('wizardOpeningTimer').value='10:00';
     document.getElementById('wizardInitialView').value='timer';
     const result=await finishNewShowWizard();
-    return JSON.stringify({result,preflight:document.getElementById('preflightOverlay').classList.contains('open'),overall:document.getElementById('preflightResult').className,name:showMeta.name,cues:cues.length,currentCue,selectedCue,running:S.running,outputOpen});
+    const activeTemplate=(ltLibrary.templates||[]).find(template=>template.id===ltLibrary.activeTemplateId);
+    return JSON.stringify({result,preflight:document.getElementById('preflightOverlay').classList.contains('open'),overall:document.getElementById('preflightResult').className,name:showMeta.name,cues:cues.length,currentCue,selectedCue,running:S.running,outputOpen,outputMode:outputConfigs[0]?.mode,outputWidth:outputConfigs[0]?.width,outputHeight:outputConfigs[0]?.height,templateName:activeTemplate?.name||''});
   })()`));
-  check('SHOW_WIZARD_CREATES_SAFE_OFF_AIR_SHOW_OK', finished.result.ok && finished.name === 'Beta Conference' && finished.cues === 2 && finished.currentCue === -1 && finished.selectedCue === 0 && !finished.running && !finished.outputOpen, JSON.stringify(finished));
+  check('SHOW_WIZARD_CREATES_SAFE_OFF_AIR_SHOW_OK', finished.result.ok && finished.name === 'Beta Conference' && finished.cues === 2 && finished.currentCue === -1 && finished.selectedCue === 0 && !finished.running && !finished.outputOpen && finished.outputMode === 'window' && finished.outputWidth === opened.outputWidth && finished.outputHeight === opened.outputHeight && finished.templateName === 'Starter Template', JSON.stringify(finished));
   check('SHOW_PREFLIGHT_VISIBLE_AFTER_WIZARD_OK', finished.preflight && /warning|ready/.test(finished.overall), JSON.stringify(finished));
   await new Promise(resolve => setTimeout(resolve, 140));
+  const preflightTemplate = await win.webContents.executeJavaScript(`document.querySelector('[data-check-id="lowerThirdTemplate"] .preflight-detail')?.textContent.trim()||''`);
+  check('SHOW_PREFLIGHT_FRIENDLY_TEMPLATE_NAME_OK', preflightTemplate === 'Starter Template', preflightTemplate);
   fs.writeFileSync(path.join(artifactDirectory, 'preflight-900x600.png'), (await win.webContents.capturePage()).toPNG());
   const disk = await repository.loadCurrent();
   check('SHOW_WIZARD_AUTOSAVE_PERSISTS_OK', disk.ok && disk.document.show.name === 'Beta Conference' && disk.document.show.rundown.length === 2);
 
-  console.log('SHOW_SETUP_RENDERER_TESTS_OK ' + checks + '/6');
+  console.log('SHOW_SETUP_RENDERER_TESTS_OK ' + checks + '/9');
   win.destroy();
   fs.rmSync(profile, { recursive: true, force: true });
   app.quit();

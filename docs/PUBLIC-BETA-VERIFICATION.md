@@ -1,6 +1,21 @@
 # Public Beta Verification
 
-Verified for the `0.12.0-beta.2` release candidate through 2026-08-16. This page separates what was exercised on the tested Mac from what was only automated, built or structurally inspected.
+Verified for the `0.12.0-beta.3` release candidate through 2026-08-25. This page separates what was exercised on the tested Mac from what was only automated, built or structurally inspected.
+
+## 2026-08-25 operator recovery verification
+
+The beta 3 source was operated through the visible packaged interface and then checked with the full automated Mac suite on `Built-in Retina Display`. The review found and corrected several first-run and recovery problems:
+
+- New Show, Import Show Folder and Preflight are now visible in the Show menu instead of being hidden in the overflow menu.
+- A new show on the control display now starts with a safe 16:9 window route rather than taking the operator display fullscreen. The initial window is bounded to 80% of the display and capped at 1280x720.
+- New shows select a neutral `Starter Template` lower third instead of inheriting a development or QA template.
+- Preflight reports the lower-third template by its readable name instead of exposing an internal identifier.
+- Output Routing opens at the first destination, while its fixed footer and deeper Canvas controls remain reachable through local scrolling.
+- Scene rename, rundown reorder/skip/delete controls, planned start time and the Settings close control now expose localized titles and accessibility labels.
+
+The current source run passed all module suites, all eight renderer suites, `69/69` Composer checks, the `56/56` responsive usability matrix and the complete display smoke with `SMOKE_OK`. Full-HD synthetic live-input transport also passed its target. A separate synthetic 3840x2160/60 run reached roughly 48-52 rendered fps depending on codec and did not meet the 55 fps certification threshold; 4K60 live capture is therefore explicitly not certified.
+
+This run used only the Built-in Retina Display. It did not physically validate HDMI reconnect ordering, an external projector/LED processor, a UVC capture card or Windows hardware. Those remain off-air test requirements, not release claims.
 
 ## 2026-08-16 Program recording verification
 
@@ -42,7 +57,7 @@ This proves ShowSlate's per-route configuration, full-Program renderer transform
 
 ## Physical Mac verification
 
-The `0.12.0-beta.2` complete source smoke and fresh packaged Apple Silicon `.app` smoke both passed on the explicitly selected `HP E24u G5`. Earlier release evidence on this page also covers the `Built-in Retina Display` and `PHL 243V7`. The test resolver fails closed if the configured display is missing or ambiguous and does not silently fall back to another monitor.
+The `0.12.0-beta.2` complete source smoke and fresh packaged Apple Silicon `.app` smoke both passed on the explicitly selected `HP E24u G5`. Earlier release evidence on this page also covers the `Built-in Retina Display` and `PHL 243V7`. The beta 3 source verification above used the Built-in Retina Display. The test resolver fails closed if the configured display is missing or ambiguous and does not silently fall back to another monitor.
 
 The verified Conference Desk workflow includes:
 

@@ -3,12 +3,13 @@
 - The public Mac beta has an ad-hoc bundle signature and is not Apple Developer ID signed or notarized. macOS can require explicit approval in Privacy & Security on first launch.
 - The Mac beta is Apple Silicon only. Intel Mac packages are not currently published.
 - The public Windows x64 installer and portable app are unsigned. Windows SmartScreen can show an Unknown publisher warning, and broader physical Windows hardware testing is still required.
-- `0.12.0-beta.2` uses Electron 43.1.1. Local source and packaged evidence is limited to the displays and hardware listed in [PUBLIC-BETA-VERIFICATION.md](PUBLIC-BETA-VERIFICATION.md); this does not replace physical Windows or additional venue display-chain testing.
+- `0.12.0-beta.3` uses Electron 43.1.1. Local source and packaged evidence is limited to the displays and hardware listed in [PUBLIC-BETA-VERIFICATION.md](PUBLIC-BETA-VERIFICATION.md); this does not replace physical Windows or additional venue display-chain testing.
 - Fail-closed stable candidate and publication workflows are present, but no signed stable artifact exists until real Apple and Windows credentials pass native verification and exact candidate artifacts pass the retained hardware/operator evidence gate.
 - OBS and vMix browser-source workflows have not received a complete manual integration pass. Do not treat them as certified integrations.
 - MP4 playback and WebM VP8/VP9 decode and internal alpha compositing are covered by source and packaged Electron tests. Reliable alpha in external production software still depends on that application's codec and browser pipeline and is not certified in this beta.
 - Window/display capture and camera/UVC capture inputs work only in the desktop app and its Electron output windows. Browser/OBS URL outputs do not receive those local streams.
 - Capture-device compatibility depends on operating-system and UVC drivers. Re-select and test each real device on the show computer; a synthetic capture test does not certify every physical card.
+- A targeted synthetic 3840x2160/60 live-input run on the development Mac did not sustain the release target of 55 rendered fps. Full-HD live-input transport passed, but 4K60 capture is not certified in this beta. Use 1080p for show-critical capture until the exact 4K device, codec, output count and computer have passed an off-air soak.
 - Preview is always muted. Source audio is optional, off by default and limited to one local Program output; ShowSlate is not a multibus audio mixer.
 - Record Program uses the encoders available through Electron and the operating system. Automatic mode prefers MP4/H.264 and falls back to WebM, so the final container and codec can differ between computers.
 - Recording is a single composited Program capture, not isolated tracks, multibus audio, replay, streaming or broadcast redundancy. Long-duration, 4K and 50/60 fps recording must be rehearsed with the exact media, outputs, disk and hardware.

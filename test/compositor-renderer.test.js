@@ -155,8 +155,11 @@ app.whenReady().then(async () => {
   })())`));
   check('COMPOSITOR_VISIBLE_FROM_NORMAL_UI_OK', opened.visible && opened.open && opened.advanced && opened.previewVisible && opened.panelVisible && opened.defaultTimerHidden, JSON.stringify(opened));
   check('COMPOSITOR_SAFE_PREVIEW_DEFAULT_AND_LAYER_CONTROLS_OK', opened.directProgram === false && opened.layerTakeVisible && opened.layerHideVisible && opened.settingsText === 'Settings' && opened.settingsAria === 'Settings', JSON.stringify(opened));
-  const sceneControls = JSON.parse(await win.webContents.executeJavaScript(`JSON.stringify((()=>{const ids=['canvasSceneSelect','btnCanvasSceneAdd','btnCanvasSceneDuplicate','btnCanvasSceneDelete'];return {visible:ids.every(id=>document.getElementById(id).getClientRects().length>0),options:document.getElementById('canvasSceneSelect').options.length,duplicateTitle:document.getElementById('btnCanvasSceneDuplicate').title};})())`));
-  check('COMPOSITOR_SCENE_CONTROLS_VISIBLE_OK', sceneControls.visible && sceneControls.options >= 1 && sceneControls.duplicateTitle.length > 0, JSON.stringify(sceneControls));
+  const sceneControls = JSON.parse(await win.webContents.executeJavaScript(`JSON.stringify((()=>{const ids=['canvasSceneSelect','btnCanvasSceneAdd','btnCanvasSceneDuplicate','btnCanvasSceneDelete'];const rename=document.querySelector('#sceneList .rename');return {visible:ids.every(id=>document.getElementById(id).getClientRects().length>0),options:document.getElementById('canvasSceneSelect').options.length,duplicateTitle:document.getElementById('btnCanvasSceneDuplicate').title,renameTitle:rename?.title||'',renameAria:rename?.getAttribute('aria-label')||''};})())`));
+  check('COMPOSITOR_SCENE_CONTROLS_VISIBLE_OK', sceneControls.visible && sceneControls.options >= 1 && sceneControls.duplicateTitle.length > 0 && sceneControls.renameTitle === 'Rename' && sceneControls.renameAria === 'Rename', JSON.stringify(sceneControls));
+  const rundownAccessibility = JSON.parse(await win.webContents.executeJavaScript(`JSON.stringify((()=>{const previousCues=cues,previousCurrent=currentCue,previousSelected=selectedCue;cues=migrateCues([{id:'accessibility-cue',name:'Accessible cue',durationMs:60000,status:'pending'}]);currentCue=-1;selectedCue=0;renderCues();const row=document.querySelector('#cueList .cue'),actions=row?[...row.querySelectorAll('.cue-actions button')]:[];const result={showStartTitle:document.getElementById('showStartInput').title,titles:actions.map(button=>button.title),labels:actions.map(button=>button.getAttribute('aria-label'))};cues=previousCues;currentCue=previousCurrent;selectedCue=previousSelected;renderCues();return result;})())`));
+  const expectedCueActions=['Move cue up','Move cue down','Skip cue','Delete cue'];
+  check('RUNDOWN_ACTIONS_LOCALIZED_AND_LABELLED_OK', rundownAccessibility.showStartTitle === 'Planned show start' && JSON.stringify(rundownAccessibility.titles) === JSON.stringify(expectedCueActions) && JSON.stringify(rundownAccessibility.labels) === JSON.stringify(expectedCueActions), JSON.stringify(rundownAccessibility));
 
   const recordingUi = JSON.parse(await win.webContents.executeJavaScript(`(async()=>{
     const top=document.getElementById('btnRecordProgram');
@@ -176,19 +179,20 @@ app.whenReady().then(async () => {
     document.getElementById('recordingWidth').value='2560';
     document.getElementById('recordingWidth').dispatchEvent(new Event('input',{bubbles:true}));
     await new Promise(resolve=>setTimeout(resolve,300));
-    const result={visible,panelVisible:panel.classList.contains('active')&&panel.getClientRects().length>0,controlsVisible,customSize:!document.getElementById('recordingCustomSize').hidden,customBitrate:!document.getElementById('recordingBitrateField').hidden,audioBitrateHidden:document.getElementById('recordingAudioBitrateField').hidden,topLabel:top.textContent.trim(),width:Number(document.getElementById('recordingWidth').value)};
+    const result={visible,panelVisible:panel.classList.contains('active')&&panel.getClientRects().length>0,controlsVisible,customSize:!document.getElementById('recordingCustomSize').hidden,customBitrate:!document.getElementById('recordingBitrateField').hidden,audioBitrateHidden:document.getElementById('recordingAudioBitrateField').hidden,topLabel:top.textContent.trim(),closeAria:document.getElementById('btnSetupClose').getAttribute('aria-label'),width:Number(document.getElementById('recordingWidth').value)};
     document.getElementById('btnSettingsDrawer').click();
     document.getElementById('btnCompositor').click();
     return JSON.stringify(result);
   })()`));
   check('RECORD_PROGRAM_VISIBLE_FROM_NORMAL_UI_OK', recordingUi.visible && recordingUi.topLabel.includes('Record'), JSON.stringify(recordingUi));
-  check('RECORDING_SETTINGS_COMPLETE_AND_PERSIST_OK', recordingUi.panelVisible && recordingUi.controlsVisible && recordingUi.customSize && recordingUi.customBitrate && recordingUi.audioBitrateHidden && recordingUi.width === 2560 && Number(recordingSettingsState.width) === 2560 && recordingSettingsState.resolution === 'custom' && recordingSettingsState.quality === 'custom' && recordingSettingsState.includeAudio === false, JSON.stringify({ ...recordingUi, persisted: recordingSettingsState }));
+  check('RECORDING_SETTINGS_COMPLETE_AND_PERSIST_OK', recordingUi.panelVisible && recordingUi.controlsVisible && recordingUi.customSize && recordingUi.customBitrate && recordingUi.audioBitrateHidden && recordingUi.closeAria === 'Close' && recordingUi.width === 2560 && Number(recordingSettingsState.width) === 2560 && recordingSettingsState.resolution === 'custom' && recordingSettingsState.quality === 'custom' && recordingSettingsState.includeAudio === false, JSON.stringify({ ...recordingUi, persisted: recordingSettingsState }));
 
   const showMenuInitial = JSON.parse(await win.webContents.executeJavaScript(`JSON.stringify((()=>{
     window.alert=()=>{};window.confirm=()=>true;
     const button=document.getElementById('btnShowFileMenu');button.click();
     const menu=document.getElementById('showFileMenu');
-    return {buttonVisible:button.getClientRects().length>0,menuVisible:menu.getClientRects().length>0,expanded:button.getAttribute('aria-expanded'),hidden:menu.getAttribute('aria-hidden'),items:menu.querySelectorAll('[role="menuitem"]').length,name:document.getElementById('showFileMenuName').textContent.trim(),path:document.getElementById('showFileMenuPath').textContent.trim()};
+    const workflows=['btnNewShow','btnImportShowFolder','btnPreflight'].every(id=>menu.querySelector('#'+id)&&document.getElementById(id).getClientRects().length>0);
+    return {buttonVisible:button.getClientRects().length>0,menuVisible:menu.getClientRects().length>0,expanded:button.getAttribute('aria-expanded'),hidden:menu.getAttribute('aria-hidden'),items:menu.querySelectorAll('[role="menuitem"]').length,workflows,name:document.getElementById('showFileMenuName').textContent.trim(),path:document.getElementById('showFileMenuPath').textContent.trim()};
   })())`));
   await win.webContents.executeJavaScript(`document.getElementById('btnShowSave').click()`);
   if (!await waitFor(() => showDocumentSaveRequests.length === 1)) throw new Error('Save Show did not invoke show-document-save');
@@ -199,7 +203,7 @@ app.whenReady().then(async () => {
   await win.webContents.executeJavaScript(`document.getElementById('btnShowFileMenu').click();document.getElementById('btnShowOpen').click()`);
   if (!await waitFor(() => showDocumentOpenRequests === 1)) throw new Error('Open Show did not invoke show-document-open');
   const showMenuFinal = JSON.parse(await win.webContents.executeJavaScript(`JSON.stringify({open:document.body.classList.contains('show-file-open'),expanded:document.getElementById('btnShowFileMenu').getAttribute('aria-expanded')})`));
-  check('SHOW_FILE_MENU_SAVE_SAVE_AS_OPEN_VISIBLE_OK', showMenuInitial.buttonVisible && showMenuInitial.menuVisible && showMenuInitial.expanded === 'true' && showMenuInitial.hidden === 'false' && showMenuInitial.items === 3 && showMenuInitial.name.length > 0 && firstSavePath.endsWith('.showslate') && saveAsPath.endsWith(' Copy.showslate') && showDocumentSaveRequests[0].saveAs === false && showDocumentSaveRequests[1].saveAs === true && !showMenuFinal.open && showMenuFinal.expanded === 'false', JSON.stringify({showMenuInitial,firstSavePath,saveAsPath,showMenuFinal}));
+  check('SHOW_FILE_MENU_SAVE_SAVE_AS_OPEN_VISIBLE_OK', showMenuInitial.buttonVisible && showMenuInitial.menuVisible && showMenuInitial.expanded === 'true' && showMenuInitial.hidden === 'false' && showMenuInitial.items === 6 && showMenuInitial.workflows && showMenuInitial.name.length > 0 && firstSavePath.endsWith('.showslate') && saveAsPath.endsWith(' Copy.showslate') && showDocumentSaveRequests[0].saveAs === false && showDocumentSaveRequests[1].saveAs === true && !showMenuFinal.open && showMenuFinal.expanded === 'false', JSON.stringify({showMenuInitial,firstSavePath,saveAsPath,showMenuFinal}));
 
   const compositionWorkflow = JSON.parse(await win.webContents.executeJavaScript(`(async()=>{
     const wait=async fn=>{const started=Date.now();while(Date.now()-started<1800){if(fn())return true;await new Promise(resolve=>setTimeout(resolve,25));}return false;};

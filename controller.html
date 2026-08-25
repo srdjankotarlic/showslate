@@ -3367,7 +3367,7 @@
           <button id="btnReport" class="mini ghost" data-i18n="report" data-i18n-title="reportTitle" title="Izveštaj: planirano vs. stvarno po tački">Izveštaj</button>
           <input type="file" id="cueFile" accept=".csv,.txt,.tsv" style="display:none">
         </div>
-        <label class="cue-schedule"><span class="lbl" data-i18n="showStart">Start</span><input type="time" id="showStartInput" title="Planirani početak showa"></label>
+        <label class="cue-schedule"><span class="lbl" data-i18n="showStart">Start</span><input type="time" id="showStartInput" title="Planned show start" data-i18n-title="showStartTitle"></label>
         <span id="ouStatus" class="ou"></span>
       </div>
       <div class="cuelist" id="cueList" data-testid="rundown-panel" tabindex="0" data-i18n-aria="rundownListAria" aria-label="Rundown items"></div>
@@ -3828,7 +3828,7 @@
     </div>
 
     <div class="setupwrap" id="setupWrap">
-    <div class="setupwrap-head"><span data-i18n="settingsBtn">Podešavanja</span><button id="btnSetupClose" class="ghost mini" aria-label="Zatvori">✕</button></div>
+    <div class="setupwrap-head"><span data-i18n="settingsBtn">Podešavanja</span><button id="btnSetupClose" class="ghost mini" aria-label="Close" data-i18n-aria="compositionClose" data-i18n-title="compositionClose" title="Close">✕</button></div>
     <div class="tabbar" id="setupTabs">
       <button data-pane="timer" class="active" data-i18n="tabTimer">Timing</button>
       <button data-pane="look" data-i18n="tabLook">Izgled</button>
@@ -4602,16 +4602,17 @@
       <small id="showFileMenuPath" data-i18n="showNotSavedAsFile">Not saved as a file</small>
     </div>
     <div class="show-file-divider"></div>
+    <button id="btnNewShow" class="ghost show-file-item" type="button" role="menuitem" data-i18n="newShow" data-testid="new-show-button">New Show…</button>
+    <button id="btnImportShowFolder" class="ghost show-file-item" type="button" role="menuitem" data-i18n="importShowFolder" data-testid="import-show-folder-button">Import Show Folder…</button>
+    <button id="btnShowOpen" class="ghost show-file-item" type="button" role="menuitem" data-testid="show-open-button"><span data-i18n="showOpen">Open Show…</span><kbd>⌘O</kbd></button>
+    <div class="show-file-divider"></div>
     <button id="btnShowSave" class="ghost show-file-item" type="button" role="menuitem" data-testid="show-save-button"><span data-i18n="showSave">Save Show</span><kbd>⌘S</kbd></button>
     <button id="btnShowSaveAs" class="ghost show-file-item" type="button" role="menuitem" data-testid="show-save-as-button"><span data-i18n="showSaveAs">Save Show As…</span><kbd>⇧⌘S</kbd></button>
-    <button id="btnShowOpen" class="ghost show-file-item" type="button" role="menuitem" data-testid="show-open-button"><span data-i18n="showOpen">Open Show…</span><kbd>⌘O</kbd></button>
+    <div class="show-file-divider"></div>
+    <button id="btnPreflight" class="ghost show-file-item" type="button" role="menuitem" data-i18n="preflight" data-testid="preflight-button">Preflight</button>
   </div>
   <div class="tb-menu" id="tbMenu" data-testid="topbar-overflow-menu" role="menu" aria-hidden="true">
     <div class="lang"><select id="langSel" data-i18n-title="languageTitle" title="Interface language"></select></div>
-    <button id="btnNewShow" class="ghost" data-i18n="newShow" data-testid="new-show-button">New Show…</button>
-    <button id="btnImportShowFolder" class="ghost" data-i18n="importShowFolder" data-testid="import-show-folder-button">Import Show Folder…</button>
-    <button id="btnPreflight" class="ghost" data-i18n="preflight" data-testid="preflight-button">Preflight</button>
-    <div class="tb-msep"></div>
     <button id="btnShowExport" class="ghost" data-i18n="showExport" data-testid="show-export-button">Export Show…</button>
     <button id="btnShowImport" class="ghost" data-i18n="showImport" data-testid="show-import-button">Import Show…</button>
     <div class="tb-msep"></div>
@@ -4768,7 +4769,7 @@ const I18N = {
     outputName:'Naziv', outputDisplay:'Ekran', outputRole:'Uloga', outputRole_audience:'Publika', outputRole_confidence:'Govornik / confidence', outputRole_timer:'Samo tajmer', outputRole_stream:'Stream grafika', outputRole_door:'Agenda na vratima', outputMode:'Režim', outputPlacement:'Pozicija', outputResolution:'Veličina prozora', outputCoordinates:'Koordinate', outputGrid:'Grid', outputCell:'Polje', outputEnabled:'Aktivan', outputLiveState:'PRIKAZ POTVRĐEN', outputSyncingState:'SINHRONIZACIJA', outputOffState:'ISKLJUČENO', outputPendingState:'ČEKA PRIMENU', outputUnavailableState:'EKRAN NIJE DOSTUPAN', outputAmbiguousState:'EKRAN NIJE JEDINSTVEN', outputMappingRequiredState:'POTREBNA POVRŠINA', outputUnavailableDisplay:'Nedostupan ekran', outputNoDestinations:'Nema podešenih izlaza. Dodajte destinaciju za publiku, govornika, stream ili agendu na vratima.', outputRouteApplied:'Usmeravanje je primenjeno.', outputAllStopped:'Svi izlazi su zaustavljeni.', outputRemove:'Ukloni izlaz', outputFixUnavailable:'Izaberi dostupan ekran za svaku aktivnu destinaciju pre primene.', outputFixAmbiguous:'Izaberi tačan ekran za svaku aktivnu destinaciju pre primene.', outputFixMapping:'Svaki aktivan mapirani izlaz mora imati bar jednu vidljivu površinu.', outputCanvas:'Output canvas', outputCanvasHint:'Nezavisan format i rezolucija ovog izlaza', outputCanvasPreset:'Format', outputCanvasSize:'Canvas rezolucija', outputCanvasFit:'Prilagođavanje', outputCanvasMatch:'Kao Program', outputProgramFeed:'Program signal', outputProgramFeedHint:'Direktno šalje ceo Program. Mapiranje je opciono za projektore i nepravilne površine.', outputDirectProgram:'Direktan Program', outputMappedProgram:'Mapirani Program', outputSetupMapping:'Podesi mapiranje', outputEditMapping:'Uredi mapiranje', outputMapProjector:'Mapiraj projektor', outputMappingActive:'Mapiranje aktivno', outputMappingNeeded:'Nema dodeljene površine', outputMappingNone:'Direktan Program',
     outputFullscreen:'Ceo ekran', outputWindow:'Prozor', outputCustom:'Tačna veličina', outputGridMode:'Grid polje', outputCenter:'Centar', outputTopLeft:'Gore levo', outputTopRight:'Gore desno', outputBottomLeft:'Dole levo', outputBottomRight:'Dole desno', outputCustomPosition:'X / Y',
     fsTitle:'Pun ekran (F)', closeTitle:'Zatvori izlazni prozor', onTop:'Na vrhu',
-    sources:'Izvori', tabRundown:'Rundown', sceneNamePrompt:'Naziv scene:', rename:'Preimenuj',
+    sources:'Izvori', tabRundown:'Rundown', sceneNamePrompt:'Naziv scene:', rename:'Preimenuj', showStartTitle:'Planirani početak programa', cueMoveUp:'Pomeri tačku gore', cueMoveDown:'Pomeri tačku dole', cueSkip:'Preskoči tačku', cueRestore:'Vrati preskočenu tačku', cueDelete:'Obriši tačku',
     canvasTitle:'Canvas — odnos stranica platna (i vertikalni ekrani)', fadeTitle:'Trajanje prelaza scene na izlazu', fadeCut:'Cut',
     lockLive:'Zaključaj program', lockTitle:'Štiti živ program: GO, RESET i preskakanje traže otključavanje; poruke i ±vreme rade', enterLiveMode:'Live režim', exitLiveMode:'Izađi iz Live',
     liveDeckKicker:'PERFORMANCE DECK', liveComposition:'Kompozicija', livePreviewFirst:'PRVO PREVIEW', liveDirect:'DIREKTNO', liveCut:'CUT', liveFade:'FADE', liveSafeStatus:'Bezbedno: klik priprema Preview', liveDirectStatus:'Direktno: klik odmah menja Program', liveTakeScene:'PUSTI SCENU', liveSelectedClip:'IZABRANI KLIP', liveTakeClip:'PUSTI KLIP', liveHideClip:'SKLONI KLIP', livePrevious:'PRETHODNA', liveNext:'SLEDEĆA', livePersistent:'PIN', livePersistentHint:'Zadrži ovaj lejer preko sledeće scene', liveLayer:'LEJER {n}', liveEmptyClip:'PRAZNO', liveNoClips:'Ova kompozicija još nema izvore.', liveGoCue:'GO CUE',
@@ -4879,7 +4880,7 @@ const I18N = {
     outputName:'Name', outputDisplay:'Display', outputRole:'Role', outputRole_audience:'Audience', outputRole_confidence:'Confidence', outputRole_timer:'Timer only', outputRole_stream:'Stream graphics', outputRole_door:'Door agenda', outputMode:'Mode', outputPlacement:'Placement', outputResolution:'Window size', outputCoordinates:'Coordinates', outputGrid:'Grid', outputCell:'Cell', outputEnabled:'Enabled', outputLiveState:'RENDER CONFIRMED', outputSyncingState:'SYNCING', outputOffState:'OFF', outputPendingState:'PENDING APPLY', outputUnavailableState:'DISPLAY UNAVAILABLE', outputAmbiguousState:'DISPLAY NOT UNIQUE', outputMappingRequiredState:'SURFACE REQUIRED', outputUnavailableDisplay:'Unavailable display', outputNoDestinations:'No outputs configured. Add a destination for the audience, confidence, stream or door agenda.', outputRouteApplied:'Routing applied.', outputAllStopped:'All outputs stopped.', outputRemove:'Remove output', outputFixUnavailable:'Choose an available display for every enabled destination before applying.', outputFixAmbiguous:'Choose the exact display for every enabled destination before applying.', outputFixMapping:'Every enabled mapped output needs at least one visible surface.', outputCanvas:'Output canvas', outputCanvasHint:'Independent format and resolution for this destination', outputCanvasPreset:'Format', outputCanvasSize:'Canvas resolution', outputCanvasFit:'Scaling', outputCanvasMatch:'Match Program', outputProgramFeed:'Program feed', outputProgramFeedHint:'Direct sends the full Program. Mapping is optional for projectors and irregular surfaces.', outputDirectProgram:'Direct Program', outputMappedProgram:'Mapped Program', outputSetupMapping:'Set up mapping', outputEditMapping:'Edit mapping', outputMapProjector:'Map projector', outputMappingActive:'Mapping active', outputMappingNeeded:'No surface assigned', outputMappingNone:'Direct Program',
     outputFullscreen:'Fullscreen', outputWindow:'Window', outputCustom:'Custom size', outputGridMode:'Grid cell', outputCenter:'Center', outputTopLeft:'Top left', outputTopRight:'Top right', outputBottomLeft:'Bottom left', outputBottomRight:'Bottom right', outputCustomPosition:'X / Y',
     fsTitle:'Fullscreen (F)', closeTitle:'Close output window', onTop:'On top',
-    sources:'Sources', tabRundown:'Rundown', sceneNamePrompt:'Scene name:', rename:'Rename',
+    sources:'Sources', tabRundown:'Rundown', sceneNamePrompt:'Scene name:', rename:'Rename', showStartTitle:'Planned show start', cueMoveUp:'Move cue up', cueMoveDown:'Move cue down', cueSkip:'Skip cue', cueRestore:'Restore skipped cue', cueDelete:'Delete cue',
     canvasTitle:'Canvas — output aspect ratio (incl. vertical screens)', fadeTitle:'Scene transition duration on outputs', fadeCut:'Cut',
     lockLive:'Lock Live', lockTitle:'Protects the live show: GO, RESET and skip require unlocking; messages and ±time still work', enterLiveMode:'Live Mode', exitLiveMode:'Exit Live',
     liveDeckKicker:'PERFORMANCE DECK', liveComposition:'Composition', livePreviewFirst:'PREVIEW FIRST', liveDirect:'DIRECT', liveCut:'CUT', liveFade:'FADE', liveSafeStatus:'Safe: click prepares Preview', liveDirectStatus:'Direct: click changes Program immediately', liveTakeScene:'TAKE SCENE', liveSelectedClip:'SELECTED CLIP', liveTakeClip:'TAKE CLIP', liveHideClip:'HIDE CLIP', livePrevious:'PREVIOUS', liveNext:'NEXT', livePersistent:'PIN', livePersistentHint:'Keep this layer over the next scene', liveLayer:'LAYER {n}', liveEmptyClip:'EMPTY', liveNoClips:'This composition has no sources yet.', liveGoCue:'GO CUE',
@@ -5936,7 +5937,7 @@ function renderCues(){
     row.innerHTML=`${c.color?`<span class="stripe" style="background:${c.color}"></span>`:''}<span class="n">${i+1}</span>`+
       `<div class="body"><div class="cue-titleline"><div class="nm"></div>${markers}</div>${c.note?'<div class="note"></div>':''}${sceneLink}</div>`+
       `<div class="cue-meta">${badge}<span class="times">${times}</span></div>`+
-      `<div class="cue-actions"><button class="mini up">▲</button><button class="mini dn">▼</button><button class="mini skip" title="Preskoči">⏭</button><button class="mini del">✕</button></div>`;
+      `<div class="cue-actions"><button class="mini up">▲</button><button class="mini dn">▼</button><button class="mini skip">⏭</button><button class="mini del">✕</button></div>`;
     const nmEl=row.querySelector('.nm'); nmEl.textContent=c.name||t('noName'); nmEl.title=c.name||t('noName');
     if(c.note) row.querySelector('.note').textContent=c.note;
     const sceneLinkEl=row.querySelector('.cue-scene-link');
@@ -5955,15 +5956,18 @@ function renderCues(){
     row.addEventListener('keydown',e=>{
       if(e.key==='Enter'||e.key===' '){ e.preventDefault(); activateCue(); }
     });
-    row.querySelector('.up').addEventListener('click',()=>moveCue(i,-1));
-    row.querySelector('.dn').addEventListener('click',()=>moveCue(i,1));
-    row.querySelector('.skip').addEventListener('click',()=>{
+    const cueUp=row.querySelector('.up'),cueDown=row.querySelector('.dn'),cueSkip=row.querySelector('.skip'),cueDelete=row.querySelector('.del');
+    [[cueUp,'cueMoveUp'],[cueDown,'cueMoveDown'],[cueDelete,'cueDelete']].forEach(([button,key])=>{button.title=t(key);button.setAttribute('aria-label',t(key));});
+    const skipKey=c.status==='skipped'?'cueRestore':'cueSkip';cueSkip.title=t(skipKey);cueSkip.setAttribute('aria-label',t(skipKey));
+    cueUp.addEventListener('click',()=>moveCue(i,-1));
+    cueDown.addEventListener('click',()=>moveCue(i,1));
+    cueSkip.addEventListener('click',()=>{
       if(lockBlocked()) return;
       if(i===currentCue) return;   // LIVE red se ne preskače dugmetom
       c.status = c.status==='skipped' ? 'pending' : 'skipped';
       saveCues(); send(); renderCues();
     });
-    row.querySelector('.del').addEventListener('click',()=>{ if(i===currentCue && lockBlocked()) return; cues.splice(i,1);
+    cueDelete.addEventListener('click',()=>{ if(i===currentCue && lockBlocked()) return; cues.splice(i,1);
       if(currentCue>=cues.length) currentCue=cues.length-1;
       if(selectedCue===i) selectedCue=-1; else if(selectedCue>i) selectedCue--;
       saveCues(); send(); renderCues(); updateGoLabel(); });
@@ -6475,6 +6479,7 @@ $('btnShowImport')?.addEventListener('click',()=>importPortableShow());
 let wizardStep=0;
 let wizardLogo='';
 let wizardFolderImport={rootName:'',schedule:null,assets:[],warnings:[]};
+let wizardTemplateDraft=null;
 function textVars(value,vars={}){ return Object.entries(vars).reduce((text,[key,item])=>text.replaceAll('{'+key+'}',String(item)),String(value||'')); }
 function setFlowOpen(id,open){
   const overlay=$(id); if(!overlay) return;
@@ -6502,7 +6507,28 @@ function updateWizardFolderStatus(){
   box.textContent=textVars(t('wizardFolderReady'),{name:wizardFolderImport.rootName,assets:wizardFolderImport.assets.length})+warnings;
   box.className='flow-preview good';
 }
-function populateWizardDisplays(){
+function defaultOutputModeForDisplay(display){
+  return display&&!display.hasControl?'fullscreen':'window';
+}
+function defaultOutputSizeForDisplay(display,mode='window',canvas={width:1920,height:1080}){
+  const displayWidth=Math.max(160,Number(display&&display.width)||1280);
+  const displayHeight=Math.max(120,Number(display&&display.height)||720);
+  if(mode==='fullscreen') return {width:Math.round(displayWidth),height:Math.round(displayHeight)};
+  const canvasWidth=Math.max(1,Number(canvas&&canvas.width)||1920);
+  const canvasHeight=Math.max(1,Number(canvas&&canvas.height)||1080);
+  const maxWidth=Math.max(160,Math.min(1280,Math.floor(displayWidth*0.8)));
+  const maxHeight=Math.max(120,Math.min(720,Math.floor(displayHeight*0.8)));
+  const scale=Math.min(maxWidth/canvasWidth,maxHeight/canvasHeight);
+  return {width:Math.max(160,Math.round(canvasWidth*scale)),height:Math.max(120,Math.round(canvasHeight*scale))};
+}
+function applyWizardOutputSize(display,mode=$('wizardOutputMode')?.value||'window'){
+  if(!display) return;
+  const canvas=canvasFromLegacyAspect($('wizardCanvas')?.value||'16:9');
+  const size=defaultOutputSizeForDisplay(display,mode,canvas);
+  $('wizardWidth').value=String(size.width);
+  $('wizardHeight').value=String(size.height);
+}
+function populateWizardDisplays(options={}){
   const select=$('wizardDisplay'); if(!select) return;
   const previous=select.value;
   select.innerHTML='';
@@ -6516,17 +6542,32 @@ function populateWizardDisplays(){
   if(previous&&lastDisplays.some(display=>String(display.id)===previous)) select.value=previous;
   else if(fallback) select.value=String(fallback.id);
   const chosen=lastDisplays.find(display=>String(display.id)===select.value);
-  if(chosen){ $('wizardWidth').value=String(chosen.width); $('wizardHeight').value=String(chosen.height); }
+  if(chosen){
+    if(options.preferSafeMode===true||String(chosen.id)!==previous) $('wizardOutputMode').value=defaultOutputModeForDisplay(chosen);
+    applyWizardOutputSize(chosen);
+  }
 }
-function populateWizardTemplates(){
+function wizardStarterTemplate(templates){
+  const rows=Array.isArray(templates)?templates:[];
+  return rows.find(template=>String(template&&template.name||'').trim().toLowerCase()==='starter template')||null;
+}
+function populateWizardTemplates(options={}){
   const select=$('wizardLtTemplate'); if(!select) return;
   const previous=select.value;
   const templates=ltLibrary&&Array.isArray(ltLibrary.templates)?ltLibrary.templates:[];
+  let starter=wizardStarterTemplate(templates);
+  if(!starter){
+    if(!wizardTemplateDraft) wizardTemplateDraft=ltDefaultTemplate('Starter Template');
+    starter=wizardTemplateDraft;
+  }
   select.innerHTML='';
   const none=document.createElement('option'); none.value=''; none.textContent='—'; select.appendChild(none);
   templates.forEach(template=>{ const option=document.createElement('option'); option.value=template.id; option.textContent=template.name||template.id; select.appendChild(option); });
+  if(starter===wizardTemplateDraft){ const option=document.createElement('option'); option.value=starter.id; option.textContent=starter.name; select.appendChild(option); }
   const active=String((ltLibrary&&ltLibrary.activeTemplateId)||'');
-  select.value=templates.some(template=>template.id===previous)?previous:(templates.some(template=>template.id===active)?active:'');
+  const choices=[...templates,...(starter===wizardTemplateDraft?[starter]:[])];
+  if(options.preferStarter===true) select.value=starter.id;
+  else select.value=choices.some(template=>template.id===previous)?previous:(choices.some(template=>template.id===active)?active:starter.id);
 }
 function setWizardStep(next){
   wizardStep=Math.max(0,Math.min(6,Number(next)||0));
@@ -6569,6 +6610,7 @@ function renderWizardSummary(){
 }
 async function openNewShowWizard(){
   closeTopbarMenu();
+  closeShowFileMenu();
   if(!lastDisplays.length) await refreshDisplays();
   const today=new Date();
   $('wizardShowName').value='';
@@ -6579,9 +6621,10 @@ async function openNewShowWizard(){
   wizardFolderImport={rootName:'',schedule:null,assets:[],warnings:[]};
   $('wizardBg').value='#000000'; $('wizardFg').value='#ffffff';
   $('wizardHoldingText').value='WELCOME'; $('wizardOpeningTimer').value='10:00'; $('wizardInitialView').value='timer';
-  $('wizardOutputMode').value='fullscreen'; $('wizardCanvas').value='16:9';
+  $('wizardOutputMode').value='window'; $('wizardCanvas').value='16:9';
+  wizardTemplateDraft=null;
   wizardLogo=''; $('wizardLogoStatus').textContent=t('wizardNoLogo');
-  populateWizardDisplays(); populateWizardTemplates(); updateWizardFolderStatus(); updateWizardRundownPreview(); setWizardStep(0);
+  populateWizardDisplays({preferSafeMode:true}); populateWizardTemplates({preferStarter:true}); updateWizardFolderStatus(); updateWizardRundownPreview(); setWizardStep(0);
   setFlowOpen('newShowOverlay',true);
   setTimeout(()=>$('wizardShowName').focus(),30);
 }
@@ -6636,8 +6679,12 @@ async function finishNewShowWizard(){
   const height=Math.max(120,Math.min(8192,Number($('wizardHeight').value)||1080));
   const duration=parseTime($('wizardOpeningTimer').value);
   const chosenTemplateId=$('wizardLtTemplate').value||'';
-  const library=jsonCopy(ltLibrary||null,null);
-  if(library) library.activeTemplateId=chosenTemplateId||null;
+  const library=jsonCopy(ltLibrary||{schemaVersion:1,activeTemplateId:null,templates:[],updatedAt:new Date().toISOString()},null);
+  if(!Array.isArray(library.templates)) library.templates=[];
+  if(wizardTemplateDraft&&chosenTemplateId===wizardTemplateDraft.id&&!library.templates.some(template=>template&&template.id===chosenTemplateId)){
+    library.templates.push(jsonCopy(wizardTemplateDraft,null));
+  }
+  library.activeTemplateId=chosenTemplateId||null;
   const sceneSetup=buildWizardScenes($('wizardInitialView').value,$('wizardHoldingText').value.trim(),$('wizardFg').value);
   const importedContent=buildWizardImportedContent(sceneSetup,matched.assets);
   const rundown=migrateCues(matched.cues.map(cue=>{
@@ -6671,6 +6718,10 @@ async function finishNewShowWizard(){
 }
 function preflightDetail(check){
   const detail=String(check&&check.detail||'');
+  if(check.id==='lowerThirdTemplate'&&!['none-selected','auto-cue-template-missing'].includes(detail)){
+    const template=(ltLibrary&&Array.isArray(ltLibrary.templates)?ltLibrary.templates:[]).find(item=>String(item&&item.id||'')===detail);
+    if(template) return String(template.name||detail);
+  }
   if(check.id==='missingAssets'&&detail!=='all-found') return detail;
   if(['rundownValid','lowerThirdTemplate','displayAssignment','outputResolution','outputAspect','conferenceAudienceRoute','conferenceRouteAssignments','conferenceCueActions','conferenceMediaMapping','conferenceOutputDelivery'].includes(check.id)
       && !['invalid-or-empty','none-selected','not-assigned','invalid'].includes(detail)) return detail;
@@ -6681,6 +6732,7 @@ function renderPreflight(result){
   const checks=Array.isArray(result&&result.checks)?result.checks:[];
   checks.forEach(check=>{
     const item=document.createElement('div'); item.className='preflight-row '+check.status;
+    item.dataset.checkId=check.id;
     const dot=document.createElement('span'); dot.className='preflight-dot';
     const name=document.createElement('span'); name.className='preflight-name'; name.textContent=t('preflightCheck_'+check.id);
     const detail=document.createElement('span'); detail.className='preflight-detail'; detail.textContent=preflightDetail(check);
@@ -6703,7 +6755,7 @@ async function refreshPreflight(){
   renderPreflight(result);
   return result;
 }
-async function openPreflight(){ closeTopbarMenu(); setFlowOpen('preflightOverlay',true); return refreshPreflight(); }
+async function openPreflight(){ closeTopbarMenu(); closeShowFileMenu(); setFlowOpen('preflightOverlay',true); return refreshPreflight(); }
 function closePreflight(){ setFlowOpen('preflightOverlay',false); }
 async function testConferenceOutputs(){
   const button=$('btnPreflightTestOutputs');
@@ -6742,7 +6794,9 @@ $('wizardRundownFile')?.addEventListener('change',event=>{
   const file=event.target.files[0]; if(!file) return;
   const reader=new FileReader(); reader.onload=()=>{ $('wizardRundownText').value=String(reader.result||''); updateWizardRundownPreview(); }; reader.readAsText(file); event.target.value='';
 });
-$('wizardDisplay')?.addEventListener('change',()=>{ const display=lastDisplays.find(item=>String(item.id)===$('wizardDisplay').value); if(display){$('wizardWidth').value=display.width;$('wizardHeight').value=display.height;} });
+$('wizardDisplay')?.addEventListener('change',()=>{ const display=lastDisplays.find(item=>String(item.id)===$('wizardDisplay').value); if(display){$('wizardOutputMode').value=defaultOutputModeForDisplay(display);applyWizardOutputSize(display);} });
+$('wizardOutputMode')?.addEventListener('change',()=>{const display=lastDisplays.find(item=>String(item.id)===$('wizardDisplay').value);if(display&&$('wizardOutputMode').value!=='custom')applyWizardOutputSize(display);});
+$('wizardCanvas')?.addEventListener('change',()=>{const display=lastDisplays.find(item=>String(item.id)===$('wizardDisplay').value);if(display&&$('wizardOutputMode').value!=='custom')applyWizardOutputSize(display);});
 $('btnWizardLogo')?.addEventListener('click',()=>$('wizardLogoFile').click());
 $('btnWizardLogoClear')?.addEventListener('click',()=>{ wizardLogo=''; $('wizardLogoStatus').textContent=t('wizardNoLogo'); });
 $('wizardLogoFile')?.addEventListener('change',async event=>{
@@ -7475,11 +7529,14 @@ function renderScenesUI(){
   compositionScenes.forEach((sc,i)=>{
     const row=document.createElement('div');
     row.className='scene-row'+(sc.id===S.activeSceneId?' active':'');
-    row.innerHTML='<span class="scene-n"></span><div class="scene-name"></div><button class="mini rename" title="Preimenuj">✎</button>';
+    row.innerHTML='<span class="scene-n"></span><div class="scene-name"></div><button class="mini rename">✎</button>';
     row.querySelector('.scene-n').textContent=String(i+1);
     row.querySelector('.scene-name').textContent=sc.name;
     row.addEventListener('click',e=>{ if(e.target.closest('button')) return; S.activeSceneId=sc.id; sceneDirty(); });
-    row.querySelector('.rename').addEventListener('click',async ()=>{
+    const renameButton=row.querySelector('.rename');
+    renameButton.title=t('rename');
+    renameButton.setAttribute('aria-label',t('rename'));
+    renameButton.addEventListener('click',async ()=>{
       const sceneId=sc.id;
       const v=await askText(t('sceneNamePrompt'), sc.name);
       if(v!==null){
@@ -7765,6 +7822,8 @@ function setCompositorOpen(flag,options={}){
   document.body.classList.toggle('compositor-open',open);
   $('btnCompositor')?.classList.toggle('active',open);
   $('btnCompositor')?.setAttribute('aria-expanded',open?'true':'false');
+  $('btnCompositor')?.setAttribute('aria-pressed',open?'true':'false');
+  $('btnCompositor')?.setAttribute('title',open?`${t('compositorButton')} · ${t('close')}`:t('compositorButton'));
   if(options.persist!==false) localStorage.setItem('pt_compositor_open',open?'1':'0');
   if(open) closeDrawers();
   else{updateSidebarToggle();updateUtilityToggle();}
@@ -9000,9 +9059,13 @@ async function loadOutputConfigs(){
 }
 function addOutputConfig(options={}){
   const canvas=PTCOMP.normalizeCanvas(S.canvas||canvasFromLegacyAspect(S.canvasAspect));
+  const displayId=outputFallbackDisplay();
+  const display=lastDisplays.find(item=>Number(item.id)===Number(displayId));
+  const mode=defaultOutputModeForDisplay(display);
+  const size=defaultOutputSizeForDisplay(display,mode,canvas);
   outputConfigs.push(normalizeOutputConfigUI({
     id:makeId('out'), name:`Output ${outputConfigs.length+1}`,
-    role:'audience', displayId:outputFallbackDisplay(), mode:'fullscreen', width:canvas.width, height:canvas.height, placement:'center', x:0, y:0, gridSize:S.gridSize||3, gridCell:S.gridCell||0, liveAudio:false, mappingEnabled:false,
+    role:'audience', displayId, mode, width:size.width, height:size.height, placement:'center', x:0, y:0, gridSize:S.gridSize||3, gridCell:S.gridCell||0, liveAudio:false, mappingEnabled:false,
     outputCanvas:{...canvas,fit:'contain'}
   }, outputConfigs.length));
   saveOutputConfigsLocal(); markOutputRoutingDirty(); renderOutputRows();
@@ -9074,7 +9137,10 @@ function openOutputRouter(){
   closeTopbarMenu(); closeDrawers(); renderOutputRows();
   const overlay=$('outputRouterOverlay'); if(!overlay) return;
   overlay.classList.add('open'); overlay.setAttribute('aria-hidden','false');
-  requestAnimationFrame(()=>$('btnOutputRouterCloseX')?.focus());
+  requestAnimationFrame(()=>{
+    const list=$('outputRouterList'); if(list) list.scrollTop=0;
+    $('btnOutputRouterCloseX')?.focus();
+  });
 }
 function closeOutputRouter(){
   const overlay=$('outputRouterOverlay'); if(!overlay) return;
