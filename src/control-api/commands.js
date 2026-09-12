@@ -222,7 +222,8 @@ function materializeControlStatus(raw, now = Date.now()) {
     timer.remainingMs = Math.max(-604800000, Math.min(604800000, timer.endAt - now));
   }
   if (timer.running && timer.mode === 'countup' && timer.startAt) {
-    timer.elapsedMs = Math.min(604800000, timer.elapsedMs + Math.max(0, now - timer.startAt));
+    // elapsedMs already includes the running interval through capturedAt.
+    timer.elapsedMs = Math.min(604800000, timer.elapsedMs + Math.max(0, now - timer.capturedAt));
   }
   status.queriedAt = now;
   return status;

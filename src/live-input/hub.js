@@ -6,6 +6,7 @@
   const definitions = new Map();
   const inputs = new Map();
   const peers = new Map();
+  const pendingOffers = new Map();
   const reconnectTimers = new Map();
   const startTasks = new Map();
   const startGenerations = new Map();
@@ -514,8 +515,21 @@
     const id = String(inputId || '');
     const definition = definitions.get(id);
     if (!definition || !definition.active) throw new Error('Live input is not available.');
-    const stream = await startInput(id);
     const key = peerKey(consumerId, id);
+    // A consumer can leave while shared capture is still starting.
+    const request = { consumerId: Number(consumerId) };
+    pendingOffers.set(key, request);
+    let stream;
+    try {
+      stream = await startInput(id);
+    } catch (error) {
+      if (pendingOffers.get(key) !== request) return;
+      pendingOffers.delete(key);
+      throw error;
+    }
+    if (pendingOffers.get(key) !== request) return;
+    pendingOffers.delete(key);
+    if (!definitions.get(id)?.active || inputs.get(id)?.stream !== stream) return;
     const previous = peers.get(key);
     const profile = requestedProfile === 'operator' ? 'operator' : (previous && previous.profile === 'operator' ? 'operator' : 'program');
     if (previous && !replace) return;
@@ -523,87 +537,110 @@
     const pc = new RTCPeerConnection({ iceServers: [] });
     const peer = { consumerId: Number(consumerId), inputId: id, profile, pc, pendingCandidates: [] };
     peers.set(key, peer);
-    const senderSetup = stream.getTracks().map(async track => {
-      if (track.kind === 'video' && 'contentHint' in track) track.contentHint = definition.type === 'device' ? 'motion' : 'detail';
-      if (track.kind === 'audio' && 'contentHint' in track) track.contentHint = 'music';
-      const sender = pc.addTrack(track, stream);
-      const preferredCodec = track.kind === 'video' ? preferProgramVideoCodec(pc, sender, definition, profile) : '';
-      if (typeof sender.getParameters !== 'function' || typeof sender.setParameters !== 'function') return;
-      const parameters = sender.getParameters();
-      if (track.kind === 'audio') {
+    const isCurrent = () => peers.get(key) === peer;
+    try {
+      const senderSetup = stream.getTracks().map(async track => {
+        if (track.kind === 'video' && 'contentHint' in track) track.contentHint = definition.type === 'device' ? 'motion' : 'detail';
+        if (track.kind === 'audio' && 'contentHint' in track) track.contentHint = 'music';
+        const sender = pc.addTrack(track, stream);
+        const preferredCodec = track.kind === 'video' ? preferProgramVideoCodec(pc, sender, definition, profile) : '';
+        if (typeof sender.getParameters !== 'function' || typeof sender.setParameters !== 'function') return;
+        const parameters = sender.getParameters();
+        if (track.kind === 'audio') {
+          if (!Array.isArray(parameters.encodings) || !parameters.encodings.length) parameters.encodings = [{}];
+          parameters.encodings = parameters.encodings.map(encoding => ({
+            ...encoding,
+            active: true,
+            maxBitrate: definition.qualityProfile === 'realtime' ? 192000 : 320000
+          }));
+          const applied = await sender.setParameters(parameters).then(() => true, () => false);
+          peer.audioTransport = { sampleRate: 48000, channels: 2, maxBitrate: definition.qualityProfile === 'realtime' ? 192000 : 320000, applied };
+          return;
+        }
+        const settings = typeof track.getSettings === 'function' ? track.getSettings() : {};
+        const transport = compositor.liveTransportProfile(definition, settings, profile);
+        parameters.degradationPreference = transport.degradationPreference;
         if (!Array.isArray(parameters.encodings) || !parameters.encodings.length) parameters.encodings = [{}];
         parameters.encodings = parameters.encodings.map(encoding => ({
           ...encoding,
           active: true,
-          maxBitrate: definition.qualityProfile === 'realtime' ? 192000 : 320000
+          priority: profile === 'program' ? 'high' : 'low',
+          networkPriority: profile === 'program' ? 'high' : 'low',
+          scaleResolutionDownBy: transport.scaleResolutionDownBy,
+          maxBitrate: transport.maxBitrate,
+          maxFramerate: transport.targetFrameRate
         }));
         const applied = await sender.setParameters(parameters).then(() => true, () => false);
-        peer.audioTransport = { sampleRate: 48000, channels: 2, maxBitrate: definition.qualityProfile === 'realtime' ? 192000 : 320000, applied };
-        return;
-      }
-      const settings = typeof track.getSettings === 'function' ? track.getSettings() : {};
-      const transport = compositor.liveTransportProfile(definition, settings, profile);
-      parameters.degradationPreference = transport.degradationPreference;
-      if (!Array.isArray(parameters.encodings) || !parameters.encodings.length) parameters.encodings = [{}];
-      parameters.encodings = parameters.encodings.map(encoding => ({
-        ...encoding,
-        active: true,
-        priority: profile === 'program' ? 'high' : 'low',
-        networkPriority: profile === 'program' ? 'high' : 'low',
-        scaleResolutionDownBy: transport.scaleResolutionDownBy,
-        maxBitrate: transport.maxBitrate,
-        maxFramerate: transport.targetFrameRate
-      }));
-      const applied = await sender.setParameters(parameters).then(() => true, () => false);
-      peer.transport = { ...transport, preferredCodec, applied };
-    });
-    await Promise.all(senderSetup);
-    pc.onicecandidate = event => {
-      if (event.candidate) api.liveHubSignal({
+        peer.transport = { ...transport, preferredCodec, applied };
+      });
+      await Promise.all(senderSetup);
+      if (!isCurrent()) return;
+      pc.onicecandidate = event => {
+        if (isCurrent() && event.candidate) api.liveHubSignal({
+          consumerId: peer.consumerId,
+          inputId: id,
+          type: 'candidate',
+          candidate: event.candidate.toJSON ? event.candidate.toJSON() : event.candidate
+        });
+      };
+      pc.onconnectionstatechange = () => {
+        if (['failed', 'closed'].includes(pc.connectionState) && peers.get(key) === peer) {
+          peers.delete(key);
+          pc.close();
+        }
+      };
+      const offer = await pc.createOffer();
+      if (!isCurrent()) return;
+      await pc.setLocalDescription(offer);
+      if (!isCurrent()) return;
+      api.liveHubSignal({
         consumerId: peer.consumerId,
         inputId: id,
-        type: 'candidate',
-        candidate: event.candidate.toJSON ? event.candidate.toJSON() : event.candidate
+        type: 'offer',
+        description: pc.localDescription.toJSON ? pc.localDescription.toJSON() : pc.localDescription
       });
-    };
-    pc.onconnectionstatechange = () => {
-      if (['failed', 'closed'].includes(pc.connectionState) && peers.get(key) === peer) {
-        peers.delete(key);
-        pc.close();
-      }
-    };
-    const offer = await pc.createOffer();
-    await pc.setLocalDescription(offer);
-    api.liveHubSignal({
-      consumerId: peer.consumerId,
-      inputId: id,
-      type: 'offer',
-      description: pc.localDescription.toJSON ? pc.localDescription.toJSON() : pc.localDescription
-    });
+    } catch (error) {
+      if (!isCurrent()) return;
+      peers.delete(key);
+      pc.close();
+      throw error;
+    }
   }
 
   async function handleConsumerSignal(payload) {
     const consumerId = Number(payload && payload.consumerId);
     const inputId = String(payload && payload.inputId || '');
-    const peer = peers.get(peerKey(consumerId, inputId));
+    const key = peerKey(consumerId, inputId);
+    const peer = peers.get(key);
     if (!peer) return;
-    if (payload.type === 'answer' && payload.description) {
-      await peer.pc.setRemoteDescription(withProgramBitrateHints(payload.description, peer.transport, peer.transport && peer.transport.preferredCodec));
-      for (const candidate of peer.pendingCandidates.splice(0)) await peer.pc.addIceCandidate(candidate).catch(() => {});
-    } else if (payload.type === 'candidate' && payload.candidate) {
-      if (peer.pc.remoteDescription) await peer.pc.addIceCandidate(payload.candidate).catch(() => {});
-      else peer.pendingCandidates.push(payload.candidate);
+    try {
+      if (payload.type === 'answer' && payload.description) {
+        await peer.pc.setRemoteDescription(withProgramBitrateHints(payload.description, peer.transport, peer.transport && peer.transport.preferredCodec));
+        for (const candidate of peer.pendingCandidates.splice(0)) {
+          if (peers.get(key) !== peer) return;
+          await peer.pc.addIceCandidate(candidate).catch(() => {});
+        }
+      } else if (payload.type === 'candidate' && payload.candidate) {
+        if (peer.pc.remoteDescription) await peer.pc.addIceCandidate(payload.candidate).catch(() => {});
+        else peer.pendingCandidates.push(payload.candidate);
+      }
+    } catch (error) {
+      if (peers.get(key) === peer) throw error;
     }
   }
 
   function unsubscribe(consumerId, inputId) {
     const key = peerKey(Number(consumerId), String(inputId || ''));
+    pendingOffers.delete(key);
     const peer = peers.get(key);
     if (peer) peer.pc.close();
     peers.delete(key);
   }
 
   function releaseConsumer(consumerId) {
+    for (const [key, request] of pendingOffers) {
+      if (request.consumerId === Number(consumerId)) pendingOffers.delete(key);
+    }
     for (const [key, peer] of [...peers]) {
       if (peer.consumerId !== Number(consumerId)) continue;
       peer.pc.close(); peers.delete(key);

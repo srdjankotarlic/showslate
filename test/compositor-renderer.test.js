@@ -11,6 +11,7 @@ const smokeDisplay = require('../tools/smoke-display.js');
 const root = path.resolve(__dirname, '..');
 const profile = fs.mkdtempSync(path.join(os.tmpdir(), 'showslate-compositor-ui-'));
 const artifactDirectory = path.join(root, 'artifacts', 'generated', 'compositor');
+const hiddenVisual = process.env.SHOWSLATE_HIDDEN_VISUAL === '1';
 app.setPath('userData', profile);
 
 let repository;
@@ -134,13 +135,13 @@ ipcMain.handle('recording-abort', () => ({ ok: true, aborted: true }));
 app.whenReady().then(async () => {
   repository = new ShowRepository({ userDataDir: profile, appMetadata: { commit: 'compositor-ui' } });
   await repository.initializeSession({ track: false });
-  target = smokeDisplay.resolveTargetDisplay(screen, { root }).display || screen.getPrimaryDisplay();
-  check('COMPOSITOR_UI_TARGET_DISPLAY_OK', !!target, target ? target.label : 'missing');
+  target = hiddenVisual ? screen.getPrimaryDisplay() : smokeDisplay.resolveTargetDisplay(screen, { root }).display;
+  check('COMPOSITOR_UI_TARGET_DISPLAY_OK', !!target, target ? `${target.label}${hiddenVisual ? ' (hidden visual)' : ''}` : 'missing');
   fs.mkdirSync(artifactDirectory, { recursive: true });
 
   const win = new BrowserWindow({
     ...smokeDisplay.clampToWorkArea({ width: 1280, height: 800 }, target.workArea),
-    show: true, backgroundColor: '#0b0c0f',
+    show: !hiddenVisual, backgroundColor: '#0b0c0f',
     webPreferences: { preload: path.join(root, 'preload.js'), contextIsolation: true, nodeIntegration: false, backgroundThrottling: false }
   });
   await win.loadFile(path.join(root, 'controller.html'));
@@ -864,16 +865,34 @@ app.whenReady().then(async () => {
   win.webContents.sendInputEvent({type:'mouseDown',x:layerPointerSetup.startX,y:layerPointerSetup.startY,button:'left',clickCount:1});
   win.webContents.sendInputEvent({type:'mouseMove',x:layerPointerSetup.startX+3,y:layerPointerSetup.startY+12,movementX:3,movementY:12});
   win.webContents.sendInputEvent({type:'mouseMove',x:layerPointerSetup.dropX,y:layerPointerSetup.dropY,movementX:layerPointerSetup.dropX-layerPointerSetup.startX,movementY:layerPointerSetup.dropY-layerPointerSetup.startY});
-  await new Promise(resolve=>setTimeout(resolve,40));
-  const layerPointerActive=JSON.parse(await win.webContents.executeJavaScript(`JSON.stringify({active:document.body.classList.contains('layer-pointer-dragging'),marked:!!document.querySelector('#layerList .layer-row.drop-before')})`));
+  if (!await waitFor(() => win.webContents.executeJavaScript(`layerPointerDrag?.active&&layerPointerDrag.targetId===${JSON.stringify(layerPointerSetup.targetId)}&&!layerPointerDrag.placeAfter`))) throw new Error('layer pointer drag did not reach its target');
+  const layerPointerActive=JSON.parse(await win.webContents.executeJavaScript(`JSON.stringify((()=>{
+    const sourceId=${JSON.stringify(layerPointerSetup.sourceId)},sourceRow=document.querySelector('#layerList .layer-row[data-layer-id="'+sourceId+'"]');
+    currentScene().layers.find(layer=>layer.id===sourceId).name='Refreshed while dragging';
+    renderScenesUI();
+    return {active:document.body.classList.contains('layer-pointer-dragging'),marked:!!document.querySelector('#layerList .layer-row.drop-before'),retained:sourceRow.isConnected};
+  })())`));
   win.webContents.sendInputEvent({type:'mouseUp',x:layerPointerSetup.dropX,y:layerPointerSetup.dropY,button:'left',clickCount:1});
   await new Promise(resolve=>setTimeout(resolve,80));
   const layerPointerDrag=JSON.parse(await win.webContents.executeJavaScript(`JSON.stringify((()=>{
     const visual=[...document.querySelectorAll('#layerList .layer-row')].map(row=>row.dataset.layerId),prior=window.__layerPointerRestore;
-    const result={sourceId:${JSON.stringify(layerPointerSetup.sourceId)},targetId:${JSON.stringify(layerPointerSetup.targetId)},first:visual[0],active:${JSON.stringify(layerPointerActive.active)},marked:${JSON.stringify(layerPointerActive.marked)},programUnchanged:prior.program===JSON.stringify(programState&&programState.scenes||[]),bodyClean:!document.body.classList.contains('layer-pointer-dragging')};
+    const result={sourceId:${JSON.stringify(layerPointerSetup.sourceId)},targetId:${JSON.stringify(layerPointerSetup.targetId)},first:visual[0],active:${JSON.stringify(layerPointerActive.active)},marked:${JSON.stringify(layerPointerActive.marked)},retained:${JSON.stringify(layerPointerActive.retained)},refreshApplied:document.querySelector('#layerList .layer-row .layer-name')?.textContent==='Refreshed while dragging',programUnchanged:prior.program===JSON.stringify(programState&&programState.scenes||[]),bodyClean:!document.body.classList.contains('layer-pointer-dragging')};
     currentScene().layers=prior.layers;selectedLayerId=prior.selected;delete window.__layerPointerRestore;sceneDirty();return result;
   })())`));
-  check('COMPOSITOR_LAYER_POINTER_DRAG_REORDER_OK', layerPointerDrag.sourceId !== layerPointerDrag.targetId && layerPointerDrag.first === layerPointerDrag.sourceId && layerPointerDrag.active && layerPointerDrag.marked && layerPointerDrag.programUnchanged && layerPointerDrag.bodyClean, JSON.stringify(layerPointerDrag));
+  check('COMPOSITOR_LAYER_POINTER_DRAG_REORDER_OK', layerPointerDrag.sourceId !== layerPointerDrag.targetId && layerPointerDrag.first === layerPointerDrag.sourceId && layerPointerDrag.active && layerPointerDrag.marked && layerPointerDrag.retained && layerPointerDrag.refreshApplied && layerPointerDrag.programUnchanged && layerPointerDrag.bodyClean, JSON.stringify(layerPointerDrag));
+  const layerPointerCancel=JSON.parse(await win.webContents.executeJavaScript(`JSON.stringify((()=>{
+    const scene=currentScene(),original=cloneState(scene.layers),selectedBefore=selectedLayerId;
+    const row=document.querySelectorAll('#layerList .layer-row')[1],handle=row.querySelector('.layer-drag-handle'),rect=handle.getBoundingClientRect();
+    handle.dispatchEvent(new MouseEvent('mousedown',{bubbles:true,cancelable:true,button:0,clientX:rect.left+2,clientY:rect.top+2}));
+    document.dispatchEvent(new MouseEvent('mousemove',{bubbles:true,cancelable:true,clientX:rect.left+2,clientY:rect.top+20}));
+    scene.layers.find(layer=>layer.id===row.dataset.layerId).name='Refreshed after cancellation';
+    renderScenesUI();
+    const retained=row.isConnected;
+    finishLayerPointerDrag(false);
+    const result={retained,refreshApplied:document.querySelector('#layerList .layer-row[data-layer-id="'+row.dataset.layerId+'"] .layer-name')?.textContent==='Refreshed after cancellation',orderUnchanged:scene.layers.every((layer,index)=>layer.id===original[index].id),bodyClean:!document.body.classList.contains('layer-pointer-dragging')};
+    scene.layers=original;selectedLayerId=selectedBefore;sceneDirty();return result;
+  })())`));
+  check('COMPOSITOR_LAYER_POINTER_CANCEL_REFRESHES_ROWS_OK', layerPointerCancel.retained && layerPointerCancel.refreshApplied && layerPointerCancel.orderUnchanged && layerPointerCancel.bodyClean, JSON.stringify(layerPointerCancel));
   if (!await waitFor(() => configuredInputs.some(input => input.type === 'window' && input.active))) throw new Error('window input was not configured');
   check('COMPOSITOR_WINDOW_AND_CAPTURE_CARD_CONFIGURED_ONCE_OK', configuredInputs.filter(input => input.type === 'window' && input.withAudio).length === 1 && configuredInputs.filter(input => input.type === 'device' && input.videoDeviceId === 'video-card-1' && input.audioDeviceId === 'audio-card-1' && input.withAudio && input.width === 1920 && input.height === 1080 && input.fps === 60 && input.captureMode === 'low-latency' && input.qualityProfile === 'quality').length === 1, JSON.stringify(configuredInputs));
   const captureFallback=JSON.parse(await win.webContents.executeJavaScript(`JSON.stringify((()=>{const previousId=selectedLayerId,layer=currentScene().layers.find(row=>row.type==='capture'),input=liveInputDefinition(layer.inputId);liveInputStatuses.set(input.id,{inputId:input.id,state:'live',width:1280,height:720,frameRate:29.97,requestedWidth:1920,requestedHeight:1080,requestedFrameRate:60,qualityTier:'HD',qualityProfile:'quality',hasVideo:true,hasAudio:true,audioSampleRate:48000,audioSampleSize:24,audioChannels:2,formatMatched:false,formatFallback:true});selectLayer(layer.id);renderInspector();const quality=document.getElementById('inspLiveQuality');const row=document.querySelector('#layerList .layer-row[data-layer-id="'+layer.id+'"]');const result={warning:quality.classList.contains('warning'),text:quality.textContent,meta:row&&row.querySelector('.layer-meta')?.textContent||''};liveInputStatuses.delete(input.id);selectLayer(previousId);renderInspector();return result;})())`));

@@ -7,6 +7,7 @@ const { evaluatePreflight } = require('../src/show-storage/preflight.js');
 const smokeDisplay = require('../tools/smoke-display.js');
 
 const root = path.resolve(__dirname, '..');
+const hiddenVisual = process.env.SHOWSLATE_HIDDEN_VISUAL === '1';
 const profile = fs.mkdtempSync(path.join(os.tmpdir(), 'showslate-show-setup-'));
 const artifactDirectory = path.join(root, 'artifacts', 'generated', 'show-setup');
 app.setPath('userData', profile);
@@ -69,11 +70,11 @@ ipcMain.handle('live-input-statuses', () => []);
 app.whenReady().then(async () => {
   repository = new ShowRepository({ userDataDir: profile, appMetadata: { commit: 'show-setup-test' } });
   await repository.initializeSession({ track: false });
-  target = smokeDisplay.resolveTargetDisplay(screen, { root }).display;
+  target = hiddenVisual ? screen.getPrimaryDisplay() : smokeDisplay.resolveTargetDisplay(screen, { root }).display;
   check('SHOW_SETUP_TARGET_DISPLAY_OK', !!target, target ? target.label : 'missing');
   const bounds = smokeDisplay.clampToWorkArea({ width: 1280, height: 800 }, target.workArea);
   const win = new BrowserWindow({
-    ...bounds, show: true, backgroundColor: '#0b0c0f',
+    ...bounds, show: !hiddenVisual, backgroundColor: '#0b0c0f',
     webPreferences: { preload: path.join(root, 'preload.js'), contextIsolation: true, nodeIntegration: false, backgroundThrottling: false }
   });
   await win.loadFile(path.join(root, 'controller.html'));

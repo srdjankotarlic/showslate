@@ -7,6 +7,7 @@ const path = require('path');
 const smokeDisplay = require('../tools/smoke-display.js');
 
 const root = path.resolve(__dirname, '..');
+const hiddenVisual = process.env.SHOWSLATE_HIDDEN_VISUAL === '1';
 const profile = fs.mkdtempSync(path.join(os.tmpdir(), 'showslate-control-api-'));
 app.setPath('userData', profile);
 let target;
@@ -58,11 +59,11 @@ ipcMain.handle('share-info', () => ({}));
 ipcMain.handle('live-input-statuses', () => []);
 
 app.whenReady().then(async () => {
-  target = smokeDisplay.resolveTargetDisplay(screen, { root }).display;
+  target = hiddenVisual ? screen.getPrimaryDisplay() : smokeDisplay.resolveTargetDisplay(screen, { root }).display;
   check('CONTROL_API_TARGET_DISPLAY_OK', !!target, target ? target.label : 'missing');
   const win = new BrowserWindow({
     ...smokeDisplay.clampToWorkArea({ width: 1100, height: 700 }, target.workArea),
-    show: true,
+    show: !hiddenVisual,
     backgroundColor: '#0b0c0f',
     webPreferences: { preload: path.join(root, 'preload.js'), contextIsolation: true, nodeIntegration: false, backgroundThrottling: false }
   });

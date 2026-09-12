@@ -9,6 +9,7 @@ const { evaluatePreflight } = require('../src/show-storage/preflight.js');
 const smokeDisplay = require('../tools/smoke-display.js');
 
 const root = path.resolve(__dirname, '..');
+const hiddenVisual = process.env.SHOWSLATE_HIDDEN_VISUAL === '1';
 const profile = fs.mkdtempSync(path.join(os.tmpdir(), 'showslate-conference-ui-'));
 const artifactDirectory = path.join(root, 'artifacts', 'generated', 'conference-desk');
 app.setPath('userData', profile);
@@ -129,7 +130,7 @@ ipcMain.on('live-input-unsubscribe', () => {});
 app.whenReady().then(async () => {
   repository = new ShowRepository({ userDataDir: profile, appMetadata: { commit: 'conference-desk-ui' } });
   await repository.initializeSession({ track: false });
-  target = smokeDisplay.resolveTargetDisplay(screen, { root }).display;
+  target = hiddenVisual ? screen.getPrimaryDisplay() : smokeDisplay.resolveTargetDisplay(screen, { root }).display;
   check('CONFERENCE_UI_TARGET_DISPLAY_OK', !!target, target ? target.label : 'missing');
   fs.mkdirSync(artifactDirectory, { recursive: true });
 
@@ -142,7 +143,7 @@ app.whenReady().then(async () => {
 
   controller = new BrowserWindow({
     ...smokeDisplay.clampToWorkArea({ width: 1280, height: 800 }, target.workArea),
-    show: true, backgroundColor: '#0b0d11',
+    show: !hiddenVisual, backgroundColor: '#0b0d11',
     webPreferences: { preload: path.join(root, 'preload.js'), contextIsolation: true, nodeIntegration: false, backgroundThrottling: false }
   });
   await controller.loadFile(path.join(root, 'controller.html'));
@@ -183,7 +184,7 @@ app.whenReady().then(async () => {
   const outputState = JSON.parse(await output.webContents.executeJavaScript(`JSON.stringify({role:document.body.dataset.outputRole,current:document.getElementById('roleCurrent').textContent,timer:document.getElementById('timer').textContent,roleVisible:getComputedStyle(document.getElementById('roleView')).display!=='none'})`));
   check('CONFERENCE_GO_EMITS_ONE_ATOMIC_PROGRAM_REVISION_OK', transactionStates.length === 1 && transactionStates[0].state.running === true, `states=${transactionStates.length}`);
   check('CONFERENCE_CONFIDENCE_OUTPUT_RENDER_ACK_OK', outputState.role === 'confidence' && outputState.current === 'Opening' && outputState.timer !== '--:--' && outputState.roleVisible && lastAck.revision === revision, JSON.stringify({ outputState, lastAck }));
-  output.show();
+  if (!hiddenVisual) output.show();
   await new Promise(resolve => setTimeout(resolve, 180));
   fs.writeFileSync(path.join(artifactDirectory, 'confidence-output.png'), (await output.webContents.capturePage()).toPNG());
 

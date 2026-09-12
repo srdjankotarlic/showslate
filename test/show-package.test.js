@@ -97,6 +97,93 @@ function check(name, fn) {
       assert(prepared.warnings.some(message => message.includes('Fonts')));
     });
 
+    const oversizedAsset = path.join(sourceMedia, 'oversized.mp4');
+    fs.writeFileSync(oversizedAsset, 'mock large video');
+    const oversizedDocument = makeShow();
+    oversizedDocument.show.branding.logo = 'media://oversized.mp4';
+    const packageBeforeOversized = fs.readFileSync(packagePath);
+    const statSync = fs.statSync;
+    const readFileSync = fs.readFileSync;
+    let oversizedReadAttempted = false;
+    try {
+      fs.statSync = function (file, ...args) {
+        const stat = statSync.call(fs, file, ...args);
+        return String(file) === oversizedAsset ? Object.assign(Object.create(stat), { size: P.MAX_ASSET_BYTES + 1 }) : stat;
+      };
+      fs.readFileSync = function (file, ...args) {
+        if (String(file) === oversizedAsset) {
+          oversizedReadAttempted = true;
+          throw new Error('Oversized media must be rejected before loading it into memory.');
+        }
+        return readFileSync.call(fs, file, ...args);
+      };
+      await assert.rejects(P.exportShowPackage({ destination: packagePath, document: oversizedDocument, mediaDirectory: sourceMedia }), error => error.code === 'ASSET_TOO_LARGE');
+    } finally {
+      fs.statSync = statSync;
+      fs.readFileSync = readFileSync;
+    }
+    check('SHOW_PACKAGE_OVERSIZED_MEDIA_REJECTED_BEFORE_READ_OK', () => {
+      assert.strictEqual(oversizedReadAttempted, false);
+      assert.deepStrictEqual(fs.readFileSync(packagePath), packageBeforeOversized);
+    });
+
+    const manyAssetsDocument = makeShow();
+    manyAssetsDocument.show.screenContent.scenes = [{ id: 'bulk-assets', layers: Array.from({ length: 2044 }, (_, index) => ({ id: 'bulk-' + index, type: 'media', src: 'media://bulk-' + index + '.png' })) }];
+    await assert.rejects(P.exportShowPackage({ destination: packagePath, document: manyAssetsDocument, mediaDirectory: sourceMedia }), error => error.code === 'TOO_MANY_ENTRIES');
+    check('SHOW_PACKAGE_ENTRY_LIMIT_PRESERVES_DESTINATION_OK', () => {
+      assert.deepStrictEqual(fs.readFileSync(packagePath), packageBeforeOversized);
+    });
+
+    const aggregateDocument = makeShow();
+    const aggregateFiles = new Set();
+    aggregateDocument.show.screenContent.scenes = [{ id: 'aggregate', layers: Array.from({ length: 6 }, (_, index) => {
+      const filename = 'aggregate-' + index + '.mp4';
+      const file = path.join(sourceMedia, filename);
+      aggregateFiles.add(file);
+      fs.writeFileSync(file, 'mock video');
+      return { id: 'aggregate-' + index, type: 'media', src: 'media://' + filename };
+    }) }];
+    let aggregateReadAttempted = false;
+    try {
+      fs.statSync = function (file, ...args) {
+        const stat = statSync.call(fs, file, ...args);
+        return aggregateFiles.has(String(file)) ? Object.assign(Object.create(stat), { size: P.MAX_ASSET_BYTES }) : stat;
+      };
+      fs.readFileSync = function (file, ...args) {
+        if (aggregateFiles.has(String(file))) {
+          aggregateReadAttempted = true;
+          throw new Error('Oversized export must be rejected before loading its media.');
+        }
+        return readFileSync.call(fs, file, ...args);
+      };
+      await assert.rejects(P.exportShowPackage({ destination: packagePath, document: aggregateDocument, mediaDirectory: sourceMedia }), error => error.code === 'PACKAGE_TOO_LARGE');
+    } finally {
+      fs.statSync = statSync;
+      fs.readFileSync = readFileSync;
+    }
+    check('SHOW_PACKAGE_TOTAL_SIZE_REJECTED_BEFORE_READ_OK', () => {
+      assert.strictEqual(aggregateReadAttempted, false);
+      assert.deepStrictEqual(fs.readFileSync(packagePath), packageBeforeOversized);
+    });
+
+    const bareDocument = makeShow();
+    bareDocument.show.lowerThird.library.templates[0].layers[0].assetId = 'plate.png';
+    bareDocument.show.rundown[0].name = 'plate.png';
+    bareDocument.show.branding.logo = '';
+    bareDocument.show.screenContent.items = [{ id: 'inline-logo', type: 'logo', assetId: 'data:image/png;base64,cG5n' }];
+    const barePackagePath = path.join(root, 'Bare lower-third asset.showslate-show');
+    const bareExported = await P.exportShowPackage({ destination: barePackagePath, document: bareDocument, mediaDirectory: sourceMedia });
+    const bareImported = await P.importShowPackage({ packagePath: barePackagePath, mediaDirectory: importedMedia });
+    check('SHOW_PACKAGE_BARE_LT_ASSET_ROUNDTRIP_PRESERVES_TEXT_OK', () => {
+      assert.strictEqual(bareExported.assets, 3);
+      const importedAsset = bareImported.document.show.lowerThird.library.templates[0].layers[0].assetId;
+      assert(/^media:\/\/[a-f0-9]{16}\.png$/.test(importedAsset));
+      assert.strictEqual(fs.readFileSync(path.join(importedMedia, importedAsset.slice(8)), 'utf8'), 'portable-png-data');
+      assert.strictEqual(bareImported.document.show.rundown[0].name, 'plate.png');
+      assert.strictEqual(bareImported.document.show.screenContent.items[0].assetId, 'data:image/png;base64,cG5n');
+      assert.strictEqual(bareDocument.show.lowerThird.library.templates[0].layers[0].assetId, 'plate.png');
+    });
+
     fs.rmSync(sourceMedia, { recursive: true, force: true });
     const imported = await P.importShowPackage({ packagePath, mediaDirectory: importedMedia });
     const cleanProfile = path.join(root, 'clean-profile');

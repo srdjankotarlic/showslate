@@ -54,7 +54,7 @@ function safePackagePath(value) {
 }
 
 function safeMediaFilename(assetId) {
-  const match = /^media:\/\/([A-Za-z0-9][A-Za-z0-9._-]{0,159})$/.exec(String(assetId || ''));
+  const match = /^(?:media:\/\/)?([A-Za-z0-9][A-Za-z0-9._-]{0,159})$/.exec(String(assetId || ''));
   if (!match) return null;
   const filename = match[1];
   const ext = path.extname(filename).toLowerCase();
@@ -62,29 +62,40 @@ function safeMediaFilename(assetId) {
   return filename;
 }
 
-function visit(value, visitor, keyPath = [], depth = 0) {
+function visit(value, visitor, keyPath = [], depth = 0, parent = null) {
   if (depth > 50) throw fail('DOCUMENT_TOO_DEEP', 'Show document exceeds the package depth limit.');
   if (typeof value === 'string') {
-    visitor(value, keyPath);
+    visitor(value, keyPath, parent);
     return;
   }
   if (!value || typeof value !== 'object') return;
   if (Array.isArray(value)) {
-    value.forEach((item, index) => visit(item, visitor, keyPath.concat(String(index)), depth + 1));
+    value.forEach((item, index) => visit(item, visitor, keyPath.concat(String(index)), depth + 1, value));
     return;
   }
   for (const [key, item] of Object.entries(value)) {
     if (FORBIDDEN_SECRET_KEYS.has(String(key).toLowerCase())) {
       throw fail('SECRET_FIELD', 'Show document contains a private field that cannot be exported: ' + keyPath.concat(key).join('.'));
     }
-    visit(item, visitor, keyPath.concat(key), depth + 1);
+    visit(item, visitor, keyPath.concat(key), depth + 1, value);
   }
+}
+
+function isMediaReference(value, keyPath, parent) {
+  if (typeof value !== 'string' || !value) return false;
+  if (value.startsWith('media://')) return true;
+  // Older lower-third layers may store the media filename without its scheme.
+  // A matching filename in ordinary show text must remain ordinary text.
+  return keyPath.length === 8 && keyPath[0] === 'show' && keyPath[1] === 'lowerThird'
+    && keyPath[2] === 'library' && keyPath[3] === 'templates' && keyPath[5] === 'layers'
+    && keyPath[7] === 'assetId' && parent
+    && (parent.type === 'media' || parent.type === 'logo') && parent.sourceType !== 'legacyDataUrl';
 }
 
 function collectMediaReferences(document) {
   const references = new Map();
-  visit(document, (value, keyPath) => {
-    if (!value.startsWith('media://')) return;
+  visit(document, (value, keyPath, parent) => {
+    if (!isMediaReference(value, keyPath, parent)) return;
     const filename = safeMediaFilename(value);
     if (!filename) throw fail('UNSAFE_ASSET_REFERENCE', 'Show contains an unsafe media reference at ' + keyPath.join('.') + '.');
     const row = references.get(value) || { source: value, filename, references: [] };
@@ -178,6 +189,7 @@ async function writeZip(destination, entries) {
       entries.forEach(entry => archive.append(entry.data, { name: entry.name }));
       archive.finalize().catch(done);
     });
+    if (fs.statSync(temp).size > MAX_PACKAGE_BYTES) throw fail('PACKAGE_TOO_LARGE', 'Show package exceeds 1 GB.');
     fs.renameSync(temp, destination);
   } catch (error) {
     try { fs.rmSync(temp, { force: true }); } catch (_) {}
@@ -205,13 +217,26 @@ async function exportShowPackage({ destination, document: input, mediaDirectory,
     if (component.data.length > MAX_SHOW_BYTES) throw fail('JSON_TOO_LARGE', component.path + ' exceeds 25 MB.');
   });
   const mediaRoot = path.resolve(mediaDirectory) + path.sep;
-  const assets = collectMediaReferences(document).map((reference, index) => {
+  const references = collectMediaReferences(document);
+  if (references.length + 5 > MAX_ENTRY_COUNT) throw fail('TOO_MANY_ENTRIES', 'Show package contains too many files.');
+  const assetFiles = references.map(reference => {
     const full = path.resolve(mediaDirectory, reference.filename);
-    if (!full.startsWith(mediaRoot) || !fs.existsSync(full) || !fs.statSync(full).isFile()) {
+    const stat = full.startsWith(mediaRoot) && fs.existsSync(full) ? fs.statSync(full) : null;
+    if (!stat || !stat.isFile()) {
       throw fail('MISSING_ASSET', 'Missing show asset: ' + reference.filename);
     }
-    const data = fs.readFileSync(full);
+    if (stat.size > MAX_ASSET_BYTES) throw fail('ASSET_TOO_LARGE', 'Show asset exceeds 200 MB: ' + reference.filename);
+    return { ...reference, full, bytes: stat.size };
+  });
+  let totalBytes = Object.values(components).reduce((total, component) => total + component.data.length, 0);
+  if (totalBytes + assetFiles.reduce((total, asset) => total + asset.bytes, 0) > MAX_PACKAGE_BYTES) {
+    throw fail('PACKAGE_TOO_LARGE', 'Show package expands beyond the allowed size.');
+  }
+  const assets = assetFiles.map((reference, index) => {
+    const data = fs.readFileSync(reference.full);
     if (data.length > MAX_ASSET_BYTES) throw fail('ASSET_TOO_LARGE', 'Show asset exceeds 200 MB: ' + reference.filename);
+    totalBytes += data.length;
+    if (totalBytes > MAX_PACKAGE_BYTES) throw fail('PACKAGE_TOO_LARGE', 'Show package expands beyond the allowed size.');
     const ext = path.extname(reference.filename).toLowerCase();
     const checksum = sha256(data);
     const sourceTag = sha256(reference.source).slice(0, 8);
@@ -251,8 +276,11 @@ async function exportShowPackage({ destination, document: input, mediaDirectory,
     })),
     warnings: collectWarnings(document)
   };
+  const manifestData = jsonBuffer(manifest);
+  if (manifestData.length > MAX_SHOW_BYTES) throw fail('JSON_TOO_LARGE', 'manifest.json exceeds 25 MB.');
+  if (totalBytes + manifestData.length > MAX_PACKAGE_BYTES) throw fail('PACKAGE_TOO_LARGE', 'Show package expands beyond the allowed size.');
   const entries = [
-    { name: 'manifest.json', data: jsonBuffer(manifest) },
+    { name: 'manifest.json', data: manifestData },
     ...Object.values(components).map(component => ({ name: component.path, data: component.data })),
     ...assets.map(asset => ({ name: asset.path, data: asset.data }))
   ];
@@ -395,12 +423,12 @@ function validateShowPackageEntries(entries, { existingShowIds = [], existingTem
   return { manifest, document: validated.value, assets: [...sourceMap.values()], warnings: Array.isArray(manifest.warnings) ? manifest.warnings.map(String) : [] };
 }
 
-function rewriteMediaReferences(value, replacements) {
-  if (typeof value === 'string') return replacements.get(value) || value;
+function rewriteMediaReferences(value, replacements, keyPath = [], parent = null) {
+  if (typeof value === 'string') return isMediaReference(value, keyPath, parent) ? (replacements.get(value) || value) : value;
   if (!value || typeof value !== 'object') return value;
-  if (Array.isArray(value)) return value.map(item => rewriteMediaReferences(item, replacements));
+  if (Array.isArray(value)) return value.map((item, index) => rewriteMediaReferences(item, replacements, keyPath.concat(String(index)), value));
   const out = {};
-  for (const [key, item] of Object.entries(value)) out[key] = rewriteMediaReferences(item, replacements);
+  for (const [key, item] of Object.entries(value)) out[key] = rewriteMediaReferences(item, replacements, keyPath.concat(key), value);
   return out;
 }
 

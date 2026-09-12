@@ -42,6 +42,15 @@ check('OUTPUT_MODEL_CUSTOM_BOUNDS_CLAMPED_OK', clamped.x === -320 && clamped.y =
 const grid = routing.gridBounds(philips.bounds, 3, 8);
 check('OUTPUT_MODEL_GRID_BOUNDS_OK', grid.x === -640 && grid.y === 720 && grid.width === 640 && grid.height === 360);
 
+const unevenArea = { x: -1921, y: 35, width: 1921, height: 1081 };
+const unevenGrid = Array.from({ length: 9 }, (_, index) => routing.gridBounds(unevenArea, 3, index));
+check('OUTPUT_MODEL_GRID_COVERS_REMAINDER_PIXELS_OK',
+  unevenGrid[8].x + unevenGrid[8].width === unevenArea.x + unevenArea.width
+  && unevenGrid[8].y + unevenGrid[8].height === unevenArea.y + unevenArea.height
+  && unevenGrid.reduce((sum, bounds) => sum + bounds.width * bounds.height, 0) === unevenArea.width * unevenArea.height
+  && unevenGrid.every((bounds, index) => (index % 3 === 2 || bounds.x + bounds.width === unevenGrid[index + 1].x)
+    && (index >= 6 || bounds.y + bounds.height === unevenGrid[index + 3].y)));
+
 const projected = routing.normalizeConfig({
   id: 'route-projected', displayId: 3, mode: 'fullscreen', compositionId: 'composition-led', mappingId: 'mapping-left',
   outputCanvas: { width: 1920, height: 1080, fps: 50, fit: 'contain' },

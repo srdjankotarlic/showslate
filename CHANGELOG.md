@@ -2,6 +2,34 @@
 
 All notable changes to ShowSlate are documented here.
 
+## 0.12.0-beta.4 - 2026-09-12
+
+### Fixed
+
+- Keep standalone live audio subscribed on Program, and restore the system-default audio device when the operator clears a selected output device.
+- Retry temporary live-input connection failures, retain ICE candidates during connection setup, and cancel pending connections when a source or consumer is removed.
+- Keep a paused video paused when seeking near its OUT point, including clips set to loop.
+- Stop recording automatically after a failed disk write, preserve the available footage, and make incomplete recordings available through Reveal without reporting them as completed.
+- Wait for recording preparation and capture cleanup when a pending recording is cancelled.
+- Preserve the original last-saved show across repeated crashes, recover from a valid baseline when autosave is corrupt, and keep recovery retryable after a storage write failure.
+- Use the same monitor identity and ambiguity rules in Preflight as actual output routing.
+- Keep layer drag-and-drop stable when live-input status updates refresh the interface, applying the deferred update after drop or cancellation.
+- Keep GO and file/recovery loads working when the legacy localStorage cache is full; restore authoritative show data directly while preserving lower-third library migration.
+- Keep delayed automatic speaker graphics attached to the live cue after rundown reordering, and report failed autosaves after file/package import without a false saved/success message.
+- Keep mapped output audio controls on the canonical scene, silence retiring scene audio, release discarded media, and synchronize mapped fades, live placeholders, destination geometry and transparency.
+- Prevent rapid scene changes from revealing an already retired frame.
+- Correct count-up control status, live/replayed report timing and stable cue-ID matching after reordering.
+- Serve the required video transport module to browser/OBS outputs and recognize explicit OSC boolean ON/OFF messages.
+- Cover remainder pixels in output grids and import the selected media when a nested library file shares a root filename.
+- Make duplicate-content lower-third assets portable, reject conflicting cached asset bytes, and check export size limits before buffering oversized media.
+- Preserve legacy bare lower-third media IDs and embedded images in portable packages without rewriting ordinary cue text or inline screen-content logos.
+
+### Maintenance
+
+- Add deterministic recording and live-input lifecycle regressions, real hidden output-audio checks, and an explicit hidden renderer test command.
+- Expand hidden renderer coverage to recovery, setup, Conference Desk, screen content, control status, reports, controller failures and mapped output lifecycle.
+- Update affected packaging dependencies to patched compatible versions, including js-yaml 4.3.2.
+
 ## 0.12.0-beta.2 - 2026-08-16
 
 ### Added

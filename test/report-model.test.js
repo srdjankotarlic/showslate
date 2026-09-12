@@ -75,6 +75,45 @@ check('REPORT_LEGACY_LOG_FALLBACK_OK', () => {
   assert.strictEqual(legacy.rows[0].status, 'completed');
 });
 
+check('REPORT_LIVE_CANONICAL_CUE_IGNORES_PREVIOUS_LEGACY_END_OK', () => {
+  for (const end of [0, 31000]) {
+    const live = Report.buildReport({
+      now: 120000,
+      cues: [{ id: 'replay', name: 'Replayed cue', durationMs: 60000, actualStart: 100000, actualEnd: null, actualDurationMs: null, status: 'live' }],
+      legacyActualTimes: [{ cueId: 'replay', i: 0, s: 1000, e: end }]
+    });
+    assert.strictEqual(live.rows[0].status, 'live');
+    assert.strictEqual(live.rows[0].actualEnd, 120000);
+    assert.strictEqual(live.rows[0].actualDurationMs, 20000);
+    assert.strictEqual(live.summary.allTerminal, false);
+  }
+});
+
+check('REPORT_OPEN_LEGACY_LOG_USES_NOW_OK', () => {
+  const live = Report.buildReport({
+    now: 50000,
+    cues: [{ id: 'legacy', name: 'Legacy cue', durationMs: 60000, status: 'live' }],
+    legacyActualTimes: [{ i: 0, s: 10000, e: 0 }]
+  });
+  assert.strictEqual(live.rows[0].status, 'live');
+  assert.strictEqual(live.rows[0].actualDurationMs, 40000);
+});
+
+check('REPORT_DOES_NOT_REASSIGN_ID_BASED_LOGS_AFTER_REORDER_OK', () => {
+  const reordered = Report.buildReport({
+    now: 50000,
+    cues: [
+      { id: 'new', name: 'New cue', durationMs: 30000 },
+      { id: 'logged', name: 'Moved cue', durationMs: 30000 }
+    ],
+    legacyActualTimes: [{ cueId: 'logged', i: 0, s: 10000, e: 40000 }]
+  });
+  assert.strictEqual(reordered.rows[0].actualStart, null);
+  assert.strictEqual(reordered.rows[0].status, 'pending');
+  assert.strictEqual(reordered.rows[1].actualDurationMs, 30000);
+  assert.strictEqual(reordered.rows[1].status, 'completed');
+});
+
 check('REPORT_CSV_UNICODE_ESCAPING_AND_SUMMARY_OK', () => {
   const csv = Report.toCsv(report);
   assert(csv.startsWith('\ufeffcue_number,cue_id,name'));

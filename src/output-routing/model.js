@@ -179,9 +179,11 @@ function gridBounds(area, gridSize, gridCell) {
   const cell = numberInRange(gridCell, 0, 0, size * size - 1);
   const row = Math.floor(cell / size);
   const column = cell % size;
-  const width = Math.floor(area.width / size);
-  const height = Math.floor(area.height / size);
-  return { x: area.x + column * width, y: area.y + row * height, width, height };
+  const left = Math.floor(area.width * column / size);
+  const top = Math.floor(area.height * row / size);
+  const right = Math.floor(area.width * (column + 1) / size);
+  const bottom = Math.floor(area.height * (row + 1) / size);
+  return { x: area.x + left, y: area.y + top, width: right - left, height: bottom - top };
 }
 
 module.exports = { normalizeConfig, normalizeProjection, normalizeOutputCanvas, rememberDisplay, resolveDisplay, placedBounds, gridBounds };

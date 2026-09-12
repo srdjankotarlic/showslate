@@ -338,9 +338,26 @@ async function abortRecordingSession(options = {}) {
   closeRecordingOutput();
   if (!sessionRecord) return { ok: true, aborted: true };
   await destroyRecordingWriter(sessionRecord);
-  if (options.preserve && sessionRecord.bytes > 0) {
+  let hasMedia = sessionRecord.bytes > 0;
+  if (options.preserve && !hasMedia) {
+    // A failed first write can leave bytes on disk before its callback reports
+    // success. Do not discard that footage based only on acknowledged chunks.
+    try { hasMedia = fs.statSync(sessionRecord.tempPath).size > 0; }
+    catch (_) { hasMedia = true; }
+  }
+  if (options.preserve && hasMedia) {
     const incomplete = sessionRecord.finalPath.replace(/(\.[^.]+)$/, '.incomplete$1');
-    try { fs.renameSync(sessionRecord.tempPath, incomplete); return { ok: false, aborted: true, preservedPath: incomplete }; } catch (_) {}
+    try {
+      fs.renameSync(sessionRecord.tempPath, incomplete);
+      lastRecordingPath = incomplete;
+      return { ok: false, aborted: true, preservedPath: incomplete };
+    } catch (_) {
+      if (fs.existsSync(sessionRecord.tempPath)) {
+        lastRecordingPath = sessionRecord.tempPath;
+        return { ok: false, aborted: true, preservedPath: sessionRecord.tempPath };
+      }
+      return { ok: false, aborted: true, error: 'The incomplete recording file is unavailable.' };
+    }
   }
   try { fs.unlinkSync(sessionRecord.tempPath); } catch (_) {}
   return { ok: true, aborted: true };
@@ -583,7 +600,7 @@ function startServer(port, attempt = 0) {
       return;
     }
 
-    if (url === '/src/compositor/model.js' || url === '/src/live-input/consumer.js') {
+    if (url === '/src/compositor/model.js' || url === '/src/compositor/media-transport.js' || url === '/src/live-input/consumer.js') {
       const relative = url.slice(1);
       res.writeHead(200, { 'Content-Type': 'application/javascript; charset=utf-8', 'Cache-Control': 'no-store' });
       res.end(fileHtml(relative));
@@ -774,6 +791,7 @@ function parseOSC(buf) {
       if (tag === 'i') { args.push(buf.readInt32BE(off)); off += 4; }
       else if (tag === 'f') { args.push(Math.round(buf.readFloatBE(off))); off += 4; }
       else if (tag === 's') { const s = readStr(off); if (!s) break; args.push(s.str); off = s.next; }
+      else if (tag === 'T' || tag === 'F') { args.push(tag === 'T'); }
       else break; // nepodržan tag (blob/…) — stani
     }
   }
@@ -1537,8 +1555,11 @@ ipcMain.handle('recording-finish', async (event, payload) => {
       durationMs: Math.max(0, Date.now() - sessionRecord.startedAt), mimeType: sessionRecord.mimeType
     };
   } catch (error) {
-    await abortRecordingSession({ preserve: true });
-    return { ok: false, error: String(error && error.message || error), code: error.code || 'RECORDING_FINALIZE_FAILED' };
+    const aborted = await abortRecordingSession({ preserve: true });
+    return {
+      ok: false, error: String(error && error.message || error), code: error.code || 'RECORDING_FINALIZE_FAILED',
+      ...(aborted.preservedPath ? { preservedPath: aborted.preservedPath } : {})
+    };
   }
 });
 ipcMain.handle('recording-abort', async (event, payload) => {

@@ -136,7 +136,9 @@ class MediaLibrary {
       forceLinked || stat.size > this.managedCopyMaxBytes || free < stat.size + this.reserveBytes
     );
 
-    const existingManagedId = insideLibrary ? safeMediaId(path.basename(realPath)) : '';
+    // media:// IDs address only files directly in the library root. Reusing a
+    // nested file's basename could resolve to a different asset at the root.
+    const existingManagedId = path.dirname(realPath) === this.mediaDirectory ? safeMediaId(path.basename(realPath)) : '';
     if (existingManagedId) {
       return {
         ok: true,

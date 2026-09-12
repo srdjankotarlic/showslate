@@ -80,6 +80,41 @@ check('PREFLIGHT_CONFERENCE_DESK_ACCEPTS_ACKED_ROLE_OUTPUTS_OK', () => {
   assert.strictEqual(result.checks.find(row => row.id === 'conferenceOutputDelivery').status, 'ok');
 });
 
+check('PREFLIGHT_REJECTS_REUSED_OR_AMBIGUOUS_DISPLAY_IDENTITIES_OK', () => {
+  const document = showDocument();
+  document.show.details.productMode = 'conference-desk';
+  document.show.outputs.configs = [{ id: 'audience', name: 'Audience', role: 'audience', enabled: true, displayId: 7, displayLabel: 'Stage projector' }];
+  const reused = evaluatePreflight(document, readyFacts);
+  assert.strictEqual(reused.checks.find(row => row.id === 'conferenceRouteAssignments').status, 'block');
+  const ambiguous = evaluatePreflight(document, {
+    ...readyFacts,
+    displays: [...readyFacts.displays,
+      { id: 8, label: 'Stage projector', width: 1920, height: 1080 },
+      { id: 9, label: 'Stage projector', width: 1920, height: 1080 }]
+  });
+  assert.strictEqual(ambiguous.checks.find(row => row.id === 'conferenceRouteAssignments').status, 'block');
+});
+
+check('PREFLIGHT_ACCEPTS_UNIQUE_DISPLAY_FINGERPRINT_AFTER_RECONNECT_OK', () => {
+  const document = showDocument();
+  document.show.details.productMode = 'conference-desk';
+  document.show.outputs.configs = [{ id: 'audience', name: 'Audience', role: 'audience', enabled: true, displayId: 99, displayWidth: 1920, displayHeight: 1080 }];
+  const result = evaluatePreflight(document, readyFacts);
+  assert.strictEqual(result.checks.find(row => row.id === 'conferenceRouteAssignments').status, 'ok');
+});
+
+check('PREFLIGHT_ASPECT_USES_RESOLVED_DISPLAY_IDENTITY_OK', () => {
+  const document = showDocument();
+  document.show.outputs.configs = [{ id: 'audience', name: 'Audience', enabled: true, displayId: 8, displayLabel: 'Stage projector' }];
+  const result = evaluatePreflight(document, {
+    ...readyFacts,
+    displays: [...readyFacts.displays,
+      { id: 8, label: 'Another monitor', width: 1280, height: 1024 },
+      { id: 9, label: 'Stage projector', width: 1920, height: 1080 }]
+  });
+  assert.strictEqual(result.checks.find(row => row.id === 'outputAspect').status, 'ok');
+});
+
 check('PREFLIGHT_BLOCKS_MISSING_LIVE_INPUT_DEFINITION_OK', () => {
   const document = showDocument();
   document.show.screenContent = {

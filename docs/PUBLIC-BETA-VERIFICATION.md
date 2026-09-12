@@ -1,6 +1,22 @@
 # Public Beta Verification
 
-Verified for the `0.12.0-beta.3` release candidate through 2026-08-25. This page separates what was exercised on the tested Mac from what was only automated, built or structurally inspected.
+Local reliability verification through 2026-09-12 supports the `0.12.0-beta.4` update. This page separates the new hidden-window regression checks from historical visible Mac workflows and from exact tagged release artifacts. It does not certify physical Windows or venue hardware behavior.
+
+## 2026-09-12 reliability verification
+
+The local reliability candidate included the source changes now prepared for beta 4. Before the release version and commit were finalized, it passed:
+
+- `npm test`: 25 module groups and 262 reported checks, plus free-build, icon and public-site checks.
+- `npm run test:renderers:hidden`: 12 Electron groups and 236 checks covering recovery, setup, Conference Desk, screen content, control status, reports, Composer, responsive usability, audio, mapped-output lifecycle, controller failures and synthetic WebRTC transport.
+- A fresh local Apple Silicon build: 40 repeated output-audio, output-lifecycle, controller-reliability and live-input checks against its packaged `app.asar`, using development Electron 43.1.1.
+- Byte-for-byte comparison of all 15 changed runtime files against the packaged archive, packaged CLI boot with an isolated profile, MIT/no-activation-gate inspection, strict/deep local signature verification and DMG integrity verification.
+- Dependency audit with zero reported vulnerabilities, diff whitespace checks and changed JavaScript/inline-script syntax checks.
+
+These tests covered full legacy-cache handling during GO and show loads, delayed lower thirds after cue reordering, autosave error reporting, recording failures, recovery across repeated crashes, live-input connection cleanup, mapped audio/transitions, count-up/report timing, OSC booleans, browser-output dependencies and portable media packages.
+
+The local artifact still identified the beta 3 base commit plus uncommitted changes; it is not an exact beta 4 release artifact. Tagged release packages must be rebuilt from the clean beta 4 commit through the [native beta workflow](https://github.com/srdjankotarlic/showslate/actions/workflows/release.yml), which checks packaged boot/provenance and creates checksums and attestations before publication. Local regression totals must not be treated as an exact-artifact physical rehearsal of those CI downloads.
+
+The September 12 renderer tests used hidden windows, isolated temporary profiles, synthetic media and mocked device operations. No customer shows, capture devices or installed application profile were used. The packaged renderer checks are not a full visible packaged-app rehearsal. This run adds no physical HDMI/LED/UVC, Windows, external audio-sink or sustained 4K60 certification. The older visible display and recording evidence below remains historical evidence only.
 
 ## 2026-08-25 operator recovery verification
 
