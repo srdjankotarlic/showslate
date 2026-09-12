@@ -14,11 +14,13 @@
     mixedStream: null,
     writeChain: Promise.resolve(),
     writeError: null,
+    writeFailed: false,
     nextSequence: 0,
     bytes: 0,
     startedAt: 0,
     elapsedTimer: 0,
     stopPromise: null,
+    startOperation: null,
     lastPath: '',
     cancelRequested: false
   };
@@ -314,15 +316,19 @@
   }
 
   function queueChunk(blob) {
-    if (!blob || !blob.size || !state.sessionId) return;
+    if (!blob || !blob.size || !state.sessionId || state.writeFailed) return;
+    const sessionId = state.sessionId;
     const sequence = state.nextSequence++;
     state.writeChain = state.writeChain.then(async () => {
+      if (state.writeFailed) return;
       const data = await blob.arrayBuffer();
-      const result = await api.recordingWriteChunk({ sessionId: state.sessionId, sequence, data });
+      const result = await api.recordingWriteChunk({ sessionId, sequence, data });
       if (!result?.ok) throw new Error(result?.error || 'Could not write recording data.');
       state.bytes = Number(result.bytes) || state.bytes + data.byteLength;
     }).catch(error => {
+      state.writeFailed = true;
       if (!state.writeError) state.writeError = error;
+      if (state.phase === 'recording') void stopProgramRecording({ preserve: true });
     });
   }
 
@@ -331,6 +337,7 @@
     state.recorder = null;
     state.writeChain = Promise.resolve();
     state.writeError = null;
+    state.writeFailed = false;
     state.nextSequence = 0;
     state.bytes = 0;
     state.stopPromise = null;
@@ -345,8 +352,18 @@
       return { ok: false, error: 'MediaRecorder unavailable' };
     }
 
+    state.startOperation = prepareProgramRecording();
+    try {
+      return await state.startOperation;
+    } finally {
+      state.startOperation = null;
+    }
+  }
+
+  async function prepareProgramRecording() {
     state.phase = 'preparing';
     state.cancelRequested = false;
+    clearTimeout(settingsSaveTimer);
     setUiRecording(false, true);
     setStatus('saving', 'Preparing Program recorder...');
     let prepared = null;
@@ -363,6 +380,7 @@
       prepared = await api.recordingPrepare({ settings, mimeType, programCanvas: programCanvas() });
       if (!prepared?.ok) throw new Error(prepared?.error || 'Could not prepare Program recording.');
       state.sessionId = prepared.sessionId;
+      if (state.cancelRequested) throw new Error('Recording start was cancelled.');
       if (!prepared.renderReady) throw new Error('Program renderer did not become ready for recording.');
 
       const mandatory = {
@@ -380,6 +398,7 @@
         });
       }
       state.captureStream = await navigator.mediaDevices.getUserMedia({ audio: false, video: { mandatory } });
+      if (state.cancelRequested) throw new Error('Recording start was cancelled.');
       const videoTrack = state.captureStream.getVideoTracks()[0];
       if (!videoTrack || videoTrack.readyState !== 'live') throw new Error('Program video capture did not start.');
       const captureSettings = videoTrack.getSettings ? videoTrack.getSettings() : {};
@@ -406,6 +425,7 @@
       });
       state.writeChain = Promise.resolve();
       state.writeError = null;
+      state.writeFailed = false;
       state.nextSequence = 0;
       state.bytes = 0;
       state.stopPromise = new Promise(resolve => state.recorder.addEventListener('stop', resolve, { once: true }));
@@ -428,7 +448,8 @@
       setStatus('recording', `${prepared.dimensions.width}×${prepared.dimensions.height} · ${prepared.settings.fps} fps · ${prepared.mimeType.split(';')[0]}`);
       return { ok: true, path: prepared.filePath, dimensions: prepared.dimensions, mimeType: prepared.mimeType };
     } catch (error) {
-      console.error('SHOWSLATE_RECORDING_START_FAILED', error?.name || 'Error', error?.message || error);
+      const canceled = state.cancelRequested;
+      if (!canceled) console.error('SHOWSLATE_RECORDING_START_FAILED', error?.name || 'Error', error?.message || error);
       stopMediaStreams();
       if (state.sessionId || prepared?.sessionId) {
         try { await api.recordingAbort({ sessionId: state.sessionId || prepared.sessionId, preserve: false }); } catch (_) {}
@@ -437,6 +458,10 @@
       state.phase = 'idle';
       setUiRecording(false, false);
       const detail = `${error?.name && error.name !== 'Error' ? `${error.name}: ` : ''}${String(error?.message || error)}`;
+      if (canceled) {
+        setStatus('idle', translated('recordingReady', 'Ready'));
+        return { ok: false, canceled: true };
+      }
       setStatus('error', detail);
       return { ok: false, error: detail };
     }
@@ -445,6 +470,7 @@
   async function stopProgramRecording(options = {}) {
     if (state.phase === 'preparing') {
       state.cancelRequested = true;
+      if (state.startOperation) await state.startOperation;
       return { ok: false, canceled: true };
     }
     if (state.phase === 'stopping') return state.stopOperation || { ok: false, busy: true };
@@ -457,6 +483,7 @@
     state.stopOperation = (async () => {
       const recorder = state.recorder;
       const sessionId = state.sessionId;
+      let preservedPath = '';
       try {
         if (recorder.state !== 'inactive') recorder.stop();
         if (state.stopPromise) await state.stopPromise;
@@ -464,7 +491,10 @@
         if (state.writeError) throw state.writeError;
         stopMediaStreams();
         const result = await api.recordingFinish({ sessionId });
-        if (!result?.ok) throw new Error(result?.error || 'Could not finalize recording.');
+        if (!result?.ok) {
+          preservedPath = String(result?.preservedPath || '');
+          throw new Error(result?.error || 'Could not finalize recording.');
+        }
         updateLastFile(result.path);
         const duration = formatElapsed(result.durationMs);
         const message = `${translated('recordingCompleted', 'Recording saved.')} ${fileNameFromPath(result.path)} · ${duration} · ${formatBytes(result.bytes)}`;
@@ -479,12 +509,17 @@
         return { ...result, ok: true };
       } catch (error) {
         stopMediaStreams();
-        try { await api.recordingAbort({ sessionId, preserve: options.preserve !== false }); } catch (_) {}
+        try {
+          const aborted = await api.recordingAbort({ sessionId, preserve: options.preserve !== false });
+          preservedPath = preservedPath || String(aborted?.preservedPath || '');
+        } catch (_) {}
+        if (preservedPath) updateLastFile(preservedPath);
         resetRuntime();
         state.phase = 'idle';
         setUiRecording(false, false);
-        setStatus('error', String(error?.message || error));
-        return { ok: false, error: String(error?.message || error) };
+        const detail = String(error?.message || error);
+        setStatus('error', detail + (preservedPath ? ` · ${fileNameFromPath(preservedPath)}` : ''));
+        return { ok: false, error: detail, ...(preservedPath ? { preservedPath } : {}) };
       } finally {
         state.stopOperation = null;
       }

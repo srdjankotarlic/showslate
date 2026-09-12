@@ -30,7 +30,7 @@
     const list = Array.isArray(entries) ? entries : [];
     const cueId = String(cue && cue.id || '');
     return list.find(entry => entry && cueId && String(entry.cueId || entry.id || '') === cueId)
-      || list.find(entry => entry && Number(entry.i) === index)
+      || list.find(entry => entry && !String(entry.cueId || entry.id || '') && Number(entry.i) === index)
       || null;
   }
 
@@ -69,8 +69,13 @@
       const plannedStart = explicitPlanned ?? plannedCursor;
       if (plannedStart !== null) plannedCursor = plannedStart + plannedDurationMs;
 
-      const actualStart = finite(cue && cue.actualStart) ?? finite(legacy && legacy.s);
-      const storedActualEnd = finite(cue && cue.actualEnd) ?? finite(legacy && legacy.e);
+      const canonicalStart = finite(cue && cue.actualStart);
+      const actualStart = canonicalStart ?? finite(legacy && legacy.s);
+      // Canonical cues deliberately keep actualEnd null while live. A previous
+      // legacy run must not close that interval; legacy e=0 means still open.
+      const legacyEnd = finite(legacy && legacy.e);
+      const storedActualEnd = finite(cue && cue.actualEnd)
+        ?? (canonicalStart === null && legacyEnd > 0 ? legacyEnd : null);
       const status = reportStatus(cue, actualStart, storedActualEnd);
       const actualEnd = storedActualEnd ?? (status === 'live' && actualStart !== null ? now : null);
       const storedDuration = finite(cue && cue.actualDurationMs);

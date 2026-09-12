@@ -68,6 +68,26 @@ check('CONTROL_STATUS_RUNNING_TIMER_MATERIALIZES_OK', () => {
   assert.strictEqual(status.queriedAt, 30000);
 });
 
+check('CONTROL_STATUS_COUNTUP_ADVANCES_FROM_SNAPSHOT_OK', () => {
+  const snapshot = {
+    ...rawStatus,
+    timer: { mode: 'countup', running: true, elapsedMs: 15000, startAt: 5000, capturedAt: 20000 }
+  };
+  assert.strictEqual(API.materializeControlStatus(snapshot, 20000).timer.elapsedMs, 15000);
+  assert.strictEqual(API.materializeControlStatus(snapshot, 25000).timer.elapsedMs, 20000);
+  assert.strictEqual(API.selectStatusSection(snapshot, 'cue', 25000).timer.elapsedMs, 20000);
+  assert.strictEqual(snapshot.timer.elapsedMs, 15000, 'Repeated queries must not mutate the published snapshot');
+});
+
+check('CONTROL_STATUS_COUNTUP_RESUME_AND_PAUSE_OK', () => {
+  const snapshot = {
+    timer: { mode: 'countup', running: true, elapsedMs: 65000, startAt: 20000, capturedAt: 25000 }
+  };
+  assert.strictEqual(API.materializeControlStatus(snapshot, 30000).timer.elapsedMs, 70000);
+  snapshot.timer.running = false;
+  assert.strictEqual(API.materializeControlStatus(snapshot, 50000).timer.elapsedMs, 65000);
+});
+
 check('CONTROL_STATUS_SECTIONS_ARE_BOUNDED_OK', () => {
   const show = API.selectStatusSection(rawStatus, 'show', 30000);
   const cue = API.selectStatusSection(rawStatus, 'cue', 30000);

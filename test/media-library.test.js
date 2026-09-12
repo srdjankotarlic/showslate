@@ -39,6 +39,17 @@ function check(name, condition, detail = '') {
   const normalizedManaged = await library.importFile(unsafeManagedPath);
   check('MEDIA_LIBRARY_NORMALIZES_EXISTING_UNSAFE_NAME_OK', normalizedManaged.ok && /^media:\/\/[a-f0-9]{24}\.png$/.test(normalizedManaged.src));
 
+  const nestedDirectory = path.join(mediaDirectory, 'staging');
+  fs.mkdirSync(nestedDirectory);
+  fs.writeFileSync(path.join(mediaDirectory, 'logo.png'), 'different-root-logo');
+  const nestedSource = path.join(nestedDirectory, 'logo.png');
+  fs.writeFileSync(nestedSource, 'selected-nested-logo');
+  const canonicalLibrary = new MediaLibrary({ mediaDirectory: fs.realpathSync(mediaDirectory) });
+  const nested = await canonicalLibrary.importFile(nestedSource);
+  const nestedInfo = canonicalLibrary.inspect(nested.src);
+  check('MEDIA_LIBRARY_NESTED_IMPORT_RESOLVES_SELECTED_FILE_OK',
+    nested.ok && nestedInfo.ok && fs.readFileSync(nestedInfo.path, 'utf8') === 'selected-nested-logo');
+
   const largePath = path.join(sources, 'five-gigabyte-program.mp4');
   const fiveGiB = 5 * 1024 * 1024 * 1024;
   const markerOffset = 4 * 1024 * 1024 * 1024 + 12345;

@@ -5455,6 +5455,7 @@ function calc(now, st=S){
 let lastKey='', lastSchedFire=0, lastPreviewGridKey='', stageKeys={pv:'',pg:''}, monitorSceneKeys={pv:'',pg:''};
 let selectedLayerId=null;   // izabrani izvor (OBS-stil manipulacija u Preview-u)
 let draggedLayerId='', layerPointerDrag=null, suppressLayerClickUntil=0;
+let layerSceneRefreshPending=false;
 let inspBinding=false;
 let videoTransportTarget='preview', videoTransportLayerId='', videoSeekDragging=false, lastVideoTransportPaint=0;
 let liveInputConfigKey=JSON.stringify([]), liveInputConfigurePending=false;
@@ -6049,8 +6050,8 @@ function scheduleCueLowerThirdAuto(plan){
   const token=++lowerThirdAutoToken;
   lowerThirdAutoTimer=setTimeout(()=>{
     lowerThirdAutoTimer=null;
-    if(token!==lowerThirdAutoToken || currentCue!==plan.cueIndex || !cues[currentCue] || String(cues[currentCue].id)!==plan.cueId) return;
-    takeCueLowerThirdAuto(plan);
+    if(token!==lowerThirdAutoToken || !cues[currentCue] || String(cues[currentCue].id)!==plan.cueId) return;
+    takeCueLowerThirdAuto({...plan,cueIndex:currentCue});
   },plan.delayMs);
 }
 function goLiveWithCue(i, opts={}){
@@ -6420,10 +6421,10 @@ async function openShowDocument(options={}){
   }
   showDocumentPath=String(result.path||'');
   scheduleShowAutosave('show-document-open',100);
-  await flushShowAutosave({reason:'show-document-open',force:true});
-  setShowSaveStatus('saved');
+  const autosave=await flushShowAutosave({reason:'show-document-open',force:true});
+  if(!autosave.ok&&!options.silent) alert(t('showSaveFailed')+' '+(autosave.error||t('saveStatusError')));
   updateShowFileMenu();
-  return result;
+  return {...result,autosave};
 }
 window.__ptShowDocument={saveShow:saveShowDocument,openShow:openShowDocument};
 
@@ -6464,12 +6465,14 @@ async function importPortableShow(options={}){
   api.showDocumentClearPath();
   updateShowFileMenu();
   scheduleShowAutosave('show-package-import',100);
-  await flushShowAutosave({reason:'show-package-import',force:true});
-  if(!options.silent){
+  const autosave=await flushShowAutosave({reason:'show-package-import',force:true});
+  if(!autosave.ok&&!options.silent){
+    alert(t('showSaveFailed')+' '+(autosave.error||t('saveStatusError')));
+  }else if(!options.silent){
     const warnings=Array.isArray(result.warnings)&&result.warnings.length?'\n\n'+result.warnings.join('\n'):'';
     alert(t('showImportDone')+warnings);
   }
-  return result;
+  return {...result,autosave};
 }
 window.__ptShowPackage={exportShow:exportPortableShow,importShow:importPortableShow};
 $('btnShowExport')?.addEventListener('click',()=>exportPortableShow());
@@ -6829,7 +6832,7 @@ function applyShowDocument(document,{source='current',announce=true}={}){
       api.showDocumentClearPath();
     }
     updateShowFileMenu();
-    localStorage.setItem('pt_show_meta',JSON.stringify(showMeta));
+    try{ localStorage.setItem('pt_show_meta',JSON.stringify(showMeta)); }catch(_){}
     cues=migrateCues(jsonCopy(payload.rundown,[]));
     currentCue=Number.isInteger(payload.liveCue)&&payload.liveCue>=-1&&payload.liveCue<cues.length?payload.liveCue:-1;
     selectedCue=Number.isInteger(payload.selectedCue)&&payload.selectedCue>=-1&&payload.selectedCue<cues.length?payload.selectedCue:-1;
@@ -6864,13 +6867,13 @@ function applyShowDocument(document,{source='current',announce=true}={}){
     if(typeof preferences.lang==='string'&&I18N[preferences.lang]) lang=preferences.lang;
     if(lower.library&&typeof lower.library==='object'){
       ltLibrary=jsonCopy(lower.library,null);
-      if(ltLibrary) localStorage.setItem(PTLT.LIBRARY_KEY,JSON.stringify(ltLibrary));
+      saveLtLibrary();
     }
     outputConfigs=Array.isArray(outputs.configs)?jsonCopy(outputs.configs,[]):[];
     const primaryDisplayId=Number(outputs.primaryDisplayId||payload.details&&payload.details.primaryDisplayId);
     if(primaryDisplayId&&$('displaySel')&&$('displaySel').querySelector(`option[value="${primaryDisplayId}"]`)) $('displaySel').value=String(primaryDisplayId);
     saveCues(); saveSettings(); saveLog(); saveOutputConfigsLocal();
-    load();
+    load({fromStorage:false});
     const timer=payload.timer||{};
     S.mode=['countdown','countup','clock'].includes(timer.mode)?timer.mode:'countdown';
     S.durationMs=Math.max(1000,Number(timer.durationMs)||600000);
@@ -6969,7 +6972,11 @@ function migrateCues(arr){
   try{ localStorage.setItem('pt_schema','2'); }catch(e){}
   return arr;
 }
-function saveCues(){ localStorage.setItem('pt_cues',JSON.stringify(cues)); scheduleShowAutosave('rundown'); }
+function saveCues(){
+  // The compatibility cache must never interrupt GO or the authoritative disk autosave.
+  try{ localStorage.setItem('pt_cues',JSON.stringify(cues)); }catch(_){}
+  scheduleShowAutosave('rundown');
+}
 function saveSettings(){
   const settings = {
     yellowSec:S.yellowSec,redSec:S.redSec,flashZero:S.flashZero,soundZero:S.soundZero,
@@ -7001,8 +7008,9 @@ function saveSettings(){
   }
   scheduleShowAutosave('settings');
 }
-function load(){
-  try{
+function load({fromStorage=true}={}){
+  // File/recovery loads already supplied authoritative state; do not round-trip through a stale or reduced cache.
+  if(fromStorage) try{
     const st=JSON.parse(localStorage.getItem('pt_settings')||'{}');
     Object.assign(S,{
       yellowSec:st.yellowSec??S.yellowSec, redSec:st.redSec??S.redSec,
@@ -7034,7 +7042,7 @@ function load(){
   const previewSafetyKey='showslate_preview_program_safety_v1';
   if(localStorage.getItem(previewSafetyKey)!=='1'){
     S.studioDirect=false;
-    localStorage.setItem(previewSafetyKey,'1');
+    try{ localStorage.setItem(previewSafetyKey,'1'); }catch(_){}
   }
   $('showStartInput').value=S.showStart||''; $('chkNowNext').checked=S.showNowNext;
   $('yellowInput').value=fmtSecs(S.yellowSec,false);
@@ -7056,7 +7064,13 @@ function load(){
   if($('chkDirectProgram')) $('chkDirectProgram').checked=!!S.studioDirect;
   updateLogoPreview();
   buildLowerThirdPresets();
-  initLtLibrary();
+  if(fromStorage) initLtLibrary();
+  else{
+    normalizeLowerThird();
+    const migrated=PTLT.migrateLowerThirdLibrary(ltLibrary,S.lowerThird,ltPresets);
+    ltLibrary=migrated.library;
+    if(migrated.changed) saveLtLibrary();
+  }
   initLtStudio();
   buildPresets();
   updateLiveInfo(); updateGoLabel(); updateStatusCard();
@@ -7355,7 +7369,7 @@ function setSidebarView(view){
   $('sidebarSlidesPane').classList.toggle('active',slides);
   $('btnSidebarRundown').classList.toggle('active',!slides); $('btnSidebarRundown').setAttribute('aria-selected',slides?'false':'true');
   $('btnSidebarSlides').classList.toggle('active',slides); $('btnSidebarSlides').setAttribute('aria-selected',slides?'true':'false');
-  localStorage.setItem('pt_sidebar_view',slides?'slides':'rundown');
+  try{ localStorage.setItem('pt_sidebar_view',slides?'slides':'rundown'); }catch(_){}
   if(slides) renderContentItems();
   updateGoLabel();
 }
@@ -7435,6 +7449,7 @@ function finishLayerPointerDrag(commit=false){
   suppressLayerClickUntil=Date.now()+(state.active?260:80);
   clearLayerDropMarkers();
   if(shouldMove)reorderSceneLayerById(layerId,targetId,placeAfter);
+  if(layerSceneRefreshPending)renderScenesUI();
 }
 function moveLayerPointerDrag(event){
   const state=layerPointerDrag;
@@ -7522,6 +7537,10 @@ function deleteSceneLayer(layerId){
   return true;
 }
 function renderScenesUI(){
+  // Live-input status updates can arrive during a pointer drag. Keep its rows
+  // and drop marker attached until the gesture commits or is cancelled.
+  if(layerPointerDrag){layerSceneRefreshPending=true;return;}
+  layerSceneRefreshPending=false;
   ensureScenes();
   const sceneBox=$('sceneList'), layerBox=$('layerList');
   if(!sceneBox || !layerBox) return;

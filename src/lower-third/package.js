@@ -46,7 +46,7 @@ function safePackagePath(value) {
 }
 
 function safeMediaFilename(assetId) {
-  const match = /^media:\/\/([A-Za-z0-9][A-Za-z0-9._-]{0,127})$/.exec(String(assetId || ''));
+  const match = /^(?:media:\/\/)?([A-Za-z0-9][A-Za-z0-9._-]{0,127})$/.exec(String(assetId || ''));
   if (!match) return null;
   const filename = match[1];
   const ext = path.extname(filename).toLowerCase();
@@ -69,6 +69,7 @@ function templateAssets(template, mediaDirectory) {
   const bySource = new Map();
   for (const layer of template.layers || []) {
     if (!layer || (layer.type !== 'media' && layer.type !== 'logo')) continue;
+    if (layer.sourceType === 'legacyDataUrl') continue;
     const source = layer.assetId || layer.src || '';
     const filename = safeMediaFilename(source);
     if (!filename) throw fail('UNSAFE_ASSET_REFERENCE', 'Template contains an unsupported or unsafe asset reference.');
@@ -79,7 +80,7 @@ function templateAssets(template, mediaDirectory) {
     }
     const bytes = fs.statSync(full).size;
     if (bytes > MAX_ASSET_BYTES) throw fail('ASSET_TOO_LARGE', 'Lower-third asset exceeds 200 MB: ' + filename);
-    const existing = bySource.get(source) || { source, filename, full, layerIds: [] };
+    const existing = bySource.get(source) || { source, filename, full, bytes, layerIds: [] };
     existing.layerIds.push(layer.id);
     bySource.set(source, existing);
   }
@@ -116,6 +117,7 @@ async function writeZip(destination, entries) {
       for (const entry of entries) archive.append(entry.data, { name: entry.name });
       archive.finalize().catch(done);
     });
+    if (fs.statSync(temp).size > MAX_PACKAGE_BYTES) throw fail('PACKAGE_TOO_LARGE', 'Template package exceeds 512 MB.');
     fs.renameSync(temp, destination);
   } catch (error) {
     try { fs.rmSync(temp, { force: true }); } catch (e) {}
@@ -129,14 +131,24 @@ async function exportLowerThirdPackage({ destination, template, mediaDirectory, 
   }
   const cleanTemplate = validateTemplate(template);
   const templateData = jsonBuffer(cleanTemplate);
-  const assets = templateAssets(cleanTemplate, mediaDirectory).map(asset => {
+  if (templateData.length > MAX_JSON_BYTES) throw fail('JSON_TOO_LARGE', 'template.json exceeds 5 MB.');
+  const references = templateAssets(cleanTemplate, mediaDirectory);
+  if (references.length + 2 > MAX_ENTRY_COUNT) throw fail('TOO_MANY_ENTRIES', 'Template package contains too many files.');
+  let totalBytes = templateData.length;
+  if (totalBytes + references.reduce((total, asset) => total + asset.bytes, 0) > MAX_PACKAGE_BYTES) {
+    throw fail('PACKAGE_TOO_LARGE', 'Template package expands beyond the allowed size.');
+  }
+  const assets = references.map((asset, index) => {
     const data = fs.readFileSync(asset.full);
+    if (data.length > MAX_ASSET_BYTES) throw fail('ASSET_TOO_LARGE', 'Lower-third asset exceeds 200 MB: ' + asset.filename);
+    totalBytes += data.length;
+    if (totalBytes > MAX_PACKAGE_BYTES) throw fail('PACKAGE_TOO_LARGE', 'Template package expands beyond the allowed size.');
     const ext = path.extname(asset.filename).toLowerCase();
     const checksum = sha256(data);
     return {
       ...asset,
       data,
-      packagePath: 'assets/' + checksum.slice(0, 24) + ext,
+      packagePath: 'assets/' + checksum.slice(0, 24) + '-' + index + ext,
       sha256: checksum,
       bytes: data.length,
       mime: MIME_BY_EXT[ext]
@@ -167,8 +179,11 @@ async function exportLowerThirdPackage({ destination, template, mediaDirectory, 
     })),
     fontFallbacks: fontFallbacks(cleanTemplate)
   };
+  const manifestData = jsonBuffer(manifest);
+  if (manifestData.length > MAX_JSON_BYTES) throw fail('JSON_TOO_LARGE', 'manifest.json exceeds 5 MB.');
+  if (totalBytes + manifestData.length > MAX_PACKAGE_BYTES) throw fail('PACKAGE_TOO_LARGE', 'Template package expands beyond the allowed size.');
   const entries = [
-    { name: 'manifest.json', data: jsonBuffer(manifest) },
+    { name: 'manifest.json', data: manifestData },
     { name: 'template.json', data: templateData },
     ...assets.map(asset => ({ name: asset.packagePath, data: asset.data }))
   ];
@@ -272,6 +287,7 @@ function validateLowerThirdPackageEntries(entries, { existingTemplateIds = [] } 
   const usedSources = new Set();
   for (const layer of template.layers || []) {
     if (!layer || (layer.type !== 'media' && layer.type !== 'logo')) continue;
+    if (layer.sourceType === 'legacyDataUrl') continue;
     const source = layer.assetId || layer.src || '';
     if (!sourceMap.has(source)) throw fail('MISSING_ASSET', 'Template references an asset not declared in the package.');
     usedSources.add(source);
@@ -301,10 +317,12 @@ function installPackageAssets(prepared, mediaDirectory) {
   const cleanImported = validateTemplate(imported);
   try {
     for (const plan of plans) {
-      if (!fs.existsSync(plan.destination)) {
-        plan.temp = path.join(mediaDirectory, '.lt-import-' + crypto.randomBytes(8).toString('hex') + '.tmp');
-        fs.writeFileSync(plan.temp, plan.asset.data, { flag: 'wx' });
+      if (fs.existsSync(plan.destination)) {
+        if (sha256(fs.readFileSync(plan.destination)) !== plan.asset.sha256) throw fail('MEDIA_COLLISION', 'Existing media file does not match imported content.');
+        continue;
       }
+      plan.temp = path.join(mediaDirectory, '.lt-import-' + crypto.randomBytes(8).toString('hex') + '.tmp');
+      fs.writeFileSync(plan.temp, plan.asset.data, { flag: 'wx' });
     }
     for (const plan of plans) {
       if (plan.temp) {

@@ -35,7 +35,7 @@
       };
     }
 
-    handleStatus(payload) {
+    handleStatus(payload, { captureFailure = true } = {}) {
       const rows = Array.isArray(payload) ? payload : [payload];
       rows.forEach(row => {
         if (!row || !row.inputId) return;
@@ -44,7 +44,7 @@
         const record = this.peers.get(id);
         if (!record) return;
         const state = String(row.state || '');
-        if (state === 'error') {
+        if (state === 'error' && captureFailure) {
           record.blockedByError = true;
           record.awaitingOffer = false;
           if (record.retryTimer) clearTimeout(record.retryTimer);
@@ -66,7 +66,7 @@
 
     async ensure(inputId) {
       const id = String(inputId || '');
-      if (!id || typeof this.api.liveInputSubscribe !== 'function') return;
+      if (!id || !this.desired.has(id) || typeof this.api.liveInputSubscribe !== 'function') return;
       let record = this.peers.get(id);
       if (!record) {
         record = this.peerRecord();
@@ -76,6 +76,7 @@
       record.subscribing = true;
       try {
         const result = await this.api.liveInputSubscribe(id);
+        if (this.peers.get(id) !== record || !this.desired.has(id) || record.blockedByError) return;
         if (!result || result.ok !== true) throw new Error(result && result.error || 'Live input service is not ready.');
         if (record.pc) return;
         record.awaitingOffer = true;
@@ -87,7 +88,8 @@
         }, 2500);
       }
       catch (error) {
-        this.handleStatus({ inputId: id, state: 'error', error: String(error && error.message || error) });
+        if (this.peers.get(id) !== record || !this.desired.has(id)) return;
+        this.handleStatus({ inputId: id, state: 'error', error: String(error && error.message || error) }, { captureFailure: false });
         this.scheduleRetry(id, record);
       } finally {
         record.subscribing = false;
@@ -125,6 +127,7 @@
         if (record.pc) record.pc.close();
         const pc = new RTCPeerConnection({ iceServers: [] });
         record.pc = pc;
+        const isCurrent = () => this.peers.get(inputId) === record && record.pc === pc && this.desired.has(inputId);
         record.stream = new MediaStream();
         this.streams.set(inputId, record.stream);
         this.refreshElements(inputId);
@@ -138,10 +141,10 @@
           });
           const stream = record.stream;
           this.refreshElements(inputId);
-          this.handleStatus({ inputId, state: 'live', hasVideo: stream.getVideoTracks().length > 0, hasAudio: stream.getAudioTracks().length > 0 });
+          this.handleStatus({ inputId, state: 'live', error: '', hasVideo: stream.getVideoTracks().length > 0, hasAudio: stream.getAudioTracks().length > 0 });
         };
         pc.onicecandidate = event => {
-          if (event.candidate && typeof this.api.liveInputSignalToHub === 'function') {
+          if (isCurrent() && event.candidate && typeof this.api.liveInputSignalToHub === 'function') {
             this.api.liveInputSignalToHub({ inputId, type: 'candidate', candidate: event.candidate.toJSON ? event.candidate.toJSON() : event.candidate });
           }
         };
@@ -172,12 +175,31 @@
             }
           }
         };
-        await pc.setRemoteDescription(payload.description);
-        for (const candidate of queuedCandidates) await pc.addIceCandidate(candidate).catch(() => {});
-        const answer = await pc.createAnswer();
-        await pc.setLocalDescription(answer);
-        if (typeof this.api.liveInputSignalToHub === 'function') {
-          await this.api.liveInputSignalToHub({ inputId, type: 'answer', description: pc.localDescription.toJSON ? pc.localDescription.toJSON() : pc.localDescription });
+        try {
+          await pc.setRemoteDescription(payload.description);
+          if (!isCurrent()) return;
+          // ICE can arrive while the remote description is being applied.
+          queuedCandidates.push(...record.pendingCandidates.splice(0));
+          for (const candidate of queuedCandidates) {
+            if (!isCurrent()) return;
+            await pc.addIceCandidate(candidate).catch(() => {});
+          }
+          if (!isCurrent()) return;
+          const answer = await pc.createAnswer();
+          if (!isCurrent()) return;
+          await pc.setLocalDescription(answer);
+          if (!isCurrent()) return;
+          if (typeof this.api.liveInputSignalToHub === 'function') {
+            await this.api.liveInputSignalToHub({ inputId, type: 'answer', description: pc.localDescription.toJSON ? pc.localDescription.toJSON() : pc.localDescription });
+          }
+        } catch (error) {
+          if (!isCurrent()) return;
+          this.closePeer(inputId, true);
+          const retry = this.peerRecord();
+          retry.retryCount = record.retryCount;
+          this.peers.set(inputId, retry);
+          this.handleStatus({ inputId, state: 'error', error: String(error && error.message || error) }, { captureFailure: false });
+          this.scheduleRetry(inputId, retry);
         }
       } else if (payload.type === 'candidate' && payload.candidate) {
         if (record.pc && record.pc.remoteDescription) await record.pc.addIceCandidate(payload.candidate).catch(() => {});
@@ -243,10 +265,10 @@
     closePeer(inputId, notify = true) {
       const id = String(inputId || '');
       const record = this.peers.get(id);
+      this.peers.delete(id);
       if (record && record.retryTimer) clearTimeout(record.retryTimer);
       if (record && record.disconnectTimer) clearTimeout(record.disconnectTimer);
       if (record && record.pc) record.pc.close();
-      this.peers.delete(id);
       const stream = this.streams.get(id);
       if (stream) stream.getTracks().forEach(track => track.stop());
       const elements = this.elements.get(id);
@@ -256,9 +278,9 @@
     }
 
     dispose() {
+      this.desired.clear();
       for (const id of [...this.peers.keys()]) this.closePeer(id, true);
       this.elements.clear();
-      this.desired.clear();
     }
   }
 

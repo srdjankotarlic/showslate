@@ -117,7 +117,105 @@ async function prepareCrash(root, nowRef) {
   check('SHOW_REPOSITORY_CLEAN_EXIT_NO_RECOVERY_OK', !cleanStatus.recoveryAvailable);
   await fsp.rm(baselineRoot, { recursive: true, force: true });
 
-  console.log('SHOW_REPOSITORY_TESTS_OK ' + passed + '/12');
+  for (const choice of ['recover', 'last-saved']) {
+    const repeatedRoot = await makeRoot();
+    const repeatedClock = { value: Date.now() };
+    try {
+      await prepareCrash(repeatedRoot, repeatedClock);
+      const firstRestart = new ShowRepository({ userDataDir: repeatedRoot, now: () => ++repeatedClock.value });
+      await firstRestart.initializeSession({ track: true });
+      const secondRestart = new ShowRepository({ userDataDir: repeatedRoot, now: () => ++repeatedClock.value });
+      const secondStatus = await secondRestart.initializeSession({ track: true });
+      assert.strictEqual(secondStatus.hasLastSaved, true);
+      assert.strictEqual(secondRestart.priorRecovery.baselineDocument.show.name, 'Last saved');
+      const selected = await secondRestart.resolveRecovery(choice);
+      const expectedName = choice === 'recover' ? 'Crash autosave' : 'Last saved';
+      assert.strictEqual(selected.document.show.name, expectedName);
+      await secondRestart.save(documentFor('Later unsaved edits'));
+      const thirdRestart = new ShowRepository({ userDataDir: repeatedRoot, now: () => ++repeatedClock.value });
+      await thirdRestart.initializeSession({ track: true });
+      const selectedBaseline = await thirdRestart.resolveRecovery('last-saved');
+      check('SHOW_REPOSITORY_REPEATED_CRASH_' + choice.toUpperCase().replace('-', '_') + '_OK',
+        selectedBaseline.ok && selectedBaseline.document.show.name === expectedName);
+    } finally {
+      await fsp.rm(repeatedRoot, { recursive: true, force: true });
+    }
+  }
+
+  const corruptCrashRoot = await makeRoot();
+  const corruptCrashClock = { value: Date.now() };
+  try {
+    await prepareCrash(corruptCrashRoot, corruptCrashClock);
+    await fsp.writeFile(path.join(corruptCrashRoot, 'shows', 'current-show.json'), '{broken');
+    const corruptRestart = new ShowRepository({ userDataDir: corruptCrashRoot, now: () => ++corruptCrashClock.value });
+    const corruptStatus = await corruptRestart.initializeSession({ track: true });
+    check('SHOW_REPOSITORY_CORRUPT_AUTOSAVE_OFFERS_BASELINE_OK', corruptStatus.recoveryAvailable && corruptStatus.hasLastSaved);
+    const recoveredBaseline = await corruptRestart.resolveRecovery('recover');
+    check('SHOW_REPOSITORY_CORRUPT_AUTOSAVE_RECOVERS_BASELINE_OK',
+      recoveredBaseline.ok && recoveredBaseline.source === 'last-saved' && recoveredBaseline.document.show.name === 'Last saved');
+  } finally {
+    await fsp.rm(corruptCrashRoot, { recursive: true, force: true });
+  }
+
+  const firstSessionRoot = await makeRoot();
+  try {
+    const firstSession = new ShowRepository({ userDataDir: firstSessionRoot });
+    await firstSession.initializeSession({ track: true });
+    await firstSession.save(documentFor('First session autosave'));
+    const firstRestart = new ShowRepository({ userDataDir: firstSessionRoot });
+    const firstStatus = await firstRestart.initializeSession({ track: true });
+    assert.strictEqual(firstStatus.hasLastSaved, false);
+    const secondRestart = new ShowRepository({ userDataDir: firstSessionRoot });
+    const secondStatus = await secondRestart.initializeSession({ track: true });
+    assert.strictEqual(secondStatus.hasLastSaved, false);
+    await secondRestart.resolveRecovery('recover');
+    await secondRestart.save(documentFor('Later first-session edits'));
+    const thirdRestart = new ShowRepository({ userDataDir: firstSessionRoot });
+    await thirdRestart.initializeSession({ track: true });
+    const baseline = await thirdRestart.resolveRecovery('last-saved');
+    check('SHOW_REPOSITORY_FIRST_RECOVERY_CREATES_BASELINE_OK', baseline.document.show.name === 'First session autosave');
+  } finally {
+    await fsp.rm(firstSessionRoot, { recursive: true, force: true });
+  }
+
+  const discardRoot = await makeRoot();
+  const discardClock = { value: Date.now() };
+  try {
+    await prepareCrash(discardRoot, discardClock);
+    const restart = new ShowRepository({ userDataDir: discardRoot, now: () => ++discardClock.value });
+    await restart.initializeSession({ track: true });
+    const discarded = await restart.resolveRecovery('discard');
+    assert.strictEqual(discarded.document, null);
+    await restart.save(documentFor('New workspace after discard'));
+    const nextRestart = new ShowRepository({ userDataDir: discardRoot, now: () => ++discardClock.value });
+    const status = await nextRestart.initializeSession({ track: true });
+    assert.strictEqual(status.hasLastSaved, false);
+    const recovered = await nextRestart.resolveRecovery('recover');
+    check('SHOW_REPOSITORY_DISCARD_CLEARS_OLD_SESSION_BASELINE_OK', recovered.document.show.name === 'New workspace after discard');
+  } finally {
+    await fsp.rm(discardRoot, { recursive: true, force: true });
+  }
+
+  const retryRoot = await makeRoot();
+  const retryClock = { value: Date.now() };
+  try {
+    await prepareCrash(retryRoot, retryClock);
+    const restart = new ShowRepository({ userDataDir: retryRoot, now: () => ++retryClock.value });
+    await restart.initializeSession({ track: true });
+    const baselineFile = path.join(restart.directory, restart.session.baselineFile);
+    await fsp.unlink(baselineFile);
+    await fsp.mkdir(baselineFile);
+    const failed = await restart.resolveRecovery('recover');
+    assert.strictEqual(failed.ok, false);
+    assert.strictEqual(restart.getStatus().recoveryAvailable, true);
+    await fsp.rmdir(baselineFile);
+    const retried = await restart.resolveRecovery('recover');
+    check('SHOW_REPOSITORY_RECOVERY_WRITE_FAILURE_RETRY_OK', retried.ok && retried.document.show.name === 'Crash autosave');
+  } finally {
+    await fsp.rm(retryRoot, { recursive: true, force: true });
+  }
+
+  console.log('SHOW_REPOSITORY_TESTS_OK count=' + passed);
 })().catch((error) => {
   console.error(error && error.stack || error);
   process.exit(1);

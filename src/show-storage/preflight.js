@@ -1,6 +1,7 @@
 const { validateShowDocument } = require('./repository.js');
 const conference = require('../conference-desk/model.js');
 const compositor = require('../compositor/model.js');
+const outputRouting = require('../output-routing/model.js');
 
 function row(id, status, detail = '') {
   return { id, status, detail: String(detail || '') };
@@ -85,6 +86,12 @@ function evaluatePreflight(input, facts = {}) {
     missingAutoTemplate ? 'auto-cue-template-missing' : (templateReady ? activeId : 'none-selected')));
 
   const displays = Array.isArray(facts.displays) ? facts.displays : [];
+  const routingDisplays = displays.map(display => ({
+    ...display,
+    id: Number(display.id),
+    bounds: { width: Number(display.width), height: Number(display.height) }
+  }));
+  const resolveRouteDisplay = config => outputRouting.resolveDisplay(config, routingDisplays).display;
   const selectedDisplayId = Number(facts.selectedDisplayId);
   const selectedDisplay = displays.find(display => Number(display.id) === selectedDisplayId);
   checks.push(row('displayAssignment', selectedDisplay ? 'ok' : 'block', selectedDisplay ? String(selectedDisplay.label || selectedDisplay.id) : 'not-assigned'));
@@ -113,8 +120,7 @@ function evaluatePreflight(input, facts = {}) {
   }
   for (const config of configs) {
     const mode = String(config.mode || 'fullscreen');
-    const assignedDisplay = displays.find(display => Number(display.id) === Number(config.displayId)
-      || (config.displayLabel && String(display.label || '') === String(config.displayLabel)));
+    const assignedDisplay = resolveRouteDisplay(config);
     const width = mode === 'custom' || mode === 'window' ? Number(config.width) : Number(assignedDisplay && assignedDisplay.width);
     const height = mode === 'custom' || mode === 'window' ? Number(config.height) : Number(assignedDisplay && assignedDisplay.height);
     if (width > 0 && height > 0) aspectDestinations.push({ name: String(config.name || config.id || 'Output'), width, height });
@@ -135,11 +141,7 @@ function evaluatePreflight(input, facts = {}) {
     const audienceRoutes = enabledConfigs.filter(config => config.role === 'audience');
     checks.push(row('conferenceAudienceRoute', audienceRoutes.length ? 'ok' : 'block', audienceRoutes.length ? `${audienceRoutes.length}-configured` : 'audience-required'));
 
-    const unavailableRoutes = enabledConfigs.filter(config => {
-      const id = Number(config.displayId);
-      const label = String(config.displayLabel || '');
-      return !displays.some(display => Number(display.id) === id || (label && String(display.label || '') === label));
-    });
+    const unavailableRoutes = enabledConfigs.filter(config => !resolveRouteDisplay(config));
     checks.push(row('conferenceRouteAssignments', unavailableRoutes.length ? 'block' : 'ok', unavailableRoutes.length ? unavailableRoutes.map(config => config.name || config.id).join(', ') : 'all-assigned'));
 
     const contentIds = new Set((Array.isArray(content.items) ? content.items : []).map(item => String(item && item.id || '')).filter(Boolean));

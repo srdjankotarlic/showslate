@@ -213,6 +213,7 @@ function outT(key){ const l=outLang(); return (OUT_I18N[l] && OUT_I18N[l][key]) 
 
 let S = null, prevRem = null, lastKey = '', lastSceneKey = '', lastLtRuntimeKey = '', ltSequenceTimer = null, lastMappedSurfaceKey = '', lastMappedDynamicSyncAt = 0;
 let outputRenderDirty = true, lastDynamicRenderAt = 0, lastMappedRenderAt = 0;
+let sceneFrameRevision = 0;
 const mappedRuntimeNodes = new Map();
 const liveInputConsumer = IS_ELECTRON && window.ShowSlateLiveInput
   ? new window.ShowSlateLiveInput.LiveInputConsumer(api,{label:'output'}) : null;
@@ -532,6 +533,17 @@ function syncMappedMedia(source,clone,allowAudio=false){
   });
 }
 function syncMappedDynamic(source,clone){
+  const sourceFrames=new Map([...source.querySelectorAll('.scene-frame[data-scene-frame-id]')].map(frame=>[frame.dataset.sceneFrameId,frame]));
+  clone.querySelectorAll('.scene-frame[data-scene-frame-id]').forEach(frame=>{
+    const original=sourceFrames.get(frame.dataset.sceneFrameId);
+    if(!original){removeOutputNode(frame);return;}
+    if(frame.style.cssText!==original.style.cssText)frame.style.cssText=original.style.cssText;
+    frame.querySelectorAll('.live-input-placeholder').forEach(placeholder=>{
+      const layerId=placeholder.closest('[data-layer-id]')?.dataset.layerId;
+      const sourceLayer=layerId&&original.querySelector(`[data-layer-id="${CSS.escape(layerId)}"]`);
+      if(sourceLayer&&!sourceLayer.querySelector('.live-input-placeholder'))placeholder.remove();
+    });
+  });
   const sourceNodes=[...source.querySelectorAll('[id]')];
   sourceNodes.forEach(original=>{
     const id=original.id,target=clone.querySelector(`[data-mapped-source-id="${CSS.escape(id)}"]`);if(!target)return;
@@ -614,10 +626,10 @@ function renderMappedSurfaces(){
   const surfaces=routeProjectionSurfaces();
   const projection=routeProjection(),enabled=Array.isArray(projection&&projection.surfaces);
   host.classList.toggle('active',enabled);source.classList.toggle('mapping-source',enabled);
-  if(!enabled){host.replaceChildren();mappedRuntimeNodes.clear();lastMappedSurfaceKey='';lastMappedDynamicSyncAt=0;return;}
-  const bounds=mappedOutputBounds(routeOutputCanvas()),key=`${innerWidth}x${innerHeight}|${S.activeSceneId}|${lastSceneKey}|${lastLtRuntimeKey}|${JSON.stringify(surfaces)}|${S.blackout}`;
+  if(!enabled){releaseOutputMedia(host);host.replaceChildren();mappedRuntimeNodes.clear();lastMappedSurfaceKey='';lastMappedDynamicSyncAt=0;return;}
+  const outputCanvas=routeOutputCanvas(),bounds=mappedOutputBounds(outputCanvas),key=`${innerWidth}x${innerHeight}|${S.activeSceneId}|${lastSceneKey}|${lastLtRuntimeKey}|${JSON.stringify(surfaces)}|${JSON.stringify(outputCanvas)}|${S.bgColor}|${!!S.transparent}|${outputRole}|${S.blackout}`;
   if(key===lastMappedSurfaceKey){const now=performance.now();if(now-lastMappedDynamicSyncAt>=33){lastMappedDynamicSyncAt=now;mappedRuntimeNodes.forEach(record=>record.clones.forEach(clone=>syncMappedDynamic($('programContent'),clone)));}return;}
-  lastMappedSurfaceKey=key;lastMappedDynamicSyncAt=performance.now();host.replaceChildren();mappedRuntimeNodes.clear();surfaces.forEach((surface,index)=>createMappedSurface(surface,bounds,index));
+  lastMappedSurfaceKey=key;lastMappedDynamicSyncAt=performance.now();releaseOutputMedia(host);host.replaceChildren();mappedRuntimeNodes.clear();surfaces.forEach((surface,index)=>createMappedSurface(surface,bounds,index));
 }
 function projectionIsInactive(projection){
   return !!projection&&!!projection.compositionId&&String(projection.compositionId)!==String(S&&S.activeCompositionId||'composition-main');
@@ -669,7 +681,7 @@ function routeMediaAudio(element,layer,enabled){
   element.defaultMuted=element.muted;
   element.volume=Math.max(0,Math.min(1,Number(layer.volume??1)));
   const sinkId=String(S._outputRoute&&S._outputRoute.audioOutputDeviceId||'');
-  if(programAllowed&&sinkId&&typeof element.setSinkId==='function') element.setSinkId(sinkId).catch(()=>{});
+  if(programAllowed&&typeof element.setSinkId==='function'&&element.sinkId!==sinkId) element.setSinkId(sinkId).catch(()=>{});
   return programAllowed;
 }
 function outputMediaRuntimeSignature(layer){
@@ -698,14 +710,15 @@ function bindOutputVideo(video,layer){
 function syncSceneMediaRuntime(providedLayers){
   const scene=S&&activeScene();
   const layers=providedLayers||((scene&&Array.isArray(scene.layers))?scene.layers.filter(layer=>layer&&layer.visible!==false):[]);
-  if(!layers.length)return;
   const byId=new Map(layers.map(layer=>[String(layer.id||''),layer]));
-  const frames=[...document.querySelectorAll('#sceneRoot .scene-frame')];
+  // Mapping clones retain IDs for the shared output CSS. Only the canonical
+  // scene may own audio and transport; mapped copies remain muted.
+  const frames=[...($('sceneRoot')?.querySelectorAll('.scene-frame')||[])];
   const frame=frames[frames.length-1];
   if(!frame)return;
   frame.querySelectorAll('.scene-layer[data-layer-id]').forEach(box=>{
     const layer=byId.get(String(box.dataset.layerId||''));
-    if(!layer)return;
+    if(!layer){silenceOutputMedia(box);return;}
     if(layer.type==='video')bindOutputVideo(box.querySelector('video'),layer);
     else if(layer.type==='window'||layer.type==='capture'){
       const video=box.querySelector('video');if(video)routeMediaAudio(video,layer,!!(S._outputRoute&&S._outputRoute.liveAudio===true));
@@ -713,6 +726,23 @@ function syncSceneMediaRuntime(providedLayers){
       const audio=box.querySelector('audio');if(audio)routeMediaAudio(audio,layer,!!(S._outputRoute&&S._outputRoute.liveAudio===true));
     }
   });
+}
+
+function silenceOutputMedia(root){
+  root.querySelectorAll('video,audio').forEach(media=>{media.muted=true;media.defaultMuted=true;});
+}
+function releaseOutputMedia(root){
+  root.querySelectorAll('video,audio').forEach(media=>{
+    if(typeof media.__showSlateTransportCleanup==='function')media.__showSlateTransportCleanup();
+    media.muted=true;media.defaultMuted=true;
+    try{media.pause();media.srcObject=null;media.removeAttribute('src');media.load();}catch(_){}
+  });
+}
+function removeOutputNode(node){
+  if(node.__showSlateRetireTimer)clearTimeout(node.__showSlateRetireTimer);
+  delete node.__showSlateRetireTimer;
+  releaseOutputMedia(node);
+  node.remove();
 }
 
 function renderScene(){
@@ -737,19 +767,21 @@ function renderScene(){
   const oldFrames=[...root.children];
   const frame=document.createElement('div');
   frame.className='scene-frame';
+  frame.dataset.sceneFrameId=String(++sceneFrameRevision);
   applyProjectionFrame(frame,null);
   applyProjectionMask(root,null);
   if(fadeMs>0 && oldFrames.length){
     frame.style.opacity='0';
     frame.style.transition=`opacity ${fadeMs}ms ease`;
-    requestAnimationFrame(()=>requestAnimationFrame(()=>{ frame.style.opacity='1'; }));
+    requestAnimationFrame(()=>requestAnimationFrame(()=>{ if(frame.parentElement===root&&root.lastElementChild===frame)frame.style.opacity='1'; }));
     oldFrames.forEach(f=>{
+      silenceOutputMedia(f);
       f.style.transition=`opacity ${fadeMs}ms ease`;
       f.style.opacity='0';
-      setTimeout(()=>{ try{ f.remove(); }catch(e){} }, fadeMs+80);
+      if(!f.__showSlateRetireTimer)f.__showSlateRetireTimer=setTimeout(()=>removeOutputNode(f),fadeMs+80);
     });
   } else {
-    oldFrames.forEach(f=>{ try{ f.remove(); }catch(e){} });
+    oldFrames.forEach(removeOutputNode);
   }
   root.appendChild(frame);
   layers.forEach((layer,layerIndex)=>{
@@ -825,7 +857,7 @@ function renderScene(){
     frame.appendChild(d);
   });
   syncSceneMediaRuntime(layers);
-  if(liveInputConsumer) liveInputConsumer.sync(layers.filter(layer=>(layer.type==='window'||layer.type==='capture')&&layer.inputId).map(layer=>layer.inputId));
+  if(liveInputConsumer) liveInputConsumer.sync(layers.filter(layer=>['window','capture','audio'].includes(layer.type)&&layer.inputId).map(layer=>layer.inputId));
 }
 
 // Tajmer kao LEJER scene: prvi vidljivi 'timer' lejer određuje kutiju #stage;

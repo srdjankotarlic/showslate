@@ -193,7 +193,7 @@ class ShowRepository {
       baseline = await this.readValidated(priorBaselineFile);
     }
     this.priorRecovery = {
-      available: crashed && current.ok,
+      available: crashed && (current.ok || baseline.ok),
       crashed,
       sessionId: crashed ? String(priorMarker.sessionId || '') : '',
       startedAt: crashed ? String(priorMarker.startedAt || '') : '',
@@ -206,9 +206,12 @@ class ShowRepository {
       const startedAt = new Date(this.now()).toISOString();
       const sessionId = crypto.randomBytes(10).toString('hex');
       let baselineFile = '';
-      if (current.ok) {
+      // Until recovery is resolved, another restart must retain the original
+      // last-saved version instead of promoting the crash autosave to baseline.
+      const sessionBaseline = crashed ? (baseline.ok ? baseline.document : null) : (current.ok ? current.document : null);
+      if (sessionBaseline) {
         baselineFile = 'session-baseline-' + sessionId + '.json';
-        await atomicWrite(path.join(this.directory, baselineFile), JSON.stringify(current.document, null, 2) + '\n');
+        await atomicWrite(path.join(this.directory, baselineFile), JSON.stringify(sessionBaseline, null, 2) + '\n');
       }
       this.session = { schemaVersion: SESSION_SCHEMA_VERSION, sessionId, pid: process.pid, startedAt, clean: false, baselineFile };
       await atomicWrite(this.sessionFile, JSON.stringify(this.session, null, 2) + '\n');
@@ -276,14 +279,29 @@ class ShowRepository {
     const recover = this.priorRecovery || { available: false };
     let document = null;
     let source = 'discard';
-    if (choice === 'recover' && recover.autosaveDocument) {
-      document = recover.autosaveDocument;
-      source = 'autosave';
+    if (choice === 'recover' && (recover.autosaveDocument || recover.baselineDocument)) {
+      document = recover.autosaveDocument || recover.baselineDocument;
+      source = recover.autosaveDocument ? 'autosave' : 'last-saved';
     } else if (choice === 'last-saved' && (recover.baselineDocument || recover.autosaveDocument)) {
       document = recover.baselineDocument || recover.autosaveDocument;
       source = recover.baselineDocument ? 'last-saved' : 'autosave';
     } else if (choice !== 'discard') {
       return { ok: false, error: 'Unknown recovery choice' };
+    }
+    if (this.trackSession && this.session) {
+      try {
+        const previousBaselineFile = this.session.baselineFile;
+        const baselineFile = document ? (previousBaselineFile || 'session-baseline-' + this.session.sessionId + '.json') : '';
+        if (document) await atomicWrite(path.join(this.directory, baselineFile), JSON.stringify(document, null, 2) + '\n');
+        if (baselineFile !== previousBaselineFile) {
+          const session = { ...this.session, baselineFile };
+          await atomicWrite(this.sessionFile, JSON.stringify(session, null, 2) + '\n');
+          this.session = session;
+        }
+        if (!baselineFile && previousBaselineFile) await fsp.unlink(path.join(this.directory, previousBaselineFile)).catch(() => {});
+      } catch (error) {
+        return { ok: false, error: String(error && error.message || error) };
+      }
     }
     if (recover.priorBaselineFile) await fsp.unlink(recover.priorBaselineFile).catch(() => {});
     this.priorRecovery = { available: false };

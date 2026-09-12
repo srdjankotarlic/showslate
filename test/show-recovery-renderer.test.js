@@ -6,6 +6,7 @@ const { ShowRepository } = require('../src/show-storage/repository.js');
 const smokeDisplay = require('../tools/smoke-display.js');
 
 const root = path.resolve(__dirname, '..');
+const hiddenVisual = process.env.SHOWSLATE_HIDDEN_VISUAL === '1';
 const profile = fs.mkdtempSync(path.join(os.tmpdir(), 'showslate-recovery-renderer-'));
 const artifactDirectory = path.join(root, 'artifacts', 'generated', 'show-recovery');
 app.setPath('userData', profile);
@@ -65,7 +66,7 @@ app.whenReady().then(async () => {
 
   repository = new ShowRepository({ userDataDir: profile, appMetadata: { commit: 'crashed-session' } });
   await repository.initializeSession({ track: true });
-  const target = smokeDisplay.resolveTargetDisplay(screen, { root }).display;
+  const target = hiddenVisual ? screen.getPrimaryDisplay() : smokeDisplay.resolveTargetDisplay(screen, { root }).display;
   check('SHOW_RECOVERY_TARGET_DISPLAY_OK', !!target, target ? target.label : 'missing');
   const bounds = smokeDisplay.clampToWorkArea({ width: 1280, height: 800 }, target.workArea);
   const win = new BrowserWindow({ ...bounds, show: false, webPreferences: { preload: path.join(root, 'preload.js'), contextIsolation: true, nodeIntegration: false, backgroundThrottling: false } });

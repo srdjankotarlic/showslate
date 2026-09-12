@@ -6,7 +6,7 @@
 npm test
 ```
 
-Runs 16 deterministic module scripts across brand migration, lower-third packages, show storage and recovery data, portable show packages, Conference Desk schedule/folder import, preflight, screen-content and compositor models, control API normalization, post-show reports, pure output-routing rules, localization, build provenance, signing preflight and exact-artifact release evidence. Free-build, icon and public-site checks run before that suite. The same command runs in GitHub Actions.
+Runs 25 deterministic module scripts across brand migration, lower-third packages, show storage and recovery data, portable show packages, Conference Desk schedule/folder import, preflight, screen-content and compositor models, media transport, live-input connection lifecycle, recording lifecycle, control API normalization, OSC packets, HTTP browser dependencies, post-show reports, pure output-routing rules, localization, build provenance, signing preflight and exact-artifact release evidence. Free-build, icon and public-site checks run before that suite. The same command runs in GitHub Actions.
 
 ## Local renderer suite
 
@@ -14,11 +14,27 @@ Runs 16 deterministic module scripts across brand migration, lower-third package
 npm run test:renderers:display
 ```
 
-Runs eight real Electron renderer workflows. Every visible test window resolves the explicitly configured display and aborts if that display is unavailable; it never silently falls back to another screen. Set `SHOWSLATE_SMOKE_DISPLAY` to a unique display label or use the ignored local `.showslate-smoke-display.json` file.
+Runs the Electron renderer workflows, including hidden output-audio regression checks. Every visible test window resolves the explicitly configured display and aborts if that display is unavailable; it never silently falls back to another screen. Set `SHOWSLATE_SMOKE_DISPLAY` to a unique display label or use the ignored local `.showslate-smoke-display.json` file.
 
 The Conference Desk renderer suite uses visible normal controls to import a fixture folder, finish setup, inspect output-role controls, press GO, verify one Program transaction and require render acknowledgements for Audience, Confidence, Timer, Stream Graphics and Door Agenda. It also checks Live Mode at 900x600.
 
 The public-site renderer suite loads the real static site at desktop and mobile sizes, verifies local screenshots, installer links, horizontal fit and a visible hint of the next section.
+
+## Hidden renderer regression
+
+```bash
+npm run test:renderers:hidden
+```
+
+Runs 12 real Electron suites: recovery, setup, Conference Desk, screen content, control API, reports, Composer, responsive usability, output audio, mapped output lifecycle, controller reliability and live-input transport. Windows use `show: false` and isolated temporary profiles. It requires a graphical Electron environment but does not open visible windows or use physical capture devices. The audio output test uses a silent synthetic stream and checks standalone audio subscriptions, mute rules, source removal and system-default output selection. Its device-selection assertions stub the OS sink operation; they do not certify a physical speaker or audio interface.
+
+Controller reliability injects full legacy-cache and failed disk-save conditions, tests delayed speaker graphics across cue reordering, verifies safe file restoration and retries saving. Mapped output lifecycle checks canonical-only audio, fade retirement, rapid scene changes, destination geometry, transparency and live placeholders. HTTP dependency tests exercise the production request handler without opening a network socket; OSC tests parse real encoded packets.
+
+The live-input regression uses the real capture hub's synthetic test source and real WebRTC connections to separate Preview and Program consumers. It checks decoded frame progression, muted Preview, one shared capture, independent consumer removal and reconnection without restarting the source. Run it alone with `npm run test:live-input-ui`.
+
+`test:output-audio-ui`, `test:output-lifecycle-ui`, `test:controller-reliability-ui` and `test:live-input-ui` accept `SHOWSLATE_TEST_APP_ROOT` pointing to a built application's `app.asar` to exercise the packaged renderer and preload files using the development Electron runner. This checks archive contents and renderer integration; it is not a full packaged-application smoke run.
+
+Hidden renderer checks complement designated-display smoke; they do not replace visible operator rehearsal, physical output routing or hardware performance measurements. Each suite included in the hidden group accepts `SHOWSLATE_HIDDEN_VISUAL=1` or always keeps its windows hidden. Visible modes retain the configured-display requirement. The public-site visual suite is separate and still requires an explicitly configured safe display.
 
 ## Responsive product matrix
 

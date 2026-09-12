@@ -49,7 +49,9 @@
     element.dataset.transportLayerId = String(layer.id || '');
 
     const sinkId = String(options.sinkId || '');
-    if (!element.muted && sinkId && typeof element.setSinkId === 'function') element.setSinkId(sinkId).catch(() => {});
+    if (!element.muted && typeof element.setSinkId === 'function' && String(element.sinkId || '') !== sinkId) {
+      try { Promise.resolve(element.setSinkId(sinkId)).catch(() => {}); } catch (_) {}
+    }
 
     function resolved(now = Date.now()) {
       return compositor.resolveMediaPlayback(layer, now, mediaDuration(element));
@@ -74,7 +76,7 @@
     }
 
     function atOut() {
-      if (settling) return;
+      if (settling || layer.playbackState !== 'playing') return;
       const bounds = compositor.mediaPlaybackBounds(layer, mediaDuration(element));
       if (!(bounds.end > bounds.start) || finite(element.currentTime) < bounds.end - 0.035) return;
       settling = true;

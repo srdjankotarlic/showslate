@@ -16,10 +16,16 @@ const groups = {
     'test:media-library',
     'test:screen-content',
     'test:compositor',
+    'test:media-transport',
+    'test:live-input-consumer',
+    'test:live-input-hub',
     'test:control-api',
+    'test:http-output-dependencies',
+    'test:osc-parser',
     'test:report',
     'test:output-routing',
     'test:recording',
+    'test:recording-controller',
     'test:release-signing',
     'test:release-evidence',
     'test:localization',
@@ -33,7 +39,25 @@ const groups = {
     'test:screen-content-ui',
     'test:compositor-ui',
     'test:control-api-ui',
-    'test:report-ui'
+    'test:report-ui',
+    'test:output-audio-ui',
+    'test:output-lifecycle-ui',
+    'test:controller-reliability-ui',
+    'test:live-input-ui'
+  ],
+  'hidden-renderers': [
+    'test:show-recovery',
+    'test:show-setup-ui',
+    'test:conference-desk-ui',
+    'test:screen-content-ui',
+    'test:control-api-ui',
+    'test:report-ui',
+    'test:compositor-ui',
+    'test:beta-ui',
+    'test:output-audio-ui',
+    'test:output-lifecycle-ui',
+    'test:controller-reliability-ui',
+    'test:live-input-ui'
   ]
 };
 
@@ -43,7 +67,7 @@ const scripts = requested === 'all'
   : groups[requested];
 
 if (!scripts) {
-  console.error(`Unknown suite "${requested}". Use modules, renderers, or all.`);
+  console.error(`Unknown suite "${requested}". Use modules, renderers, hidden-renderers, or all.`);
   process.exit(2);
 }
 
@@ -58,7 +82,7 @@ for (const script of scripts) {
     : ['run', script];
   const result = spawnSync(runner, args, {
     cwd: process.cwd(),
-    env: process.env,
+    env: requested === 'hidden-renderers' ? { ...process.env, SHOWSLATE_HIDDEN_VISUAL: '1' } : process.env,
     stdio: 'inherit'
   });
   if (result.error) {
