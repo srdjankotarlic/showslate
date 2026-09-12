@@ -1,6 +1,14 @@
 # Public Beta Verification
 
-Local reliability verification through 2026-09-12 supports the `0.12.0-beta.4` update. This page separates the new hidden-window regression checks from historical visible Mac workflows and from exact tagged release artifacts. It does not certify physical Windows or venue hardware behavior.
+Local verification through 2026-09-12 supports the `0.12.0-beta.5` update. This page separates hidden-window regression checks from historical visible Mac workflows and from exact tagged release artifacts. It does not certify physical Windows or venue hardware behavior.
+
+## 2026-09-12 Live Deck verification
+
+The Live Deck source at clean commit `3f0cbef4614c40f98fd8401830df3fcda3933967` passed 26 module groups, the free-build/icon/site contracts, and 13 hidden Electron groups with 265 checks. The dedicated Live Deck suite contributes 29 checks covering actual image/H.264/VP8 thumbnail decoding, missing-media fallback, responsive bounds, Preview/Program isolation, one-row replacement, PIN continuity, duplicate source IDs, transport pairing, lower-third runtime and native keyboard events. The thumbnail helper has 20 deterministic checks for bounded decoding, cancellation, stale work and capture-free live snapshots.
+
+A clean local Apple Silicon candidate (`0.12.0-beta.4-live.1`) built from that commit passed 29 Live Deck and 10 controller-reliability checks against its packaged ASAR using Electron 43.1.1, plus executable build-info boot, byte-for-byte runtime matching, strict ad-hoc signature, DMG integrity and MIT/no-activation checks. The dependency audit reported zero vulnerabilities. Screenshots at [1440×900](images/live-deck-1440x900.png), [1024×700](images/live-deck-1024x700.png), and [900×600](images/live-deck-900x600.png) show a fixture show, not a customer's media or physical capture devices.
+
+Those local checks precede the beta 5 version/release metadata commit. The native beta workflow separately rebuilds the tagged Mac and Windows downloads, checks boot/provenance and creates checksums/attestations. Local candidate tests are not an exact-artifact physical rehearsal of those downloads. No physical Windows, HDMI/LED/UVC, external audio device or sustained 4K60 certification is added by this update.
 
 ## 2026-09-12 reliability verification
 
