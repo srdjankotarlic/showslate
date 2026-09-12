@@ -11716,7 +11716,8 @@ function selectLiveModeClip(sceneId,layerId,{previewOnly=false}={}){
   return true;
 }
 function takeLiveModeClip(){
-  const layer=selectedLayer(),previewScene=currentScene();
+  const previewScene=currentScene();
+  const layer=(previewScene.layers||[]).find(row=>row.id===selectedLayerId);
   if(!layer)return false;
   const next=cloneState(ensureProgramState()),programScene=activeScene(next);
   const result=PTLIVE.takeClip(programScene,previewScene,layer.id);

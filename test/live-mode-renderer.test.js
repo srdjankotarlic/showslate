@@ -167,18 +167,20 @@ function run() {
     const selection = await evaluate(`
       const program=JSON.stringify(programState),timer=timerCueSnapshot();
       document.querySelector('.live-mode-clip[data-layer-id="live-video"]').click();
-      return {programUnchanged:program===JSON.stringify(programState),timerUnchanged:timer===timerCueSnapshot(),scene:S.activeSceneId,layer:selectedLayerId};
+      return {programUnchanged:program===JSON.stringify(programState),timerUnchanged:timer===timerCueSnapshot(),scene:S.activeSceneId,layer:selectedLayerId,videoInitiallyPaused:selectedLayer().playbackState==='paused',restartOnTake:selectedLayer().restartOnTake};
     `);
-    check('LIVE_MODE_PREVIEW_SELECTION_ISOLATED_OK', selection.programUnchanged && selection.timerUnchanged && selection.scene === 'live-film' && selection.layer === 'live-video', selection);
+    check('LIVE_MODE_PREVIEW_SELECTION_ISOLATED_OK', selection.programUnchanged && selection.timerUnchanged && selection.scene === 'live-film' && selection.layer === 'live-video' && selection.videoInitiallyPaused && selection.restartOnTake, selection);
     const takeClip = await evaluate(`
       const before=activeScene(programState),timer=timerCueSnapshot();
       const untouched=cloneState(before.layers.find(row=>row.id==='live-title'));
       document.getElementById('liveModeTakeClip').click();
       const after=activeScene(programState),clip=liveModeProgramLayer(selectedLayer(),S.activeSceneId);
       const retained=after.layers.find(row=>row.id==='live-title');
-      return {timerUnchanged:timer===timerCueSnapshot(),scenePreserved:after.id==='live-opening',clipLive:!!clip,source:clip?.programSourceLayerId,row:clip?.programLiveRow,replacedBack:!after.layers.some(row=>row.id==='live-photo'),othersUnchanged:!!retained&&Object.keys(untouched).every(key=>JSON.stringify(untouched[key])===JSON.stringify(retained[key])),count:after.layers.length};
+      const preview=selectedLayer(),transportKeys=['playbackState','playbackPosition','playbackUpdatedAt','playbackRate','inPoint','outPoint'];
+      return {timerUnchanged:timer===timerCueSnapshot(),scenePreserved:after.id==='live-opening',clipLive:!!clip,source:clip?.programSourceLayerId,row:clip?.programLiveRow,replacedBack:!after.layers.some(row=>row.id==='live-photo'),othersUnchanged:!!retained&&Object.keys(untouched).every(key=>JSON.stringify(untouched[key])===JSON.stringify(retained[key])),count:after.layers.length,pairedTransport:!!clip&&transportKeys.every(key=>preview[key]===clip[key]),previewPlaying:preview.playbackState==='playing',programPlaying:clip?.playbackState==='playing',previewPosition:preview.playbackPosition,programPosition:clip?.playbackPosition,inPoint:preview.inPoint};
     `);
     check('LIVE_MODE_TAKE_CLIP_REPLACES_ONLY_ITS_ROW_OK', takeClip.timerUnchanged && takeClip.scenePreserved && takeClip.clipLive && takeClip.source === 'live-video' && takeClip.row === 1 && takeClip.replacedBack && takeClip.othersUnchanged && takeClip.count === 2, takeClip);
+    check('LIVE_MODE_TAKE_RESTART_SYNCHRONIZES_PREVIEW_PROGRAM_OK', takeClip.pairedTransport && takeClip.previewPlaying && takeClip.programPlaying && takeClip.previewPosition === takeClip.inPoint && takeClip.inPoint === 0.05, takeClip);
     const columnTake = await evaluate(`
       const timer=timerCueSnapshot();
       document.querySelector('.live-mode-scene-take[data-scene-id="live-countdown"]').click();
