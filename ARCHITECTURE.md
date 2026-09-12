@@ -40,6 +40,16 @@ Preview selection must never change the LIVE cue, running timer or Program outpu
 - Browser and OBS URL outputs receive canonical Program state over SSE, but they do not receive local WebRTC capture streams. Local live inputs are supported only in Electron desktop output windows.
 - `src/report/model.js` builds the post-show report from canonical cue actual fields, with legacy log fallback and spreadsheet-safe CSV output.
 
+## Live performance deck
+
+- Live Mode is another view of the existing scenes, not a second playback engine. Columns are scenes; rows are top-first layer positions. Studio's individual-layer TAKE behavior is unchanged.
+- `src/live-mode/model.js` replaces only the selected logical row for a Live TAKE CLIP. Program-only `programLiveRow` keeps sparse rows stable; scene + source-layer provenance disambiguates reused IDs. Program runtime IDs remain unique.
+- PIN means ignore scene/column triggering for that row. Explicit TAKE CLIP can replace a pinned layer; HIDE CLIP preserves its row. Retained video and lower-third runtime timing is not restarted by a column change.
+- Preview First is the safe default. Direct thumbnail activation changes Program; clicking the name selects without triggering in either mode. Deck arrow keys move focus only and do not leak into timer/transform shortcuts.
+- `src/live-mode/thumbnails.js` generates bounded 256×144 stills with one detached, muted, paused decoder at a time. Only visible deck cells request work; canceled/replaced decks discard stale callbacks and decoder resources. Thumbnail generation never calls play or capture APIs.
+- Live stills are read at most once per second from already-attached muted monitor consumers. A missing/inactive stream shows a named fallback rather than initiating capture or showing a stale live still. Thumbnail cache entries are not stored in show documents.
+- Local hidden regression coverage is `SHOWSLATE_HIDDEN_VISUAL=1 npm run test:live-deck-ui`; it uses an isolated profile and no real capture/output routes. It is not physical device or sustained 4K60 certification.
+
 ## Lower thirds
 
 - `src/lower-third/model.js`, `validate.js`, `migrate.js` and `resolve.js` define the versioned template/runtime contract.

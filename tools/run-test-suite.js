@@ -12,6 +12,7 @@ const groups = {
     'test:show-preflight',
     'test:conference-desk',
     'test:live-mode',
+    'test:live-thumbnails',
     'test:show-folder-import',
     'test:media-library',
     'test:screen-content',
@@ -46,6 +47,7 @@ const groups = {
     'test:live-input-ui'
   ],
   'hidden-renderers': [
+    'test:live-deck-ui',
     'test:show-recovery',
     'test:show-setup-ui',
     'test:conference-desk-ui',

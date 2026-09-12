@@ -3497,7 +3497,7 @@
       </div>
     </div>
 
-    <section class="live-mode-workspace" id="liveModeWorkspace" data-testid="live-mode-workspace" aria-label="Live performance workspace" hidden>
+    <section class="live-mode-workspace" id="liveModeWorkspace" data-testid="live-mode-workspace" aria-label="Live performance workspace" tabindex="-1" hidden>
       <header class="live-mode-toolbar">
         <div class="live-mode-identity">
           <span class="live-mode-kicker" data-i18n="liveDeckKicker">PERFORMANCE DECK</span>
@@ -4270,6 +4270,7 @@
 </div>
 
 <div class="statusbar status-bar">
+  <span class="live-mode-keyboard-help" data-i18n="liveKeyboardHelp">Deck: arrows move focus · Enter/Space activates · name selects without playing</span>
   <span data-i18n-html="shortcuts"><kbd>Space</kbd> start/pauza · <kbd>R</kbd> reset · <kbd>N</kbd> sledeći · <kbd>↑↓</kbd> ±1m · <kbd>←→</kbd> ±10s · <kbd>B</kbd> blackout · <kbd>F</kbd> pun ekran · <kbd>M</kbd> poruka · <kbd>C</kbd> obriši poruku</span>
   <span class="show-save-status" id="showSaveStatus" data-kind="idle">—</span>
 </div>
@@ -4706,6 +4707,7 @@
 <script src="src/screen-content/model.js"></script>
 <script src="src/compositor/model.js"></script>
 <script src="src/live-mode/model.js"></script>
+<script src="src/live-mode/thumbnails.js"></script>
 <script src="src/compositor/media-transport.js"></script>
 <script src="src/live-input/consumer.js"></script>
 <script src="src/conference-desk/model.js"></script>
@@ -4743,6 +4745,7 @@ const PTCD = window.SHOWSLATE_CONFERENCE || {
 };
 const PTCOMP = window.ShowSlateCompositor;
 const PTLIVE = window.ShowSlateLiveMode;
+const PTTHUMBS = window.ShowSlateLiveThumbnails;
 const PTMEDIA = window.ShowSlateMediaTransport;
 const liveInputStatuses = new Map();
 const liveInputConsumer = window.ShowSlateLiveInput ? new window.ShowSlateLiveInput.LiveInputConsumer(api,{
@@ -4772,7 +4775,9 @@ const I18N = {
     sources:'Izvori', tabRundown:'Rundown', sceneNamePrompt:'Naziv scene:', rename:'Preimenuj', showStartTitle:'Planirani početak programa', cueMoveUp:'Pomeri tačku gore', cueMoveDown:'Pomeri tačku dole', cueSkip:'Preskoči tačku', cueRestore:'Vrati preskočenu tačku', cueDelete:'Obriši tačku',
     canvasTitle:'Canvas — odnos stranica platna (i vertikalni ekrani)', fadeTitle:'Trajanje prelaza scene na izlazu', fadeCut:'Cut',
     lockLive:'Zaključaj program', lockTitle:'Štiti živ program: GO, RESET i preskakanje traže otključavanje; poruke i ±vreme rade', enterLiveMode:'Live režim', exitLiveMode:'Izađi iz Live',
-    liveDeckKicker:'PERFORMANCE DECK', liveComposition:'Kompozicija', livePreviewFirst:'PRVO PREVIEW', liveDirect:'DIREKTNO', liveCut:'CUT', liveFade:'FADE', liveSafeStatus:'Bezbedno: klik priprema Preview', liveDirectStatus:'Direktno: klik odmah menja Program', liveTakeScene:'PUSTI SCENU', liveSelectedClip:'IZABRANI KLIP', liveTakeClip:'PUSTI KLIP', liveHideClip:'SKLONI KLIP', livePrevious:'PRETHODNA', liveNext:'SLEDEĆA', livePersistent:'PIN', livePersistentHint:'Zadrži ovaj lejer preko sledeće scene', liveLayer:'LEJER {n}', liveEmptyClip:'PRAZNO', liveNoClips:'Ova kompozicija još nema izvore.', liveGoCue:'GO CUE',
+    liveDeckKicker:'PERFORMANCE DECK', liveComposition:'Kompozicija', livePreviewFirst:'PRVO PREVIEW', liveDirect:'DIREKTNO', liveCut:'CUT', liveFade:'FADE', liveSafeStatus:'Klik priprema · TAKE pušta', liveDirectStatus:'Sličica pušta · naziv samo bira', liveTakeScene:'PUSTI SCENU', liveSelectedClip:'IZABRANI KLIP', liveTakeClip:'PUSTI KLIP', liveHideClip:'SKLONI KLIP', livePrevious:'PRETHODNA', liveNext:'SLEDEĆA', livePersistent:'PIN', livePersistentHint:'Sačuvaj ovaj red pri puštanju scene. PUSTI KLIP i dalje može da ga zameni.', liveLayer:'LEJER {n}', liveEmptyClip:'PRAZNO', liveNoClips:'Ova kompozicija još nema izvore.', liveGoCue:'GO CUE',
+    liveSelectOnly:'Izaberi u Preview bez puštanja', liveClipHelp:'Sličica prati režim puštanja; naziv samo bira. Strelice pomeraju fokus, Enter/Space aktivira.', liveThumbnailUnavailable:'Pregled nije dostupan',
+    liveKeyboardHelp:'Deck: strelice pomeraju fokus · Enter/Space aktivira · naziv bira bez puštanja',
     demoShow:'Učitaj konferencijski demo', identify:'Prepoznaj ekrane', identifyTitle:'Na svakom fizičkom ekranu prikaži veliki broj (3s)',
     liveLabel:'U PROGRAMU', goNextOnly:'SLEDEĆI RED', goNextOnlyTitle:'Ide na sledeći red u rundown-u, bez obzira na izabrani red.', operatorBack:'NAZAD', operatorBackTitle:'Pripremi prethodni rundown red u Preview-u bez promene Programa', programBlack:'CRNO', programBlackStatus:'CRNO', liveControls:'Live kontrole', liveControlsHint:'Sekundarne komande i trenutno stanje rundown-a.', statusTitle:'IZLAZI · STATUS',
     stStage:'Ekran govornika', stServer:'Mrežni prikazi (OBS · Backstage · Signal)', stRemote:'Telefon daljinski', stApi:'API / Companion',
@@ -4883,7 +4888,9 @@ const I18N = {
     sources:'Sources', tabRundown:'Rundown', sceneNamePrompt:'Scene name:', rename:'Rename', showStartTitle:'Planned show start', cueMoveUp:'Move cue up', cueMoveDown:'Move cue down', cueSkip:'Skip cue', cueRestore:'Restore skipped cue', cueDelete:'Delete cue',
     canvasTitle:'Canvas — output aspect ratio (incl. vertical screens)', fadeTitle:'Scene transition duration on outputs', fadeCut:'Cut',
     lockLive:'Lock Live', lockTitle:'Protects the live show: GO, RESET and skip require unlocking; messages and ±time still work', enterLiveMode:'Live Mode', exitLiveMode:'Exit Live',
-    liveDeckKicker:'PERFORMANCE DECK', liveComposition:'Composition', livePreviewFirst:'PREVIEW FIRST', liveDirect:'DIRECT', liveCut:'CUT', liveFade:'FADE', liveSafeStatus:'Safe: click prepares Preview', liveDirectStatus:'Direct: click changes Program immediately', liveTakeScene:'TAKE SCENE', liveSelectedClip:'SELECTED CLIP', liveTakeClip:'TAKE CLIP', liveHideClip:'HIDE CLIP', livePrevious:'PREVIOUS', liveNext:'NEXT', livePersistent:'PIN', livePersistentHint:'Keep this layer over the next scene', liveLayer:'LAYER {n}', liveEmptyClip:'EMPTY', liveNoClips:'This composition has no sources yet.', liveGoCue:'GO CUE',
+    liveDeckKicker:'PERFORMANCE DECK', liveComposition:'Composition', livePreviewFirst:'PREVIEW FIRST', liveDirect:'DIRECT', liveCut:'CUT', liveFade:'FADE', liveSafeStatus:'Click prepares · TAKE plays', liveDirectStatus:'Thumbnail plays · name selects', liveTakeScene:'TAKE SCENE', liveSelectedClip:'SELECTED CLIP', liveTakeClip:'TAKE CLIP', liveHideClip:'HIDE CLIP', livePrevious:'PREVIOUS', liveNext:'NEXT', livePersistent:'PIN', livePersistentHint:'Keep this row when launching a scene. TAKE CLIP can still replace it.', liveLayer:'LAYER {n}', liveEmptyClip:'EMPTY', liveNoClips:'This composition has no sources yet.', liveGoCue:'GO CUE',
+    liveSelectOnly:'Select in Preview without playing', liveClipHelp:'Thumbnail follows trigger mode; name only selects. Arrows move focus, Enter/Space activates.', liveThumbnailUnavailable:'Preview unavailable',
+    liveKeyboardHelp:'Deck: arrows move focus · Enter/Space activates · name selects without playing',
     demoShow:'Load conference demo', identify:'Identify displays', identifyTitle:'Show a big number on every physical display (3s)',
     liveLabel:'LIVE', goNextOnly:'NEXT ROW', goNextOnlyTitle:'Advances to the next rundown row, regardless of the selected row.', operatorBack:'BACK', operatorBackTitle:'Prepare the previous rundown item in Preview without changing Program', programBlack:'BLACK', programBlackStatus:'BLACK', liveControls:'Live controls', liveControlsHint:'Secondary commands and current rundown status.', statusTitle:'OUTPUTS · STATUS',
     stStage:'Speaker screen', stServer:'Network views (OBS · Backstage · Signal)', stRemote:'Phone remote', stApi:'API / Companion',
@@ -5247,15 +5254,20 @@ function takePreview(kind='transition'){
 function comparableProgramLayer(layer){
   if(!layer) return '';
   const copy=cloneState(layer);
+  if(copy.programSourceLayerId)copy.id=copy.programSourceLayerId;
   delete copy.programSourceLayerId;
   delete copy.programSourceSceneId;
+  delete copy.programLiveRow;
   return JSON.stringify(copy);
 }
-function findProgramLayer(layer, state=ensureProgramState()){
+function findProgramLayer(layer, state=ensureProgramState(), sourceSceneId=S.activeSceneId){
   if(!layer) return null;
   const scene=activeScene(state);
   if(!scene || !Array.isArray(scene.layers)) return null;
-  return scene.layers.find(row=>row && (row.id===layer.id || row.programSourceLayerId===layer.id)) || null;
+  return scene.layers.find(row=>row &&
+    String(row.programSourceLayerId||row.id||'')===String(layer.id||'')&&
+    String(row.programSourceSceneId||scene.id||'')===String(sourceSceneId||'')
+  ) || null;
 }
 function layerProgramInfo(layer){
   if(!layer) return {key:'none',label:t('layerPreviewOnly'),programLayer:null};
@@ -11648,14 +11660,18 @@ $('btnIdentify').addEventListener('click',()=>api.identifyDisplays&&api.identify
 let conferenceLiveMode=false;
 let liveModePreviousStudioDirect=false;
 let liveModeLastTransportPaint=0;
-const liveModeVideoPosterCache=new Map();
+let liveModeLastThumbnailPaint=0;
+const liveModeThumbnails=PTTHUMBS.createThumbnailQueue({document,resolveSource:mediaSrc,maxEntries:96,maxPending:128});
+let liveModeThumbnailObserver=null;
+const liveModeThumbnailJobs=new Map();
 let liveModePreferences=(()=>{
   try{return PTLIVE.normalizePreferences(JSON.parse(localStorage.getItem('showslate_live_mode')||'{}'));}
   catch(_){return PTLIVE.normalizePreferences();}
 })();
 
 function persistLiveModePreferences(){
-  localStorage.setItem('showslate_live_mode',JSON.stringify(liveModePreferences));
+  // Preference storage is optional; a full cache must not disable live controls.
+  try{localStorage.setItem('showslate_live_mode',JSON.stringify(liveModePreferences));}catch(_){}
 }
 function liveModeScenes(){
   ensureScenes();
@@ -11667,10 +11683,10 @@ function liveModeContentForScene(sceneId){
 function liveModeProgramLayer(layer,sceneId,program=ensureProgramState()){
   if(!layer)return null;
   const scene=activeScene(program);
-  return scene&&Array.isArray(scene.layers)?scene.layers.find(row=>row&&row.visible!==false&&(
-    String(row.id||'')===String(layer.id||'') ||
-    (String(row.programSourceLayerId||'')===String(layer.id||'')&&(!row.programSourceSceneId||String(row.programSourceSceneId)===String(sceneId||'')))
-  ))||null:null;
+  return scene&&Array.isArray(scene.layers)?scene.layers.find(row=>row&&row.visible!==false&&
+    String(row.programSourceLayerId||row.id||'')===String(layer.id||'')&&
+    String(row.programSourceSceneId||scene.id||'')===String(sceneId||'')
+  )||null:null;
 }
 function selectLiveModeScene(sceneId,{takeDirect=false}={}){
   const scene=liveModeScenes().find(row=>String(row.id)===String(sceneId||''));
@@ -11689,15 +11705,49 @@ function selectLiveModeScene(sceneId,{takeDirect=false}={}){
   if(takeDirect)return takeLiveModeScene(scene.id);
   return true;
 }
-function selectLiveModeClip(sceneId,layerId){
+function selectLiveModeClip(sceneId,layerId,{previewOnly=false}={}){
   const scene=liveModeScenes().find(row=>String(row.id)===String(sceneId||''));
   const layer=scene&&(scene.layers||[]).find(row=>String(row.id)===String(layerId||''));
   if(!layer)return false;
   selectLiveModeScene(scene.id);
   selectLayer(layer.id);
   renderLiveModeWorkspace();
-  if(liveModePreferences.triggerMode==='direct')return takeSelectedLayer({allowDirect:true});
+  if(!previewOnly&&liveModePreferences.triggerMode==='direct')return takeLiveModeClip();
   return true;
+}
+function takeLiveModeClip(){
+  const previewScene=currentScene();
+  const layer=(previewScene.layers||[]).find(row=>row.id===selectedLayerId);
+  if(!layer)return false;
+  const next=cloneState(ensureProgramState()),programScene=activeScene(next);
+  const result=PTLIVE.takeClip(programScene,previewScene,layer.id);
+  if(!result)return false;
+  prepareVideoLayerForTake(result.layer,layer);
+  const sceneIndex=next.scenes.findIndex(scene=>scene.id===programScene.id);
+  next.scenes.splice(sceneIndex,1,result.scene);
+  if(layer.inputId){
+    const definition=(S.liveInputs||[]).find(row=>row.id===layer.inputId);
+    if(definition){next.liveInputs=(next.liveInputs||[]).filter(row=>row.id!==definition.id);next.liveInputs.push(cloneState(definition));}
+  }
+  if(layer.type==='lowerThird'){
+    const lowerThird=lowerThirdStateFromSource(result.layer,{preview:false});if(lowerThird)next.lowerThird=lowerThird;
+  }else if(result.replaced?.some(row=>row.type==='lowerThird')){
+    next.lowerThird={...(next.lowerThird||{}),visible:false,until:0,runtimeVersion:null,runtime:null};
+  }
+  pushProgramState(next);
+  if(layer.type==='video')videoTransportTarget='both';
+  monitorSceneKeys={pv:'',pg:''};
+  renderStage('pv',S,Date.now());renderStage('pg',next,Date.now());
+  saveSettings();updateStudioButtons();publishControlStatus();
+  return true;
+}
+function hideLiveModeClip(){
+  const layer=selectedLayer(),next=cloneState(ensureProgramState());
+  const live=liveModeProgramLayer(layer,currentScene().id,next);
+  if(!live)return false;
+  live.visible=false;
+  if(live.type==='lowerThird')next.lowerThird={...(next.lowerThird||{}),visible:false,until:0,runtimeVersion:null,runtime:null};
+  pushProgramState(next);updateStudioButtons();publishControlStatus();return true;
 }
 function takeLiveModeScene(sceneId=S.activeSceneId){
   const scene=liveModeScenes().find(row=>String(row.id)===String(sceneId||''));
@@ -11713,6 +11763,8 @@ function takeLiveModeScene(sceneId=S.activeSceneId){
   const merged=PTLIVE.mergePersistentLayers(nextScene,currentSceneLive);
   const nextSceneIndex=(next.scenes||[]).findIndex(row=>String(row.id)===String(scene.id));
   if(nextSceneIndex>=0)next.scenes.splice(nextSceneIndex,1,merged.scene);
+  if(merged.retained.some(layer=>layer.type==='lowerThird'))next.lowerThird=cloneState(current.lowerThird);
+  else prepareLowerThirdSceneForTake(next,current);
   if(liveModePreferences.transition==='fade'){
     $('studio')?.classList.add('taking');
     setTimeout(()=>$('studio')?.classList.remove('taking'),320);
@@ -11737,54 +11789,60 @@ function setLiveModeLayerPersistent(sceneId,layerId,enabled){
   const live=liveModeProgramLayer(layer,scene.id,next);
   if(live)live.livePersistent=!!enabled;
   if(live)pushProgramState(next);
-  selectedLayerId=layer.id;
   sceneDirty();
   return true;
 }
-function loadLiveModeVideoPoster(layer,image){
-  const source=String(layer&&layer.src||'');
-  if(!source)return;
-  const cached=liveModeVideoPosterCache.get(source);
-  if(cached){image.src=cached;return;}
-  if(cached===null)return;
-  liveModeVideoPosterCache.set(source,null);
-  const video=document.createElement('video');
-  video.muted=true;video.preload='metadata';video.playsInline=true;
-  const release=()=>{try{video.pause();video.removeAttribute('src');video.load();}catch(_){};};
-  const fail=()=>{liveModeVideoPosterCache.delete(source);release();};
-  video.addEventListener('error',fail,{once:true});
-  video.addEventListener('loadedmetadata',()=>{
-    try{video.currentTime=Math.min(Math.max(0.05,Number(layer.inPoint)||0.05),Math.max(0.05,(Number(video.duration)||1)-0.05));}
-    catch(_){fail();}
-  },{once:true});
-  video.addEventListener('seeked',()=>{
-    try{
-      const width=240,height=Math.max(80,Math.round(width*(video.videoHeight||9)/(video.videoWidth||16)));
-      const canvas=document.createElement('canvas');canvas.width=width;canvas.height=height;
-      canvas.getContext('2d',{alpha:false}).drawImage(video,0,0,width,height);
-      const poster=canvas.toDataURL('image/jpeg',.72);liveModeVideoPosterCache.set(source,poster);image.src=poster;
-    }catch(_){liveModeVideoPosterCache.delete(source);}
-    release();
-  },{once:true});
-  video.src=mediaSrc(source);
+function clearLiveModeThumbnails(){
+  liveModeThumbnailObserver?.disconnect();
+  for(const job of liveModeThumbnailJobs.values())job.cancel?.();
+  liveModeThumbnailJobs.clear();
+  liveModeThumbnails.clearPending();
+}
+function paintLiveModeThumbnail(job,poster,info={}){
+  if(!job.thumb.isConnected)return;
+  if(poster){
+    job.image.src=poster;job.image.hidden=false;job.fallback.hidden=true;
+    job.thumb.dataset.thumbnailState='ready';
+  }else if(info.status==='error'){
+    job.fallback.textContent=t('liveThumbnailUnavailable');
+    job.thumb.dataset.thumbnailState='error';
+  }
+}
+function updateLiveModeThumbnails(now=Date.now()){
+  if(!conferenceLiveMode||now-liveModeLastThumbnailPaint<1000)return;
+  liveModeLastThumbnailPaint=now;
+  for(const job of liveModeThumbnailJobs.values()){
+    if(!job.visible)continue;
+    if(job.descriptor.kind==='timer'){job.fallback.textContent=$('pvTime')?.textContent||job.descriptor.text;continue;}
+    if(job.descriptor.kind!=='live')continue;
+    const inputId=job.descriptor.inputId;
+    const existing=[...document.querySelectorAll('#pvScene video[data-live-input-id],#pgScene video[data-live-input-id]')]
+      .find(video=>video.dataset.liveInputId===inputId&&video.muted&&video.readyState>=2);
+    const poster=existing?liveModeThumbnails.snapshot(job.descriptor,existing):'';
+    if(poster)paintLiveModeThumbnail(job,poster);
+    else {job.image.hidden=true;job.fallback.hidden=false;job.thumb.dataset.thumbnailState='unavailable';}
+  }
 }
 function liveModeClipThumbnail(parent,cell,layer){
   const thumb=document.createElement('span');thumb.className='live-mode-clip-thumb';
-  const previewSource=String(cell.thumbnail||(cell.type==='image'&&layer&&layer.src)||'');
-  if(previewSource){
-    const image=document.createElement('img');image.src=mediaSrc(previewSource);image.alt='';thumb.appendChild(image);
-  }else if(cell.type==='video'&&layer&&layer.src){
-    const image=document.createElement('img');image.alt='';thumb.appendChild(image);loadLiveModeVideoPoster(layer,image);
-  }else if(cell.type==='color'){
-    thumb.style.background=layer&&(layer.color||layer.bg)||'#20242c';thumb.textContent='#';
-  }else if(cell.type==='text'){
-    thumb.classList.add('text-preview');thumb.textContent=String(layer&&layer.text||cell.name||'TEXT').slice(0,80);
-  }else if(cell.type==='timer'){
-    thumb.classList.add('timer-preview');thumb.textContent='10:00';
-  }else{
-    thumb.classList.add('type-preview');thumb.textContent=cell.type.slice(0,5).toUpperCase();
+  thumb.setAttribute('aria-hidden','true');
+  const descriptor=PTTHUMBS.describe(layer||cell,{timerText:$('pvTime')?.textContent||'10:00',resolveSource:mediaSrc});
+  thumb.classList.add(descriptor.kind+'-preview');thumb.dataset.thumbnailState='fallback';
+  const fallback=document.createElement('span');fallback.className='live-mode-thumb-fallback';
+  fallback.textContent=descriptor.kind==='text'?descriptor.text:(descriptor.text||descriptor.label||cell.type.toUpperCase());
+  if(descriptor.kind==='color')thumb.style.background=PTCOMP.layerFillStyle(layer);
+  if(descriptor.kind==='text'){
+    thumb.style.color=layer?.color||'#eef1f4';thumb.style.background=layer?.bg||'#121518';
   }
+  if(descriptor.kind==='live')fallback.textContent=[...new Set([descriptor.label,layer?.sourceName||cell.name])].filter(Boolean).join('\n');
+  if(descriptor.kind==='blank')fallback.textContent=lang==='sr'?'Prazan izlaz':'Blank output';
+  const image=document.createElement('img');image.alt='';image.hidden=true;image.decoding='async';
+  image.addEventListener('error',()=>{image.hidden=true;fallback.hidden=false;fallback.textContent=t('liveThumbnailUnavailable');thumb.dataset.thumbnailState='error';});
+  thumb.append(fallback,image);
   parent.appendChild(thumb);
+  const job={thumb,image,fallback,descriptor,visible:false,cancel:null};
+  liveModeThumbnailJobs.set(thumb,job);
+  liveModeThumbnailObserver?.observe(thumb);
 }
 function renderLiveModeCueStatus(){
   const live=$('liveModeCueLive'),next=$('liveModeCueNext');
@@ -11798,7 +11856,21 @@ function renderLiveModeCueStatus(){
 }
 function renderLiveModeWorkspace(){
   const workspace=$('liveModeWorkspace'),deckRoot=$('liveModeDeck');
-  if(!workspace||!deckRoot)return;
+  if(!workspace||!deckRoot||!conferenceLiveMode)return;
+  const focused=deckRoot.contains(document.activeElement)?document.activeElement:null;
+  const focusIdentity=focused?{scene:focused.dataset.sceneId,layer:focused.dataset.layerId,kind:focused.className,type:focused.type}:null;
+  clearLiveModeThumbnails();
+  liveModeThumbnailObserver=new IntersectionObserver(entries=>{
+    for(const entry of entries){
+      const job=liveModeThumbnailJobs.get(entry.target);if(!job)continue;
+      job.visible=entry.isIntersecting;
+      if(!job.visible){job.cancel?.();job.cancel=null;continue;}
+      if(['image','video'].includes(job.descriptor.kind)&&!job.cancel){
+        job.cancel=liveModeThumbnails.request(job.descriptor,{isCurrent:()=>job.thumb.isConnected&&job.visible&&conferenceLiveMode,onReady:(poster,info)=>paintLiveModeThumbnail(job,poster,info)});
+      }
+    }
+    liveModeLastThumbnailPaint=0;updateLiveModeThumbnails();
+  },{root:$('liveModeDeckScroll'),rootMargin:'80px'});
   const deckScroll=$('liveModeDeckScroll');
   const previousScroll={left:deckScroll.scrollLeft,top:deckScroll.scrollTop};
   const compositionSelect=$('liveModeComposition');
@@ -11826,6 +11898,13 @@ function renderLiveModeWorkspace(){
   safety.textContent=t(liveModePreferences.triggerMode==='direct'?'liveDirectStatus':'liveSafeStatus');
   safety.classList.toggle('direct',liveModePreferences.triggerMode==='direct');
   const program=ensureProgramState(),programScene=activeScene(program);
+  const mixedProgram=(programScene?.layers||[]).some(layer=>layer.visible!==false&&layer.programSourceSceneId&&layer.programSourceSceneId!==programScene.id);
+  for(const [selector,key] of [['.studio-preview','studioPreview'],['.studio-program','studioProgram']]){
+    const monitor=document.querySelector(selector);if(!monitor)continue;
+    let label=monitor.querySelector('.live-mode-monitor-label');
+    if(!label){label=document.createElement('div');label.className='live-mode-monitor-label';monitor.appendChild(label);}
+    label.textContent=t(key)+(key==='studioProgram'&&mixedProgram?' · MIX':'');
+  }
   $('liveModeBlack').classList.toggle('on',!!program.blackout);
   const scenes=liveModeScenes();
   const deck=PTLIVE.buildDeck(scenes,{previewSceneId:S.activeSceneId,programSceneId:programScene&&programScene.id});
@@ -11843,7 +11922,7 @@ function renderLiveModeWorkspace(){
     const select=document.createElement('button');select.type='button';select.className='live-mode-scene-button';select.dataset.sceneId=scene.id;
     select.setAttribute('aria-label',`${scene.name} — ${liveModePreferences.triggerMode==='direct'?t('liveDirect'):t('studioPreview')}`);
     const name=document.createElement('strong');name.textContent=scene.name;
-    const meta=document.createElement('span');meta.textContent=scene.activeProgram?t('badgeLive'):scene.activePreview?t('badgeSelected'):`${scene.layerCount} ${t('sources').toLowerCase()}`;
+    const meta=document.createElement('span');meta.textContent=scene.activeProgram?(mixedProgram?'MIX':t('badgeLive')):scene.activePreview?t('badgeSelected'):`${scene.layerCount} ${t('sources').toLowerCase()}`;
     select.append(name,meta);select.addEventListener('click',()=>selectLiveModeScene(scene.id,{takeDirect:liveModePreferences.triggerMode==='direct'}));
     const take=document.createElement('button');take.type='button';take.className='live-mode-scene-take';take.dataset.sceneId=scene.id;take.textContent='▶';
     take.setAttribute('aria-label',`${t('liveTakeScene')}: ${scene.name}`);
@@ -11875,8 +11954,10 @@ function renderLiveModeWorkspace(){
       clip.setAttribute('aria-label',`${cell.sceneName} — ${cell.name}`);
       liveModeClipThumbnail(clip,cell,sourceLayer);
       const clipName=document.createElement('strong');clipName.textContent=cell.name;
-      const clipMeta=document.createElement('span');clipMeta.textContent=live?t('badgeLive'):cell.type;
-      clip.append(clipName,clipMeta);clip.addEventListener('click',()=>selectLiveModeClip(cell.sceneId,cell.id));
+      clipName.title=t('liveSelectOnly');
+      const clipMeta=document.createElement('span');clipMeta.className='live-mode-clip-type';clipMeta.textContent=live?t('badgeLive'):cell.type;
+      clip.title=`${cell.sceneName} — ${cell.name}\n${t('liveClipHelp')}`;
+      clip.append(clipName,clipMeta);clip.addEventListener('click',event=>selectLiveModeClip(cell.sceneId,cell.id,{previewOnly:!!event.target.closest('strong')}));
       const persistent=document.createElement('label');persistent.className='live-mode-persistent';persistent.title=t('livePersistentHint');
       const checkbox=document.createElement('input');checkbox.type='checkbox';checkbox.checked=cell.persistent;checkbox.dataset.sceneId=cell.sceneId;checkbox.dataset.layerId=cell.id;
       checkbox.setAttribute('aria-label',`${t('livePersistent')}: ${cell.name}`);
@@ -11891,7 +11972,13 @@ function renderLiveModeWorkspace(){
   $('liveModeTakeClip').disabled=!layer;
   const liveLayer=layer&&liveModeProgramLayer(layer,currentScene().id,program);
   $('liveModeHideClip').disabled=!liveLayer;
+  $('liveModePrevious').disabled=!scenes.length||scenes[0].id===S.activeSceneId;
+  $('liveModeNext').disabled=!scenes.length||scenes.at(-1).id===S.activeSceneId;
   renderLiveModeCueStatus();updateLiveModeTransportUI(Date.now(),true);
+  if(focusIdentity){
+    const replacement=[...deckRoot.querySelectorAll('button,input')].find(node=>node.dataset.sceneId===focusIdentity.scene&&node.dataset.layerId===focusIdentity.layer&&node.className===focusIdentity.kind&&node.type===focusIdentity.type);
+    replacement?.focus({preventScroll:true});
+  }
   if(preserveScroll)requestAnimationFrame(()=>{
     deckScroll.scrollLeft=Math.min(previousScroll.left,Math.max(0,deckScroll.scrollWidth-deckScroll.clientWidth));
     deckScroll.scrollTop=Math.min(previousScroll.top,Math.max(0,deckScroll.scrollHeight-deckScroll.clientHeight));
@@ -11899,6 +11986,7 @@ function renderLiveModeWorkspace(){
 }
 function updateLiveModeTransportUI(now=Date.now(),force=false){
   if(!conferenceLiveMode||(!force&&now-liveModeLastTransportPaint<80))return;
+  updateLiveModeThumbnails(now);
   liveModeLastTransportPaint=now;
   const layer=selectedLayer(),isVideo=!!layer&&layer.type==='video';
   const live=layer&&liveModeProgramLayer(layer,currentScene().id),hasProgram=!!live&&live.type==='video';
@@ -11925,6 +12013,7 @@ function setConferenceLiveMode(enabled){
     S.studioDirect=liveModePreviousStudioDirect;
   }
   conferenceLiveMode=next;
+  if(!next)clearLiveModeThumbnails();
   document.body.classList.toggle('conference-live-mode',conferenceLiveMode);
   const workspace=$('liveModeWorkspace');if(workspace)workspace.hidden=!conferenceLiveMode;
   const button=$('btnConferenceLive');
@@ -11955,8 +12044,25 @@ $('liveModeCueBack')?.addEventListener('click',preparePreviousCue);
 $('liveModeCueGo')?.addEventListener('click',goNext);
 $('liveModePrevious')?.addEventListener('click',()=>{const scene=PTLIVE.sceneAtOffset(liveModeScenes(),S.activeSceneId,-1);if(scene)selectLiveModeScene(scene.id);});
 $('liveModeNext')?.addEventListener('click',()=>{const scene=PTLIVE.sceneAtOffset(liveModeScenes(),S.activeSceneId,1);if(scene)selectLiveModeScene(scene.id);});
-$('liveModeTakeClip')?.addEventListener('click',()=>takeSelectedLayer({allowDirect:true}));
-$('liveModeHideClip')?.addEventListener('click',()=>hideSelectedLayer({allowDirect:true}));
+$('liveModeTakeClip')?.addEventListener('click',takeLiveModeClip);
+$('liveModeHideClip')?.addEventListener('click',hideLiveModeClip);
+$('liveModeWorkspace')?.addEventListener('keydown',event=>{
+  // Deck interaction must never bubble into the global timer or transform shortcuts.
+  event.stopPropagation();
+  const clip=event.target.closest('.live-mode-clip');
+  if(!clip||!['ArrowLeft','ArrowRight','ArrowUp','ArrowDown','Home','End'].includes(event.key))return;
+  event.preventDefault();
+  const current=clip.closest('.live-mode-cell');
+  const row=Number(current.style.gridRow),column=Number(current.style.gridColumn);
+  const clips=[...$('liveModeDeck').querySelectorAll('.live-mode-clip')];
+  const horizontal=['ArrowLeft','ArrowRight','Home','End'].includes(event.key);
+  const candidates=clips.filter(button=>Number(button.closest('.live-mode-cell').style[horizontal?'gridRow':'gridColumn'])===(horizontal?row:column));
+  const index=candidates.indexOf(clip);
+  const offset=['ArrowLeft','ArrowUp'].includes(event.key)?-1:1;
+  const destination=event.key==='Home'?candidates[0]:event.key==='End'?candidates.at(-1):candidates[index+offset];
+  destination?.focus();
+});
+window.addEventListener('beforeunload',()=>{clearLiveModeThumbnails();liveModeThumbnails.dispose();});
 document.querySelectorAll('[data-live-target]').forEach(button=>button.addEventListener('click',()=>{setVideoTransportTarget(button.dataset.liveTarget);updateLiveModeTransportUI(Date.now(),true);}));
 document.querySelectorAll('[data-live-command]').forEach(button=>button.addEventListener('click',()=>{commandVideoTargets(button.dataset.liveCommand);updateLiveModeTransportUI(Date.now(),true);}));
 $('chkLock').addEventListener('change',e=>{

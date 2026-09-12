@@ -29,9 +29,7 @@
   function layerSlotKey(layer = {}, index = 0) {
     const slot = text(layer.liveSlot).toLowerCase();
     if (slot) return `slot:${slot}`;
-    const type = text(layer.type, 'source').toLowerCase();
-    const name = text(layer.name || layer.sourceName).toLowerCase();
-    return name ? `named:${type}:${name}` : `stack:${type}:${index}`;
+    return `row:${programRow(layer, index)}`;
   }
 
   function normalizeCell(layer, scene, stackIndex) {
@@ -78,35 +76,96 @@
     return { scenes, rows, rowCount };
   }
 
-  function sourceIdentity(layer = {}) {
-    return text(layer.programSourceLayerId || layer.id);
+  function programRow(layer, fallback) {
+    return Number.isInteger(layer.programLiveRow) && layer.programLiveRow >= 0
+      ? layer.programLiveRow : fallback;
+  }
+
+  function sceneLayers(scene) {
+    return (Array.isArray(scene && scene.layers) ? scene.layers : [])
+      .filter(layer => layer && typeof layer === 'object');
+  }
+
+  function programLayers(scene, fromPreview = false) {
+    const layers = sceneLayers(scene);
+    return layers.map((layer, index) => ({
+      ...clone(layer),
+      programLiveRow: fromPreview ? layers.length - index - 1 : programRow(layer, layers.length - index - 1),
+      programSourceLayerId: text((!fromPreview && layer.programSourceLayerId) || layer.id),
+      programSourceSceneId: text((!fromPreview && layer.programSourceSceneId) || (scene && scene.id))
+    }));
+  }
+
+  function sameSource(left, right) {
+    const leftId = text(left.programSourceLayerId || left.id);
+    const rightId = text(right.programSourceLayerId || right.id);
+    return !!leftId && leftId === rightId &&
+      text(left.programSourceSceneId) === text(right.programSourceSceneId);
+  }
+
+  function sameExplicitSlot(left, right) {
+    const slot = text(left.liveSlot).toLowerCase();
+    return !!slot && slot === text(right.liveSlot).toLowerCase();
+  }
+
+  function uniqueProgramId(layer, layers) {
+    const occupied = new Set(layers.map(row => text(row.id)));
+    if (text(layer.id) && !occupied.has(text(layer.id))) return;
+    // Imported scenes can use the same layer IDs. Keep source provenance separate
+    // from the unique runtime ID used by the output renderer's keyed elements.
+    const sceneId = text(layer.programSourceSceneId, 'scene').replace(/[^A-Za-z0-9._:-]/g, '-').slice(0, 60);
+    const sourceId = text(layer.programSourceLayerId, 'layer').replace(/[^A-Za-z0-9._:-]/g, '-').slice(0, 70);
+    const base = `live-${sceneId}:${sourceId}`;
+    let candidate = base;
+    let suffix = 2;
+    while (occupied.has(candidate)) candidate = `${base}-${suffix++}`;
+    layer.id = candidate;
+  }
+
+  function sortProgramLayers(layers) {
+    return layers.sort((left, right) => right.programLiveRow - left.programLiveRow);
+  }
+
+  function takeClip(programScene, sourceScene, layerId) {
+    if (!programScene || !sourceScene) return null;
+    const sourceLayers = sceneLayers(sourceScene);
+    const sourceIndex = sourceLayers.findIndex(layer => text(layer.id) === text(layerId));
+    if (sourceIndex < 0) return null;
+    const scene = clone(programScene);
+    const current = programLayers(programScene);
+    const layer = programLayers(sourceScene, true)[sourceIndex];
+    const slotMatch = current.find(row => sameExplicitSlot(layer, row));
+    const rowIndex = slotMatch ? slotMatch.programLiveRow : sourceLayers.length - sourceIndex - 1;
+    layer.programLiveRow = rowIndex;
+    layer.visible = true;
+    const replaces = row => row.programLiveRow === rowIndex || sameSource(layer, row) || sameExplicitSlot(layer, row);
+    const replaced = current.filter(replaces);
+    const remaining = current.filter(row => !replaces(row));
+    uniqueProgramId(layer, remaining);
+    scene.layers = sortProgramLayers([...remaining, layer]);
+    return { scene, layer, rowIndex, replaced };
   }
 
   function mergePersistentLayers(targetScene, programScene) {
     const target = clone(targetScene || { id: '', name: 'Scene', layers: [] });
-    target.layers = Array.isArray(target.layers) ? target.layers : [];
-    const current = Array.isArray(programScene && programScene.layers) ? programScene.layers : [];
-    const targetIds = new Set();
-    const targetSlots = new Set();
-    target.layers.forEach((layer, index) => {
-      targetIds.add(String(layer.id || ''));
-      targetIds.add(String(layer.programSourceLayerId || ''));
-      targetSlots.add(layerSlotKey(layer, index));
-    });
+    target.layers = programLayers(targetScene, true);
+    const targetRows = [...target.layers];
+    const current = programLayers(programScene);
     const retained = [];
-    current.forEach((layer, index) => {
-      if (!layer || layer.livePersistent !== true || layer.visible === false) return;
-      const sourceId = sourceIdentity(layer);
-      const slot = layerSlotKey(layer, index);
-      if (targetIds.has(sourceId) || targetIds.has(String(layer.id || '')) || targetSlots.has(slot)) return;
+    current.forEach(layer => {
+      if (layer.livePersistent !== true || layer.visible === false) return;
       const copy = clone(layer);
-      copy.programSourceLayerId = sourceId;
-      copy.programSourceSceneId = text(layer.programSourceSceneId || (programScene && programScene.id));
+      const slotMatch = targetRows.find(row => sameExplicitSlot(copy, row));
+      if (slotMatch) copy.programLiveRow = slotMatch.programLiveRow;
+      if (retained.some(row => sameSource(copy, row) || sameExplicitSlot(copy, row) || row.programLiveRow === copy.programLiveRow)) return;
+      // PIN means ignore a scene/column launch for this row. Only an explicit
+      // clip take may replace it; unrelated default names are never slot IDs.
+      target.layers = target.layers.filter(row => row.programLiveRow !== copy.programLiveRow && !sameSource(copy, row) && !sameExplicitSlot(copy, row));
+      uniqueProgramId(copy, target.layers);
+      target.layers.push(copy);
       retained.push(copy);
-      targetIds.add(sourceId);
-      targetSlots.add(slot);
     });
-    target.layers.push(...retained);
+    sortProgramLayers(target.layers);
     return { scene: target, retained };
   }
 
@@ -125,6 +184,7 @@
     normalizePreferences,
     layerSlotKey,
     buildDeck,
+    takeClip,
     mergePersistentLayers,
     sceneAtOffset
   };
