@@ -65,6 +65,8 @@
     "test:show-preflight": "node test/show-preflight.test.js",
     "test:conference-desk": "node test/conference-desk-model.test.js",
     "test:live-mode": "node test/live-mode-model.test.js",
+    "test:live-thumbnails": "node test/live-mode-thumbnails.test.js",
+    "test:live-deck-ui": "electron test/live-mode-renderer.test.js",
     "test:show-folder-import": "node test/show-folder-import.test.js",
     "test:media-library": "node test/media-library.test.js",
     "test:show-setup-ui": "electron test/show-setup-renderer.test.js",
