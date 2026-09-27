@@ -1,6 +1,16 @@
 # Public Beta Verification
 
-Local verification through 2026-09-12 supports the `0.12.0-beta.5` update. This page separates hidden-window regression checks from historical visible Mac workflows and from exact tagged release artifacts. It does not certify physical Windows or venue hardware behavior.
+Local verification through 2026-09-27 supports the `0.12.0-beta.6` update. This page separates hidden-window regression checks, visible Mac workflows and exact tagged release artifacts. It does not certify physical Windows or venue hardware behavior.
+
+## 2026-09-27 playback and recording reliability
+
+Before fixes, six new controller checks reproduced incorrect CUT/clip transitions, cross-scene layer replacement, decoder reconstruction, incomplete media cleanup and a missing pinned capture definition. A transport regression reproduced fader-induced seeking. Actual silent-scene recording with Include Audio enabled reproduced an empty recording; adding a zero-valued audio source fixed the encoder stall.
+
+The source candidate then passed 26 module groups, 13 hidden renderer groups, 12 display renderer groups and a complete visible smoke run with 323 successful checks on the explicitly approved PHL 243V7 display (1920×1080, scale 1). Independent output routing checks passed. Tests used disposable profiles, fixture media and synthetic live streams, not the operator's show or camera.
+
+The new `npm run smoke:recording -- --display "PHL 243V7"` smoke path actually records the Program timer/color fixture with audio enabled, finalizes files and replays both WebM/VP8 and MP4/H.264 at 640×360/30 fps. The short recordings passed; independent FFprobe inspection found H.264 video and stereo AAC at 48 kHz. Silent samples keep the recording audio clock alive even when no Program audio source exists. The test does not establish long-duration stability, external microphone capture, 1080p/4K throughput or audio/video lip sync.
+
+The source checks preceded the final release commit. Native CI rebuilds the tagged downloads and verifies their provenance. Visible test-monitor checks do not validate a venue HDMI chain, LED processor, UVC card, real audio-device switch, Windows computer or sustained 4K60. Those remain explicit off-air rehearsal requirements.
 
 ## 2026-09-12 Live Deck verification
 

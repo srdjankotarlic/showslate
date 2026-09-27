@@ -26,6 +26,7 @@
   };
 
   let recordingAudioDestination = null;
+  let recordingAudioSilence = null;
   let recordingAudioActive = false;
   const recordingAudioNodes = new Map();
   let settingsSaveTimer = 0;
@@ -286,6 +287,13 @@
       throw new Error('Program audio recording is not available on this computer.');
     }
     recordingAudioDestination = context.createMediaStreamDestination();
+    // An enabled but empty audio mix must still emit samples. Otherwise some
+    // MediaRecorder encoders wait forever for the audio track and save 0 bytes
+    // when recording a timer, still image or silent scene.
+    recordingAudioSilence = context.createConstantSource();
+    recordingAudioSilence.offset.value = 0;
+    recordingAudioSilence.connect(recordingAudioDestination);
+    recordingAudioSilence.start();
     recordingAudioActive = true;
     syncProgramVideoAudio();
     syncRecordingAudioGraph();
@@ -294,6 +302,10 @@
 
   function stopRecordingAudioGraph() {
     recordingAudioActive = false;
+    if (recordingAudioSilence) {
+      try { recordingAudioSilence.stop(); recordingAudioSilence.disconnect(); } catch (_) {}
+      recordingAudioSilence = null;
+    }
     recordingAudioNodes.forEach(disconnectRecordingAudioNode);
     recordingAudioNodes.clear();
     if (recordingAudioDestination) {

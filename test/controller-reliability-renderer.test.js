@@ -49,6 +49,7 @@ const handlers = {
   'share-info': () => ({}),
   'live-input-statuses': () => [],
   'live-input-configure': () => ({ ok: true }),
+  'live-input-subscribe': () => ({ ok: true }),
   'live-input-devices': () => ({ cameras: [], microphones: [] }),
   'live-input-permissions': () => ({ camera: 'not-determined', microphone: 'not-determined', screen: 'not-determined' })
 };
@@ -109,6 +110,47 @@ app.whenReady().then(async () => {
   saveFailure = false;
   const recovered = await evaluate(`const result=await flushShowAutosave({reason:'retry',force:true});return {ok:result.ok,kind:$('showSaveStatus').dataset.kind};`);
   check('CONTROLLER_AUTOSAVE_CAN_RETRY_AFTER_DISK_FAILURE_OK', recovered.ok && recovered.kind === 'saved', recovered);
+  const transitions = await evaluate(`
+    S.studioDirect=false;S.sceneFadeMs=700;
+    takePreview('cut');const cut=programState.sceneFadeMs;
+    takePreview('transition');return {cut,fade:programState.sceneFadeMs,preference:S.sceneFadeMs};
+  `);
+  check('CONTROLLER_CUT_DOES_NOT_USE_FADE_PREFERENCE_OK', transitions.cut===0 && transitions.fade===700 && transitions.preference===700, transitions);
+  const identity = await evaluate(`
+    S.scenes=[{id:'origin',name:'Origin',layers:[{id:'shared',type:'text',text:'Original'}]},
+      {id:'incoming',name:'Incoming',layers:[{id:'shared',type:'text',text:'Incoming'}]}];
+    S.activeSceneId='origin';ensureScenes();programState=outputSnapshot(S);
+    S.activeSceneId='incoming';selectedLayerId='shared';takeSelectedLayer();
+    const first=cloneState(activeScene(programState).layers);
+    selectedLayer().text='Updated incoming';takeSelectedLayer();
+    return {first,second:cloneState(activeScene(programState).layers),found:findProgramLayer(selectedLayer())?.text};
+  `);
+  check('CONTROLLER_STUDIO_LAYER_TAKE_IS_SOURCE_SCOPED_OK', identity.first.length===2 && identity.second.length===2 && new Set(identity.second.map(row=>row.id)).size===2 && identity.second.some(row=>row.text==='Original') && identity.found==='Updated incoming', identity);
+  const lifecycle = await evaluate(`
+    const scene=currentScene();scene.layers=[{id:'decoder',type:'video',src:'data:video/mp4;base64,',playbackState:'paused',muted:true}];
+    renderMonitorScene('pv',S);const first=$('pvScene').querySelector('video');
+    scene.layers[0].x=12;monitorSceneKeys.pv='';renderMonitorScene('pv',S);
+    const same=first===$('pvScene').querySelector('video');
+    const retired=$('pvScene').querySelector('video');scene.layers=[];renderMonitorScene('pv',S);
+    return {same,paused:retired.paused,released:!retired.__showSlateTransportCleanup,src:retired.getAttribute('src')};
+  `);
+  check('CONTROLLER_TRANSFORM_PRESERVES_VIDEO_DECODER_OK', lifecycle.same, lifecycle);
+  check('CONTROLLER_REMOVED_VIDEO_RELEASES_RESOURCES_OK', lifecycle.paused && lifecycle.released && lifecycle.src===null, lifecycle);
+  const pin = await evaluate(`
+    S.scenes=[{id:'camera-scene',name:'Camera',layers:[{id:'pin-camera',type:'capture',inputId:'retained-input',livePersistent:true}]},
+      {id:'next-scene',name:'Next',layers:[{id:'next-text',type:'text',text:'Next'}]}];
+    S.activeSceneId='camera-scene';S.liveInputs=[{id:'retained-input',type:'device',videoDeviceId:'fixture-device',name:'Pinned camera'}];
+    ensureScenes();programState=outputSnapshot(S);S.liveInputs=[];
+    takeLiveModeScene('next-scene');
+    const retained=activeScene(programState).layers.some(row=>row.inputId==='retained-input');
+    const definition=programState.liveInputs.find(row=>row.id==='retained-input');
+    liveModePreferences.transition='cut';selectLiveModeClip('next-scene','next-text',{previewOnly:true});takeLiveModeClip();
+    const cut=programState.sceneFadeMs;
+    liveModePreferences.transition='fade';takeLiveModeClip();
+    return {retained,definition,cut,fade:programState.sceneFadeMs};
+  `);
+  check('CONTROLLER_PIN_RETAINS_CAPTURE_DEFINITION_OK', pin.retained && pin.definition?.videoDeviceId==='fixture-device', pin);
+  check('CONTROLLER_CLIP_TAKE_RESPECTS_TRANSITION_OK', pin.cut===0 && pin.fade>0, pin);
   check('CONTROLLER_RELIABILITY_WINDOW_HIDDEN_OK', !win.isVisible());
   await evaluate('showAutosaveReady=false;clearTimeout(showAutosaveTimer);clearScheduledLowerThirdAuto();');
   if (failures.length) throw new Error(failures.join(', '));

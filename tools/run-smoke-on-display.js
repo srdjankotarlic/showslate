@@ -27,6 +27,7 @@ for (const name of ['.showslate-smoke-display.json', '.protimer-smoke-display.js
 
 const smokeArgs = ['--smoke'];
 if (argv.includes('--output-routing-only')) smokeArgs.push('--output-routing-only');
+if (argv.includes('--recording-only')) smokeArgs.push('--recording-only');
 if (argv.includes('--live-input-only')) smokeArgs.push('--live-input-only');
 if (argv.includes('--live-input-uhd60-only')) smokeArgs.push('--live-input-uhd60-only');
 if (argv.includes('--local-media-uhd60-only')) smokeArgs.push('--local-media-uhd60-only');

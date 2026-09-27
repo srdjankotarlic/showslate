@@ -156,12 +156,12 @@ Playback has no fixed ShowSlate file-size cap. The practical limit is the show c
 
 | Status | Your computer | Download | Install |
 |---|---|---|---|
-| **Primary tested beta** | Apple Silicon Mac (M1 or newer) | **[Download ShowSlate DMG](https://github.com/srdjankotarlic/showslate/releases/download/v0.12.0-beta.5/ShowSlate-0.12.0-beta.5-arm64.dmg)** | Open the DMG and drag **ShowSlate** to Applications. |
-| **Experimental, unverified on physical hardware** | Windows 10/11 x64 | [Download Windows Setup](https://github.com/srdjankotarlic/showslate/releases/download/v0.12.0-beta.5/ShowSlate-Setup-0.12.0-beta.5.exe) | Run Setup and follow the installer; use it off-air and report hardware results. |
+| **Primary tested beta** | Apple Silicon Mac (M1 or newer) | **[Download ShowSlate DMG](https://github.com/srdjankotarlic/showslate/releases/download/v0.12.0-beta.6/ShowSlate-0.12.0-beta.6-arm64.dmg)** | Open the DMG and drag **ShowSlate** to Applications. |
+| **Experimental, unverified on physical hardware** | Windows 10/11 x64 | [Download Windows Setup](https://github.com/srdjankotarlic/showslate/releases/download/v0.12.0-beta.6/ShowSlate-Setup-0.12.0-beta.6.exe) | Run Setup and follow the installer; use it off-air and report hardware results. |
 
-The [portable Windows EXE](https://github.com/srdjankotarlic/showslate/releases/download/v0.12.0-beta.5/ShowSlate-0.12.0-beta.5-portable.exe) is an advanced no-install option and carries the same unverified Windows status. The previous [`0.12.0-beta.4`](https://github.com/srdjankotarlic/showslate/releases/tag/v0.12.0-beta.4) release remains available for comparison and rollback.
+The [portable Windows EXE](https://github.com/srdjankotarlic/showslate/releases/download/v0.12.0-beta.6/ShowSlate-0.12.0-beta.6-portable.exe) is an advanced no-install option and carries the same unverified Windows status. The previous [`0.12.0-beta.4`](https://github.com/srdjankotarlic/showslate/releases/tag/v0.12.0-beta.4) release remains available for comparison and rollback.
 
-Beta 5 improves Live Mode with visible media thumbnails, one-row clip triggering, PIN continuity and safer keyboard/transport controls while keeping the existing design and beta 4 reliability fixes. Its September 12 regression review used hidden Electron windows and isolated profiles; it did not add physical HDMI/LED/UVC or Windows validation. See the [release notes](docs/RELEASE-NOTES-0.12.0-beta.5.md) for the distinction between local regression evidence and tagged release builds.
+Beta 6 fixes clip/scene transitions, cross-scene layer identity, video decoder lifecycle and silent-scene recording while retaining the existing Live Deck design. September 27 verification includes isolated renderer suites, a full visible smoke run on a PHL 243V7 test monitor and actual MP4/WebM recording roundtrips. This is not venue hardware or sustained 4K60 certification. See the [release notes](docs/RELEASE-NOTES-0.12.0-beta.6.md) for the evidence boundaries.
 
 <details>
 <summary><strong>First-launch security warning</strong></summary>
@@ -170,7 +170,7 @@ The public beta is not yet Apple-notarized or Windows Authenticode-signed.
 
 - On macOS, confirm the app came from this repository, then use **System Settings > Privacy & Security > Open Anyway** if required.
 - On Windows, SmartScreen may show **Unknown publisher**. Continue only for the installer downloaded from this repository.
-- Optional integrity hashes are in [SHA256SUMS.txt](https://github.com/srdjankotarlic/showslate/releases/download/v0.12.0-beta.5/SHA256SUMS.txt).
+- Optional integrity hashes are in [SHA256SUMS.txt](https://github.com/srdjankotarlic/showslate/releases/download/v0.12.0-beta.6/SHA256SUMS.txt).
 
 </details>
 
@@ -221,7 +221,7 @@ External OBS/vMix alpha behavior is not certified in this beta. Test the exact s
 - [Testing](docs/TESTING.md)
 - [Signing and release](docs/SIGNING-AND-RELEASE.md)
 - [Public beta verification](docs/PUBLIC-BETA-VERIFICATION.md)
-- [0.12.0 beta 5 release notes](docs/RELEASE-NOTES-0.12.0-beta.5.md)
+- [0.12.0 beta 6 release notes](docs/RELEASE-NOTES-0.12.0-beta.6.md)
 - [Architecture](ARCHITECTURE.md)
 - [Privacy](docs/PRIVACY.md)
 

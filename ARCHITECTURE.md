@@ -37,6 +37,7 @@ Preview selection must never change the LIVE cue, running timer or Program outpu
 - `main.js` owns one hidden `live-input.html` capture hub. The hub acquires an operator-selected window/display or camera/UVC device once, then shares that stream with controller and desktop output consumers through local WebRTC.
 - `src/live-input/hub.js` owns capture lifecycle, bounded reconnect and peer senders. `src/live-input/consumer.js` owns renderer subscriptions and media attachment.
 - Window and device IDs are machine-local configuration, not portable media assets. Imported shows retain the scene/layer contract but can require source re-selection on a different computer.
+- Controller monitor videos retain their decoder across geometry/selection redraws and explicitly release removed media. Audio-only transport rebinds preserve playback position; decoded-frame callbacks supplement coarse time updates at trimmed OUT points.
 - Browser and OBS URL outputs receive canonical Program state over SSE, but they do not receive local WebRTC capture streams. Local live inputs are supported only in Electron desktop output windows.
 - `src/report/model.js` builds the post-show report from canonical cue actual fields, with legacy log fallback and spreadsheet-safe CSV output.
 
@@ -92,6 +93,7 @@ Preview selection must never change the LIVE cue, running timer or Program outpu
 - `npm run smoke:display`: full source smoke.
 - `npm run smoke:packaged:display`: full packaged smoke.
 - `npm run smoke:lt-soak`: condition-driven lower-third soak.
+- `npm run smoke:recording -- --display "Test display"`: actual isolated MP4/WebM Program recording, finalization and decode roundtrip. The recording mix emits silent samples when no audio source is present, so the audio clock cannot stall an encoder.
 
 Local visual regression is pinned to an explicitly configured display and aborts when that display is unavailable or ambiguous. Stable Mac distribution still requires Developer ID signing and notarization; stable Windows distribution still requires real Windows x64 QA and signing.
 

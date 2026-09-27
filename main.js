@@ -25,6 +25,7 @@ const SMOKE = process.argv.includes('--smoke');
 app.commandLine.appendSwitch('autoplay-policy', 'no-user-gesture-required');
 const LT2_SOAK_ONLY = SMOKE && process.argv.includes('--lt2-soak-only');
 const OUTPUT_ROUTING_SMOKE_ONLY = SMOKE && process.argv.includes('--output-routing-only');
+const RECORDING_SMOKE_ONLY = SMOKE && process.argv.includes('--recording-only');
 const LIVE_INPUT_SMOKE_ONLY = SMOKE && process.argv.includes('--live-input-only');
 const LIVE_INPUT_UHD60_SMOKE_ONLY = SMOKE && process.argv.includes('--live-input-uhd60-only');
 const LOCAL_MEDIA_UHD60_SMOKE_ONLY = SMOKE && process.argv.includes('--local-media-uhd60-only');
@@ -2706,6 +2707,57 @@ async function runLocalMediaUhd60Smoke(waitLoad, sourcePath) {
   return { ok: preview.ok && program.ok && audio.ok && visual.ok, file, imported, setup, beforeTake, preview, program, measured, audio, syncDelta, visual };
 }
 
+async function runProgramRecordingSmoke(waitLoad) {
+  await waitLoad(controlWin);
+  const directory = path.join(getTestArtifactDirectory(), 'recording');
+  fs.mkdirSync(directory, { recursive: true });
+  controlWin.webContents.setAudioMuted(true);
+  await controlWin.webContents.executeJavaScript(`(async()=>{
+    for(let i=0;i<100&&typeof window.__ptStartProgramRecording!=='function';i++)await new Promise(resolve=>setTimeout(resolve,50));
+    if(typeof window.__ptStartProgramRecording!=='function')throw new Error('Recording smoke controller did not initialize');
+    S.studioDirect=false;S.programAudioRoute='off';S.canvas={width:640,height:360,fps:30};
+    S.scenes=[{id:'recording-smoke',name:'Recording fixture',layers:[
+      {id:'background',type:'color',color:'#1855aa',visible:true},
+      {id:'timer',type:'timer',visible:true,x:5,y:5,w:90,h:90}
+    ]}];
+    S.activeSceneId='recording-smoke';ensureScenes();setDuration(60000);startPause();takePreview('cut');
+  })()`);
+  const results = [];
+  for (const format of ['webm-vp8', 'mp4-h264']) {
+    const settings = { directory, filePrefix:'Smoke '+format, resolution:'custom', width:640, height:360,
+      fps:30, format, quality:'high', includeAudio:true, audioBitrateKbps:128 };
+    const started = await controlWin.webContents.executeJavaScript(`(async()=>{
+      const saved=await api.recordingSaveSettings(${JSON.stringify(settings)});
+      if(!saved.ok)return saved;
+      const values={recordingResolution:'custom',recordingWidth:640,recordingHeight:360,recordingFps:30,recordingFormat:${JSON.stringify(format)}};
+      Object.entries(values).forEach(([id,value])=>$(id).value=String(value));
+      $('recordingDirectory').value=${JSON.stringify(directory)};$('recordingIncludeAudio').checked=true;
+      return await window.__ptStartProgramRecording();
+    })()`);
+    if (!started?.ok) throw new Error('Recording start failed for '+format+': '+JSON.stringify(started));
+    await new Promise(resolve => setTimeout(resolve, 2400));
+    const finished = await controlWin.webContents.executeJavaScript('window.__ptStopProgramRecording()');
+    if (!finished?.ok) throw new Error('Recording finalization failed: '+JSON.stringify(finished));
+    const bytes = fs.readFileSync(finished.path);
+    const source = `data:${started.mimeType.split(';')[0]};base64,${bytes.toString('base64')}`;
+    const decoded = await controlWin.webContents.executeJavaScript(`(async()=>{
+      const video=document.createElement('video');video.muted=true;video.src=${JSON.stringify(source)};
+      try{
+        await new Promise((resolve,reject)=>{
+          const timer=setTimeout(()=>reject(new Error('Recording decode timeout')),8000);
+          video.onloadeddata=()=>{clearTimeout(timer);resolve();};
+          video.onerror=()=>{clearTimeout(timer);reject(new Error('Recording cannot decode'));};
+        });
+        await video.play();await new Promise(resolve=>setTimeout(resolve,350));
+        return {width:video.videoWidth,height:video.videoHeight,time:video.currentTime};
+      }finally{video.pause();video.removeAttribute('src');video.load();}
+    })()`);
+    results.push({format,bytes:bytes.length,path:finished.path,decoded,
+      ok:bytes.length>1000&&decoded.width===640&&decoded.height===360&&decoded.time>.1&&!recordingSession&&!recordingOutput});
+  }
+  return results;
+}
+
 async function runOutputRoutingSmoke() {
   let multiOutOK = false, routingDisabledOK = false, routingPositionOK = false;
   let multiOutStateOK = false, independentCanvasMappingOK = false;
@@ -2942,6 +2994,13 @@ app.whenReady().then(async () => {
           if (!pass) smokeFailures.push(name);
           return pass;
         };
+        if (RECORDING_SMOKE_ONLY) {
+          const recordings = await runProgramRecordingSmoke(waitLoad);
+          recordings.forEach(result=>smokeCheck('PROGRAM_RECORDING_'+result.format.toUpperCase().replace(/-/g,'_')+'_ROUNDTRIP_OK',result.ok,JSON.stringify(result)));
+          console.log('PROGRAM_RECORDING_SMOKE_OK='+(smokeFailures.length===0));
+          app.exit(smokeFailures.length ? 1 : 0);
+          return;
+        }
         if (LT2_SOAK_ONLY) {
           await waitLoad(controlWin);
           const targeted = await runTargetedLowerThirdSoak(waitLoad);

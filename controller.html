@@ -5229,6 +5229,7 @@ function send(forceProgram=false,options={}){
   S.lang=lang;
   if(S.studioDirect || forceProgram){
     const next=outputSnapshot(S);
+    if(options.transition==='cut')next.sceneFadeMs=0;
     if(contentItems.length&&programState&&!options.takeContent) next.activeSceneId=programState.activeSceneId;
     if(options.takeContent){prepareVideoSceneForTake(next);prepareLowerThirdSceneForTake(next,ensureProgramState());}
     pushProgramState(next);
@@ -5245,7 +5246,7 @@ function takePreview(kind='transition'){
   const item=contentItems.find(row=>row.sceneId===S.activeSceneId);
   if(item){ selectedContentItemId=item.id; liveContentItemId=item.id; }
   else if(contentItems.length) liveContentItemId='';
-  send(true,{takeContent:true});
+  send(true,{takeContent:true,transition:kind});
   const selected=selectedLayer();
   if(selected&&selected.type==='video'&&findProgramLayer(selected))videoTransportTarget='both';
   monitorSceneKeys={pv:'',pg:''};
@@ -5303,14 +5304,15 @@ function takeSelectedLayer({allowDirect=false}={}){
   const copy=cloneState(layer);
   copy.visible=true;
   prepareVideoLayerForTake(copy,layer);
-  if(programScene.id!==previewScene.id){
-    copy.programSourceLayerId=layer.id;
-    copy.programSourceSceneId=previewScene.id;
-  }else{
-    delete copy.programSourceLayerId;
-    delete copy.programSourceSceneId;
+  copy.programSourceLayerId=layer.id;
+  copy.programSourceSceneId=previewScene.id;
+  const existing=findProgramLayer(layer,next,previewScene.id);
+  const index=(programScene.layers||[]).indexOf(existing);
+  if(existing){
+    copy.id=existing.id;
+    if(Number.isInteger(existing.programLiveRow))copy.programLiveRow=existing.programLiveRow;
   }
-  const index=(programScene.layers||[]).findIndex(row=>row && (row.id===layer.id || row.programSourceLayerId===layer.id));
+  PTLIVE.uniqueProgramId(copy,(programScene.layers||[]).filter(row=>row!==existing));
   if(index>=0) programScene.layers.splice(index,1,copy);
   else if(programScene.id===previewScene.id) insertProgramLayer(programScene,previewScene,copy);
   else programScene.layers.push(copy);
@@ -5559,7 +5561,8 @@ function applySceneTextVisual(text,layer){
   text.style.boxSizing='border-box';
 }
 function handleSceneMediaError(media,content,box,layer,prefix){
-  media.addEventListener('error',()=>{
+  if(media.__showSlateMediaError)media.removeEventListener('error',media.__showSlateMediaError);
+  media.__showSlateMediaError=()=>{
     media.remove();
     box.dataset.mediaOffline='true';
     if(prefix!=='pv'||content.querySelector('.scene-media-error')) return;
@@ -5568,7 +5571,15 @@ function handleSceneMediaError(media,content,box,layer,prefix){
     warning.textContent=`${t('sourceMissing')}: ${layer.name||layer.sourceName||layer.type}`;
     warning.setAttribute('role','status');
     content.appendChild(warning);
-  },{once:true});
+  };
+  media.addEventListener('error',media.__showSlateMediaError,{once:true});
+}
+function releaseMonitorMedia(media){
+  if(typeof media.__showSlateTransportCleanup==='function')media.__showSlateTransportCleanup();
+  if(media.__showSlateMediaError)media.removeEventListener('error',media.__showSlateMediaError);
+  delete media.__showSlateMediaError;
+  media.muted=true;media.defaultMuted=true;
+  try{media.pause();media.srcObject=null;media.removeAttribute('src');media.load();}catch(_){}
 }
 function bindMonitorVideo(video,layer,prefix){
   const monitoring=String(layer.audioMonitoring||'off');
@@ -5616,7 +5627,10 @@ function renderMonitorScene(prefix, st){
   })));
   if(key===monitorSceneKeys[prefix]){syncMonitorVideoRuntime(prefix,st,layers);return;}
   monitorSceneKeys[prefix]=key;
-  root.innerHTML='';
+  const previousMedia=[...root.querySelectorAll('video,audio')];
+  const reusableVideos=new Map(previousMedia.filter(media=>media.tagName==='VIDEO'&&!media.srcObject)
+    .map(media=>[String(media.closest('.pv-scene-layer')?.dataset.layerId||''),media]));
+  const retainedMedia=new Set(),fragment=document.createDocumentFragment();
   layers.forEach((layer,layerIndex)=>{
     if(layer.type==='lowerThird') return;             // Potpis renderuje zajednički LT runtime iznad scene.
     if(layer.type==='timer'&&prefix!=='pv') return;   // Program timer renderuje pgStage; Preview dobija interaktivni proxy.
@@ -5641,9 +5655,11 @@ function renderMonitorScene(prefix, st){
     } else if(layer.type==='image' && layer.src){
       const img=document.createElement('img'); img.decoding='async'; handleSceneMediaError(img,content,d,layer,prefix); img.src=mediaSrc(layer.src); applySceneMediaVisual(img,visual); applySceneImageSampling(img,layer); content.appendChild(img);
     } else if(layer.type==='video' && layer.src){
-      const v=document.createElement('video'),source=mediaSrc(layer.src); handleSceneMediaError(v,content,d,layer,prefix);
-      if(/^https?:/i.test(source))v.crossOrigin='anonymous';
-      v.src=source; bindMonitorVideo(v,layer,prefix); applySceneMediaVisual(v,visual); content.appendChild(v);
+      const source=mediaSrc(layer.src),previous=reusableVideos.get(String(layer.id||''));
+      const v=previous&&previous.getAttribute('src')===source?previous:document.createElement('video');
+      retainedMedia.add(v);handleSceneMediaError(v,content,d,layer,prefix);
+      if(v!==previous){if(/^https?:/i.test(source))v.crossOrigin='anonymous';v.src=source;}
+      bindMonitorVideo(v,layer,prefix);applySceneMediaVisual(v,visual);content.appendChild(v);
     } else if(layer.type==='pdf' && layer.src){
       const f=document.createElement('iframe'); f.src=mediaSrc(layer.src)+'#page='+Math.max(1,Number(layer.page)||1); content.appendChild(f);
     } else if((layer.type==='window'||layer.type==='capture')&&layer.inputId){
@@ -5654,8 +5670,10 @@ function renderMonitorScene(prefix, st){
     } else if(layer.type==='text'){
       const tx=document.createElement('div'); tx.className='pv-scene-text'; tx.textContent=Object.prototype.hasOwnProperty.call(layer,'text')?String(layer.text||''):(layer.name||''); tx.style.color=layer.color||'#fff'; tx.style.background=layer.bg||'transparent'; tx.style.fontSize=Math.max(11,(root.clientHeight||240)*(Number(layer.fontSize)||8)/100)+'px'; tx.style.fontFamily=SCENE_FONT_MAP[layer.fontFamily]||SCENE_FONT_MAP.system; tx.style.fontWeight=String(Number(layer.fontWeight)||700); tx.style.fontStyle=layer.italic?'italic':'normal'; tx.style.textDecoration=layer.underline?'underline':'none'; tx.style.textAlign=layer.textAlign||'center'; tx.style.justifyContent=layer.textAlign==='left'?'flex-start':layer.textAlign==='right'?'flex-end':'center'; tx.style.alignItems=layer.verticalAlign==='top'?'flex-start':layer.verticalAlign==='bottom'?'flex-end':'center'; applySceneTextVisual(tx,layer); content.appendChild(tx);
     }
-    root.appendChild(d);
+    fragment.appendChild(d);
   });
+  previousMedia.filter(media=>!retainedMedia.has(media)).forEach(releaseMonitorMedia);
+  root.replaceChildren(fragment);
   if(prefix==='pv'){
     const selected=layers.find(layer=>layer.id===selectedLayerId&&layer.type!=='audio');
     if(selected){
@@ -11720,6 +11738,7 @@ function takeLiveModeClip(){
   const layer=(previewScene.layers||[]).find(row=>row.id===selectedLayerId);
   if(!layer)return false;
   const next=cloneState(ensureProgramState()),programScene=activeScene(next);
+  next.sceneFadeMs=liveModePreferences.transition==='cut'?0:Math.max(120,Number(S.sceneFadeMs)||300);
   const result=PTLIVE.takeClip(programScene,previewScene,layer.id);
   if(!result)return false;
   prepareVideoLayerForTake(result.layer,layer);
@@ -11761,6 +11780,11 @@ function takeLiveModeScene(sceneId=S.activeSceneId){
   prepareVideoSceneForTake(next);
   const nextScene=activeScene(next),currentSceneLive=activeScene(current);
   const merged=PTLIVE.mergePersistentLayers(nextScene,currentSceneLive);
+  // A pinned source keeps the exact capture configuration currently on air,
+  // even if its Preview definition was edited or removed before the launch.
+  const retainedInputs=new Set(merged.retained.map(layer=>layer.inputId).filter(Boolean));
+  next.liveInputs=[...(next.liveInputs||[]).filter(input=>!retainedInputs.has(input.id)),
+    ...(current.liveInputs||[]).filter(input=>retainedInputs.has(input.id)).map(cloneState)];
   const nextSceneIndex=(next.scenes||[]).findIndex(row=>String(row.id)===String(scene.id));
   if(nextSceneIndex>=0)next.scenes.splice(nextSceneIndex,1,merged.scene);
   if(merged.retained.some(layer=>layer.type==='lowerThird'))next.lowerThird=cloneState(current.lowerThird);

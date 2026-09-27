@@ -75,4 +75,29 @@ check('MEDIA_REBIND_REMOVES_OLD_TRANSPORT_LISTENERS_OK', () => {
   assert.equal(media.__showSlateTransportCleanup, undefined);
 });
 
+check('MEDIA_AUDIO_ONLY_UPDATE_DOES_NOT_SEEK_OK', () => {
+  const media = new Media();
+  const playing = { ...layer, playbackState: 'playing', playbackPosition: 10 };
+  transport.bind(media, playing, { muted: true, volume: .8 });
+  media.currentTime = 12;
+  const cleanup = transport.bind(media, playing, { muted: false, volume: .2 });
+  assert.equal(media.currentTime, 12, 'Moving a fader must not rewind a playing decoder.');
+  assert.equal(media.volume, .2);
+  cleanup();
+});
+
+check('MEDIA_OUT_CHECKS_DECODED_FRAMES_AND_CANCELS_ON_RELEASE_OK', () => {
+  const media = new Media();
+  let callback, canceled;
+  media.requestVideoFrameCallback = fn => { callback = fn; return 42; };
+  media.cancelVideoFrameCallback = id => { canceled = id; };
+  const cleanup = transport.bind(media, { ...layer, playbackState: 'playing', playbackPosition: 12, endBehavior: 'hold' });
+  media.currentTime = 14;
+  callback();
+  assert.equal(media.paused, true);
+  assert.equal(media.dataset.playbackState, 'paused');
+  cleanup();
+  assert.equal(canceled, 42);
+});
+
 console.log('MEDIA_TRANSPORT_TESTS_OK count=' + passed);
