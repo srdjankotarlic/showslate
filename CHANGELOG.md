@@ -2,6 +2,20 @@
 
 All notable changes to ShowSlate are documented here.
 
+## 0.12.0-beta.6 - 2026-09-27
+
+- Honor CUT without changing the saved fade duration; Live TAKE CLIP now follows the selected CUT/FADE mode.
+- Scope Studio layer replacement to the source scene and layer, preserving unrelated layers and unique Program runtime IDs.
+- Retain pinned capture definitions when launching a new scene, even if Preview no longer contains the definition.
+- Reuse Preview/Program-monitor video decoders during geometry and selection edits; release removed media and transport callbacks.
+- Keep audio-only fader/routing updates from seeking playback; check trimmed OUT points on decoded frames as well as time updates.
+- Supply silent audio samples when recording a scene without audio sources, preventing empty recordings when Include Audio is enabled. Release that source on stop or failure.
+- Add reproducible regressions and an isolated actual MP4/WebM recording-and-playback smoke command (`--recording-only`, explicit safe display required).
+
+## 0.12.0-beta.5 - 2026-09-12
+
+- Add visible image/video/text/timer/color clip previews, bounded thumbnail generation, one-row Live triggering, PIN continuity and safer source-scoped transport/keyboard controls. See the beta 5 release notes for full details.
+
 ## 0.12.0-beta.4 - 2026-09-12
 
 ### Fixed

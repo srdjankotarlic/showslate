@@ -1,7 +1,7 @@
 {
   "name": "showslate",
   "productName": "ShowSlate",
-  "version": "0.12.0-beta.5",
+  "version": "0.12.0-beta.6",
   "description": "Open-source live compositor with layered scenes, Preview/Program switching, multi-display canvases and projector mapping",
   "main": "main.js",
   "author": "Srdjan Kotarlic",
@@ -55,6 +55,7 @@
     "smoke": "electron . --smoke",
     "smoke:lt-soak": "node tools/run-lt-soak.js",
     "smoke:output-routing": "node tools/run-smoke-on-display.js --source --output-routing-only",
+    "smoke:recording": "node tools/run-smoke-on-display.js --source --recording-only",
     "smoke:live-input": "node tools/run-smoke-on-display.js --source --live-input-only",
     "smoke:live-input:uhd60": "node tools/run-smoke-on-display.js --source --live-input-uhd60-only",
     "test:lt-package": "node test/lower-third-package.test.js",

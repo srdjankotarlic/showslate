@@ -42,7 +42,7 @@ function harness(overrides = {}) {
     }
     return elements.get(id);
   };
-  const settings = recording.normalizeSettings({ directory: '/test/recordings', includeAudio: false });
+  const settings = recording.normalizeSettings({ directory: '/test/recordings', includeAudio: overrides.includeAudio === true });
   const prepared = {
     ok: true, sessionId: 'session-1', mediaSourceId: 'source-1', chromeMediaSource: 'desktop',
     renderReady: true, dimensions: { width: 1920, height: 1080 }, settings,
@@ -61,6 +61,20 @@ function harness(overrides = {}) {
     getAudioTracks() { return this.tracks.filter(row => row.kind === 'audio'); }
   }
   const captureStream = new Stream([track]);
+  const silentAudioTrack = { kind:'audio', readyState:'live', stop() { calls.push('audio-track-stop'); } };
+  const audioDestination = { stream:new Stream([silentAudioTrack]) };
+  const audioContext = {
+    createMediaStreamDestination() { return audioDestination; },
+    createConstantSource() {
+      return {
+        offset:{ value:1 },
+        connect(destination) { assert.equal(destination,audioDestination);calls.push('silence-connect'); },
+        start() { assert.equal(this.offset.value,0);calls.push('silence-start'); },
+        stop() { calls.push('silence-stop'); },
+        disconnect() { calls.push('silence-disconnect'); }
+      };
+    }
+  };
   const recorders = [];
   class Recorder extends Events {
     static isTypeSupported() { return true; }
@@ -109,6 +123,10 @@ function harness(overrides = {}) {
       return overrides.capture ? overrides.capture() : captureStream;
     } } },
     ensureProgramState: () => ({ canvas: { width: 1920, height: 1080 } }),
+    activeScene: () => ({layers:[]}),
+    programAudioContext: audioContext,
+    resumeProgramAudioContext: () => audioContext,
+    syncProgramVideoAudio() {},
     PTCOMP: { normalizeCanvas: value => value },
     clearInterval, clearTimeout, setTimeout,
     setInterval: () => 1
@@ -355,12 +373,24 @@ async function testAbortRemovesEmptyFile() {
   assert.equal(main.sandbox.lastRecordingPath, '');
 }
 
+async function testSilentSceneHasAudioClockAndReleasesIt() {
+  const h = harness({includeAudio:true});
+  await flush();
+  assert.equal((await h.start()).ok,true);
+  assert.ok(h.calls.includes('silence-start'));
+  assert.equal((await h.stop()).ok,true);
+  assert.ok(h.calls.includes('silence-stop'));
+  assert.ok(h.calls.includes('silence-disconnect'));
+  assert.ok(h.calls.includes('audio-track-stop'));
+}
+
 (async () => {
   const tests = [
     testNormalFinalization, testCancelPreparation, testCancelCapture, testWriteFailure,
     testRecorderFailureFlushesFinalChunk, testWriteFailureRevealsPreservedFile,
     testFinalizeFailureRevealsAlreadyPreservedFile, testAbortRenameFailureRetainsPart,
-    testAbortPreservesUnacknowledgedBytes, testAbortPreservesUninspectablePart, testAbortRemovesEmptyFile
+    testAbortPreservesUnacknowledgedBytes, testAbortPreservesUninspectablePart, testAbortRemovesEmptyFile,
+    testSilentSceneHasAudioClockAndReleasesIt
   ];
   for (const test of tests) {
     await test();

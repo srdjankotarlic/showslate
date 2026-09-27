@@ -183,6 +183,7 @@
     TRANSITIONS: [...TRANSITIONS],
     normalizePreferences,
     layerSlotKey,
+    uniqueProgramId,
     buildDeck,
     takeClip,
     mergePersistentLayers,

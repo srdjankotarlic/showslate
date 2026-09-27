@@ -31,9 +31,13 @@
 
   function bind(element, rawLayer = {}, options = {}) {
     if (!element || !compositor) return () => {};
-    if (typeof element.__showSlateTransportCleanup === 'function') element.__showSlateTransportCleanup();
-
     const layer = compositor.normalizeLayer(rawLayer);
+    const signature = JSON.stringify([element.getAttribute ? element.getAttribute('src') : element.src,
+      layer.id, layer.playbackState, layer.playbackPosition, layer.playbackUpdatedAt,
+      layer.playbackRate, layer.inPoint, layer.outPoint, layer.endBehavior]);
+    const unchanged = element.__showSlateTransportSignature === signature;
+    if (typeof element.__showSlateTransportCleanup === 'function') element.__showSlateTransportCleanup();
+    element.__showSlateTransportSignature = signature;
     const cleanups = [];
     let settling = false;
 
@@ -105,15 +109,36 @@
     listen('durationchange', apply, { once: true });
     listen('timeupdate', atOut);
     listen('ended', atOut);
-    listen('playing', () => mark('playing'));
+    // timeupdate may be hundreds of milliseconds apart. Check each decoded
+    // frame too so a trimmed OUT point does not wait for the next coarse event.
+    if (typeof element.requestVideoFrameCallback === 'function' && layer.playbackState === 'playing') {
+      let frameRequest;
+      let disposed = false;
+      const frame = () => {
+        if (disposed) return;
+        atOut();
+        frameRequest = element.requestVideoFrameCallback(frame);
+      };
+      frameRequest = element.requestVideoFrameCallback(frame);
+      cleanups.push(() => {
+        disposed = true;
+        if (typeof element.cancelVideoFrameCallback === 'function') element.cancelVideoFrameCallback(frameRequest);
+      });
+    }
+    listen('playing', () => { delete element.dataset.playBlocked; mark('playing'); });
     listen('pause', () => {
       if (!settling && element.dataset.playbackState === 'playing') mark('paused');
     });
-    if (element.readyState >= 1) apply();
+    // Audio routing and faders may rebind while playing. Only a transport
+    // command should seek; rebinding the same clock must preserve the decoder.
+    if (element.readyState >= 1 && !unchanged) apply();
 
     const cleanup = () => {
       cleanups.splice(0).forEach(remove => remove());
-      if (element.__showSlateTransportCleanup === cleanup) delete element.__showSlateTransportCleanup;
+      if (element.__showSlateTransportCleanup === cleanup) {
+        delete element.__showSlateTransportCleanup;
+        delete element.__showSlateTransportSignature;
+      }
     };
     element.__showSlateTransportCleanup = cleanup;
     return cleanup;
