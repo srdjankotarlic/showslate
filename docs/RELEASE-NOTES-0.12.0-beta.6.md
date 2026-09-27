@@ -10,6 +10,7 @@ Reliability update for the existing Mac-first Live compositor. The interface and
 - Moving/resizing/selecting a monitor video no longer recreates its decoder. Removed monitor media releases playback and transport resources.
 - Audio fader/routing changes do not rewind an unchanged video transport. Trimmed OUT checks also run on decoded frames.
 - Recording a timer, still or silent scene with Include Audio enabled now has a silent audio clock; the encoder no longer waits indefinitely for an empty mix.
+- Program recordings use a rectangular capture window, without the macOS rounded-corner black mask. The recording smoke checks all four decoded corners.
 
 ## Downloads
 
