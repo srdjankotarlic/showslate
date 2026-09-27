@@ -273,7 +273,7 @@ async function createRecordingOutput(dimensions, fps) {
     x: parkedX, y: parkedY, width, height, useContentSize: true, show: false, skipTaskbar: true,
     paintWhenInitiallyHidden: true,
     title: 'ShowSlate — Recording Program',
-    backgroundColor: '#000000', frame: false, focusable: false,
+    backgroundColor: '#000000', frame: false, focusable: false, roundedCorners: false,
     enableLargerThanScreen: true,
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'), contextIsolation: true,
@@ -2749,11 +2749,16 @@ async function runProgramRecordingSmoke(waitLoad) {
           video.onerror=()=>{clearTimeout(timer);reject(new Error('Recording cannot decode'));};
         });
         await video.play();await new Promise(resolve=>setTimeout(resolve,350));
-        return {width:video.videoWidth,height:video.videoHeight,time:video.currentTime};
+        const canvas=document.createElement('canvas');canvas.width=video.videoWidth;canvas.height=video.videoHeight;
+        const context=canvas.getContext('2d');context.drawImage(video,0,0);
+        const corners=[[0,0],[canvas.width-1,0],[0,canvas.height-1],[canvas.width-1,canvas.height-1]]
+          .map(([x,y])=>[...context.getImageData(x,y,1,1).data]);
+        return {width:video.videoWidth,height:video.videoHeight,time:video.currentTime,corners};
       }finally{video.pause();video.removeAttribute('src');video.load();}
     })()`);
     results.push({format,bytes:bytes.length,path:finished.path,decoded,
-      ok:bytes.length>1000&&decoded.width===640&&decoded.height===360&&decoded.time>.1&&!recordingSession&&!recordingOutput});
+      ok:bytes.length>1000&&decoded.width===640&&decoded.height===360&&decoded.time>.1&&
+        decoded.corners.every(pixel=>pixel[0]<60&&pixel[1]>40&&pixel[2]>120)&&!recordingSession&&!recordingOutput});
   }
   return results;
 }

@@ -10,6 +10,7 @@ All notable changes to ShowSlate are documented here.
 - Reuse Preview/Program-monitor video decoders during geometry and selection edits; release removed media and transport callbacks.
 - Keep audio-only fader/routing updates from seeking playback; check trimmed OUT points on decoded frames as well as time updates.
 - Supply silent audio samples when recording a scene without audio sources, preventing empty recordings when Include Audio is enabled. Release that source on stop or failure.
+- Disable native macOS window rounding on the recording renderer so saved Program frames have clean rectangular corners.
 - Add reproducible regressions and an isolated actual MP4/WebM recording-and-playback smoke command (`--recording-only`, explicit safe display required).
 
 ## 0.12.0-beta.5 - 2026-09-12
