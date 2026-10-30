@@ -2,7 +2,7 @@
 
 All notable changes to ShowSlate are documented here.
 
-## Unreleased — 2026-10-30
+## 0.12.0-beta.7 — 2026-10-30
 
 - Preserve unchanged Program video decoders during CUT edits and takes, including adding a caption or adjusting layer geometry. Changed sources still release the old decoder; fading scenes retain separate retirement behavior.
 - Honor single-frame seeks at 60 fps and avoid stopping trimmed playback up to 35 ms before its OUT point.

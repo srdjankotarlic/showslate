@@ -1,6 +1,14 @@
 # Public Beta Verification
 
-Local verification through 2026-09-27 supports the `0.12.0-beta.6` update. This page separates hidden-window regression checks, visible Mac workflows and exact tagged release artifacts. It does not certify physical Windows or venue hardware behavior.
+Local verification through 2026-10-30 supports the `0.12.0-beta.7` update. This page separates hidden-window regression checks, visible Mac workflows and exact tagged release artifacts. It does not certify physical Windows or venue hardware behavior.
+
+## 2026-10-30 playback and recording preparation
+
+The [operator review](OPERATOR-REVIEW-2026-10-30.md) reproduced Program video restarting during CUT edits, ignored one-frame 60 fps seeks and an early OUT boundary. All 26 module groups and 13 hidden renderer groups passed on Electron 43.8.4. A native GUI review used a disposable profile for text creation, TAKE/HIDE, Live Mode, TAKE CLIP and rundown GO. An initial local review package passed all 13 packaged renderer groups.
+
+Actual recording exposed a cold-start WebM frame captured before Program painting completed. Recording preparation now waits for loaded image/video assets, a compositor paint and a stable state revision. The final local review build at `5cbc9f1aa23a001ff2bfbdb6b5459f2130055df5` passed MP4/H.264 and WebM/VP8 recording, finalization and replay at 640×360/30 fps, with four-corner pixel checks. Independent FFmpeg inspection confirmed the generated Program fixture in the WebM's first frame after the fix. The recording-controller suite includes a revision-during-paint regression. Dependency audit returned zero vulnerabilities.
+
+Those review builds precede the beta 7 release metadata commit. Native release CI rebuilds the tagged downloads and checks their provenance independently. The review used only the built-in Retina display and generated test media. It does not add venue HDMI/LED/projector, physical UVC/Windows, external audio-device or sustained 4K60 certification.
 
 ## 2026-09-27 playback and recording reliability
 
