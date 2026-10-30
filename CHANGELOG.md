@@ -8,6 +8,7 @@ All notable changes to ShowSlate are documented here.
 - Honor single-frame seeks at 60 fps and avoid stopping trimmed playback up to 35 ms before its OUT point.
 - Refresh compatible dependencies to address newly reported package advisories.
 - Update Electron within version 43 to 43.8.4 and repeat isolated renderer checks on that runtime.
+- Wait for loaded images and a painted, stable Program revision before recording capture starts.
 
 ## 0.12.0-beta.6 - 2026-09-27
 

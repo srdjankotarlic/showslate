@@ -248,15 +248,24 @@ async function waitForRecordingRenderer(rec, timeoutMs = 5000) {
   const deadline = Date.now() + timeoutMs;
   let lastMedia = { total: 0, ready: 0 };
   while (Date.now() < deadline) {
-    const acknowledged = rec.ackRevision >= rec.lastDispatchRevision && rec.lastDispatchRevision > 0;
+    const revision = rec.lastDispatchRevision;
+    const acknowledged = rec.ackRevision >= revision && revision > 0;
     try {
       lastMedia = await rec.win.webContents.executeJavaScript(`(() => {
-        const media = [...document.querySelectorAll('#sceneRoot video')];
-        const ready = media.filter(node => node.readyState >= 2 && node.videoWidth > 0 && node.videoHeight > 0).length;
+        const media = [...document.querySelectorAll('#sceneRoot video, #sceneRoot img')];
+        const ready = media.filter(node => node.tagName === 'IMG'
+          ? node.complete && node.naturalWidth > 0
+          : node.readyState >= 2 && node.videoWidth > 0 && node.videoHeight > 0).length;
         return { total: media.length, ready };
       })()`);
     } catch (_) {}
-    if (acknowledged && lastMedia.ready >= lastMedia.total) return { ready: true, media: lastMedia };
+    if (acknowledged && lastMedia.ready >= lastMedia.total) {
+      // DOM acknowledgement can precede the compositor's first painted frame.
+      // Flush that frame before a desktop capture can encode the empty window.
+      await rec.win.webContents.executeJavaScript('new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)))');
+      await rec.win.webContents.capturePage();
+      if(rec.lastDispatchRevision===revision)return { ready: true, media: lastMedia };
+    }
     await new Promise(resolve => setTimeout(resolve, 50));
   }
   return { ready: false, media: lastMedia };
