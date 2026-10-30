@@ -100,4 +100,16 @@ check('MEDIA_OUT_CHECKS_DECODED_FRAMES_AND_CANCELS_ON_RELEASE_OK', () => {
   assert.equal(canceled, 42);
 });
 
+check('MEDIA_SINGLE_60FPS_FRAME_SEEK_IS_NOT_IGNORED_OK',()=>{
+  const media=new Media();media.currentTime=1;
+  transport.seek(media,1+1/60);
+  assert.ok(Math.abs(media.currentTime-(1+1/60))<.0001);
+});
+check('MEDIA_OUT_DOES_NOT_SKIP_LAST_TWO_60FPS_FRAMES_OK',()=>{
+  const media=new Media();
+  const cleanup=transport.bind(media,{...layer,playbackState:'playing',playbackPosition:12,endBehavior:'hold'});
+  media.currentTime=13.97;media.emit('timeupdate');
+  assert.equal(media.paused,false,'Video should still play before OUT.');
+  cleanup();
+});
 console.log('MEDIA_TRANSPORT_TESTS_OK count=' + passed);

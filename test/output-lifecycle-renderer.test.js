@@ -126,6 +126,31 @@ app.whenReady().then(async () => {
   })()`);
   check('OUTPUT_RETIRED_MEDIA_RELEASES_TRANSPORT_AND_SOURCE_OK', cleanup.attached && cleanup.detached && cleanup.transportReleased && cleanup.src===null, cleanup);
 
+  const fixture = 'data:video/mp4;base64,' + fs.readFileSync(path.join(__dirname,'fixtures/lower-third/opaque-h264.mp4')).toString('base64');
+  await win.webContents.executeJavaScript(`(async()=>{
+    __state.sceneFadeMs=0;
+    __state.scenes[0].layers=[{id:'continuous-video',type:'video',src:${JSON.stringify(fixture)},playbackState:'playing',playbackPosition:0,playbackUpdatedAt:0,muted:true,videoAudioConfigured:true}];
+    applyState(__state);renderScene();
+    window.__continuousVideo=document.querySelector('#sceneRoot video');
+    await __continuousVideo.play();
+  })()`);
+  await new Promise(resolve=>setTimeout(resolve,220));
+  const continuity = await win.webContents.executeJavaScript(`(()=>{
+    const before=__continuousVideo.currentTime;
+    __state.scenes[0].layers.push({id:'caption',type:'text',text:'New caption'});
+    applyState(__state);renderScene();
+    const after=document.querySelector('#sceneRoot video');
+    return {same:after===__continuousVideo,before,after:after.currentTime,released:!__continuousVideo.__showSlateTransportCleanup};
+  })()`);
+  check('OUTPUT_CAPTION_EDIT_PRESERVES_PLAYING_DECODER_OK',continuity.same&&continuity.before>.1&&Math.abs(continuity.after-continuity.before)<.08,continuity);
+
+  const changedSource=await win.webContents.executeJavaScript(`(()=>{
+    __state.scenes[0].layers[0].src='data:video/webm;base64,';
+    applyState(__state);renderScene();
+    return {changed:document.querySelector('#sceneRoot video')!==__continuousVideo,released:!__continuousVideo.__showSlateTransportCleanup,src:__continuousVideo.getAttribute('src')};
+  })()`);
+  check('OUTPUT_CHANGED_VIDEO_SOURCE_RELEASES_OLD_DECODER_OK',changedSource.changed&&changedSource.released&&changedSource.src===null,changedSource);
+
   await win.webContents.executeJavaScript(`(() => {
     __state.sceneFadeMs=500;
     __state.scenes[0].layers=[{id:'color',type:'color',color:'#f00'}];

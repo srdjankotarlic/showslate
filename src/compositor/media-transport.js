@@ -19,7 +19,7 @@
     const maximum = duration > 0 ? Math.max(0, duration - 0.001) : Math.max(0, finite(position));
     const target = Math.max(0, Math.min(maximum, finite(position)));
     try {
-      if (Math.abs(finite(element.currentTime) - target) > 0.035) element.currentTime = target;
+      if (Math.abs(finite(element.currentTime) - target) > 0.0005) element.currentTime = target;
     } catch (_) {}
     return target;
   }
@@ -82,7 +82,7 @@
     function atOut() {
       if (settling || layer.playbackState !== 'playing') return;
       const bounds = compositor.mediaPlaybackBounds(layer, mediaDuration(element));
-      if (!(bounds.end > bounds.start) || finite(element.currentTime) < bounds.end - 0.035) return;
+      if (!(bounds.end > bounds.start) || finite(element.currentTime) < bounds.end - 0.001) return;
       settling = true;
       if (layer.endBehavior === 'loop') {
         seek(element, bounds.start);
