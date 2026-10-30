@@ -384,13 +384,30 @@ async function testSilentSceneHasAudioClockAndReleasesIt() {
   assert.ok(h.calls.includes('audio-track-stop'));
 }
 
+async function testRecordingReadinessWaitsForPaintAndStableRevision() {
+  const main=fs.readFileSync(path.join(__dirname,'../main.js'),'utf8');
+  const code=main.slice(main.indexOf('async function waitForRecordingRenderer('),main.indexOf('async function createRecordingOutput('));
+  const events=[];
+  const rec={ackRevision:1,lastDispatchRevision:1,win:{webContents:{
+    async executeJavaScript(script){
+      if(script.includes('querySelectorAll')){events.push('media');return {total:1,ready:1};}
+      events.push('frame');
+    },
+    async capturePage(){events.push('paint');if(events.length===3){rec.lastDispatchRevision=2;rec.ackRevision=2;}}
+  }}};
+  const sandbox={Date,setTimeout};vm.runInNewContext(code,sandbox);
+  const result=await sandbox.waitForRecordingRenderer(rec);
+  assert.equal(result.ready,true);
+  assert.deepEqual(events,['media','frame','paint','media','frame','paint'], 'An update during painting requires readiness for the new Program revision.');
+}
+
 (async () => {
   const tests = [
     testNormalFinalization, testCancelPreparation, testCancelCapture, testWriteFailure,
     testRecorderFailureFlushesFinalChunk, testWriteFailureRevealsPreservedFile,
     testFinalizeFailureRevealsAlreadyPreservedFile, testAbortRenameFailureRetainsPart,
     testAbortPreservesUnacknowledgedBytes, testAbortPreservesUninspectablePart, testAbortRemovesEmptyFile,
-    testSilentSceneHasAudioClockAndReleasesIt
+    testSilentSceneHasAudioClockAndReleasesIt,testRecordingReadinessWaitsForPaintAndStableRevision
   ];
   for (const test of tests) {
     await test();
