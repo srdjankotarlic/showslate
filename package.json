@@ -112,14 +112,14 @@
   "devDependencies": {
     "@electron/asar": "4.2.0",
     "@electron/fuses": "^2.1.3",
-    "electron": "43.1.1",
+    "electron": "43.8.4",
     "electron-builder": "26.15.3"
   },
   "engines": {
     "node": ">=22.12.0"
   },
   "allowScripts": {
-    "electron@43.1.1": true,
+    "electron@43.8.4": true,
     "electron-winstaller@5.4.0": true
   },
   "overrides": {

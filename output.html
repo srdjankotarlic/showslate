@@ -763,8 +763,14 @@ function renderScene(){
   })))+'|projection:'+JSON.stringify(projection)+'|inactive:'+projectionInactive;
   if(key===lastSceneKey){syncSceneMediaRuntime(layers);return;}
   lastSceneKey=key;
-  const fadeMs = Math.max(0, Math.min(2000, Number(S.sceneFadeMs ?? 0)));
+  const fadeMs = Math.max(0, Math.min(2000, Number(S.sceneFadeMs ?? 0)||0));
   const oldFrames=[...root.children];
+  // Reuse an unchanged decoder for immediate edits/takes. Fading frames keep
+  // their own media until retirement; never borrow from an older fading frame.
+  const reusableVideos=new Map(fadeMs===0&&oldFrames.length
+    ? [...oldFrames.at(-1).querySelectorAll('.scene-layer[data-layer-id] video')]
+      .filter(video=>!video.srcObject)
+      .map(video=>[video.closest('.scene-layer').dataset.layerId,video]) : []);
   const frame=document.createElement('div');
   frame.className='scene-frame';
   frame.dataset.sceneFrameId=String(++sceneFrameRevision);
@@ -780,8 +786,6 @@ function renderScene(){
       f.style.opacity='0';
       if(!f.__showSlateRetireTimer)f.__showSlateRetireTimer=setTimeout(()=>removeOutputNode(f),fadeMs+80);
     });
-  } else {
-    oldFrames.forEach(removeOutputNode);
   }
   root.appendChild(frame);
   layers.forEach((layer,layerIndex)=>{
@@ -810,8 +814,9 @@ function renderScene(){
       img.style.imageRendering=layer.imageSampling==='pixelated'?'pixelated':'auto';
       content.appendChild(img);
     } else if(layer.type==='video' && layer.src){
-      const v=document.createElement('video');
-      v.src=mediaSrc(layer.src);
+      const source=mediaSrc(layer.src),previous=reusableVideos.get(String(layer.id||''));
+      const v=previous&&previous.getAttribute('src')===source?previous:document.createElement('video');
+      if(v!==previous)v.src=source;
       bindOutputVideo(v,layer);
       v.style.objectPosition=visual.objectPosition;
       content.appendChild(v);
@@ -856,6 +861,7 @@ function renderScene(){
     }
     frame.appendChild(d);
   });
+  if(fadeMs===0)oldFrames.forEach(removeOutputNode);
   syncSceneMediaRuntime(layers);
   if(liveInputConsumer) liveInputConsumer.sync(layers.filter(layer=>['window','capture','audio'].includes(layer.type)&&layer.inputId).map(layer=>layer.inputId));
 }

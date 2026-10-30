@@ -2,6 +2,13 @@
 
 All notable changes to ShowSlate are documented here.
 
+## Unreleased — 2026-10-30
+
+- Preserve unchanged Program video decoders during CUT edits and takes, including adding a caption or adjusting layer geometry. Changed sources still release the old decoder; fading scenes retain separate retirement behavior.
+- Honor single-frame seeks at 60 fps and avoid stopping trimmed playback up to 35 ms before its OUT point.
+- Refresh compatible dependencies to address newly reported package advisories.
+- Update Electron within version 43 to 43.8.4 and repeat isolated renderer checks on that runtime.
+
 ## 0.12.0-beta.6 - 2026-09-27
 
 - Honor CUT without changing the saved fade duration; Live TAKE CLIP now follows the selected CUT/FADE mode.
