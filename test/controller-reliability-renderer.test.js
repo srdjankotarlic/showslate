@@ -63,6 +63,16 @@ app.whenReady().then(async () => {
   await win.loadFile(path.join(root, 'controller.html'));
   for (let tries = 0; tries < 100 && !await evaluate('return showAutosaveReady===true;'); tries++) await pause(50);
   check('CONTROLLER_RELIABILITY_INITIALIZED_OK', await evaluate('return showAutosaveReady===true;'));
+  const cueDuration = await evaluate(`
+    const before=cues.length;
+    $('cueDur').value='1::30';addCue();
+    const rejected=cues.length===before&&!$('cueDur').validity.valid;
+    $('cueDur').value='1:30';addCue();
+    const added=cues.length===before+1&&cues.at(-1).durationMs===90000;
+    $('cueDur').value='0:99';saveSelectedCueFromEditor();
+    return {rejected,added,editRejected:cues.at(-1).durationMs===90000&&!$('cueDur').validity.valid};
+  `);
+  check('CONTROLLER_REJECTS_INVALID_CUE_DURATION_OK',cueDuration.rejected&&cueDuration.added&&cueDuration.editRejected,cueDuration);
   await evaluate(`
     window.alerts=[];window.alert=message=>alerts.push(message);
     S.goAutoStart=false;S.studioDirect=false;

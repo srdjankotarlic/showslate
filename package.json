@@ -1,7 +1,7 @@
 {
   "name": "showslate",
   "productName": "ShowSlate",
-  "version": "0.12.0-beta.7",
+  "version": "0.12.0-beta.8",
   "description": "Open-source live compositor with layered scenes, Preview/Program switching, multi-display canvases and projector mapping",
   "main": "main.js",
   "author": "Srdjan Kotarlic",
@@ -110,7 +110,7 @@
     "dist:all": "npm run dist:mac && npm run dist:win"
   },
   "devDependencies": {
-    "@electron/asar": "4.2.0",
+    "@electron/asar": "4.3.2",
     "@electron/fuses": "^2.1.3",
     "electron": "43.8.4",
     "electron-builder": "26.15.3"
@@ -123,6 +123,7 @@
     "electron-winstaller@5.4.0": true
   },
   "overrides": {
+    "minimatch@>=7 <11.0.1": "11.0.1",
     "axios": "^1.18.1"
   },
   "build": {

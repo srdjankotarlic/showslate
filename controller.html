@@ -5142,12 +5142,12 @@ function fmtMs(ms){ return ms>=0?fmtSecs(Math.ceil(ms/1000),false):fmtSecs(Math.
 function parseTime(str){
   str=(str||'').trim().replace(',',':').replace('.',':');
   if(!str) return null;
-  if(/^\d+$/.test(str)) return +str*60000;
-  const p=str.split(':').map(Number);
-  if(p.some(isNaN)) return null;
-  if(p.length===2) return (p[0]*60+p[1])*1000;
-  if(p.length===3) return (p[0]*3600+p[1]*60+p[2])*1000;
-  return null;
+  if(!/^\d+(?::\d{1,2}){0,2}$/.test(str)) return null;
+  const parts=str.split(':').map(Number);
+  if(parts.slice(1).some(part=>part>=60))return null;
+  const seconds=parts.length===1?parts[0]*60:parts.reduce((total,part)=>total*60+part,0);
+  const ms=seconds*1000;
+  return Number.isSafeInteger(ms)?ms:null;
 }
 function cloneState(st){
   return JSON.parse(JSON.stringify(st || {}));
@@ -11485,7 +11485,8 @@ function saveSelectedCueFromEditor(){
   const i=getCueEditorIndex();
   if(i<0 || !cues[i]) return;
   const c=cues[i];
-  const ms=parseTime($('cueDur').value);
+  const ms=readCueEditorDuration(c.durationMs);
+  if(ms===null)return;
   c.name=$('cueName').value.trim()||c.name||t('noName');
   if(ms!==null && ms>0) c.durationMs=ms;
   c.note=$('cueNote').value.trim();
@@ -11494,8 +11495,16 @@ function saveSelectedCueFromEditor(){
   saveCues(); send(); renderCues(); updateButtons(); updateGoLabel(); updateLiveInfo();
 }
 
+function readCueEditorDuration(defaultDuration=S.durationMs){
+  const input=$('cueDur');
+  const value=input.value.trim();
+  const ms=value?parseTime(value):defaultDuration;
+  input.setCustomValidity(ms>0?'':t('invalidTime'));
+  return input.reportValidity()?ms:null;
+}
 function addCue(){
-  const ms=parseTime($('cueDur').value)??S.durationMs;
+  const ms=readCueEditorDuration();
+  if(ms===null)return;
   const cue={id:makeId('cue'), status:'pending', actualStart:null, actualEnd:null, actualDurationMs:null,
     name:$('cueName').value.trim()||`Cue ${cues.length+1}`, durationMs:ms,
     note:$('cueNote').value.trim(), color:cueColorSel,
@@ -11668,6 +11677,7 @@ document.addEventListener('keydown',event=>{
 
 function commitCueEditor(){ cueEditorMode==='new'?addCue():saveSelectedCueFromEditor(); }
 $('cueDur').addEventListener('keydown',e=>{ if(e.key==='Enter') commitCueEditor(); });
+$('cueDur').addEventListener('input',e=>e.target.setCustomValidity(''));
 $('cueName').addEventListener('keydown',e=>{ if(e.key==='Enter') commitCueEditor(); });
 $('cueNote').addEventListener('keydown',e=>{ if(e.key==='Enter') commitCueEditor(); });
 $('cueLtName').addEventListener('keydown',e=>{ if(e.key==='Enter') commitCueEditor(); });

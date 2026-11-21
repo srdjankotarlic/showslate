@@ -2,6 +2,12 @@
 
 All notable changes to ShowSlate are documented here.
 
+## 0.12.0-beta.8 — 2026-11-21
+
+- Reject malformed or zero rundown durations before creating or updating a cue.
+- Update archive and packaging dependencies flagged by npm audit.
+- Explain ShowSlate's origin as a hobby project and make beta feedback easier to submit.
+
 ## 0.12.0-beta.7 — 2026-10-30
 
 - Preserve unchanged Program video decoders during CUT edits and takes, including adding a caption or adjusting layer geometry. Changed sources still release the old decoder; fading scenes retain separate retirement behavior.

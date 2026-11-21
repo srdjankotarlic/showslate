@@ -26,6 +26,16 @@
   <a href="docs/USER-GUIDE.md"><strong>User guide</strong></a>
 </p>
 
+## A hobby project in active beta
+
+I’m Srdjan Kotarlic. I started ShowSlate as a hobby project to explore building a live compositor of my own, inspired by workflows in OBS Studio and Resolume Arena. The app combines layered scenes, Preview/Program, recording and room displays with cues, timers and lower thirds for live events.
+
+ShowSlate is unfinished and every release is a test build. I’m sharing the app and source so others can try it off-air, tell me what breaks or gets in their way, and help improve it. A report with the version, your setup, the steps you took and what you expected gives me a concrete place to start.
+
+- [Report a bug](https://github.com/srdjankotarlic/showslate/issues/new?template=bug_report.yml)
+- [Discuss an idea or share test results](https://github.com/srdjankotarlic/showslate/discussions)
+- [Contribute a fix](CONTRIBUTING.md)
+
 > [!WARNING]
 > **Mac-first public beta / work in progress.** The packaged Apple Silicon Mac app has been exercised through real operator and recording workflows. Windows packages build in native CI, but have not yet been manually validated on physical Windows hardware. ShowSlate is not production-certified: evaluate it off-air and test the exact computer, displays, media, capture devices, audio route and fallback before a live event.
 > ShowSlate can be one component in a staffed production system. It is not intended to replace specialist crew roles, redundant signal paths or independent backup hardware.
@@ -156,12 +166,12 @@ Playback has no fixed ShowSlate file-size cap. The practical limit is the show c
 
 | Status | Your computer | Download | Install |
 |---|---|---|---|
-| **Primary tested beta** | Apple Silicon Mac (M1 or newer) | **[Download ShowSlate DMG](https://github.com/srdjankotarlic/showslate/releases/download/v0.12.0-beta.7/ShowSlate-0.12.0-beta.7-arm64.dmg)** | Open the DMG and drag **ShowSlate** to Applications. |
-| **Experimental, unverified on physical hardware** | Windows 10/11 x64 | [Download Windows Setup](https://github.com/srdjankotarlic/showslate/releases/download/v0.12.0-beta.7/ShowSlate-Setup-0.12.0-beta.7.exe) | Run Setup and follow the installer; use it off-air and report hardware results. |
+| **Primary tested beta** | Apple Silicon Mac (M1 or newer) | **[Download ShowSlate DMG](https://github.com/srdjankotarlic/showslate/releases/download/v0.12.0-beta.8/ShowSlate-0.12.0-beta.8-arm64.dmg)** | Open the DMG and drag **ShowSlate** to Applications. |
+| **Experimental, unverified on physical hardware** | Windows 10/11 x64 | [Download Windows Setup](https://github.com/srdjankotarlic/showslate/releases/download/v0.12.0-beta.8/ShowSlate-Setup-0.12.0-beta.8.exe) | Run Setup and follow the installer; use it off-air and report hardware results. |
 
-The [portable Windows EXE](https://github.com/srdjankotarlic/showslate/releases/download/v0.12.0-beta.7/ShowSlate-0.12.0-beta.7-portable.exe) is an advanced no-install option and carries the same unverified Windows status. The previous [`0.12.0-beta.6`](https://github.com/srdjankotarlic/showslate/releases/tag/v0.12.0-beta.6) release remains available for comparison and rollback.
+The [portable Windows EXE](https://github.com/srdjankotarlic/showslate/releases/download/v0.12.0-beta.8/ShowSlate-0.12.0-beta.8-portable.exe) is an advanced no-install option and carries the same unverified Windows status. The previous [`0.12.0-beta.6`](https://github.com/srdjankotarlic/showslate/releases/tag/v0.12.0-beta.6) release remains available for comparison and rollback.
 
-Beta 7 preserves Program video playback during CUT edits, honors precise frame seeking and waits for the first painted Program frame before recording. It includes compatible dependency and Electron updates. October 30 verification covers native controller workflows, module/renderer suites and actual MP4/WebM recording roundtrips. See the [release notes](docs/RELEASE-NOTES-0.12.0-beta.7.md) for the evidence boundaries.
+Beta 8 tightens rundown duration validation, updates archive and packaging dependencies, and makes it easier to report problems during beta testing. It includes the playback and recording fixes from beta 7. [Release notes](docs/RELEASE-NOTES-0.12.0-beta.8.md)
 
 <details>
 <summary><strong>First-launch security warning</strong></summary>
@@ -170,7 +180,7 @@ The public beta is not yet Apple-notarized or Windows Authenticode-signed.
 
 - On macOS, confirm the app came from this repository, then use **System Settings > Privacy & Security > Open Anyway** if required.
 - On Windows, SmartScreen may show **Unknown publisher**. Continue only for the installer downloaded from this repository.
-- Optional integrity hashes are in [SHA256SUMS.txt](https://github.com/srdjankotarlic/showslate/releases/download/v0.12.0-beta.7/SHA256SUMS.txt).
+- Optional integrity hashes are in [SHA256SUMS.txt](https://github.com/srdjankotarlic/showslate/releases/download/v0.12.0-beta.8/SHA256SUMS.txt).
 
 </details>
 
@@ -221,7 +231,7 @@ External OBS/vMix alpha behavior is not certified in this beta. Test the exact s
 - [Testing](docs/TESTING.md)
 - [Signing and release](docs/SIGNING-AND-RELEASE.md)
 - [Public beta verification](docs/PUBLIC-BETA-VERIFICATION.md)
-- [0.12.0 beta 7 release notes](docs/RELEASE-NOTES-0.12.0-beta.7.md)
+- [0.12.0 beta 8 release notes](docs/RELEASE-NOTES-0.12.0-beta.8.md)
 - [Architecture](ARCHITECTURE.md)
 - [Privacy](docs/PRIVACY.md)
 
